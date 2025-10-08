@@ -1,0 +1,282 @@
+id,name,meal_type,calories,protein_g,carbs_g,fat_g,fiber_g,sugar_g,sodium_mg,nationality,tags,restaurant_name
+1,Mujadara,"lunch,dinner",446.4,41.7,33.8,15.8,4.2,13.3,651,Lebanese,"traditional, home",
+2,Tabbouleh,"lunch,dinner",749.7,30.9,32.1,13.7,4.2,14.7,1068,Lebanese,"traditional, home",
+3,Kibbeh Nayyeh,"lunch,dinner",863.1,41.5,39.8,19.9,4.4,10.7,580,Lebanese,"traditional, home",
+4,Warak Enab,"lunch,dinner",396,35.8,33.4,28.9,6.1,1.9,1064,Lebanese,"traditional, home",
+5,Fatteh Hummus,"lunch,dinner",419.2,41.5,79.3,13.1,6.8,2.3,186,Lebanese,"traditional, home",
+6,Bamieh Stew,"lunch,dinner",629.2,16.3,78.5,44.6,11.4,11.5,765,Lebanese,"traditional, home",
+7,Mloukhieh,"lunch,dinner",596,31.7,19.7,16.8,10.9,12.6,179,Lebanese,"traditional, home",
+8,Lentil Soup,"lunch,dinner",217.4,32.3,33.6,20.4,9.9,4.2,984,Lebanese,"traditional, home",
+9,Fattoush,"lunch,dinner",599.1,15.3,78.3,26.5,4.7,8.8,67,Lebanese,"traditional, home",
+10,Kafta with Rice,"lunch,dinner",336,26.6,54.7,43.2,11.1,1.2,142,Lebanese,"traditional, home",
+11,Riz a Djej,"lunch,dinner",461,24.8,70.2,20.9,11,10.7,520,Lebanese,"traditional, home",
+12,Stuffed Zucchini,"lunch,dinner",734.6,16.6,57.6,10.2,5,9.8,347,Lebanese,"traditional, home",
+13,Sheikh el Mahshi,"lunch,dinner",874,17.9,25.5,35.9,8.9,3.6,418,Lebanese,"traditional, home",
+14,Loubieh Bzeit,"lunch,dinner",844.6,33.1,30.3,11.1,2.5,10.4,1042,Lebanese,"traditional, home",
+15,Batata Harra,"lunch,dinner",333.4,11.7,66,16.5,9.2,1.9,1161,Lebanese,"traditional, home",
+16,Kousa Mahshi,"lunch,dinner",519,42.5,44.5,13.6,10.6,9.6,423,Lebanese,"traditional, home",
+17,Yakhnet Fasoulia,"lunch,dinner",447.8,5.8,39.4,39.3,11.5,14.8,960,Lebanese,"traditional, home",
+18,Eggplant Fatteh,"lunch,dinner",502.3,15.3,10.1,35.6,5.5,14.2,860,Lebanese,"traditional, home",
+19,Lebanese Potato Stew,"lunch,dinner",494.2,23.3,76.1,11.9,4.2,6.1,379,Lebanese,"traditional, home",
+20,Spinach Fatayer,"lunch,dinner",750.9,7.5,64.8,20.7,4.7,7.6,353,Lebanese,"traditional, home",
+21,Moghrabieh,"lunch,dinner",161.6,43.2,31.9,7.3,8.3,6.7,966,Lebanese,"traditional, home",
+22,Freekeh Chicken,"lunch,dinner",312.1,26,66,31.8,4.5,2.3,640,Lebanese,"traditional, home",
+23,Lebanese Omelette,"lunch,dinner",601.1,44,13.6,40,10.3,12.5,193,Lebanese,"traditional, home",
+24,Manoushe Homemade,"lunch,dinner",743.4,5.5,11.7,12.1,1.1,14.8,359,Lebanese,"traditional, home",
+25,Lebanese Meat Pie,"lunch,dinner",892.6,31.9,55,36.8,7.4,6.7,970,Lebanese,"traditional, home",
+26,Burghul with Tomatoes,"lunch,dinner",248.7,29.8,26,9.1,3.3,0.6,70,Lebanese,"traditional, home",
+27,Hummus Bowl,"lunch,dinner",362,21.7,24.7,3.5,8.4,3.5,668,Lebanese,"traditional, home",
+28,Labneh with Olive Oil,"lunch,dinner",275.3,38.2,26,25.5,11.2,11.8,334,Lebanese,"traditional, home",
+29,Grilled Halloumi,"lunch,dinner",694.7,20.5,45.2,44.2,1.6,14.7,874,Lebanese,"traditional, home",
+30,Eggplant Moussaka,"lunch,dinner",272.6,44.9,47.8,18.5,2.8,8.2,879,Lebanese,"traditional, home",
+31,Homemade Shawarma Plate,"lunch,dinner",649.8,36.6,50.3,23.3,11.2,11.3,747,Lebanese,"traditional, home",
+32,Chicken with Rice,"lunch,dinner",815.4,25.6,46.7,22,4.5,10,750,Lebanese,"traditional, home",
+33,Lebanese Lentil Risotto,"lunch,dinner",419.1,39.8,17.8,43.9,9.6,2.6,95,Lebanese,"traditional, home",
+34,Vegetable Stew,"lunch,dinner",740.6,30.4,49.5,44,2.7,7.3,784,Lebanese,"traditional, home",
+35,Lebanese Falafel Plate,"lunch,dinner",837.8,44.3,35.2,5.8,6.6,7.9,68,Lebanese,"traditional, home",
+36,Tahini Salad,"lunch,dinner",466.4,40.7,16.7,26.5,6.6,11.6,954,Lebanese,"traditional, home",
+37,Zaatar Bread,"lunch,dinner",789.7,14.1,12.7,26.9,10.2,8.7,989,Lebanese,"traditional, home",
+38,Garlic Potatoes,"lunch,dinner",837.6,38.8,67.8,34.9,8.1,3.2,191,Lebanese,"traditional, home",
+39,Stuffed Peppers,"lunch,dinner",788.3,17.4,64.6,8.9,2.2,9.2,661,Lebanese,"traditional, home",
+40,Tomato Kibbeh,"lunch,dinner",499.6,17.5,47.7,25.7,7.9,0,405,Lebanese,"traditional, home",
+41,Chickpea Stew,"lunch,dinner",689.3,33,13.7,35.9,4.3,7.7,276,Lebanese,"traditional, home",
+42,Yogurt Cucumber Salad,"lunch,dinner",279.3,8.3,16.4,18.7,2.5,5.6,434,Lebanese,"traditional, home",
+43,Cabbage Rolls,"lunch,dinner",325.4,35.3,69,8.8,6.9,12.4,540,Lebanese,"traditional, home",
+44,Stuffed Vine Leaves,"lunch,dinner",481.5,33.4,12.2,19.7,3.2,0.1,207,Lebanese,"traditional, home",
+45,Beet Salad,"lunch,dinner",448.8,40,24.4,3.1,2.8,4.7,315,Lebanese,"traditional, home",
+46,Chard Stew,"lunch,dinner",503.4,13.5,53.8,31.5,9.2,9.8,890,Lebanese,"traditional, home",
+47,Mujadara Hamra,"lunch,dinner",718.6,17.4,22.8,34.9,8.3,2.6,413,Lebanese,"traditional, home",
+48,Potato Kibbeh,"lunch,dinner",241.6,9.8,74.8,24.5,9.8,12.6,951,Lebanese,"traditional, home",
+49,Lebanese Grilled Veggies,"lunch,dinner",680.8,19.6,53.2,4.1,3.4,12.2,1047,Lebanese,"traditional, home",
+50,Hindbeh,"lunch,dinner",168.3,8.2,28.8,38.8,3.9,10.1,382,Lebanese,"traditional, home",
+51,Toum Dip,"lunch,dinner",602.2,41.5,23.6,13.9,2.9,10.3,75,Lebanese,"traditional, home",
+52,Chicken Shawarma Sandwich,"lunch,dinner",167.3,15.2,34.6,44.6,9.2,6.8,279,Lebanese,"restaurant, popular",Zaatar w Zeit
+53,Beef Shawarma Plate,"lunch,dinner",854.3,5.9,70.2,35.6,2.8,11.9,394,Lebanese,"restaurant, popular",Kabablaki
+54,Taouk Sandwich,"lunch,dinner",818.2,24.6,42.2,30.2,9.7,9.7,546,Lebanese,"restaurant, popular",Zaatar w Zeit
+55,Mixed Grill Platter,"lunch,dinner",468.3,44.7,55,5.4,10.7,11.7,790,Lebanese,"restaurant, popular",Malak Al Taouk
+56,Falafel Wrap,"lunch,dinner",443.7,37.5,63.6,19.5,6.5,10,266,Lebanese,"restaurant, popular",Le Chef
+57,Manakish Zaatar,"lunch,dinner",551.4,27.6,58.1,22.1,9.3,5,330,Lebanese,"restaurant, popular",Roadster Diner
+58,Manakish Cheese,"lunch,dinner",522.9,6.5,45,39.9,3,4.7,174,Lebanese,"restaurant, popular",Roadster Diner
+59,Meat Pizza (Lahm Bi Ajeen),"lunch,dinner",516.1,24.2,34.3,28,8.1,11.4,765,Lebanese,"restaurant, popular",Malak Al Taouk
+60,Fatteh Shawarma,"lunch,dinner",263.6,13.7,12.7,26.6,7.1,13.4,758,Lebanese,"restaurant, popular",Abou Jassem
+61,Burger Taouk Style,"lunch,dinner",636.4,19,67.9,35.5,3.4,7.1,1096,Lebanese,"restaurant, popular",Kabablaki
+62,Malak al Taouk Sandwich,"lunch,dinner",768.3,33.1,10.7,25,6.2,4.3,992,Lebanese,"restaurant, popular",Zaatar w Zeit
+63,Zaatar w Zeit Wrap,"lunch,dinner",672.8,21.9,18.1,25.6,2,1,1000,Lebanese,"restaurant, popular",Kabablaki
+64,Kabab Platter,"lunch,dinner",664.5,19.2,78.4,34.8,1.4,7.7,164,Lebanese,"restaurant, popular",Roadster Diner
+65,Beef Kafta Sandwich,"lunch,dinner",859.5,8.5,59.8,29.7,11.7,10.2,1160,Lebanese,"restaurant, popular",Abou Jassem
+66,Hummus Shawarma Bowl,"lunch,dinner",353.6,7.2,17.9,16.9,6.3,10.1,147,Lebanese,"restaurant, popular",Malak Al Taouk
+67,Chicken Caesar Wrap,"lunch,dinner",395.8,20.6,32.9,20.6,8.7,10.2,624,Lebanese,"restaurant, popular",Malak Al Taouk
+68,Lebanese Pizza,"lunch,dinner",328,28.6,58.8,38.7,11.6,2.3,1065,Lebanese,"restaurant, popular",Kabablaki
+69,Cheese Roll,"lunch,dinner",611.4,31.1,17.7,13.1,1.6,1.9,711,Lebanese,"restaurant, popular",Zaatar w Zeit
+70,Zaatar Fries,"lunch,dinner",290.7,15.9,47.6,10.6,1.5,1.8,106,Lebanese,"restaurant, popular",Kabablaki
+71,Batata Harra Box,"lunch,dinner",786.2,42,46.5,5,2.9,9.1,346,Lebanese,"restaurant, popular",Le Chef
+72,Fatayer Combo,"lunch,dinner",244.3,8.4,68.8,29.4,5.8,6.2,652,Lebanese,"restaurant, popular",Le Chef
+73,Hummus with Meat,"lunch,dinner",152.7,42,79.3,14.6,5,3.3,1190,Lebanese,"restaurant, popular",Kabablaki
+74,Tabbouleh Bowl,"lunch,dinner",391.4,7,43.6,38.6,2.5,0.6,837,Lebanese,"restaurant, popular",Kabablaki
+75,Warak Enab Plate,"lunch,dinner",743.3,10.5,61.9,12.2,1.4,11.5,138,Lebanese,"restaurant, popular",Le Chef
+76,Lebanese Mixed Mezza,"lunch,dinner",158.2,44.2,30.6,18.2,3.5,9.9,597,Lebanese,"restaurant, popular",Malak Al Taouk
+77,Grilled Halloumi Sandwich,"lunch,dinner",530,20.6,10.9,23.1,10,2.7,395,Lebanese,"restaurant, popular",Kabablaki
+78,Fatteh Taouk,"lunch,dinner",865.5,34.1,21.5,6.6,8.4,4.9,820,Lebanese,"restaurant, popular",Kabablaki
+79,Falafel Bowl,"lunch,dinner",155.5,40.6,62.1,29.1,9.3,8.8,93,Lebanese,"restaurant, popular",Abou Jassem
+80,Shish Taouk Plate,"lunch,dinner",571.5,33,19.4,22,10.3,1.9,868,Lebanese,"restaurant, popular",Le Chef
+81,Lebanese Saj Sandwich,"lunch,dinner",515.3,34.7,22.4,12.6,11.1,13.9,851,Lebanese,"restaurant, popular",Le Chef
+82,Zinger Taouk Wrap,"lunch,dinner",776.9,6.1,37,6,1.7,13.2,357,Lebanese,"restaurant, popular",Malak Al Taouk
+83,Halloumi Burger,"lunch,dinner",594.9,15.1,18.5,9.2,11.6,3.5,961,Lebanese,"restaurant, popular",Roadster Diner
+84,Kofta Platter,"lunch,dinner",550.6,31.3,68,4.8,11.1,11.9,209,Lebanese,"restaurant, popular",Abou Jassem
+85,Lebanese Fries Box,"lunch,dinner",507.4,20.9,50,42.5,5.9,4.1,587,Lebanese,"restaurant, popular",Zaatar w Zeit
+86,Chicken Sub,"lunch,dinner",362.5,7.9,67,38,5.4,8.2,190,Lebanese,"restaurant, popular",Malak Al Taouk
+87,Tawouk Fries Combo,"lunch,dinner",625.2,35.4,33.8,24.9,10,14.7,56,Lebanese,"restaurant, popular",Zaatar w Zeit
+88,Zaatar Saj,"lunch,dinner",285.7,42,67.1,42.5,11.6,6.9,1089,Lebanese,"restaurant, popular",Zaatar w Zeit
+89,Grilled Fish Platter,"lunch,dinner",454.3,18.6,75.1,22.9,9.3,2.9,1111,Lebanese,"restaurant, popular",Roadster Diner
+90,Shrimp Taouk Plate,"lunch,dinner",220.2,41.5,14.7,32.7,4.3,11.4,1135,Lebanese,"restaurant, popular",Le Chef
+91,Fatteh Mix,"lunch,dinner",632,26.8,15.5,39.5,7.2,12.1,1174,Lebanese,"restaurant, popular",Abou Jassem
+92,Falafel Sandwich,"lunch,dinner",407.9,11.3,73.5,33.2,5.5,7.1,880,Lebanese,"restaurant, popular",Zaatar w Zeit
+93,Kafta Plate,"lunch,dinner",539.2,34.6,24,27.5,11.5,3.3,1134,Lebanese,"restaurant, popular",Le Chef
+94,Zaatar Mix Pizza,"lunch,dinner",811.2,5.8,39.6,38.9,10,13.3,218,Lebanese,"restaurant, popular",Roadster Diner
+95,Fried Kibbeh,"lunch,dinner",669,6.4,75.7,9.2,9.1,10.9,727,Lebanese,"restaurant, popular",Le Chef
+96,Grilled Tawouk Plate,"lunch,dinner",879.6,18.4,52.4,14.2,4.1,9.3,650,Lebanese,"restaurant, popular",Le Chef
+97,Chicken Fatteh,"lunch,dinner",859.3,11.3,62.1,38.1,1.5,6.5,644,Lebanese,"restaurant, popular",Roadster Diner
+98,Falafel Sandwich Box,"lunch,dinner",588,33.1,37.6,14.4,5.2,1.9,819,Lebanese,"restaurant, popular",Roadster Diner
+99,Fatteh Warak Enab,"lunch,dinner",796.4,28.2,69.3,9.8,5.4,10.7,1015,Lebanese,"restaurant, popular",Roadster Diner
+100,Lamb Rice Plate,"lunch,dinner",205.1,28.4,78.7,25.7,3.8,5.3,776,Lebanese,"restaurant, popular",Abou Jassem
+101,Spicy Taouk Wrap,"lunch,dinner",873.9,15.5,13.3,5,11.1,9.3,593,Lebanese,"restaurant, popular",Roadster Diner
+102,Mixed Shawarma Bowl,"lunch,dinner",871,29.9,17,26.4,7.2,4.9,375,Lebanese,"restaurant, popular",Malak Al Taouk
+103,Lebanese Meat Stew,"lunch,dinner",563.7,40.6,16.8,12.9,8.6,6.8,1162,Lebanese,"traditional, home",
+104,Spinach with Rice,"lunch,dinner",818.8,16.3,22.3,27.8,5.8,9.7,1155,Lebanese,"traditional, home",
+105,Okra with Tomato,"lunch,dinner",281.1,13.3,63.2,3.1,7.1,0.2,133,Lebanese,"traditional, home",
+106,Rice with Lentils,"lunch,dinner",237.7,41.7,16,39.4,1.2,7.5,389,Lebanese,"traditional, home",
+107,Vegetable Couscous,"lunch,dinner",166.2,33.9,24.9,43.7,3.6,11.8,944,Lebanese,"traditional, home",
+108,Freekeh with Lamb,"lunch,dinner",366.5,18.9,75.2,6.9,5.8,14.8,1103,Lebanese,"traditional, home",
+109,Yakhnet Sbanegh,"lunch,dinner",553.8,43.7,25.2,15.9,3.7,2.7,857,Lebanese,"traditional, home",
+110,Stuffed Eggplant,"lunch,dinner",755.3,37.6,30.6,40.4,5.1,10.9,617,Lebanese,"traditional, home",
+111,Homemade Falafel,"lunch,dinner",270.1,31.2,61.5,38.5,1.9,7.2,883,Lebanese,"traditional, home",
+112,Kibbeh Labanieh,"lunch,dinner",846.5,10.4,11.1,15.2,5.6,3.5,158,Lebanese,"traditional, home",
+113,Eggplant Fatteh,"lunch,dinner",206.9,9.7,57.8,22.2,10.9,0.2,813,Lebanese,"traditional, home",
+114,Loubieh with Olive Oil,"lunch,dinner",601.7,29.4,10.2,20.3,11.1,0.7,693,Lebanese,"traditional, home",
+115,Chicken and Potatoes,"lunch,dinner",393.4,37.9,60.8,18.7,1.5,1.9,122,Lebanese,"traditional, home",
+116,Ruz bi Djaj,"lunch,dinner",623.4,16.3,36.6,28.1,5.1,12.4,73,Lebanese,"traditional, home",
+117,Lebanese Meatballs,"lunch,dinner",752.5,39.2,79.4,8.3,6.7,4,911,Lebanese,"traditional, home",
+118,Stuffed Tomatoes,"lunch,dinner",674.1,19.9,65.6,30.5,4,13,1196,Lebanese,"traditional, home",
+119,Hindbeh bi Zeit,"lunch,dinner",644.2,29.7,76,3.4,10.6,2,176,Lebanese,"traditional, home",
+120,Homemade Fries,"lunch,dinner",506.1,8.5,24.7,12.5,2.7,13.4,577,Lebanese,"traditional, home",
+121,Grilled Eggplant,"lunch,dinner",438.2,22.6,69.3,15.4,3.9,11.2,68,Lebanese,"traditional, home",
+122,Vegetable Stuffed Peppers,"lunch,dinner",566,23.1,56.8,40.6,1.3,9.9,827,Lebanese,"traditional, home",
+123,Homemade Tabbouleh Deluxe,"lunch,dinner",239.6,42.7,22.3,23,10.7,13.5,1110,Lebanese,"traditional, home",
+124,Rice and Chickpeas,"lunch,dinner",875.2,13.5,31.8,25.5,2.9,7.6,295,Lebanese,"traditional, home",
+125,Lebanese Chard Rolls,"lunch,dinner",328.6,39.1,47.1,34.4,10.7,11.1,648,Lebanese,"traditional, home",
+126,Homemade Fatteh Mix,"lunch,dinner",569.2,33,51.7,42.4,11.5,13.4,819,Lebanese,"traditional, home",
+127,Spinach Pies,"lunch,dinner",272.5,24.7,73.1,12.7,4,13.1,409,Lebanese,"traditional, home",
+128,Grilled Kafta Plate,"lunch,dinner",804.9,18.7,63.9,29.6,7.4,9.9,1174,Lebanese,"restaurant, popular",Zaatar w Zeit
+129,Chicken Sub Combo,"lunch,dinner",422.4,23.6,38.9,18.7,4,11.5,770,Lebanese,"restaurant, popular",Abou Jassem
+130,Lebanese Tacos,"lunch,dinner",834.1,14.8,53.1,37.8,5.1,8.2,342,Lebanese,"restaurant, popular",Kabablaki
+131,Fatteh Falafel,"lunch,dinner",838.3,34.5,64.4,21.7,4.7,6.7,492,Lebanese,"restaurant, popular",Roadster Diner
+132,Grilled Lamb Plate,"lunch,dinner",859.2,30.4,27.3,21,5.9,8.1,172,Lebanese,"restaurant, popular",Malak Al Taouk
+133,Mixed Grill Box,"lunch,dinner",344,33.4,56.8,25.5,10.5,1.8,938,Lebanese,"restaurant, popular",Roadster Diner
+134,Shawarma Saj,"lunch,dinner",206.7,28,67.9,21.4,6.4,2.1,204,Lebanese,"restaurant, popular",Roadster Diner
+135,Beef Burger,"lunch,dinner",325.5,13.1,16.2,18.5,2.1,6.9,775,Lebanese,"restaurant, popular",Kabablaki
+136,Chicken Burger,"lunch,dinner",331.3,37.1,39.4,27.2,6.4,7.2,597,Lebanese,"restaurant, popular",Malak Al Taouk
+137,Taouk Platter,"lunch,dinner",842.2,31.4,31.5,8.1,2.1,1.1,825,Lebanese,"restaurant, popular",Le Chef
+138,Falafel Fries Combo,"lunch,dinner",799.8,43,46.5,31.6,10,2.3,893,Lebanese,"restaurant, popular",Zaatar w Zeit
+139,Lebanese Rice Bowl,"lunch,dinner",161.2,25,53.2,14.8,10.9,14.5,970,Lebanese,"restaurant, popular",Malak Al Taouk
+140,Grilled Chicken Salad,"lunch,dinner",518.7,34,41.3,43.1,3.4,11.4,831,Lebanese,"restaurant, popular",Le Chef
+141,Taouk Box,"lunch,dinner",269.3,14.4,10.8,32.4,10.2,3.2,418,Lebanese,"restaurant, popular",Abou Jassem
+142,Falafel Plate Combo,"lunch,dinner",230.9,41.4,19.8,14.1,3,12.9,248,Lebanese,"restaurant, popular",Le Chef
+143,Cheese Saj,"lunch,dinner",890.5,14,58.4,28.2,10.4,13.8,436,Lebanese,"restaurant, popular",Malak Al Taouk
+144,Kibbeh Plate,"lunch,dinner",731.5,12.5,32.1,4.2,4,1.5,132,Lebanese,"restaurant, popular",Kabablaki
+145,Lebanese Taouk Burger,"lunch,dinner",635.2,23.9,45.9,4.5,2.5,6.5,355,Lebanese,"restaurant, popular",Abou Jassem
+146,Fatteh Combo,"lunch,dinner",746.1,10.3,73.1,19.3,9.4,9.7,355,Lebanese,"restaurant, popular",Roadster Diner
+147,Zaatar Fries Bowl,"lunch,dinner",473.4,24.3,31.1,12.8,7.1,2.2,656,Lebanese,"restaurant, popular",Abou Jassem
+148,Fish Sandwich,"lunch,dinner",743.9,43.3,55.9,28.4,9.5,8.5,848,Lebanese,"restaurant, popular",Kabablaki
+149,Shrimp Plate,"lunch,dinner",471.8,10.1,44.9,24.6,9.7,2.3,198,Lebanese,"restaurant, popular",Zaatar w Zeit
+150,Lebanese Mezza Combo,"lunch,dinner",311.4,7.6,67.1,25.2,7.7,2.3,1110,Lebanese,"restaurant, popular",Le Chef
+151,Zaatar Taouk Wrap,"lunch,dinner",724.7,38.7,37.2,24.6,3.3,11.7,1027,Lebanese,"restaurant, popular",Le Chef
+152,Chicken Caesar Plate,"lunch,dinner",246.6,26.3,51.6,44.7,5.5,3.5,420,Lebanese,"restaurant, popular",Roadster Diner
+153,Coca-Cola Classic,"lunch,dinner",140,0,35,0,0,35,20,International,"beverage, drink",
+154,Coca-Cola Zero Sugar,"lunch,dinner",1,0,0,0,0,0,20,International,"beverage, drink",
+155,Coca-Cola Cherry,"lunch,dinner",150,0,39,0,0,39,25,International,"beverage, drink",
+156,Pepsi Classic,"lunch,dinner",139,0,35,0,0,35,15,International,"beverage, drink",
+157,Pepsi Max,"lunch,dinner",1,0,0,0,0,0,20,International,"beverage, drink",
+158,Pepsi Wild Cherry,"lunch,dinner",150,0,40,0,0,40,25,International,"beverage, drink",
+159,Sprite,"lunch,dinner",140,0,38,0,0,38,25,International,"beverage, drink",
+160,Sprite Zero,"lunch,dinner",1,0,0,0,0,0,20,International,"beverage, drink",
+161,Fanta Orange,"lunch,dinner",160,0,44,0,0,44,25,International,"beverage, drink",
+162,Fanta Grape,"lunch,dinner",170,0,46,0,0,46,30,International,"beverage, drink",
+163,Fanta Pineapple,"lunch,dinner",170,0,46,0,0,46,30,International,"beverage, drink",
+164,Dr Pepper,"lunch,dinner",150,0,40,0,0,40,55,International,"beverage, drink",
+165,Dr Pepper Cherry,"lunch,dinner",155,0,42,0,0,42,55,International,"beverage, drink",
+166,Mountain Dew,"lunch,dinner",170,0,46,0,0,46,60,International,"beverage, drink",
+167,Mountain Dew Code Red,"lunch,dinner",170,0,46,0,0,46,65,International,"beverage, drink",
+168,Mountain Dew Baja Blast,"lunch,dinner",160,0,44,0,0,44,60,International,"beverage, drink",
+169,7UP,"lunch,dinner",140,0,36,0,0,36,20,International,"beverage, drink",
+170,Mirinda Orange,"lunch,dinner",160,0,44,0,0,44,30,International,"beverage, drink",
+171,Mirinda Strawberry,"lunch,dinner",160,0,44,0,0,44,30,International,"beverage, drink",
+172,Schweppes Tonic Water,"lunch,dinner",120,0,30,0,0,30,35,International,"beverage, drink",
+173,Canada Dry Ginger Ale,"lunch,dinner",140,0,35,0,0,35,35,International,"beverage, drink",
+174,Faygo Redpop,"lunch,dinner",160,0,44,0,0,44,40,International,"beverage, drink",
+175,Jarritos Mango,"lunch,dinner",150,0,38,0,0,38,35,International,"beverage, drink",
+176,Jarritos Tamarind,"lunch,dinner",140,0,37,0,0,37,30,International,"beverage, drink",
+177,Red Bull,"lunch,dinner",110,2,27,0,0,27,105,International,"beverage, drink",
+178,Red Bull Sugarfree,"lunch,dinner",10,2,2,0,0,2,105,International,"beverage, drink",
+179,Red Bull Tropical,"lunch,dinner",120,2,29,0,0,29,105,International,"beverage, drink",
+180,Monster Energy,"lunch,dinner",210,2,54,0,0,54,180,International,"beverage, drink",
+181,Monster Zero Ultra,"lunch,dinner",10,2,2,0,0,2,180,International,"beverage, drink",
+182,Monster Mango Loco,"lunch,dinner",230,2,58,0,0,58,180,International,"beverage, drink",
+183,Rockstar Energy,"lunch,dinner",250,2,63,0,0,63,200,International,"beverage, drink",
+184,Rockstar Punched,"lunch,dinner",260,2,65,0,0,65,200,International,"beverage, drink",
+185,Rockstar Sugarfree,"lunch,dinner",25,2,5,0,0,5,200,International,"beverage, drink",
+186,Bang Energy Blue Razz,"lunch,dinner",0,2,0,0,0,0,40,International,"beverage, drink",
+187,Bang Energy Peach Mango,"lunch,dinner",0,2,0,0,0,0,40,International,"beverage, drink",
+188,5-Hour Energy Shot,"lunch,dinner",5,2,1,0,0,1,10,International,"beverage, drink",
+189,Tropicana Orange Juice,"lunch,dinner",110,1,26,0,0.5,22,5,International,"beverage, drink",
+190,Tropicana Grapefruit Juice,"lunch,dinner",100,1,24,0,0.5,20,5,International,"beverage, drink",
+191,Minute Maid Apple Juice,"lunch,dinner",120,1,29,0,0.5,25,10,International,"beverage, drink",
+192,Minute Maid Mango Juice,"lunch,dinner",130,1,32,0,0.5,28,10,International,"beverage, drink",
+193,Capri Sun Strawberry Kiwi,"lunch,dinner",60,1,16,0,0.5,12,15,International,"beverage, drink",
+194,Capri Sun Pacific Cooler,"lunch,dinner",60,1,16,0,0.5,12,15,International,"beverage, drink",
+195,Rani Float Peach,"lunch,dinner",135,1,34,0,0.5,30,25,International,"beverage, drink",
+196,Simply Lemonade,"lunch,dinner",120,1,28,0,0.5,24,10,International,"beverage, drink",
+197,Simply Limeade,"lunch,dinner",120,1,28,0,0.5,24,10,International,"beverage, drink",
+198,Ocean Spray Cranberry,"lunch,dinner",110,1,28,0,0.5,24,5,International,"beverage, drink",
+199,Ocean Spray Grape,"lunch,dinner",120,1,29,0,0.5,25,5,International,"beverage, drink",
+200,Evian Water,"lunch,dinner",0,0,0,0,0,0,5,International,"beverage, drink",
+201,Fiji Water,"lunch,dinner",0,0,0,0,0,0,6,International,"beverage, drink",
+202,Perrier Sparkling Water,"lunch,dinner",0,0,0,0,0,0,0,International,"beverage, drink",
+203,San Pellegrino Sparkling,"lunch,dinner",0,0,0,0,0,0,0,International,"beverage, drink",
+204,SmartWater,"lunch,dinner",0,0,0,0,0,0,5,International,"beverage, drink",
+205,Dasani Water,"lunch,dinner",0,0,0,0,0,0,5,International,"beverage, drink",
+206,Aquafina Water,"lunch,dinner",0,0,0,0,0,0,5,International,"beverage, drink",
+207,Starbucks Frappuccino Mocha,"lunch,dinner",190,3,31,2,0,29,120,International,"beverage, drink",
+208,Starbucks Cold Brew Black,"lunch,dinner",15,3,3,2,0,1,10,International,"beverage, drink",
+209,Starbucks Nitro Cold Brew,"lunch,dinner",10,3,2,2,0,0,10,International,"beverage, drink",
+210,Dunkin Iced Coffee Mocha,"lunch,dinner",180,3,29,2,0,27,115,International,"beverage, drink",
+211,Dunkin Cold Brew Black,"lunch,dinner",15,3,3,2,0,1,10,International,"beverage, drink",
+212,Nescafé Latte Can,"lunch,dinner",120,3,23,2,0,21,100,International,"beverage, drink",
+213,Lipton Ice Tea Lemon,"lunch,dinner",135,0,33,0,0,33,20,International,"beverage, drink",
+214,Arizona Green Tea Honey,"lunch,dinner",210,0,51,0,0,51,15,International,"beverage, drink",
+215,Nestea Peach,"lunch,dinner",135,0,33,0,0,33,25,International,"beverage, drink",
+216,Pure Leaf Iced Tea Unsweetened,"lunch,dinner",0,0,0,0,0,0,15,International,"beverage, drink",
+217,Gold Peak Sweet Tea,"lunch,dinner",180,0,46,0,0,46,25,International,"beverage, drink",
+218,Ayran,"lunch,dinner",110,2,9,2,0.5,7,280,International,"beverage, drink",
+219,Kombucha Ginger Lemon,"lunch,dinner",70,2,16,2,0.5,14,20,International,"beverage, drink",
+220,Kombucha Raspberry,"lunch,dinner",80,2,18,2,0.5,16,20,International,"beverage, drink",
+221,Horchata,"lunch,dinner",120,2,26,2,0.5,24,50,International,"beverage, drink",
+222,Matcha Latte,"lunch,dinner",140,2,26,2,0.5,24,70,International,"beverage, drink",
+223,Thai Iced Tea,"lunch,dinner",180,2,45,2,0.5,43,60,International,"beverage, drink",
+224,Gandour Tarboosh (Ras el Abed),"lunch,dinner",150,1.5,22,7,0,16,45,Lebanese,brand=Gandour;flavor=Marshmallow cone;size=32g;local;classic,
+225,Gandour Pik-One,"lunch,dinner",180,2,24,9,0.5,20,80,Lebanese,brand=Gandour;flavor=Nougat & caramel;size=37g;local,
+226,Snickers Bar,"lunch,dinner",248,4.6,32,12,1.2,27,120,Lebanese,brand=Mars;flavor=Peanut caramel;size=50g;imported;contains_nuts,
+227,Mars Bar,"lunch,dinner",228,2.2,35,8.5,0.6,31,90,Lebanese,brand=Mars;flavor=Caramel nougat;size=51g;imported,
+228,Galaxy Smooth Milk,"lunch,dinner",216,2.8,24,12,0.7,22,30,Lebanese,brand=Mars;flavor=Milk chocolate;size=40g;imported,
+229,Cadbury Dairy Milk,"lunch,dinner",240,3.8,26,13,0.8,24,40,Lebanese,brand=Cadbury;flavor=Milk chocolate;size=45g;imported,
+230,KitKat 4-Finger,"lunch,dinner",207,3.9,26,10.8,0.7,21,36,Lebanese,brand=Nestlé;flavor=Wafer chocolate;size=41g;imported;wafer,
+231,Patchi Dark Square,"lunch,dinner",56,0.7,4.4,4.1,0.9,3.2,0,Lebanese,brand=Patchi;flavor=Dark chocolate;size=10g;local;premium;dark,
+232,Ferrero Rocher (3 pieces),"lunch,dinner",227,3.1,16.5,16.4,1.8,15.4,21,Lebanese,brand=Ferrero;flavor=Hazelnut;size=37g;imported;contains_nuts,
+233,Gandour Unica,"lunch,dinner",160,2,16,9,0.6,10,55,Lebanese,brand=Gandour;flavor=Chocolate-coated wafer;size=30g;local,
+234,"Loacker Quadratini (Hazelnut, 8 pcs)","lunch,dinner",200,3.3,24,10,0.9,10,45,Lebanese,brand=Loacker;flavor=Hazelnut;size=37g;imported;contains_nuts,
+235,Nestlé KitKat Chunky,"lunch,dinner",207,3.5,26,10.5,0.7,21,36,Lebanese,brand=Nestlé;flavor=Wafer chocolate;size=40g;imported,
+236,Master Chips Classic Salt,"lunch,dinner",240,3,24,15,3,0.5,300,Lebanese,brand=Master;flavor=Salted;size=45g;local;fried;gluten_free,
+237,Master Chips Ketchup,"lunch,dinner",230,3,23,14,3,2,320,Lebanese,brand=Master;flavor=Ketchup;size=45g;local;fried,
+238,Master Kettle Cooked Sea Salt,"lunch,dinner",210,3.2,21,13,2.5,0.8,260,Lebanese,brand=Master;flavor=Kettle cooked;size=40g;local;kettle;gluten_free,
+239,Pringles Original (small can),"lunch,dinner",210,2,21,13,1.2,0.3,250,Lebanese,brand=Pringles;flavor=Original;size=40g;imported;stackable,
+240,Doritos Nacho Cheese,"lunch,dinner",200,3.3,21,12,1.5,1.1,300,Lebanese,brand=Doritos;flavor=Cheese;size=40g;imported;cheese,
+241,Cheetos Crunchy,"lunch,dinner",200,2.5,15,12,1,1,320,Lebanese,brand=Cheetos;flavor=Cheese;size=35g;imported;cheese,
+242,Quest Protein Bar Chocolate Chip Cookie Dough,"lunch,dinner",200,21,23,8,14,1,220,Lebanese,brand=Quest;flavor=Cookie Dough;size=60g;high_protein;imported,
+243,Grenade Carb Killa Chocolate Salted Caramel,"lunch,dinner",217,20,16,9,6.6,1.5,240,Lebanese,brand=Grenade;flavor=Salted Caramel;size=60g;high_protein;imported,
+244,Clif Builder's Protein Bar Chocolate,"lunch,dinner",280,20,29,9,3,20,210,Lebanese,brand=Clif;flavor=Chocolate;size=68g;high_protein;imported,
+245,Banana (medium),"lunch,dinner",105,1.3,27,0.3,3.1,14.4,1,Lebanese,brand=Fresh;flavor=Banana;size=118g;fresh;affordable,
+246,Apple (medium),"lunch,dinner",95,0.5,25,0.3,4.4,19,2,Lebanese,brand=Fresh;flavor=Apple;size=182g;fresh,
+247,Dates (4 pieces),"lunch,dinner",80,0.6,22,0,2,19,1,Lebanese,brand=Dried;flavor=Deglet Nour;size=28g;dried,
+248,Dried Apricots (6 halves),"lunch,dinner",84,1,22,0,2.7,17,2,Lebanese,brand=Dried;flavor=Apricot;size=35g;dried,
+249,Raisin Pack (small),"lunch,dinner",90,1,24,0,1.2,18,5,Lebanese,brand=Dried;flavor=Raisins;size=30g;dried,
+250,Poppins Cereal Bar Chocolate,"lunch,dinner",110,2,18,3.5,1.5,6,90,Lebanese,brand=Poppins;flavor=Chocolate;size=25g;local,
+251,Poppins Cereal Bar Strawberry,"lunch,dinner",105,1.8,18,3.2,1.6,6,85,Lebanese,brand=Poppins;flavor=Strawberry;size=25g;local;fruit,
+252,Nestlé Fitness Cereal Bar,"lunch,dinner",90,1.2,17,2.1,1.5,6,60,Lebanese,brand=Nestlé;flavor=Whole grain;size=23g;imported;whole_grain,
+253,Nature Valley Crunchy Oats & Honey (2 bars),"lunch,dinner",190,4,29,7,3,11,150,Lebanese,brand=Nature Valley;flavor=Oats & Honey;size=42g;imported;whole_grain,
+254,Gandour Safari Biscuit,"lunch,dinner",134,2,20,5,0.8,6,90,Lebanese,brand=Gandour;flavor=Plain;size=30g;local,
+255,Gandour Glucose Biscuit Pack,"lunch,dinner",125,2.1,22,3.6,0.6,7,70,Lebanese,brand=Gandour;flavor=Glucose;size=30g;local,
+256,McVitie's Digestive (2 biscuits),"lunch,dinner",140,2,18,6,2,5,180,Lebanese,brand=McVitie's;flavor=Digestive;size=28g;imported;whole_grain,
+257,LU Prince Chocolate (2 biscuits),"lunch,dinner",190,3,29,7,1.2,13,160,Lebanese,brand=LU;flavor=Chocolate filled;size=37g;imported,
+258,7DAYS Croissant Chocolate,"lunch,dinner",270,5,33,13,2,12,260,Lebanese,brand=7DAYS;flavor=Chocolate filling;size=60g;imported,
+259,7DAYS Croissant Cocoa & Vanilla,"lunch,dinner",265,5,32,13,2,11,250,Lebanese,brand=7DAYS;flavor=Cocoa & Vanilla;size=60g;imported,
+260,Chipicao Croissant,"lunch,dinner",270,5,34,12,2,12,250,Lebanese,brand=Chipicao;flavor=Chocolate;size=60g;imported,
+261,"Pain au Chocolat (bakery, small)","lunch,dinner",230,4.5,26,12,1.5,8,210,Lebanese,brand=Bakery;flavor=Chocolate;size=55g;fresh_bakery,
+262,Master Sticks (Salt),"lunch,dinner",230,3,23,14,2.5,0.7,300,Lebanese,brand=Master;flavor=Potato sticks;size=45g;local,
+263,Master Chips Chili,"lunch,dinner",235,3,23,14,2.8,1,320,Lebanese,brand=Master;flavor=Chili;size=45g;local;spicy,
+264,Pringles Sour Cream & Onion (small),"lunch,dinner",210,2,21,13,1.2,1,260,Lebanese,brand=Pringles;flavor=Sour Cream & Onion;size=40g;imported;dairy,
+265,Doritos Sweet Chili Pepper,"lunch,dinner",198,3.3,20,12,1.5,1,300,Lebanese,brand=Doritos;flavor=Sweet Chili;size=40g;imported;spicy,
+266,Ulker Halley,"lunch,dinner",140,2,21,5,0.5,12,75,Lebanese,brand=Ülker;flavor=Marshmallow biscuit;size=30g;imported,
+267,Ulker Tea Biscuits (4 pcs),"lunch,dinner",124,2.2,20,3.6,0.6,5,90,Lebanese,brand=Ülker;flavor=Plain;size=28g;imported,
+268,Loacker Gardena Fingers,"lunch,dinner",210,3,19,13,1.2,12,50,Lebanese,brand=Loacker;flavor=Hazelnut;size=38g;imported;contains_nuts,
+269,Poppins Protein Crunch Bar,"lunch,dinner",180,12,18,6,4,5,160,Lebanese,brand=Poppins;flavor=Chocolate;size=40g;local;high_protein,
+270,"Nestlé Yes! Nut Bar (Almond, Peanut, Dark Choc)","lunch,dinner",180,6,17,11,4,12,60,Lebanese,brand=Nestlé;flavor=Nut & dark chocolate;size=35g;imported;contains_nuts,
+271,Nature Valley Protein Peanut & Chocolate,"lunch,dinner",190,10,15,12,5,6,150,Lebanese,brand=Nature Valley;flavor=Peanut & Choc;size=40g;imported;contains_nuts;high_protein,
+272,Orange (medium),"lunch,dinner",62,1.2,15.4,0.2,3.1,12.2,0,Lebanese,brand=Fresh;flavor=Orange;size=130g;fresh,
+273,Pear (medium),"lunch,dinner",101,0.7,27,0.3,5.5,17,2,Lebanese,brand=Fresh;flavor=Pear;size=178g;fresh,
+274,Fresh Grapes (cup),"lunch,dinner",62,0.6,16,0.3,0.8,15,2,Lebanese,brand=Fresh;flavor=Red grapes;size=92g;fresh,
+275,Oreo (4 biscuits),"lunch,dinner",210,2.4,33.6,9.6,1.6,16,180,Lebanese,brand=Mondelez;flavor=Chocolate sandwich;size=44g;imported;vegan_recipe_may_vary,
+276,Belvita Breakfast Biscuits (2 biscuits),"lunch,dinner",115,2,19,3.8,2,6,90,Lebanese,brand=Mondelez;flavor=Honey & Nuts;size=25g;imported;whole_grain,
+277,TUC Crackers (portion),"lunch,dinner",120,2.5,16,5,0.8,2,300,Lebanese,brand=Mondelez;flavor=Salty crackers;size=25g;imported;savory,
+278,Mini Zaatar Croissant (bakery),"lunch,dinner",190,4,20,10,2,2,300,Lebanese,brand=Bakery;flavor=Zaatar;size=50g;fresh_bakery;savory,
+279,7DAYS Mini Bake Rolls (Garlic),"lunch,dinner",170,5,30,3,2,3,420,Lebanese,brand=7DAYS;flavor=Bake rolls garlic;size=40g;imported;savory,
+280,Fitness Delice Dark Chocolate Bar,"lunch,dinner",99,1.4,17,2.5,1.8,6,70,Lebanese,brand=Nestlé;flavor=Dark Chocolate;size=23g;imported,
+281,Weetabix On The Go Cereal Bar Chocolate,"lunch,dinner",117,3,18,3.2,2.7,7,60,Lebanese,brand=Weetabix;flavor=Chocolate;size=30g;imported;whole_grain,
