@@ -1,0 +1,175 @@
+/* resources/css/app.css */
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+
+/* Make sure Tailwind scans your views + React pages */
+@source '../views';
+@source '../js/**/*.{ts,tsx,js,jsx}';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+/* allow `.dark` class to flip tokens */
+@custom-variant dark (&:is(.dark *));
+
+/* Map Tailwind tokens to CSS variables (don’t change class names elsewhere) */
+@theme {
+  --font-sans:
+    'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* header / nav tokens used in your hero “glow” */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* ----------------- LIGHT MODE (root) ----------------- */
+:root {
+  /* subtle minty white */
+  --background: oklch(0.985 0.015 145); /* fallback if needed: #F6FFF8 */
+  --foreground: #0F172A;              /* slate-900 */
+
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
+  /* brand */
+  --primary: #0EA5A4;                 /* teal-600 */
+  --primary-foreground: #F0FDFA;      /* teal-50 */
+
+  --secondary: #10B981;               /* emerald-600 */
+  --secondary-foreground: #ECFDF5;    /* emerald-50 */
+
+  /* helpers */
+  --muted: #F3F4F6;                   /* gray-100 */
+  --muted-foreground: #475569;        /* slate-600 */
+
+  --accent: #F59E0B;                  /* amber-500 */
+  --accent-foreground: #1F2937;       /* gray-800 */
+
+  --destructive: #EF4444;             /* red-500 */
+  --destructive-foreground: #FEF2F2;  /* rose-50 */
+
+  --border: #E5E7EB;                  /* gray-200 */
+  --input: #E5E7EB;
+  --ring: #0EA5A4;                    /* teal focus ring */
+
+  /* charts */
+  --chart-1: #10B981; /* emerald */
+  --chart-2: #0EA5A4; /* teal */
+  --chart-3: #6366F1; /* indigo */
+  --chart-4: #F59E0B; /* amber */
+  --chart-5: #F97316; /* orange */
+
+  --radius: 0.625rem;
+
+  /* header / nav */
+  --sidebar: #0F172A;                 /* slate-900 */
+  --sidebar-foreground: #E5E7EB;      /* gray-200 */
+  --sidebar-primary: #0EA5A4;         /* teal CTA */
+  --sidebar-primary-foreground: #F0FDFA;
+  --sidebar-accent: #10B981;          /* emerald */
+  --sidebar-accent-foreground: #ECFDF5;
+  --sidebar-border: #1F2937;          /* gray-800 */
+  --sidebar-ring: #0EA5A4;
+}
+
+/* ----------------- DARK MODE (.dark) ----------------- */
+.dark {
+  --background: #0B1020;              /* deep slate/navy */
+  --foreground: #E6EDF5;              /* light slate */
+
+  --card: #111827;                    /* gray-900 */
+  --card-foreground: #E6EDF5;
+
+  --popover: #111827;
+  --popover-foreground: #E6EDF5;
+
+  /* brighter brand on dark */
+  --primary: #2DD4BF;                 /* teal-400 */
+  --primary-foreground: #062726;
+
+  --secondary: #34D399;               /* emerald-400 */
+  --secondary-foreground: #062014;
+
+  --muted: #1F2937;                   /* gray-800 */
+  --muted-foreground: #C7D2FE;        /* soft indigo hint */
+
+  --accent: #FBBF24;                  /* amber-400 */
+  --accent-foreground: #111827;
+
+  --destructive: #F87171;             /* red-400 */
+  --destructive-foreground: #1A0B0B;
+
+  --border: #273449;                  /* slate-ish */
+  --input: #273449;
+  --ring: #2DD4BF;
+
+  --chart-1: #34D399;
+  --chart-2: #2DD4BF;
+  --chart-3: #A5B4FC;
+  --chart-4: #FBBF24;
+  --chart-5: #FB923C;
+
+  --sidebar: #0B132B;
+  --sidebar-foreground: #DCE4F2;
+  --sidebar-primary: #2DD4BF;
+  --sidebar-primary-foreground: #052021;
+  --sidebar-accent: #34D399;
+  --sidebar-accent-foreground: #051A11;
+  --sidebar-border: #1A2340;
+  --sidebar-ring: #2DD4BF;
+}
+
+/* Base layer keeps structure intact */
+@layer base {
+  *   { @apply border-border; }
+  body{ @apply bg-background text-foreground; }
+  ::selection { background: var(--primary); color: var(--primary-foreground); }
+  a { @apply underline-offset-4; }
+  :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+}

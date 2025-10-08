@@ -1,0 +1,1001 @@
+id,name,category,cuisine,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g,fiber_g,sugar_g,sodium_mg,cholesterol_mg
+1,Lebanese Potato Tomato,dessert,Lebanese,363,g,506.0,8.6,28.8,16.6,0.8,6.2,768,3
+2,Brazilian Omelette Stir-Fry,bowl,Brazilian,370,g,409.0,22.0,57.6,11.9,9.0,3.0,624,55
+3,Japanese Stew Baked,bowl,Japanese,223,ml,529.0,31.7,111.9,18.1,3.0,2.3,1132,135
+4,Chinese Hummus Tandoori,rice,Chinese,2,piece,402.0,19.6,82.5,25.0,7.9,2.0,945,81
+5,Korean Cauliflower On Quinoa,vegetarian,Korean,195,g,159.0,11.1,19.0,11.1,11.1,19.0,542,102
+6,Lebanese Potato Red Curry,drink,Lebanese,1,piece,173.0,5.5,50.3,2.4,11.0,23.4,226,6
+7,Mexican Pancake Skewers,wrap,Mexican,314,ml,761.0,24.7,102.9,29.5,0.6,20.6,1011,81
+8,Lebanese Shrimp Tandoori,wrap,Lebanese,434,g,760.0,18.3,76.7,11.4,11.2,26.7,543,104
+9,American Stew Vindaloo,salad,American,317,g,316.0,6.6,20.8,31.6,9.0,6.6,414,83
+10,Vietnamese Sayadieh Spicy,vegetarian,Vietnamese,337,g,551.0,8.7,29.7,24.2,12.1,29.1,1211,115
+11,Spanish Noodles Vindaloo,pasta,Spanish,236,ml,488.0,21.8,87.8,13.7,3.3,2.3,1071,39
+12,Lebanese Hummus Korma,sandwich,Lebanese,297,g,656.0,35.4,78.0,12.7,5.8,11.9,242,102
+13,Moroccan Sambousek Roasted,lunch,Moroccan,252,g,491.0,49.4,20.3,14.2,6.1,13.7,547,43
+14,Korean Halloumi Roll,vegetarian,Korean,2,piece,442.0,22.2,38.7,27.8,2.2,13.3,378,58
+15,Lebanese Quinoa Tandoori,rice,Lebanese,326,ml,787.0,40.2,79.6,27.1,2.3,9.0,1469,93
+16,Lebanese Sushi Vindaloo,seafood,Lebanese,138,g,434.0,41.9,2.1,6.5,2.1,2.1,1441,92
+17,Mediterranean Mujadara Ramen Style,wrap,Mediterranean,2,piece,809.0,16.9,94.7,13.6,5.3,21.2,560,53
+18,Lebanese Tofu Green Curry,snack,Lebanese,286,g,340.0,22.5,17.0,13.5,4.1,14.4,953,53
+19,Lebanese Fattoush Roasted,vegetarian,Lebanese,207,g,506.0,19.9,15.5,13.5,2.9,10.3,1069,136
+20,Japanese Falafel Shoyu,lunch,Japanese,213,ml,490.0,24.2,64.1,13.5,6.1,23.1,973,19
+21,American Omelette Red Curry,pasta,American,261,g,358.0,20.3,102.2,33.2,0.9,10.4,1030,103
+22,Brazilian Waffle Herb,wrap,Brazilian,405,g,847.0,36.8,109.1,7.2,9.6,10.7,1506,137
+23,Chinese Sujuk Wrap,snack,Chinese,266,ml,662.0,25.5,36.9,31.0,3.3,0.8,414,56
+24,Japanese Mortadella Green Curry,vegan,Japanese,481,ml,189.0,23.5,15.6,32.6,3.4,3.1,692,112
+25,British Sujuk Pho Style,snack,British,204,g,520.0,9.2,76.8,19.3,8.0,20.3,955,53
+26,Turkish Mezze On Rice,snack,Turkish,1,piece,444.0,22.6,34.4,9.0,5.5,28.9,1079,147
+27,Thai Fattoush Casserole,breakfast,Thai,261,g,458.0,24.0,35.4,19.1,2.8,13.3,1273,118
+28,Italian Falafel Pesto,stew,Italian,1,piece,673.0,23.1,7.7,35.1,7.6,7.7,759,143
+29,Spanish Lentil Bowl,sandwich,Spanish,376,g,445.0,33.9,88.1,19.3,6.9,27.3,285,21
+30,Ethiopian Shish Taouk Miso,stew,Ethiopian,2,piece,749.0,33.8,58.6,21.4,2.5,27.6,791,128
+31,Japanese Burrito Pesto,vegan,Japanese,331,ml,411.0,9.1,20.5,30.0,1.3,4.3,611,23
+32,Moroccan Burger Harissa,vegetarian,Moroccan,188,g,309.0,22.4,29.5,25.1,10.0,22.3,625,0
+33,Spanish Stew Green Curry,wrap,Spanish,2,piece,618.0,19.7,80.2,18.7,8.9,26.0,1213,145
+34,British Omelette Pho Style,rice,British,1,piece,624.0,13.7,70.6,7.3,4.7,6.2,557,118
+35,Moroccan Taco Plate,dinner,Moroccan,2,piece,678.0,26.4,36.8,26.3,7.2,20.5,1293,28
+36,American Mujadara Baked,seafood,American,2,piece,397.0,25.4,10.6,16.5,10.6,10.6,1148,25
+37,Lebanese Salad Za'atar,grill,Lebanese,482,ml,412.0,39.1,53.7,15.4,9.0,9.6,1127,136
+38,Peruvian Stew Shoyu,pasta,Peruvian,1,piece,602.0,21.1,103.6,31.1,1.8,30.0,1038,138
+39,Lebanese Stuffed Grape Leaves Stir-Fry,vegan,Lebanese,2,piece,393.0,15.8,27.2,29.0,3.9,27.2,1363,14
+40,Chinese Kafta Plate,rice,Chinese,455,ml,471.0,17.8,104.4,17.3,11.6,22.9,546,1
+41,Italian Burrito Red Curry,wrap,Italian,347,g,637.0,24.6,95.0,8.7,3.0,20.6,539,92
+42,Ethiopian Kafta With Pita,vegetarian,Ethiopian,1,piece,286.0,10.1,36.9,15.2,9.5,29.9,1123,32
+43,Japanese Pancake Casserole,vegan,Japanese,394,g,292.0,13.3,22.4,28.6,2.1,1.5,212,50
+44,Lebanese Salad Casserole,breakfast,Lebanese,343,ml,384.0,35.3,26.1,36.5,1.9,2.0,828,95
+45,Lebanese Falafel Pesto,grill,Lebanese,304,g,480.0,36.5,38.5,28.5,4.8,26.9,522,92
+46,Peruvian Shish Taouk Yogurt,snack,Peruvian,1,piece,518.0,13.9,22.6,6.9,0.5,12.8,889,44
+47,Thai Tofu Tomato,bowl,Thai,436,ml,577.0,27.3,96.3,16.8,6.2,17.8,1255,120
+48,Mexican Noodles Baked,grill,Mexican,406,ml,584.0,45.8,30.9,20.3,1.4,1.1,680,48
+49,Italian Shish Taouk Stir-Fry,breakfast,Italian,1,piece,531.0,19.0,45.1,34.0,2.4,16.1,914,72
+50,Greek Mujadara Roasted,stew,Greek,228,g,670.0,29.8,62.3,32.8,7.5,14.9,606,56
+51,Spanish Mujadara Green Curry,breakfast,Spanish,323,ml,290.0,17.5,54.7,26.6,9.1,6.0,867,146
+52,Lebanese Grilled Veggies Garlic,sandwich,Lebanese,365,ml,624.0,13.4,114.2,33.9,6.1,3.7,1323,83
+53,Ethiopian Taco Butter,wrap,Ethiopian,270,g,402.0,15.2,79.3,26.8,2.0,2.0,1148,132
+54,Ethiopian Tabbouleh On Rice,breakfast,Ethiopian,2,piece,569.0,33.7,39.5,23.6,4.6,24.6,687,160
+55,Chinese Sayadieh Harissa,sandwich,Chinese,224,g,521.0,34.6,61.7,32.1,8.9,18.1,305,142
+56,Peruvian Noodles Roasted,snack,Peruvian,2,piece,252.0,14.0,78.0,33.4,1.3,23.0,475,97
+57,Italian Sujuk On Quinoa,vegetarian,Italian,2,piece,448.0,22.2,11.1,7.0,7.7,11.1,1476,117
+58,French Noodles Garlic,snack,French,1,piece,246.0,18.5,13.6,14.7,5.1,6.9,644,102
+59,Lebanese Waffle Pesto,rice,Lebanese,473,ml,386.0,22.2,53.8,12.5,0.6,22.5,1270,101
+60,Korean Porridge Shoyu,grill,Korean,1,piece,653.0,23.4,25.1,20.2,3.1,16.5,875,152
+61,Spanish Pancake Korma,lunch,Spanish,432,ml,374.0,40.5,15.8,12.2,3.1,15.8,1093,101
+62,French Fattoush Miso,lunch,French,311,g,633.0,21.0,21.4,28.4,2.5,4.0,869,156
+63,Japanese Taco Casserole,dessert,Japanese,2,piece,644.0,6.1,32.0,29.5,3.3,21.7,1123,67
+64,Brazilian Chicken Teriyaki,rice,Brazilian,1,piece,528.0,33.2,59.7,17.5,8.0,11.4,1076,77
+65,Brazilian Stuffed Grape Leaves Skewers,sandwich,Brazilian,2,piece,818.0,20.5,73.9,10.8,12.3,9.8,861,16
+66,American Mujadara Green Curry,pasta,American,376,ml,639.0,34.5,81.0,28.5,7.2,26.6,477,104
+67,Korean Halloumi With Hummus,pasta,Korean,2,piece,658.0,12.1,61.0,35.0,11.7,25.4,253,34
+68,Lebanese Potato Spicy,stew,Lebanese,1,piece,643.0,34.1,35.6,28.6,3.0,22.2,1154,91
+69,American Quinoa Lemon,vegetarian,American,338,g,161.0,5.3,37.8,12.2,4.2,5.3,193,119
+70,Italian Sushi Ramen Style,pasta,Italian,269,g,495.0,31.3,100.0,35.6,8.9,10.0,1108,5
+71,Spanish Burrito Miso,snack,Spanish,416,g,379.0,13.9,19.3,22.8,6.9,19.3,619,91
+72,Ethiopian Sfiha Baked,snack,Ethiopian,2,piece,548.0,29.1,25.0,17.0,2.9,9.3,685,61
+73,Moroccan Manousheh Herb,dessert,Moroccan,2,piece,236.0,8.8,31.4,8.0,9.1,24.7,898,94
+74,Turkish Kibbeh Shoyu,wrap,Turkish,1,piece,485.0,19.6,47.8,20.9,2.3,14.6,1303,56
+75,French Rice Red Curry,sandwich,French,2,piece,619.0,10.4,101.7,29.1,3.5,5.2,1054,47
+76,Lebanese Salad Sumac,drink,Lebanese,166,g,212.0,11.8,9.1,2.7,5.6,9.1,665,121
+77,Peruvian Lentil Garlic,lunch,Peruvian,1,piece,311.0,29.7,26.1,22.5,4.9,6.0,762,50
+78,Peruvian Lamb Tomato,grill,Peruvian,495,ml,320.0,24.2,56.2,28.3,9.2,8.6,281,78
+79,American Sushi Red Curry,sandwich,American,2,piece,398.0,37.4,44.8,6.8,11.6,26.9,952,95
+80,Moroccan Beef On Quinoa,rice,Moroccan,384,g,615.0,34.2,102.2,8.4,10.0,7.1,913,82
+81,Thai Kafta Garlic,sandwich,Thai,288,g,373.0,23.5,96.1,15.0,8.2,22.8,1156,35
+82,Lebanese Shish Taouk Skewers,drink,Lebanese,433,g,192.0,8.2,30.5,6.7,8.0,30.5,971,152
+83,Lebanese Taco Miso,dinner,Lebanese,1,piece,454.0,21.2,35.3,17.6,6.1,1.8,1360,13
+84,Italian Sujuk Tandoori,vegan,Italian,2,piece,426.0,20.9,23.5,26.7,7.3,8.8,708,22
+85,French Grilled Veggies Grilled,stew,French,2,piece,335.0,42.9,62.8,23.4,7.9,11.5,1462,65
+86,Lebanese Tofu With Veggies,stew,Lebanese,304,g,513.0,28.2,56.2,36.9,8.1,4.9,251,115
+87,Thai Chickpea Grilled,rice,Thai,367,ml,661.0,20.5,50.6,27.3,11.8,30.9,1426,15
+88,Ethiopian Fattoush Lemon,pasta,Ethiopian,232,g,728.0,16.5,115.2,11.0,4.1,24.8,859,90
+89,Lebanese Sayadieh Spicy,stew,Lebanese,1,piece,353.0,42.3,44.9,28.3,2.3,12.4,650,102
+90,Korean Cauliflower Green Curry,bowl,Korean,222,g,697.0,23.5,96.1,16.3,11.1,28.8,739,44
+91,Ethiopian Turkey Spicy,salad,Ethiopian,215,ml,339.0,12.3,42.3,26.1,6.4,3.7,233,25
+92,Lebanese Falafel Tomato,wrap,Lebanese,465,ml,707.0,20.6,62.3,15.5,4.5,2.3,395,46
+93,Turkish Lamb Casserole,drink,Turkish,408,ml,71.0,7.0,46.4,0.1,1.5,15.9,1330,91
+94,Ethiopian Potato On Rice,grill,Ethiopian,135,g,464.0,41.2,28.6,10.4,10.3,17.0,135,78
+95,American Waffle With Pita,breakfast,American,308,g,265.0,23.5,37.4,15.9,10.4,14.8,1089,73
+96,Lebanese Manousheh Teriyaki,rice,Lebanese,1,piece,711.0,20.5,92.1,24.4,9.5,22.3,584,7
+97,Mexican Sfiha Butter,bowl,Mexican,1,piece,395.0,30.3,102.0,6.8,2.7,22.8,1291,48
+98,Spanish Taco Teriyaki,vegetarian,Spanish,368,g,237.0,12.7,39.1,32.5,4.5,3.9,658,149
+99,Spanish Burrito Korma,salad,Spanish,477,ml,328.0,19.3,32.5,6.7,6.8,22.6,799,47
+100,Thai Shrimp Miso,wrap,Thai,334,ml,664.0,36.6,81.5,18.3,7.7,23.3,195,105
+101,Ethiopian Beef Herb,salad,Ethiopian,2,piece,322.0,7.4,18.1,24.1,4.6,18.1,163,24
+102,Greek Salad Spicy,dinner,Greek,1,piece,466.0,28.4,61.0,9.2,2.8,16.4,1456,19
+103,Korean Sfiha Korma,grill,Korean,160,g,663.0,31.5,52.8,19.4,1.5,19.8,1247,49
+104,Italian Fattoush Garlic,grill,Italian,2,piece,598.0,22.9,24.2,13.7,11.5,23.1,434,76
+105,Peruvian Chickpea Grilled,vegetarian,Peruvian,222,g,544.0,19.2,28.1,27.8,9.9,2.2,1447,101
+106,Ethiopian Porridge Ramen Style,vegetarian,Ethiopian,373,g,191.0,14.2,38.2,28.3,6.1,8.6,324,141
+107,Ethiopian Quinoa Tahini,dinner,Ethiopian,2,piece,434.0,38.9,39.8,10.8,8.1,18.2,944,28
+108,British Beef Grilled,lunch,British,433,g,665.0,27.2,17.1,24.1,7.8,0.9,1385,89
+109,Thai Fattoush Tandoori,rice,Thai,347,g,408.0,21.8,70.3,15.4,2.1,25.0,543,153
+110,Lebanese Sushi Red Curry,pasta,Lebanese,225,g,601.0,19.3,61.5,9.5,4.1,12.4,1040,42
+111,Mexican Turkey Garlic,stew,Mexican,498,ml,464.0,42.0,29.4,9.5,4.6,12.5,411,84
+112,Thai Tabbouleh Green Curry,seafood,Thai,399,g,405.0,42.5,22.1,20.5,4.8,12.1,916,31
+113,Italian Shish Taouk Red Curry,bowl,Italian,447,ml,586.0,26.3,45.5,8.2,4.5,27.5,826,54
+114,British Lamb Wrap,vegan,British,165,g,311.0,15.9,28.5,25.5,7.1,10.8,1060,28
+115,Thai Sushi Green Curry,vegan,Thai,412,ml,280.0,22.1,23.8,26.2,12.2,18.2,1265,120
+116,Lebanese Stuffed Grape Leaves Ramen Style,dessert,Lebanese,1,piece,229.0,5.9,59.9,27.0,9.5,11.6,1272,39
+117,French Shawarma Harissa,bowl,French,256,g,447.0,25.4,83.8,19.9,10.4,22.1,1107,83
+118,Vietnamese Tuna Tandoori,stew,Vietnamese,1,piece,465.0,43.2,45.2,25.7,8.6,18.5,389,39
+119,Chinese Sayadieh Casserole,grill,Chinese,1,piece,602.0,27.5,23.6,32.4,9.4,8.0,281,105
+120,Spanish Tabbouleh Wrap,drink,Spanish,486,ml,50.0,9.4,53.4,8.6,2.8,36.4,471,85
+121,French Potato Roll,sandwich,French,2,piece,495.0,18.6,51.5,17.1,6.5,22.4,339,169
+122,Mexican Taco Tahini,seafood,Mexican,296,ml,445.0,39.9,2.5,15.4,2.5,2.5,1320,136
+123,Mexican Mortadella Korma,lunch,Mexican,429,g,805.0,52.3,58.4,9.1,7.7,3.5,1620,49
+124,Brazilian Sushi Tandoori,drink,Brazilian,257,ml,64.0,7.2,16.4,3.2,2.8,16.4,1273,95
+125,Mexican Rice Masala,rice,Mexican,226,ml,710.0,17.0,54.4,16.8,3.7,8.5,485,131
+126,Thai Quinoa With Hummus,breakfast,Thai,1,piece,549.0,21.1,20.1,29.8,11.4,20.1,1215,113
+127,Thai Cauliflower Spicy,sandwich,Thai,245,ml,652.0,26.7,65.6,20.8,5.6,15.3,984,33
+128,British Curry Miso,dinner,British,2,piece,337.0,36.2,8.4,22.9,6.3,8.4,328,52
+129,French Falafel Masala,seafood,French,442,ml,435.0,34.9,14.6,6.5,6.2,14.6,1188,67
+130,Indian Rice With Pita,lunch,Indian,1,piece,819.0,52.5,9.6,36.4,0.9,9.6,1294,134
+131,Moroccan Noodles Za'atar,rice,Moroccan,224,ml,859.0,39.7,54.0,33.9,2.0,32.6,725,22
+132,Lebanese Burger Green Curry,grill,Lebanese,359,ml,660.0,25.5,23.7,15.2,11.1,21.4,271,127
+133,Lebanese Halloumi Wrap,dinner,Lebanese,379,ml,617.0,19.6,45.8,18.9,3.2,6.5,1312,9
+134,Thai Salad On Quinoa,stew,Thai,219,g,374.0,40.1,17.6,16.5,1.2,17.6,1367,149
+135,Moroccan Kibbeh Za'atar,lunch,Moroccan,1,piece,517.0,24.2,27.3,30.1,6.3,27.0,567,120
+136,Mediterranean Soup Vindaloo,wrap,Mediterranean,248,g,453.0,19.4,44.4,18.6,4.7,15.7,1233,8
+137,British Turkey Ramen Style,dinner,British,2,piece,417.0,25.9,57.6,17.0,11.5,6.7,401,124
+138,Vietnamese Mortadella Pesto,soup,Vietnamese,1,piece,223.0,15.5,30.0,8.0,4.8,27.7,797,134
+139,Turkish Shawarma Harissa,pasta,Turkish,305,g,439.0,14.0,56.9,32.3,7.0,12.2,322,51
+140,Chinese Quinoa Korma,stew,Chinese,2,piece,536.0,24.0,50.1,12.9,9.0,15.1,1424,89
+141,Mediterranean Mujadara Roll,dinner,Mediterranean,256,g,695.0,26.0,44.9,8.4,6.5,11.5,995,109
+142,Vietnamese Chicken Green Curry,breakfast,Vietnamese,1,piece,195.0,25.7,39.4,14.1,5.9,19.6,668,140
+143,French Turkey Vindaloo,sandwich,French,444,ml,503.0,23.4,70.7,19.0,7.5,31.8,461,117
+144,Lebanese Sujuk Red Curry,rice,Lebanese,216,ml,356.0,15.2,75.4,18.7,9.6,17.1,1311,15
+145,Mediterranean Hummus Wrap,seafood,Mediterranean,345,g,370.0,35.7,21.0,9.1,10.9,0.5,431,24
+146,Spanish Shrimp Pho Style,grill,Spanish,307,g,716.0,41.6,36.4,19.3,9.4,24.9,1123,13
+147,Lebanese Cauliflower Skewers,wrap,Lebanese,381,ml,633.0,28.2,109.0,15.6,7.9,23.8,749,36
+148,Spanish Falafel Casserole,rice,Spanish,355,g,372.0,14.1,86.4,23.4,8.7,9.1,256,0
+149,Greek Chickpea Grilled,snack,Greek,262,g,452.0,22.9,16.5,6.9,6.2,16.2,1085,124
+150,Moroccan Mezze Red Curry,dinner,Moroccan,308,g,375.0,30.1,12.6,16.1,6.2,1.9,717,67
+151,Italian Mezze Korma,sandwich,Italian,2,piece,548.0,13.9,39.9,17.2,10.0,11.2,1291,69
+152,Lebanese Pancake Tahini,stew,Lebanese,294,ml,781.0,52.1,22.4,28.5,6.5,18.4,483,63
+153,Spanish Omelette Green Curry,soup,Spanish,344,g,319.0,25.5,24.1,14.4,5.9,9.3,1139,138
+154,Moroccan Porridge On Rice,drink,Moroccan,203,g,77.0,6.1,31.6,5.8,7.9,30.4,920,158
+155,Moroccan Sfiha Green Curry,pasta,Moroccan,2,piece,380.0,32.4,84.3,16.0,7.8,1.3,1447,106
+156,Turkish Halloumi Bowl,wrap,Turkish,205,g,580.0,25.6,80.6,22.7,5.6,11.7,1185,94
+157,Greek Halloumi Casserole,seafood,Greek,476,ml,258.0,37.5,20.1,11.0,4.1,20.1,771,51
+158,Korean Lamb Baked,grill,Korean,400,g,646.0,43.3,15.3,37.7,3.6,5.7,372,97
+159,Chinese Tuna Shoyu,salad,Chinese,208,ml,361.0,8.2,28.0,15.2,7.9,5.6,1056,118
+160,French Tuna With Hummus,vegetarian,French,259,ml,190.0,17.9,26.3,33.0,4.0,11.3,642,17
+161,Korean Waffle Ramen Style,grill,Korean,341,g,434.0,25.2,11.3,17.8,2.1,11.3,928,90
+162,Vietnamese Soup Garlic,salad,Vietnamese,286,ml,228.0,22.1,32.1,31.3,11.6,14.7,394,62
+163,Vietnamese Pasta Miso,seafood,Vietnamese,250,ml,472.0,42.1,7.0,6.0,3.3,7.0,1262,95
+164,Vietnamese Salad Baked,snack,Vietnamese,432,ml,661.0,22.4,80.8,6.7,9.3,17.5,1583,17
+165,Chinese Noodles Teriyaki,lunch,Chinese,458,ml,347.0,46.7,11.7,30.6,3.0,11.7,1094,140
+166,Lebanese Mushroom Yogurt,drink,Lebanese,308,g,188.0,2.7,41.7,12.7,4.2,30.1,1549,88
+167,Lebanese Fish Stir-Fry,wrap,Lebanese,1,piece,706.0,16.7,85.6,28.6,8.8,19.3,758,88
+168,Moroccan Porridge Grilled,dinner,Moroccan,354,ml,445.0,50.2,26.5,35.2,4.5,0.1,1243,122
+169,Korean Tofu Green Curry,pasta,Korean,265,ml,526.0,15.8,57.0,29.1,4.2,16.8,873,75
+170,Lebanese Beef Baked,bowl,Lebanese,265,g,334.0,37.0,51.7,24.8,1.9,18.6,324,142
+171,Greek Mujadara Garlic,pasta,Greek,250,g,461.0,29.3,53.3,23.6,8.1,0.0,735,20
+172,Lebanese Eggplant Shoyu,stew,Lebanese,1,piece,349.0,31.8,47.5,11.3,4.3,27.8,324,130
+173,American Tofu Vindaloo,drink,American,1,piece,189.0,9.9,27.8,6.9,2.1,19.7,979,126
+174,Lebanese Omelette Za'atar,snack,Lebanese,488,ml,406.0,14.7,33.4,7.8,7.1,18.7,994,129
+175,Thai Turkey Sumac,vegan,Thai,393,ml,418.0,18.8,16.6,15.0,3.0,16.6,196,128
+176,Greek Sujuk Pho Style,drink,Greek,309,ml,196.0,13.1,43.3,8.4,0.6,7.0,439,5
+177,Spanish Sayadieh Harissa,vegan,Spanish,410,ml,184.0,15.8,31.8,13.4,4.1,15.5,403,130
+178,Spanish Fattoush Shoyu,dinner,Spanish,2,piece,381.0,24.1,52.2,10.4,7.1,1.5,971,98
+179,Lebanese Shrimp Korma,breakfast,Lebanese,356,ml,536.0,24.9,18.1,8.6,8.6,7.3,1216,111
+180,Moroccan Quinoa Pho Style,dinner,Moroccan,1,piece,527.0,30.8,33.9,24.3,4.9,8.0,273,95
+181,Chinese Lamb Bowl,breakfast,Chinese,135,g,361.0,31.0,19.6,36.5,0.9,19.6,1044,99
+182,Chinese Hummus Skewers,stew,Chinese,1,piece,503.0,44.8,14.2,28.4,11.3,14.2,205,71
+183,Thai Burger Bowl,vegetarian,Thai,260,ml,406.0,12.0,34.3,20.4,7.9,16.0,1281,33
+184,Lebanese Beef Tomato,wrap,Lebanese,1,piece,732.0,36.5,107.2,6.1,8.1,25.6,1130,16
+185,Chinese Lentil Stir-Fry,lunch,Chinese,134,g,415.0,46.3,28.5,33.1,5.9,23.1,946,83
+186,Lebanese Rice Spicy,lunch,Lebanese,216,g,633.0,44.2,24.7,28.2,3.9,12.6,410,139
+187,Lebanese Shrimp Miso,snack,Lebanese,294,ml,292.0,19.9,68.8,17.8,5.6,24.6,235,124
+188,Lebanese Lentil Grilled,stew,Lebanese,1,piece,483.0,36.1,44.3,15.8,12.5,1.0,711,75
+189,Lebanese Chickpea Baked,snack,Lebanese,140,g,652.0,18.1,28.0,18.4,9.1,28.0,255,101
+190,Lebanese Turkey Miso,dinner,Lebanese,150,g,681.0,43.9,11.7,33.4,1.1,11.7,717,115
+191,Spanish Kibbeh Yogurt,salad,Spanish,210,g,301.0,7.3,28.9,21.6,7.3,13.7,1227,70
+192,Lebanese Stuffed Grape Leaves Vindaloo,soup,Lebanese,328,g,385.0,21.1,39.7,14.7,4.6,16.3,789,146
+193,Spanish Shawarma Tomato,breakfast,Spanish,415,g,608.0,9.9,71.7,24.3,9.6,30.9,1510,16
+194,Japanese Shish Taouk Tomato,lunch,Japanese,2,piece,713.0,31.8,55.4,33.4,2.7,19.2,1334,120
+195,Lebanese Salad Pho Style,pasta,Lebanese,305,g,410.0,37.4,96.0,19.1,3.8,13.9,230,35
+196,Ethiopian Waffle Tahini,stew,Ethiopian,232,g,382.0,43.9,53.0,9.7,2.2,21.3,317,17
+197,Greek Grilled Veggies Sumac,pasta,Greek,1,piece,531.0,15.4,55.8,36.7,10.5,31.5,1111,30
+198,British Mujadara Ramen Style,sandwich,British,244,g,689.0,19.1,53.1,6.1,8.7,17.4,1311,124
+199,Mexican Porridge Pho Style,sandwich,Mexican,429,g,425.0,33.3,58.2,35.4,2.5,27.3,249,116
+200,Turkish Mushroom Pesto,dessert,Turkish,1,piece,320.0,2.8,24.5,16.2,8.7,24.5,1308,76
+201,Brazilian Salad Tomato,seafood,Brazilian,268,g,485.0,19.1,0.6,9.4,0.6,0.6,1230,23
+202,Italian Grilled Veggies Plate,seafood,Italian,482,ml,322.0,44.2,4.9,7.3,3.0,4.9,1131,120
+203,Japanese Potato Roasted,grill,Japanese,249,g,503.0,31.0,7.4,7.4,1.4,7.4,903,70
+204,Lebanese Falafel Butter,grill,Lebanese,221,g,474.0,33.3,40.9,10.3,6.7,5.5,1327,58
+205,Japanese Cauliflower Stir-Fry,dessert,Japanese,1,piece,615.0,7.8,32.7,16.4,7.2,31.1,997,94
+206,Ethiopian Sambousek Butter,vegetarian,Ethiopian,2,piece,349.0,6.7,42.6,27.1,6.4,27.7,1254,111
+207,French Tuna Garlic,bowl,French,386,g,440.0,24.6,118.1,20.2,13.0,20.4,1375,44
+208,Lebanese Mortadella Red Curry,vegetarian,Lebanese,456,ml,363.0,23.7,10.6,26.4,7.4,10.6,278,24
+209,Peruvian Halloumi Pho Style,snack,Peruvian,379,g,628.0,35.7,78.7,12.7,7.9,16.8,757,27
+210,British Lamb Sumac,rice,British,407,ml,399.0,26.0,63.0,18.0,4.7,25.5,588,144
+211,French Chickpea On Rice,sandwich,French,1,piece,759.0,19.0,72.8,26.0,2.8,6.7,1322,124
+212,Greek Shrimp Skewers,vegan,Greek,412,ml,282.0,18.7,25.7,20.0,2.3,23.8,359,8
+213,Mediterranean Hummus With Hummus,soup,Mediterranean,351,ml,320.0,8.1,8.7,8.3,7.1,5.2,1281,91
+214,Mexican Fatteh Grilled,dessert,Mexican,208,ml,225.0,8.9,75.9,11.5,3.1,6.8,406,104
+215,Lebanese Stuffed Grape Leaves Lemon,drink,Lebanese,2,piece,90.0,14.0,38.9,8.5,8.6,15.9,1344,135
+216,Indian Waffle Sumac,vegan,Indian,1,piece,324.0,16.7,36.1,14.8,7.3,16.7,485,15
+217,Japanese Quinoa On Rice,dessert,Japanese,169,g,601.0,9.5,79.8,30.0,7.6,20.4,1092,118
+218,Thai Mortadella Za'atar,wrap,Thai,1,piece,692.0,28.1,55.1,28.0,3.2,16.6,1244,150
+219,Ethiopian Mujadara Red Curry,salad,Ethiopian,216,g,320.0,18.7,33.4,20.6,10.4,26.8,1285,98
+220,Chinese Pasta With Veggies,grill,Chinese,278,ml,432.0,45.2,30.9,31.4,7.2,28.3,218,142
+221,Spanish Fish Herb,wrap,Spanish,447,g,487.0,38.3,99.1,33.5,2.1,25.0,356,12
+222,Mexican Chicken Miso,lunch,Mexican,262,ml,639.0,35.9,13.5,28.8,9.3,3.8,708,67
+223,Vietnamese Stew Tahini,lunch,Vietnamese,1,piece,297.0,27.4,49.2,12.7,8.0,18.2,448,107
+224,Lebanese Omelette On Rice,vegan,Lebanese,141,g,185.0,26.3,28.5,22.7,7.2,14.3,1173,23
+225,Vietnamese Shrimp Sumac,soup,Vietnamese,195,g,387.0,9.1,33.9,12.7,2.6,11.8,1094,6
+226,Japanese Pancake Roll,lunch,Japanese,1,piece,701.0,20.3,11.8,20.7,2.0,7.9,1129,34
+227,Lebanese Mujadara Vindaloo,snack,Lebanese,386,ml,578.0,23.1,83.7,20.8,7.8,8.7,1229,81
+228,Japanese Kibbeh Harissa,soup,Japanese,248,ml,305.0,23.6,30.5,10.4,3.2,0.4,246,17
+229,Lebanese Sayadieh Masala,dinner,Lebanese,358,g,314.0,23.8,16.1,31.5,3.5,12.6,233,25
+230,Thai Rice Baked,stew,Thai,400,g,733.0,19.2,13.2,26.7,4.5,13.2,1505,44
+231,Greek Eggplant Sumac,salad,Greek,488,ml,236.0,11.6,36.3,26.4,7.3,21.8,251,101
+232,Lebanese Salad Miso,seafood,Lebanese,321,g,563.0,38.0,27.9,24.4,9.6,27.9,847,84
+233,Lebanese Stuffed Grape Leaves On Quinoa,dessert,Lebanese,352,g,561.0,8.5,65.0,22.8,12.2,20.9,610,87
+234,French Taco With Pita,sandwich,French,2,piece,560.0,37.6,84.6,37.1,1.2,20.7,360,145
+235,Lebanese Shawarma Pesto,seafood,Lebanese,491,ml,287.0,27.4,20.7,14.0,3.4,14.8,1313,76
+236,Korean Fatteh Plate,seafood,Korean,253,g,271.0,34.8,25.5,21.5,11.9,19.7,1390,92
+237,Korean Fish Tomato,pasta,Korean,299,ml,675.0,27.2,87.6,16.1,5.5,2.8,999,0
+238,Thai Sfiha Roasted,pasta,Thai,415,g,539.0,32.7,86.7,16.9,3.2,5.5,270,128
+239,Indian Shish Taouk Harissa,snack,Indian,425,g,631.0,27.8,72.2,18.6,8.1,28.9,307,80
+240,Mediterranean Omelette Butter,wrap,Mediterranean,2,piece,818.0,33.1,56.1,31.9,1.8,21.2,1029,55
+241,Moroccan Hummus Sumac,sandwich,Moroccan,491,ml,577.0,14.6,71.8,27.4,9.5,9.3,1134,143
+242,Brazilian Mushroom Casserole,soup,Brazilian,1,piece,332.0,23.9,28.0,16.9,6.1,20.2,548,17
+243,Vietnamese Sambousek Green Curry,wrap,Vietnamese,463,ml,592.0,11.4,52.0,18.7,1.2,1.9,535,137
+244,Lebanese Sfiha Casserole,lunch,Lebanese,368,g,298.0,41.7,10.1,29.8,8.5,10.1,1084,85
+245,Thai Sujuk Za'atar,lunch,Thai,487,ml,788.0,29.9,37.7,8.9,3.6,19.8,1276,148
+246,Greek Fatteh Tahini,vegetarian,Greek,2,piece,271.0,8.6,34.3,10.7,2.5,15.6,647,69
+247,Lebanese Chicken With Veggies,dessert,Lebanese,412,ml,281.0,3.3,46.6,6.6,11.4,18.7,1048,79
+248,Lebanese Curry Tomato,stew,Lebanese,291,g,627.0,22.1,33.4,18.1,4.3,25.4,992,50
+249,British Shish Taouk Bowl,vegetarian,British,340,g,357.0,25.1,34.3,25.7,12.6,22.3,612,159
+250,Spanish Beef Vindaloo,grill,Spanish,354,ml,558.0,35.4,22.5,27.0,4.4,2.6,266,163
+251,Lebanese Mushroom Yogurt 1,dinner,Lebanese,1,piece,323.0,32.8,40.6,32.0,8.8,18.1,1318,111
+252,Korean Falafel Skewers,lunch,Korean,178,g,404.0,19.8,49.1,31.9,5.1,13.2,663,49
+253,French Shish Taouk Ramen Style,dinner,French,351,g,326.0,46.7,10.6,28.6,3.9,2.5,1151,68
+254,Lebanese Cauliflower Spicy,vegetarian,Lebanese,1,piece,457.0,15.5,42.5,9.1,8.1,26.7,1186,113
+255,Lebanese Lentil Baked,vegetarian,Lebanese,121,g,400.0,16.2,44.4,14.6,9.4,27.9,611,67
+256,Lebanese Cauliflower Teriyaki,salad,Lebanese,157,g,433.0,16.9,12.3,28.5,12.3,12.3,1044,12
+257,Lebanese Kafta With Pita,seafood,Lebanese,341,g,309.0,25.2,1.9,8.3,1.9,1.9,958,103
+258,Peruvian Rice Garlic,stew,Peruvian,223,g,646.0,40.3,39.8,15.3,4.6,20.2,571,75
+259,Thai Tuna Grilled,snack,Thai,457,ml,284.0,23.7,28.1,28.6,1.2,2.0,132,73
+260,Peruvian Lamb Red Curry,soup,Peruvian,363,ml,446.0,14.9,32.6,8.4,3.0,23.0,1123,46
+261,Lebanese Sushi Bowl,pasta,Lebanese,1,piece,842.0,42.4,94.4,30.0,2.3,5.1,968,97
+262,American Kibbeh Wrap,seafood,American,371,g,356.0,28.6,7.6,19.8,6.9,7.6,705,158
+263,Mediterranean Halloumi Vindaloo,stew,Mediterranean,2,piece,678.0,26.5,35.1,12.7,8.0,11.0,1025,134
+264,Spanish Curry Sumac,sandwich,Spanish,445,ml,483.0,32.3,97.6,5.9,10.2,12.6,418,78
+265,American Pancake Baked,pasta,American,1,piece,650.0,28.7,67.0,18.1,2.7,4.4,1153,3
+266,Peruvian Porridge Masala,drink,Peruvian,413,g,73.0,14.5,16.5,6.5,5.4,16.5,1045,146
+267,Thai Noodles Butter,soup,Thai,251,ml,382.0,16.9,32.4,14.8,2.5,19.2,469,112
+268,Korean Cauliflower Za'atar,dinner,Korean,239,ml,314.0,35.4,56.1,27.0,10.2,18.5,372,147
+269,Brazilian Falafel Butter,snack,Brazilian,1,piece,525.0,35.0,82.2,28.4,8.0,15.8,634,6
+270,Chinese Sayadieh Za'atar,seafood,Chinese,376,ml,487.0,37.3,20.0,6.7,2.0,13.7,421,131
+271,Brazilian Chicken Bowl,soup,Brazilian,2,piece,278.0,12.5,13.9,14.3,5.0,3.0,674,89
+272,Brazilian Waffle Stir-Fry,pasta,Brazilian,1,piece,466.0,28.0,83.4,11.8,7.3,15.3,1565,97
+273,Spanish Fatteh Tomato,snack,Spanish,434,ml,662.0,12.7,49.5,27.9,9.5,18.0,1041,8
+274,Lebanese Taco Shoyu,drink,Lebanese,141,g,92.0,0.6,11.5,4.7,11.5,11.5,855,116
+275,Mexican Chicken Tahini,bowl,Mexican,2,piece,601.0,16.3,97.8,21.5,8.8,19.0,1082,59
+276,Lebanese Sayadieh Sumac,dessert,Lebanese,400,ml,409.0,3.7,26.4,26.5,11.3,16.8,1140,90
+277,Greek Cauliflower Tahini,dessert,Greek,478,ml,532.0,4.5,56.2,8.9,1.5,9.6,1557,140
+278,Brazilian Sfiha Miso,dessert,Brazilian,368,ml,534.0,7.4,79.9,17.1,5.3,16.1,144,16
+279,Chinese Shawarma Harissa,sandwich,Chinese,354,ml,353.0,34.8,57.1,8.7,8.2,24.5,223,148
+280,Greek Tuna Tahini,dessert,Greek,421,ml,293.0,3.6,39.0,11.0,9.3,23.2,564,115
+281,Italian Waffle Bowl,seafood,Italian,2,piece,576.0,30.8,10.0,24.2,10.0,10.0,525,30
+282,Ethiopian Shish Taouk Pho Style,sandwich,Ethiopian,137,g,738.0,25.3,80.9,21.4,5.2,21.4,375,162
+283,Korean Chicken Yogurt,breakfast,Korean,374,ml,363.0,24.5,25.6,24.2,3.2,14.1,965,58
+284,Indian Manousheh Sumac,pasta,Indian,335,ml,570.0,37.0,82.7,27.8,8.3,22.7,832,128
+285,American Tuna Harissa,breakfast,American,240,ml,595.0,23.0,38.7,14.8,5.6,6.9,1200,7
+286,Lebanese Taco Roasted,dessert,Lebanese,423,ml,337.0,5.0,62.5,29.9,4.6,12.6,617,111
+287,Peruvian Tuna Casserole,vegetarian,Peruvian,297,ml,364.0,21.1,26.4,7.6,7.8,14.3,1480,142
+288,Turkish Tofu Grilled,rice,Turkish,233,g,515.0,31.1,94.2,24.7,5.3,28.0,1257,157
+289,Ethiopian Shrimp Lemon,wrap,Ethiopian,161,g,453.0,17.5,91.6,27.6,2.9,11.8,250,149
+290,Lebanese Curry Grilled,rice,Lebanese,206,g,448.0,31.7,108.9,16.0,3.6,9.1,1051,22
+291,Lebanese Shawarma Butter,pasta,Lebanese,492,ml,609.0,18.7,73.1,35.0,8.8,5.5,970,103
+292,Peruvian Fattoush With Pita,vegetarian,Peruvian,361,ml,457.0,13.4,22.1,12.4,3.9,0.0,1206,131
+293,Vietnamese Shish Taouk Butter,seafood,Vietnamese,202,ml,374.0,25.5,6.5,4.8,4.5,6.5,833,58
+294,Spanish Quinoa Grilled,sandwich,Spanish,387,ml,546.0,31.9,77.8,24.5,3.4,18.2,800,40
+295,Italian Eggplant Tandoori,grill,Italian,1,piece,569.0,31.2,20.9,11.2,10.8,0.6,1352,41
+296,Korean Falafel Herb,sandwich,Korean,282,g,549.0,21.1,104.6,38.1,6.4,25.9,627,147
+297,Mediterranean Tofu Green Curry,rice,Mediterranean,254,ml,715.0,16.6,63.3,6.0,11.1,20.4,618,148
+298,Mediterranean Curry Yogurt,snack,Mediterranean,316,ml,655.0,36.6,21.8,25.8,8.7,15.8,276,73
+299,Greek Eggplant Pesto,soup,Greek,1,piece,130.0,21.9,27.7,9.3,3.4,27.7,956,114
+300,American Potato Garlic,dinner,American,227,ml,535.0,44.2,55.4,23.0,1.1,17.9,1006,117
+301,Chinese Stuffed Grape Leaves With Pita,vegetarian,Chinese,419,ml,158.0,12.5,35.3,12.5,1.0,21.2,889,86
+302,Peruvian Shawarma Tandoori,pasta,Peruvian,460,ml,654.0,37.8,54.1,22.6,6.0,25.9,915,76
+303,Ethiopian Beef With Hummus,salad,Ethiopian,1,piece,423.0,17.5,27.8,16.0,6.3,14.4,849,94
+304,Lebanese Mujadara Skewers,vegan,Lebanese,395,g,203.0,22.6,17.2,19.7,1.6,17.2,1280,105
+305,Peruvian Cauliflower Skewers,pasta,Peruvian,426,g,436.0,24.3,100.6,8.2,9.5,1.8,875,147
+306,Greek Waffle Stir-Fry,lunch,Greek,1,piece,333.0,27.9,57.3,34.1,1.6,21.9,858,30
+307,Chinese Soup Red Curry,salad,Chinese,423,ml,457.0,16.5,33.6,26.1,5.4,3.1,1214,88
+308,Mexican Kibbeh On Quinoa,bowl,Mexican,2,piece,522.0,22.3,98.5,19.5,9.3,19.2,944,36
+309,Japanese Noodles Sumac,bowl,Japanese,359,g,717.0,25.2,68.9,31.5,3.6,8.1,385,123
+310,Japanese Soup Pho Style,vegan,Japanese,1,piece,162.0,11.9,14.5,15.7,7.1,6.8,1214,14
+311,Indian Taco Lemon,stew,Indian,447,ml,556.0,33.2,50.0,21.9,3.6,20.0,833,11
+312,Turkish Pasta Baked,wrap,Turkish,366,g,707.0,36.5,81.4,23.5,1.1,15.2,541,87
+313,Lebanese Noodles Pho Style,rice,Lebanese,1,piece,533.0,32.9,49.3,15.4,5.9,21.9,858,41
+314,Moroccan Shish Taouk Spicy,drink,Moroccan,367,ml,156.0,2.8,40.1,7.1,8.6,14.3,211,119
+315,Lebanese Rice With Hummus,wrap,Lebanese,257,ml,499.0,29.3,92.8,10.8,4.5,24.4,1213,98
+316,Chinese Lentil Grilled,pasta,Chinese,364,g,457.0,28.5,50.0,30.0,3.8,10.2,1222,48
+317,Turkish Mushroom Yogurt,vegetarian,Turkish,2,piece,230.0,13.3,32.3,8.4,7.8,0.5,840,96
+318,Lebanese Sfiha Stir-Fry,soup,Lebanese,273,g,465.0,7.8,31.4,13.9,11.8,11.6,289,50
+319,Spanish Sushi Roasted,rice,Spanish,345,ml,595.0,12.1,51.8,32.7,6.7,20.5,168,141
+320,Vietnamese Beef With Pita,salad,Vietnamese,1,piece,425.0,10.3,47.0,21.3,10.5,20.0,1416,151
+321,Lebanese Cauliflower Herb,dessert,Lebanese,469,ml,492.0,2.5,46.4,31.5,7.0,17.5,403,35
+322,Thai Noodles Green Curry,stew,Thai,188,g,398.0,38.8,53.9,34.4,4.5,23.3,926,23
+323,American Shawarma Skewers,salad,American,2,piece,421.0,8.3,37.8,9.0,0.8,9.2,1405,147
+324,Lebanese Halloumi Spicy,soup,Lebanese,128,g,470.0,18.7,28.9,12.9,7.8,7.3,164,13
+325,American Grilled Veggies With Hummus,seafood,American,401,g,442.0,24.6,6.1,5.9,6.1,0.5,516,69
+326,Indian Tuna Miso,dinner,Indian,1,piece,456.0,33.4,19.0,19.4,1.0,19.0,659,51
+327,Peruvian Stuffed Grape Leaves Wrap,vegan,Peruvian,1,piece,350.0,23.8,42.9,13.0,7.0,31.1,183,65
+328,Mediterranean Mortadella On Rice,bowl,Mediterranean,338,ml,498.0,26.2,40.4,19.4,2.0,23.0,685,106
+329,Peruvian Chickpea Sumac,vegetarian,Peruvian,297,ml,167.0,14.7,43.1,33.2,11.1,2.8,591,108
+330,Mexican Falafel Baked,snack,Mexican,1,piece,436.0,27.1,42.9,30.3,6.7,30.0,677,64
+331,Turkish Shrimp Herb,drink,Turkish,373,g,50.0,9.9,21.0,10.4,3.4,11.0,1224,138
+332,Lebanese Burrito Green Curry,seafood,Lebanese,320,g,404.0,24.3,18.9,13.5,5.3,17.2,123,134
+333,Brazilian Fish Lemon,soup,Brazilian,138,g,258.0,9.6,9.9,12.8,8.2,9.9,264,19
+334,Mexican Tuna Tandoori,vegetarian,Mexican,2,piece,501.0,6.6,19.6,15.4,4.7,1.9,680,84
+335,Lebanese Kafta Vindaloo,dessert,Lebanese,357,ml,595.0,7.5,34.9,29.2,8.4,32.2,855,119
+336,Thai Quinoa Vindaloo,stew,Thai,2,piece,478.0,23.1,37.4,23.0,8.1,15.4,383,101
+337,Lebanese Burger Baked,breakfast,Lebanese,2,piece,574.0,33.4,33.3,16.0,6.6,18.3,129,30
+338,Italian Soup On Quinoa,vegan,Italian,157,g,282.0,12.9,29.8,33.7,10.0,5.8,1265,146
+339,Vietnamese Taco Herb,drink,Vietnamese,1,piece,273.0,7.2,56.4,10.1,11.6,7.5,868,93
+340,Brazilian Salad With Veggies,soup,Brazilian,219,ml,156.0,20.3,17.4,8.0,6.1,4.6,882,27
+341,Thai Grilled Veggies Wrap,stew,Thai,324,ml,553.0,27.0,31.5,35.5,3.2,9.6,290,132
+342,Italian Taco Masala,breakfast,Italian,182,g,685.0,28.8,42.9,33.3,2.2,27.1,1298,155
+343,American Burger Za'atar,lunch,American,2,piece,371.0,29.4,7.8,32.5,7.8,7.8,1418,17
+344,Lebanese Porridge Yogurt,grill,Lebanese,260,ml,434.0,35.5,48.1,26.4,3.7,4.8,281,155
+345,French Soup On Quinoa,pasta,French,242,ml,663.0,18.4,56.8,8.0,7.5,10.1,727,20
+346,Lebanese Falafel Shoyu,lunch,Lebanese,253,ml,588.0,38.2,52.7,27.8,7.8,9.7,1290,117
+347,Lebanese Salad Spicy,bowl,Lebanese,388,g,819.0,25.8,77.1,27.7,9.3,15.0,471,38
+348,British Mortadella Lemon,pasta,British,2,piece,477.0,34.3,60.0,19.3,1.2,3.2,746,129
+349,Greek Sushi Roasted,drink,Greek,445,ml,247.0,9.8,24.5,9.6,6.7,21.2,697,100
+350,Vietnamese Mushroom Ramen Style,stew,Vietnamese,435,ml,495.0,43.1,34.9,14.3,8.1,2.3,1400,91
+351,Peruvian Soup Roasted,stew,Peruvian,252,ml,670.0,18.6,10.1,27.5,8.6,10.1,736,96
+352,American Shish Taouk Herb,breakfast,American,1,piece,447.0,17.8,42.9,11.4,8.0,9.1,871,140
+353,Moroccan Falafel Ramen Style,pasta,Moroccan,321,g,635.0,38.8,109.2,8.6,11.9,31.8,132,98
+354,French Potato Shoyu,breakfast,French,2,piece,548.0,29.1,36.7,21.6,3.1,5.6,333,94
+355,Greek Tabbouleh Spicy,drink,Greek,123,g,220.0,14.2,15.7,8.5,12.6,11.2,331,138
+356,British Burger Masala,salad,British,365,ml,324.0,11.9,16.2,22.7,7.0,16.2,438,78
+357,Brazilian Lamb Pho Style,lunch,Brazilian,411,ml,348.0,33.2,42.7,11.8,8.8,29.3,1467,123
+358,Italian Potato Butter,dinner,Italian,2,piece,728.0,20.4,39.6,29.4,4.1,1.6,590,123
+359,Ethiopian Pasta With Pita,stew,Ethiopian,286,ml,288.0,43.3,42.1,25.2,6.4,1.7,703,24
+360,Thai Tabbouleh Korma,breakfast,Thai,161,g,258.0,31.6,27.2,28.7,4.0,8.3,1236,104
+361,American Tuna Teriyaki,pasta,American,1,piece,453.0,27.1,44.5,36.3,12.2,18.8,1317,140
+362,Moroccan Mujadara Miso,sandwich,Moroccan,2,piece,427.0,30.8,61.6,23.6,8.8,3.3,337,61
+363,Brazilian Taco Teriyaki,rice,Brazilian,295,g,549.0,18.8,96.4,17.2,4.2,16.0,1448,15
+364,Greek Waffle Stir-Fry 1,wrap,Greek,281,ml,714.0,17.7,81.2,19.4,8.3,7.3,1051,123
+365,Mexican Sambousek Bowl,breakfast,Mexican,123,g,271.0,11.8,40.0,13.8,4.1,6.3,166,16
+366,Indian Grilled Veggies Baked,snack,Indian,402,g,306.0,29.5,81.4,21.8,11.5,26.7,1072,40
+367,Italian Sayadieh Shoyu,dessert,Italian,2,piece,638.0,5.0,38.8,7.9,10.3,12.5,631,10
+368,Lebanese Burrito Tahini,dinner,Lebanese,1,piece,536.0,19.5,31.5,17.8,6.9,2.9,661,37
+369,Italian Sayadieh Miso,dessert,Italian,415,g,275.0,7.1,85.9,25.0,3.6,21.1,1372,92
+370,Vietnamese Mezze Skewers,rice,Vietnamese,1,piece,476.0,27.9,86.2,8.7,6.1,27.1,528,44
+371,Italian Falafel Tandoori,stew,Italian,394,ml,348.0,17.7,24.0,12.1,7.8,24.0,908,52
+372,Korean Lamb Tahini,drink,Korean,357,g,209.0,1.0,36.2,7.1,4.4,29.0,1397,79
+373,Mediterranean Mezze Wrap,stew,Mediterranean,235,ml,602.0,35.7,27.4,23.9,9.6,4.1,834,134
+374,American Taco Wrap,breakfast,American,351,g,282.0,13.5,13.8,16.8,10.2,13.8,378,100
+375,Lebanese Tofu Tahini,sandwich,Lebanese,301,ml,685.0,30.3,64.2,9.0,7.9,15.4,531,145
+376,Mediterranean Tofu Baked,stew,Mediterranean,242,ml,498.0,41.2,36.2,20.3,11.4,1.2,263,138
+377,Lebanese Falafel Bowl,seafood,Lebanese,179,g,289.0,37.3,27.4,13.7,10.1,23.8,1105,33
+378,Ethiopian Tuna Wrap,sandwich,Ethiopian,1,piece,578.0,38.7,84.4,28.9,4.5,0.1,447,18
+379,French Sushi Tomato,vegetarian,French,431,ml,428.0,10.9,17.4,29.9,8.7,17.4,801,29
+380,Lebanese Tabbouleh Yogurt,pasta,Lebanese,275,ml,629.0,36.8,71.9,9.1,1.1,16.2,339,4
+381,Italian Omelette Ramen Style,bowl,Italian,325,ml,740.0,39.8,60.5,9.9,3.4,7.7,743,34
+382,Italian Fish Shoyu,seafood,Italian,191,g,420.0,22.2,10.2,12.8,2.5,9.8,446,48
+383,Lebanese Eggplant Tandoori,drink,Lebanese,325,ml,238.0,4.5,18.8,1.9,9.7,18.8,1384,93
+384,Lebanese Burrito Yogurt,vegan,Lebanese,1,piece,365.0,5.8,27.2,34.0,3.6,14.2,465,161
+385,Peruvian Lamb Wrap,wrap,Peruvian,420,ml,606.0,23.9,71.0,31.0,8.9,3.1,844,13
+386,Moroccan Kibbeh Casserole,drink,Moroccan,333,g,57.0,4.8,34.2,8.9,10.9,34.2,162,76
+387,Spanish Porridge Tandoori,pasta,Spanish,2,piece,743.0,12.2,103.4,15.8,0.9,12.9,496,152
+388,Indian Waffle With Veggies,dinner,Indian,2,piece,547.0,48.5,25.8,9.7,5.0,14.4,181,60
+389,Italian Chickpea With Veggies,soup,Italian,298,g,361.0,21.6,34.6,17.3,9.3,24.4,1263,55
+390,Ethiopian Fish Skewers,dessert,Ethiopian,303,ml,470.0,6.6,35.0,27.9,8.8,16.9,554,105
+391,Italian Falafel Grilled,bowl,Italian,469,ml,492.0,39.7,48.9,14.4,8.7,15.3,1361,85
+392,Thai Chickpea Butter,vegetarian,Thai,326,ml,452.0,5.5,16.9,5.8,9.9,16.9,850,54
+393,Turkish Soup Miso,vegan,Turkish,291,ml,197.0,20.2,15.5,12.4,5.9,15.5,1147,7
+394,Korean Grilled Veggies Green Curry,salad,Korean,254,ml,218.0,18.9,41.2,28.5,2.3,3.5,1473,90
+395,Greek Grilled Veggies Wrap,vegetarian,Greek,1,piece,267.0,11.6,26.8,9.2,3.7,25.7,630,74
+396,Korean Chicken Green Curry,drink,Korean,1,piece,238.0,4.7,34.7,12.2,12.7,30.2,349,97
+397,Korean Mezze Butter,snack,Korean,166,g,506.0,19.6,42.8,30.7,5.7,2.8,199,104
+398,Chinese Turkey Plate,dessert,Chinese,297,g,457.0,8.0,33.2,22.0,3.0,10.3,1033,163
+399,Greek Manousheh Za'atar,wrap,Greek,203,ml,499.0,19.0,70.4,22.0,2.9,26.3,1130,65
+400,Mexican Mezze Harissa,wrap,Mexican,395,g,604.0,14.0,59.7,33.8,6.4,9.8,1372,92
+401,Lebanese Pasta Lemon,dessert,Lebanese,1,piece,492.0,9.5,38.6,30.5,3.9,15.0,1276,49
+402,Vietnamese Cauliflower Plate,bowl,Vietnamese,170,g,499.0,30.1,87.0,9.9,8.4,8.9,378,149
+403,Lebanese Burrito Skewers,dessert,Lebanese,2,piece,498.0,6.6,82.7,24.2,6.1,21.1,289,83
+404,Lebanese Lentil On Quinoa,lunch,Lebanese,463,ml,392.0,25.3,21.7,21.0,11.9,11.6,565,92
+405,Ethiopian Shish Taouk Roasted,salad,Ethiopian,2,piece,373.0,22.8,39.6,26.0,4.0,20.9,1087,15
+406,Lebanese Tabbouleh With Hummus,vegan,Lebanese,323,ml,565.0,9.0,19.2,21.9,11.0,19.2,971,120
+407,Brazilian Pasta Tandoori,snack,Brazilian,158,g,338.0,11.5,41.4,28.2,2.3,14.5,1622,91
+408,Mexican Fatteh Baked,breakfast,Mexican,162,g,494.0,24.0,25.7,11.2,10.6,11.5,1060,16
+409,Vietnamese Turkey Roasted,lunch,Vietnamese,381,g,576.0,21.6,12.5,16.1,1.4,12.5,1258,135
+410,Indian Tuna With Pita,soup,Indian,149,g,405.0,24.2,38.9,8.3,2.4,15.2,1141,39
+411,French Curry Yogurt,breakfast,French,1,piece,332.0,31.5,41.1,38.0,1.6,6.2,794,110
+412,Peruvian Tuna With Pita,snack,Peruvian,327,ml,461.0,21.3,67.9,13.8,5.6,14.9,770,55
+413,Lebanese Eggplant Za'atar,seafood,Lebanese,337,ml,548.0,40.1,27.2,10.3,5.6,27.2,766,147
+414,Vietnamese Tuna Bowl,pasta,Vietnamese,1,piece,431.0,25.1,93.4,9.2,2.3,13.0,1014,17
+415,Lebanese Kafta Tahini,soup,Lebanese,2,piece,269.0,11.1,22.9,11.1,9.9,22.9,995,128
+416,Spanish Burrito Masala,rice,Spanish,244,ml,554.0,13.7,74.2,12.7,11.3,0.9,1137,132
+417,Lebanese Pancake On Quinoa,rice,Lebanese,219,g,631.0,32.8,86.4,21.1,6.2,14.0,525,79
+418,Brazilian Stew Plate,vegetarian,Brazilian,446,g,530.0,7.8,27.2,32.3,5.9,1.1,384,111
+419,Mexican Fattoush Za'atar,drink,Mexican,429,ml,175.0,7.9,31.4,6.2,5.6,26.2,319,8
+420,Peruvian Sayadieh Casserole,pasta,Peruvian,218,ml,607.0,13.6,64.7,29.1,7.1,22.6,968,60
+421,Greek Mujadara Pesto,lunch,Greek,197,g,454.0,21.4,44.2,32.5,1.9,5.3,890,6
+422,Moroccan Hummus Plate,wrap,Moroccan,1,piece,360.0,19.5,79.9,15.3,1.6,14.6,1072,32
+423,Lebanese Manousheh Shoyu,grill,Lebanese,283,g,644.0,40.8,48.4,21.2,3.6,1.3,1412,60
+424,Italian Omelette With Veggies,snack,Italian,220,ml,615.0,24.5,27.0,29.1,8.1,9.1,1239,69
+425,Indian Waffle Masala,dessert,Indian,401,ml,515.0,9.8,71.6,22.3,2.9,16.3,1122,143
+426,Japanese Waffle Shoyu,vegetarian,Japanese,2,piece,186.0,9.7,28.1,13.1,9.7,24.6,1377,70
+427,Italian Hummus Casserole,wrap,Italian,1,piece,724.0,18.8,62.3,11.4,0.9,26.3,602,85
+428,Moroccan Turkey Garlic,lunch,Moroccan,240,ml,446.0,46.9,44.2,13.7,11.0,31.0,847,3
+429,Italian Tofu Harissa,grill,Italian,401,ml,722.0,31.7,52.9,31.8,3.3,17.7,836,19
+430,Peruvian Quinoa Korma,vegan,Peruvian,198,g,185.0,19.6,20.0,20.9,4.6,20.0,413,62
+431,Mexican Noodles Harissa,dessert,Mexican,458,ml,241.0,6.6,74.5,8.9,7.2,15.1,486,46
+432,American Fattoush Plate,pasta,American,2,piece,599.0,33.9,83.1,32.0,8.1,22.8,433,85
+433,Greek Stew Pesto,snack,Greek,316,ml,711.0,23.5,95.1,13.7,1.7,26.6,479,36
+434,Korean Lamb Stir-Fry,wrap,Korean,391,g,804.0,25.1,71.6,31.6,9.1,27.3,1301,137
+435,Lebanese Pancake Red Curry,wrap,Lebanese,1,piece,637.0,31.6,81.6,10.9,5.4,18.5,119,30
+436,Lebanese Potato Vindaloo,salad,Lebanese,2,piece,459.0,19.3,37.7,24.3,9.2,9.1,742,111
+437,Peruvian Turkey Grilled,grill,Peruvian,310,ml,451.0,28.4,48.1,22.1,0.7,0.7,842,92
+438,Italian Quinoa Garlic,soup,Italian,252,g,284.0,11.9,11.8,9.2,11.8,3.8,1205,75
+439,Korean Eggplant Tomato,seafood,Korean,1,piece,619.0,42.9,8.5,21.2,5.2,8.5,431,36
+440,Indian Lentil Plate,wrap,Indian,492,ml,499.0,25.8,62.8,25.1,8.7,2.8,839,152
+441,Spanish Grilled Veggies Shoyu,rice,Spanish,2,piece,406.0,28.3,46.3,35.0,6.3,11.3,1014,113
+442,Lebanese Waffle Za'atar,vegan,Lebanese,493,ml,416.0,7.6,41.0,6.2,2.5,5.1,795,53
+443,Italian Rice Herb,vegan,Italian,235,ml,171.0,7.7,41.4,30.7,9.3,28.4,521,143
+444,Japanese Shrimp On Quinoa,wrap,Japanese,2,piece,629.0,13.2,90.5,22.7,8.8,1.4,294,33
+445,Lebanese Rice Baked,bowl,Lebanese,212,ml,548.0,33.6,79.4,21.8,11.0,27.9,312,16
+446,Mexican Hummus Pho Style,vegan,Mexican,2,piece,413.0,26.3,30.6,23.8,5.7,2.5,1271,116
+447,Lebanese Mortadella With Hummus,snack,Lebanese,2,piece,307.0,20.3,12.7,19.4,8.9,12.7,1018,44
+448,Turkish Shawarma Pho Style,bowl,Turkish,189,g,348.0,27.4,58.6,7.1,1.2,26.7,604,59
+449,Lebanese Shrimp Za'atar,soup,Lebanese,285,ml,341.0,17.1,11.0,9.6,5.1,11.0,507,101
+450,French Turkey Korma,vegan,French,465,ml,309.0,14.8,22.5,25.1,8.9,16.7,652,61
+451,Turkish Stuffed Grape Leaves Herb,sandwich,Turkish,358,ml,616.0,12.0,69.9,8.0,9.3,8.7,1419,105
+452,Chinese Salad Roll,grill,Chinese,1,piece,294.0,19.7,26.0,9.7,7.4,15.6,430,37
+453,Lebanese Tuna Lemon,bowl,Lebanese,213,ml,582.0,33.7,67.2,29.3,10.0,14.6,1338,59
+454,Mexican Fatteh Teriyaki,dinner,Mexican,1,piece,551.0,18.6,11.6,12.9,6.1,11.6,1345,157
+455,Vietnamese Sfiha Sumac,pasta,Vietnamese,226,ml,390.0,14.9,92.1,24.8,2.5,0.8,743,22
+456,Brazilian Sayadieh Tandoori,grill,Brazilian,276,g,291.0,21.9,12.6,25.4,10.9,12.6,1228,88
+457,Peruvian Fish With Veggies,rice,Peruvian,153,g,717.0,22.5,67.7,20.0,7.0,21.5,1468,5
+458,Ethiopian Cauliflower Roll,seafood,Ethiopian,1,piece,447.0,33.5,8.0,17.8,8.0,3.5,969,102
+459,Lebanese Mezze Tahini,grill,Lebanese,303,ml,388.0,24.0,52.7,16.4,7.1,24.2,984,20
+460,Spanish Taco Garlic,pasta,Spanish,1,piece,660.0,12.6,73.7,11.0,2.3,14.7,1213,150
+461,Chinese Beef With Pita,lunch,Chinese,307,ml,351.0,42.0,51.2,8.4,1.2,12.2,918,18
+462,Japanese Sayadieh Wrap,pasta,Japanese,1,piece,447.0,32.8,81.3,27.2,9.2,29.7,773,78
+463,French Soup Wrap,snack,French,1,piece,491.0,33.2,76.2,8.9,3.6,12.2,752,107
+464,Greek Eggplant Tahini,drink,Greek,490,ml,234.0,12.3,7.2,5.6,3.7,7.2,478,112
+465,Lebanese Pasta Tomato,vegan,Lebanese,384,g,284.0,11.9,23.5,27.6,8.7,9.8,145,21
+466,Ethiopian Kafta On Quinoa,dinner,Ethiopian,494,ml,390.0,20.8,48.8,26.9,8.2,28.2,208,105
+467,Ethiopian Mortadella Red Curry,wrap,Ethiopian,416,ml,529.0,21.9,105.5,34.6,8.1,4.7,729,111
+468,British Sfiha With Pita,bowl,British,1,piece,420.0,18.2,40.7,15.0,8.5,21.2,281,151
+469,Italian Curry With Veggies,grill,Italian,1,piece,285.0,39.7,34.3,13.2,8.6,19.9,1351,16
+470,Greek Kibbeh Baked,vegan,Greek,369,g,549.0,14.6,31.3,5.4,4.6,7.4,1198,97
+471,Brazilian Kibbeh On Rice,sandwich,Brazilian,400,ml,757.0,28.7,52.6,17.9,9.5,3.3,879,32
+472,Lebanese Pasta Grilled,wrap,Lebanese,140,g,714.0,23.1,67.9,15.9,6.2,16.8,796,60
+473,Vietnamese Sfiha Korma,bowl,Vietnamese,2,piece,679.0,13.5,46.1,25.1,1.9,19.9,1235,17
+474,Lebanese Soup With Hummus,salad,Lebanese,318,g,313.0,7.4,29.9,6.2,2.3,11.1,1483,48
+475,Lebanese Fish On Rice,wrap,Lebanese,264,ml,776.0,26.6,52.5,17.4,11.4,13.5,983,97
+476,Spanish Shish Taouk Spicy,drink,Spanish,2,piece,255.0,2.4,45.8,9.4,1.6,32.4,1059,66
+477,Turkish Fatteh Stir-Fry,bowl,Turkish,1,piece,463.0,11.7,91.8,31.0,4.4,21.1,1100,14
+478,Brazilian Salad Vindaloo,lunch,Brazilian,367,g,562.0,19.9,44.0,23.9,12.4,8.8,431,141
+479,Peruvian Pancake On Quinoa,vegetarian,Peruvian,376,ml,380.0,25.9,24.0,11.4,0.9,17.4,709,15
+480,Lebanese Tuna Teriyaki,drink,Lebanese,170,g,267.0,0.8,39.9,10.7,2.4,31.1,493,14
+481,Turkish Fish Tahini,snack,Turkish,368,g,512.0,24.7,70.0,16.5,1.8,1.8,759,64
+482,Moroccan Hummus Red Curry,breakfast,Moroccan,2,piece,353.0,25.1,62.5,17.1,5.7,2.8,1090,35
+483,Greek Potato Green Curry,salad,Greek,488,ml,403.0,6.3,41.7,36.7,8.3,21.2,380,10
+484,Japanese Kibbeh Yogurt,rice,Japanese,2,piece,524.0,16.3,85.1,8.8,1.7,23.0,1392,127
+485,Moroccan Shawarma With Veggies,vegan,Moroccan,1,piece,468.0,14.6,19.3,35.8,4.6,14.3,983,2
+486,Lebanese Chicken Lemon,breakfast,Lebanese,366,ml,583.0,22.5,35.7,8.3,11.3,20.8,917,151
+487,Korean Sujuk With Pita,pasta,Korean,253,ml,665.0,29.6,38.8,18.6,10.8,12.8,407,3
+488,Greek Grilled Veggies Tomato,grill,Greek,443,g,678.0,17.7,29.6,24.9,6.9,0.2,1363,94
+489,Japanese Shrimp Red Curry,seafood,Japanese,337,g,424.0,35.0,16.0,6.0,1.9,1.8,452,86
+490,Ethiopian Turkey Plate,dessert,Ethiopian,2,piece,489.0,7.2,79.5,4.9,5.2,19.5,981,131
+491,Moroccan Burger Korma,vegan,Moroccan,355,ml,180.0,20.9,12.5,35.0,7.1,10.2,710,57
+492,Lebanese Sfiha Shoyu,sandwich,Lebanese,422,g,477.0,21.6,48.3,26.2,0.9,14.1,166,138
+493,Japanese Potato With Veggies,seafood,Japanese,391,g,473.0,28.4,2.4,18.6,2.4,2.4,805,21
+494,Mediterranean Chickpea Roll,dinner,Mediterranean,216,ml,565.0,31.3,10.4,9.3,1.1,10.4,662,97
+495,British Burger Za'atar,breakfast,British,438,ml,589.0,22.8,28.0,34.8,8.7,12.5,527,28
+496,British Salad Spicy,soup,British,2,piece,238.0,15.2,27.9,5.8,2.1,1.3,296,93
+497,Greek Sayadieh Herb,vegetarian,Greek,274,g,396.0,10.9,44.5,20.8,8.2,4.4,452,132
+498,Mediterranean Turkey Tahini,soup,Mediterranean,232,g,335.0,18.9,38.8,11.8,4.2,17.1,1425,96
+499,Lebanese Burrito Tomato,lunch,Lebanese,330,g,600.0,32.3,16.4,20.6,9.1,16.4,1209,58
+500,Lebanese Kibbeh Plate,dinner,Lebanese,1,piece,464.0,26.1,40.1,30.9,1.1,1.0,423,30
+501,Mexican Potato Lemon,vegetarian,Mexican,127,g,468.0,22.3,10.3,24.3,4.7,10.3,262,143
+502,Chinese Mujadara Garlic,pasta,Chinese,2,piece,779.0,35.6,99.0,7.7,2.1,27.0,1187,29
+503,Greek Porridge Pesto,wrap,Greek,371,g,615.0,35.7,60.7,10.3,3.3,18.9,507,20
+504,Peruvian Mezze Grilled,soup,Peruvian,437,ml,337.0,9.6,21.3,16.9,9.5,11.7,871,29
+505,Ethiopian Taco Stir-Fry,seafood,Ethiopian,1,piece,617.0,37.3,1.2,10.1,1.2,1.2,718,52
+506,Lebanese Quinoa Red Curry,pasta,Lebanese,164,g,381.0,22.9,63.4,22.5,5.7,18.3,695,73
+507,Vietnamese Beef Lemon,rice,Vietnamese,270,ml,589.0,19.1,42.1,28.0,5.9,17.8,1107,136
+508,Italian Turkey With Veggies,vegetarian,Italian,342,g,261.0,20.8,38.5,31.7,2.8,18.9,323,142
+509,Brazilian Sayadieh On Rice,breakfast,Brazilian,446,ml,550.0,17.6,31.9,23.5,7.5,13.2,769,113
+510,Spanish Taco Tomato,soup,Spanish,2,piece,297.0,14.7,33.5,8.0,1.5,25.0,700,148
+511,Korean Beef With Hummus,vegetarian,Korean,310,g,197.0,23.4,10.1,28.7,9.9,10.0,684,107
+512,Brazilian Salad Wrap,breakfast,Brazilian,170,g,662.0,16.5,46.7,25.5,7.3,25.4,1440,31
+513,Brazilian Halloumi With Veggies,seafood,Brazilian,2,piece,445.0,26.0,4.8,17.4,2.4,4.8,895,4
+514,Spanish Tabbouleh Vindaloo,sandwich,Spanish,270,g,541.0,10.8,65.9,34.0,5.2,31.1,312,70
+515,Spanish Chickpea Yogurt,soup,Spanish,329,ml,319.0,13.5,24.6,15.4,6.5,13.6,960,39
+516,American Pancake Pesto,rice,American,1,piece,648.0,26.4,77.3,7.6,1.7,20.7,1483,59
+517,Thai Pasta Pesto,salad,Thai,416,g,476.0,15.2,45.0,11.3,7.6,12.7,1530,41
+518,Japanese Tabbouleh Skewers,vegetarian,Japanese,2,piece,539.0,24.5,25.8,29.4,2.0,11.7,1227,85
+519,Moroccan Mushroom Masala,dessert,Moroccan,272,g,218.0,7.0,68.1,15.2,8.4,23.7,615,1
+520,American Burrito Tandoori,bowl,American,147,g,604.0,29.4,66.1,18.4,3.5,4.5,1194,90
+521,French Shrimp Skewers,rice,French,2,piece,699.0,15.6,69.4,13.1,1.0,21.6,446,118
+522,Ethiopian Sujuk On Rice,snack,Ethiopian,215,ml,277.0,36.4,78.4,36.1,5.3,7.9,270,74
+523,Turkish Cauliflower Roasted,dinner,Turkish,1,piece,408.0,34.0,11.9,18.3,7.6,6.2,441,94
+524,French Kibbeh On Quinoa,snack,French,124,g,586.0,11.2,29.1,12.5,8.7,9.0,1056,7
+525,Moroccan Halloumi Green Curry,seafood,Moroccan,1,piece,602.0,35.9,30.2,19.4,8.5,30.0,1106,54
+526,Turkish Tofu With Veggies,seafood,Turkish,320,g,491.0,31.9,20.7,10.4,7.8,20.7,475,106
+527,Thai Shish Taouk Pesto,wrap,Thai,1,piece,407.0,24.7,53.5,16.7,7.8,7.1,1108,156
+528,Lebanese Stuffed Grape Leaves Wrap,stew,Lebanese,2,piece,527.0,47.7,50.1,15.4,9.7,11.1,437,9
+529,Chinese Pancake Za'atar,sandwich,Chinese,1,piece,504.0,9.3,92.7,7.4,2.5,17.5,289,30
+530,Peruvian Potato Masala,soup,Peruvian,260,g,258.0,8.6,13.5,8.8,7.0,8.5,860,145
+531,Lebanese Mortadella Za'atar,pasta,Lebanese,275,g,495.0,25.9,64.5,9.6,10.5,13.3,1073,62
+532,Thai Soup Lemon,drink,Thai,314,ml,101.0,7.6,19.8,5.2,3.9,19.8,351,132
+533,Ethiopian Burrito Sumac,pasta,Ethiopian,482,ml,769.0,20.7,72.6,24.0,7.1,12.0,169,144
+534,Lebanese Quinoa With Pita,wrap,Lebanese,2,piece,618.0,20.5,42.8,16.7,5.2,7.2,757,143
+535,Lebanese Quinoa Tandoori 1,drink,Lebanese,1,piece,101.0,10.3,39.2,2.0,1.9,9.1,1147,64
+536,Italian Rice Garlic,soup,Italian,275,ml,202.0,22.4,26.7,8.0,3.7,11.3,1220,106
+537,Peruvian Lentil Stir-Fry,pasta,Peruvian,1,piece,675.0,30.5,39.8,10.7,6.1,2.9,1168,65
+538,Thai Tuna With Hummus,salad,Thai,352,g,241.0,9.1,45.4,19.5,10.4,5.9,211,30
+539,Japanese Noodles Roasted,wrap,Japanese,1,piece,440.0,19.5,54.2,14.5,6.6,13.1,956,14
+540,Lebanese Halloumi Yogurt,lunch,Lebanese,2,piece,486.0,35.9,60.0,15.7,6.3,23.5,988,55
+541,Turkish Manousheh Sumac,sandwich,Turkish,383,ml,714.0,32.8,87.3,5.5,9.5,10.9,1152,133
+542,French Sfiha Pesto,dessert,French,335,ml,558.0,9.2,60.0,25.5,0.6,19.7,1457,52
+543,Mediterranean Sambousek Miso,stew,Mediterranean,320,g,519.0,40.7,10.2,21.1,10.2,10.2,1601,148
+544,Spanish Grilled Veggies Herb,soup,Spanish,2,piece,376.0,19.5,9.0,10.4,1.5,9.0,1484,156
+545,Korean Mujadara Green Curry,seafood,Korean,200,g,302.0,42.6,20.5,6.9,11.6,0.9,1369,51
+546,Japanese Mujadara Butter,dessert,Japanese,1,piece,273.0,6.4,73.6,7.9,8.6,26.7,1434,125
+547,Turkish Stuffed Grape Leaves Red Curry,rice,Turkish,442,ml,439.0,13.1,44.9,8.4,8.8,27.4,1117,18
+548,Turkish Fattoush Roll,breakfast,Turkish,2,piece,589.0,32.5,27.6,16.8,7.9,22.6,790,90
+549,Lebanese Shawarma Herb,bowl,Lebanese,451,ml,553.0,22.8,79.0,9.8,7.8,23.1,1048,92
+550,French Porridge Yogurt,seafood,French,287,ml,616.0,22.5,25.5,8.4,9.2,25.5,1475,37
+551,Mexican Fattoush Garlic,rice,Mexican,300,g,471.0,28.5,102.7,26.3,4.7,14.9,479,104
+552,Brazilian Shawarma Ramen Style,drink,Brazilian,400,g,233.0,2.6,32.8,1.7,8.9,17.5,335,36
+553,Lebanese Sambousek Herb,snack,Lebanese,485,ml,455.0,36.3,86.6,8.1,12.1,5.6,198,161
+554,Peruvian Porridge Sumac,drink,Peruvian,131,g,98.0,10.6,33.9,11.8,8.3,20.6,1108,131
+555,Korean Hummus Miso,rice,Korean,203,ml,418.0,14.2,88.2,33.6,3.2,18.3,1539,79
+556,French Sujuk Butter,salad,French,2,piece,264.0,7.3,20.9,25.9,10.2,15.8,664,109
+557,Brazilian Burrito Skewers,vegan,Brazilian,2,piece,380.0,22.2,34.1,28.7,3.0,20.5,292,143
+558,Lebanese Eggplant Wrap,stew,Lebanese,309,g,555.0,19.4,17.9,26.5,1.4,3.5,497,144
+559,Lebanese Curry Casserole,lunch,Lebanese,2,piece,375.0,34.8,22.9,33.7,12.4,18.8,851,113
+560,Mediterranean Lentil On Rice,soup,Mediterranean,435,g,344.0,10.9,21.1,5.3,8.3,2.4,509,66
+561,Spanish Sambousek Shoyu,dessert,Spanish,1,piece,303.0,7.1,42.6,24.0,7.9,21.5,899,103
+562,Mexican Shawarma Shoyu,drink,Mexican,207,ml,187.0,1.8,10.7,1.3,6.6,7.4,970,56
+563,Lebanese Hummus Bowl,sandwich,Lebanese,244,g,784.0,21.3,47.3,32.8,2.5,21.8,541,131
+564,Ethiopian Soup Stir-Fry,grill,Ethiopian,1,piece,346.0,30.3,49.9,13.9,10.5,21.9,1300,95
+565,Spanish Quinoa Bowl,drink,Spanish,2,piece,68.0,5.4,13.0,8.4,1.1,13.0,1391,107
+566,British Tuna Miso,bowl,British,439,ml,628.0,19.9,76.2,36.3,11.6,26.6,589,149
+567,Moroccan Porridge Grilled 1,dinner,Moroccan,360,g,714.0,22.9,8.0,27.6,6.8,8.0,1306,151
+568,Ethiopian Taco Korma,drink,Ethiopian,2,piece,214.0,1.9,35.5,0.2,2.7,35.5,130,68
+569,Greek Sambousek Wrap,vegan,Greek,1,piece,198.0,21.5,33.4,29.2,2.3,10.0,276,51
+570,Vietnamese Eggplant With Veggies,pasta,Vietnamese,1,piece,559.0,31.1,45.5,13.8,3.7,6.0,1074,85
+571,Thai Lamb Tandoori,vegan,Thai,2,piece,156.0,4.6,23.5,12.6,1.6,9.5,1007,58
+572,Moroccan Curry Masala,dinner,Moroccan,255,g,716.0,18.4,47.7,14.9,6.0,11.3,627,143
+573,Lebanese Mujadara Miso,bowl,Lebanese,166,g,663.0,9.8,98.4,25.7,1.7,8.3,294,65
+574,Lebanese Taco Stir-Fry,soup,Lebanese,258,g,322.0,22.7,33.0,8.4,9.9,28.3,868,157
+575,Lebanese Beef Spicy,snack,Lebanese,233,g,245.0,29.2,13.5,28.6,5.2,13.5,125,73
+576,Italian Waffle Herb,sandwich,Italian,2,piece,491.0,35.0,106.7,37.0,3.6,26.1,418,120
+577,Ethiopian Omelette Herb,soup,Ethiopian,159,g,254.0,11.3,14.2,5.2,0.7,6.0,1319,61
+578,Chinese Taco Roll,wrap,Chinese,1,piece,336.0,12.0,58.9,30.0,7.8,6.7,1219,26
+579,Turkish Hummus Roasted,seafood,Turkish,255,ml,610.0,30.5,9.6,7.3,0.7,9.6,1372,55
+580,Greek Pancake With Hummus,vegan,Greek,334,g,241.0,13.1,42.3,9.2,9.3,3.7,958,150
+581,Indian Halloumi Skewers,bowl,Indian,2,piece,524.0,26.1,100.6,23.2,2.4,4.1,751,122
+582,Brazilian Noodles Baked,pasta,Brazilian,220,ml,546.0,38.4,76.3,6.7,7.5,21.2,301,7
+583,Indian Burrito Green Curry,rice,Indian,2,piece,401.0,30.7,63.1,27.0,4.8,7.7,352,24
+584,Lebanese Burger Masala,vegan,Lebanese,2,piece,261.0,22.7,20.9,13.4,1.9,6.9,880,47
+585,Japanese Fish Pesto,dessert,Japanese,296,g,197.0,4.7,63.2,15.8,1.4,20.8,861,113
+586,British Porridge Bowl,lunch,British,265,ml,770.0,24.8,61.3,23.6,12.3,24.5,1255,17
+587,Spanish Porridge Red Curry,dessert,Spanish,389,g,302.0,4.0,61.2,28.5,8.9,4.5,428,113
+588,Lebanese Burger Lemon,salad,Lebanese,182,g,316.0,17.9,29.9,5.1,2.2,4.9,606,88
+589,Italian Stuffed Grape Leaves Sumac,bowl,Italian,359,g,448.0,35.3,44.4,9.7,5.3,3.6,150,144
+590,American Hummus Herb,dinner,American,2,piece,691.0,19.3,51.1,23.8,10.4,26.9,249,23
+591,Korean Kafta Butter,grill,Korean,200,g,535.0,26.1,34.3,8.4,1.0,16.1,257,139
+592,Lebanese Cauliflower Shoyu,breakfast,Lebanese,244,ml,487.0,13.0,57.8,17.0,9.8,22.8,253,25
+593,French Kibbeh Skewers,grill,French,1,piece,455.0,46.9,9.5,9.0,2.2,9.5,573,28
+594,Thai Kibbeh Roasted,grill,Thai,474,ml,616.0,49.3,51.1,28.1,1.4,0.1,1451,24
+595,Lebanese Mezze Butter,bowl,Lebanese,157,g,540.0,31.7,49.9,15.3,2.0,22.9,604,78
+596,Moroccan Chickpea Pesto,stew,Moroccan,325,ml,544.0,36.4,35.6,31.3,5.1,18.1,729,96
+597,Chinese Manousheh Bowl,sandwich,Chinese,447,g,381.0,28.5,113.9,34.8,1.3,11.1,1373,147
+598,Thai Pasta Pesto 1,vegetarian,Thai,393,g,179.0,8.1,45.4,27.2,5.0,0.8,1510,61
+599,Lebanese Beef Herb,salad,Lebanese,242,ml,270.0,5.7,42.6,19.1,10.1,15.4,341,91
+600,Vietnamese Noodles Bowl,stew,Vietnamese,233,ml,324.0,38.2,37.9,12.6,2.3,11.8,698,150
+601,Japanese Fattoush Tomato,vegan,Japanese,479,ml,275.0,7.3,24.7,35.7,9.6,12.8,210,66
+602,Brazilian Sfiha Tandoori,dinner,Brazilian,293,ml,601.0,45.4,14.4,30.3,8.1,6.0,275,12
+603,Lebanese Shrimp Green Curry,grill,Lebanese,141,g,576.0,42.8,22.3,23.2,7.9,1.0,497,158
+604,Peruvian Lamb Roll,seafood,Peruvian,227,ml,331.0,41.2,20.9,22.4,5.8,8.7,610,52
+605,French Halloumi Masala,vegan,French,127,g,511.0,15.9,44.1,6.7,2.6,22.3,249,109
+606,Chinese Sayadieh Garlic,drink,Chinese,2,piece,224.0,13.8,41.0,4.0,9.4,18.3,608,135
+607,Spanish Lentil Pho Style,dinner,Spanish,2,piece,341.0,18.3,46.7,16.2,10.4,23.7,1343,79
+608,Mexican Tofu Stir-Fry,salad,Mexican,1,piece,172.0,8.0,34.4,11.8,5.5,7.1,1234,96
+609,French Lamb With Hummus,seafood,French,320,ml,551.0,43.0,3.9,12.3,3.9,3.9,636,109
+610,Japanese Waffle Roll,lunch,Japanese,2,piece,661.0,38.6,14.5,11.7,5.2,14.5,1395,38
+611,Italian Stuffed Grape Leaves Green Curry,bowl,Italian,232,ml,440.0,13.5,109.4,17.9,5.6,12.3,213,55
+612,Indian Eggplant Stir-Fry,seafood,Indian,211,ml,296.0,30.9,18.7,11.1,0.8,17.5,626,145
+613,Moroccan Fish Yogurt,soup,Moroccan,434,g,371.0,12.0,30.4,4.6,1.4,13.1,571,122
+614,Ethiopian Tuna Roll,dessert,Ethiopian,415,g,453.0,10.6,48.4,12.0,12.4,15.8,938,137
+615,Moroccan Chicken Red Curry,rice,Moroccan,1,piece,610.0,24.7,45.3,22.8,9.0,19.9,1136,105
+616,Korean Shawarma Baked,seafood,Korean,1,piece,408.0,19.0,12.8,20.4,1.8,12.7,1375,14
+617,Indian Sayadieh Garlic,vegetarian,Indian,1,piece,289.0,24.1,44.0,22.3,0.7,24.4,142,143
+618,French Pasta Harissa,bowl,French,305,ml,599.0,25.9,94.4,9.4,2.5,13.0,367,95
+619,Spanish Porridge Casserole,wrap,Spanish,2,piece,766.0,35.7,109.6,29.4,1.7,19.5,969,65
+620,British Porridge Miso,snack,British,2,piece,245.0,17.3,40.4,10.8,5.3,10.6,360,69
+621,Korean Chicken With Hummus,rice,Korean,287,g,426.0,27.0,55.8,29.2,9.9,18.3,113,131
+622,Lebanese Curry On Quinoa,pasta,Lebanese,251,ml,599.0,22.6,77.8,17.1,7.5,11.6,188,146
+623,Spanish Mortadella On Quinoa,salad,Spanish,1,piece,259.0,20.5,15.4,9.1,7.6,12.6,1250,156
+624,Mexican Falafel Grilled,soup,Mexican,264,g,303.0,16.0,8.2,12.6,8.2,2.2,599,109
+625,Korean Tuna Pesto,pasta,Korean,2,piece,526.0,28.3,62.1,31.1,10.4,25.1,1119,47
+626,Lebanese Eggplant Tandoori 1,snack,Lebanese,1,piece,332.0,18.9,25.9,7.8,10.8,25.9,431,17
+627,Lebanese Mushroom Harissa,dinner,Lebanese,466,ml,540.0,29.9,12.8,14.8,10.1,12.8,915,126
+628,Turkish Waffle Green Curry,seafood,Turkish,172,g,470.0,39.8,5.3,5.2,0.7,5.3,304,128
+629,Lebanese Cauliflower Grilled,drink,Lebanese,2,piece,63.0,3.0,21.2,1.1,8.5,21.2,754,127
+630,Spanish Tuna Tahini,dessert,Spanish,2,piece,551.0,9.6,31.3,28.4,7.2,4.9,398,113
+631,Korean Shawarma Roasted,dessert,Korean,1,piece,294.0,4.7,81.9,29.0,5.6,26.2,1416,39
+632,British Kibbeh Sumac,vegan,British,157,g,427.0,12.3,14.9,11.1,2.7,10.1,288,45
+633,Lebanese Burger Pho Style,soup,Lebanese,469,ml,327.0,14.3,29.2,11.7,1.8,8.9,1027,151
+634,Italian Sambousek Shoyu,wrap,Italian,444,ml,447.0,11.7,75.9,7.5,3.7,3.6,758,97
+635,Chinese Beef Pho Style,grill,Chinese,420,g,393.0,41.3,25.0,29.6,10.2,1.1,928,10
+636,Moroccan Shawarma With Pita,dessert,Moroccan,223,ml,628.0,6.4,30.0,14.9,12.6,15.8,1073,155
+637,Lebanese Fish Bowl,sandwich,Lebanese,154,g,544.0,33.6,77.4,12.0,3.0,29.7,690,158
+638,Mediterranean Eggplant Roll,lunch,Mediterranean,222,ml,481.0,40.3,53.3,16.4,2.6,4.4,810,21
+639,Peruvian Porridge Miso,wrap,Peruvian,1,piece,563.0,26.2,82.8,32.9,4.0,21.0,414,40
+640,Italian Mujadara Yogurt,sandwich,Italian,1,piece,802.0,12.0,41.7,12.5,10.1,5.7,269,33
+641,Ethiopian Shish Taouk On Rice,stew,Ethiopian,1,piece,390.0,36.1,58.4,14.7,4.9,30.9,1391,86
+642,Lebanese Shrimp On Rice,wrap,Lebanese,2,piece,412.0,35.9,91.3,12.9,10.7,5.6,157,104
+643,Lebanese Falafel With Pita,vegetarian,Lebanese,263,ml,290.0,12.8,20.4,17.1,4.5,1.4,608,139
+644,Indian Curry Korma,dessert,Indian,1,piece,497.0,6.6,80.4,10.7,1.0,1.0,448,9
+645,Chinese Mortadella Sumac,rice,Chinese,192,g,649.0,27.7,67.2,9.9,2.6,17.2,985,41
+646,Mexican Fatteh On Rice,seafood,Mexican,1,piece,337.0,20.3,5.3,21.5,2.0,0.4,724,50
+647,Japanese Sambousek Bowl,salad,Japanese,1,piece,321.0,4.7,38.4,18.1,1.0,0.5,1000,43
+648,Lebanese Sayadieh Roasted,drink,Lebanese,220,g,222.0,10.7,30.1,11.5,3.4,23.7,604,2
+649,Turkish Eggplant Stir-Fry,seafood,Turkish,2,piece,492.0,24.6,12.8,9.8,12.4,11.1,169,96
+650,Moroccan Turkey Za'atar,dinner,Moroccan,1,piece,410.0,36.9,33.9,31.6,11.5,25.5,350,141
+651,Turkish Hummus On Rice,wrap,Turkish,133,g,639.0,22.2,90.6,20.3,6.3,31.8,1327,50
+652,Vietnamese Burger Herb,drink,Vietnamese,2,piece,202.0,4.6,43.0,3.5,9.9,5.7,179,46
+653,Mediterranean Rice With Pita,breakfast,Mediterranean,2,piece,235.0,12.2,65.4,33.9,6.5,30.0,931,159
+654,American Rice Ramen Style,soup,American,215,g,142.0,25.7,17.3,14.3,5.4,13.0,1482,154
+655,British Sambousek On Quinoa,wrap,British,1,piece,651.0,16.4,64.8,11.0,3.8,8.4,1310,69
+656,Lebanese Noodles On Quinoa,vegan,Lebanese,2,piece,428.0,14.1,24.6,17.3,5.1,0.8,877,150
+657,American Potato Ramen Style,grill,American,1,piece,610.0,49.3,56.1,9.9,10.8,4.0,1099,77
+658,Ethiopian Falafel Roll,lunch,Ethiopian,448,ml,613.0,29.7,10.7,16.4,6.2,10.3,211,122
+659,Mediterranean Lentil Red Curry,vegan,Mediterranean,2,piece,210.0,23.5,33.2,9.9,7.9,22.1,1447,132
+660,Lebanese Lentil Baked 1,breakfast,Lebanese,1,piece,322.0,22.1,63.8,21.8,1.2,3.9,721,167
+661,Brazilian Mujadara Baked,bowl,Brazilian,243,ml,345.0,13.7,88.2,12.4,6.1,20.1,379,73
+662,French Manousheh Stir-Fry,seafood,French,315,ml,481.0,28.7,22.1,7.2,3.4,3.3,596,84
+663,British Chickpea Tandoori,pasta,British,1,piece,331.0,13.8,70.2,29.0,2.7,25.3,789,76
+664,American Burger Spicy,stew,American,435,ml,621.0,49.5,9.1,31.9,6.3,9.1,995,30
+665,Ethiopian Quinoa Spicy,vegan,Ethiopian,1,piece,490.0,11.0,29.1,15.8,0.9,23.5,312,14
+666,Vietnamese Sayadieh Pesto,sandwich,Vietnamese,416,g,392.0,33.6,85.0,16.6,1.1,16.8,254,123
+667,Greek Tuna On Quinoa,breakfast,Greek,350,g,363.0,32.4,41.4,11.2,3.2,12.2,480,30
+668,Ethiopian Falafel Ramen Style,soup,Ethiopian,327,g,319.0,9.2,31.8,15.4,4.3,11.5,819,10
+669,Ethiopian Salad Butter,soup,Ethiopian,1,piece,342.0,17.6,13.1,4.2,5.7,11.9,230,13
+670,Lebanese Cauliflower Roll,seafood,Lebanese,2,piece,247.0,38.8,8.3,20.6,4.8,8.3,1267,24
+671,Brazilian Waffle Masala,vegan,Brazilian,319,ml,164.0,18.0,13.2,18.2,10.5,7.5,153,51
+672,Turkish Chickpea Yogurt,lunch,Turkish,2,piece,478.0,45.1,58.9,10.3,6.6,25.8,958,104
+673,Mediterranean Pasta Grilled,dinner,Mediterranean,1,piece,385.0,44.2,11.5,23.0,3.3,11.3,837,134
+674,Lebanese Beef Tahini,lunch,Lebanese,2,piece,475.0,40.3,6.1,21.2,5.0,6.1,295,113
+675,French Kibbeh Tahini,pasta,French,330,ml,413.0,18.6,89.2,13.8,10.0,29.3,1333,99
+676,Lebanese Fish Skewers,sandwich,Lebanese,161,g,399.0,10.5,59.6,23.1,3.1,8.1,884,70
+677,Lebanese Mushroom Korma,vegetarian,Lebanese,2,piece,294.0,23.4,17.8,26.5,11.4,17.8,526,105
+678,Japanese Sushi Roasted,vegetarian,Japanese,234,g,318.0,24.3,27.3,7.4,11.1,25.5,847,49
+679,French Lamb Pesto,drink,French,1,piece,216.0,0.3,52.4,9.2,3.3,26.0,487,140
+680,British Sujuk Za'atar,breakfast,British,213,ml,309.0,13.3,36.6,7.0,4.1,16.6,613,4
+681,Turkish Shish Taouk Ramen Style,dessert,Turkish,369,g,362.0,8.4,52.0,17.4,8.7,21.6,194,17
+682,Thai Burger Shoyu,vegetarian,Thai,2,piece,474.0,10.6,45.2,19.7,12.4,7.4,1422,46
+683,Lebanese Sayadieh Green Curry,sandwich,Lebanese,301,ml,535.0,28.9,66.2,25.5,9.6,24.6,972,20
+684,Turkish Noodles Tandoori,salad,Turkish,265,g,344.0,24.9,27.4,31.0,3.1,1.8,1446,45
+685,Turkish Tuna Teriyaki,bowl,Turkish,277,ml,573.0,16.8,52.3,31.3,8.1,7.0,1024,29
+686,Korean Soup Tomato,lunch,Korean,434,g,688.0,45.4,5.4,28.4,5.4,5.4,167,34
+687,Ethiopian Tofu Pesto,vegan,Ethiopian,227,g,289.0,20.7,23.7,23.5,10.2,4.2,551,121
+688,Moroccan Taco Casserole,pasta,Moroccan,1,piece,541.0,19.6,52.9,24.3,1.8,6.7,578,120
+689,Peruvian Sujuk Ramen Style,soup,Peruvian,336,g,174.0,21.0,29.5,17.8,11.8,29.5,923,163
+690,Moroccan Curry Roll,snack,Moroccan,1,piece,473.0,22.6,30.7,29.2,3.8,7.1,442,119
+691,Korean Sfiha Pesto,snack,Korean,419,ml,636.0,20.5,37.5,19.8,10.8,19.3,939,70
+692,Peruvian Stew Pesto,drink,Peruvian,402,ml,210.0,11.9,39.0,4.1,1.9,21.3,815,23
+693,Indian Chicken Garlic,bowl,Indian,258,g,635.0,28.7,66.7,8.2,9.6,22.9,139,24
+694,Ethiopian Rice With Pita,rice,Ethiopian,252,g,546.0,28.5,43.9,29.1,9.8,16.1,882,144
+695,Greek Porridge Miso,wrap,Greek,2,piece,518.0,26.2,53.3,12.2,10.0,29.7,1524,14
+696,Peruvian Sujuk On Quinoa,bowl,Peruvian,253,ml,676.0,18.4,94.3,12.8,6.2,1.5,835,84
+697,Moroccan Shawarma Lemon,rice,Moroccan,133,g,723.0,34.0,85.1,17.2,3.5,24.6,516,51
+698,Thai Cauliflower Garlic,bowl,Thai,481,ml,436.0,26.3,44.3,11.9,3.5,2.7,823,76
+699,British Stew Tahini,vegetarian,British,281,g,519.0,13.4,21.5,36.2,5.9,14.5,318,78
+700,French Burrito Teriyaki,wrap,French,405,g,798.0,32.0,48.2,16.3,1.4,23.8,1125,52
+701,Japanese Sambousek Skewers,vegan,Japanese,2,piece,520.0,5.9,13.9,26.8,6.7,5.9,912,137
+702,Lebanese Cauliflower Tahini,rice,Lebanese,341,ml,536.0,14.7,70.5,9.3,7.4,2.5,784,109
+703,Lebanese Waffle Yogurt,vegetarian,Lebanese,1,piece,305.0,9.9,22.4,21.6,7.5,13.9,985,27
+704,Chinese Burrito Sumac,seafood,Chinese,1,piece,432.0,23.1,3.5,23.4,3.5,3.5,1505,53
+705,Lebanese Mujadara Baked,stew,Lebanese,409,ml,618.0,42.8,31.7,29.8,6.1,12.4,444,46
+706,Lebanese Quinoa On Quinoa,stew,Lebanese,317,ml,490.0,30.2,54.2,15.0,8.7,10.0,1227,48
+707,Peruvian Mushroom Baked,vegetarian,Peruvian,2,piece,212.0,16.6,45.6,5.9,5.1,24.7,610,59
+708,Italian Mushroom With Hummus,vegan,Italian,1,piece,223.0,16.4,42.0,12.4,10.2,28.6,604,36
+709,Lebanese Shish Taouk Vindaloo,breakfast,Lebanese,285,g,633.0,9.7,28.7,6.2,8.2,21.9,177,127
+710,Spanish Fatteh Stir-Fry,drink,Spanish,145,g,169.0,11.2,45.1,0.2,9.2,27.1,1412,15
+711,Spanish Shawarma Shoyu,grill,Spanish,2,piece,428.0,32.1,10.3,33.5,7.0,10.3,699,34
+712,Japanese Sushi Pesto,vegetarian,Japanese,205,ml,330.0,12.2,21.8,20.3,1.7,6.4,1387,60
+713,Greek Stuffed Grape Leaves On Rice,snack,Greek,243,ml,570.0,13.4,58.6,12.0,12.1,19.0,251,68
+714,Ethiopian Fish Korma,sandwich,Ethiopian,323,ml,692.0,35.5,43.1,26.3,7.5,26.5,496,33
+715,Vietnamese Stuffed Grape Leaves Pesto,stew,Vietnamese,338,ml,467.0,32.3,41.2,25.1,10.0,11.5,204,18
+716,Ethiopian Turkey Miso,salad,Ethiopian,132,g,316.0,8.3,37.6,19.4,9.0,16.2,662,46
+717,Thai Curry On Quinoa,dessert,Thai,2,piece,479.0,3.3,43.6,25.4,9.7,28.4,628,96
+718,Indian Shrimp Vindaloo,drink,Indian,2,piece,50.0,2.3,29.3,0.8,11.8,17.6,381,111
+719,Lebanese Pancake Garlic,bowl,Lebanese,235,g,578.0,16.1,80.8,31.6,3.5,23.7,1266,89
+720,British Soup Green Curry,dessert,British,2,piece,251.0,3.4,76.4,14.1,3.7,3.2,1284,98
+721,Turkish Fatteh Butter,dessert,Turkish,175,g,639.0,10.7,33.4,31.4,2.4,5.3,1432,55
+722,Lebanese Rice Butter,bowl,Lebanese,290,ml,634.0,15.8,61.8,26.0,7.9,9.8,1169,46
+723,British Porridge Stir-Fry,salad,British,1,piece,349.0,14.8,36.8,13.4,2.0,29.0,1094,30
+724,Korean Mezze Shoyu,pasta,Korean,323,g,699.0,35.3,50.1,15.8,10.5,28.0,366,54
+725,Peruvian Manousheh Teriyaki,snack,Peruvian,2,piece,572.0,12.0,35.0,21.2,1.1,22.8,513,109
+726,Lebanese Pancake Tandoori,seafood,Lebanese,252,ml,479.0,33.9,15.3,6.6,4.4,15.3,1033,105
+727,Lebanese Fish Miso,snack,Lebanese,2,piece,423.0,38.6,34.8,33.0,8.7,23.9,625,116
+728,Mexican Curry Bowl,pasta,Mexican,1,piece,694.0,28.7,42.5,28.6,6.0,20.9,225,67
+729,Indian Tuna Bowl,wrap,Indian,282,ml,531.0,21.2,83.4,27.4,7.3,14.5,293,15
+730,Mexican Sayadieh Garlic,breakfast,Mexican,191,g,407.0,10.7,56.2,14.3,10.6,20.3,1433,32
+731,American Grilled Veggies Casserole,rice,American,212,g,555.0,20.6,90.4,12.8,2.6,27.0,438,64
+732,Greek Sayadieh Vindaloo,pasta,Greek,448,ml,678.0,15.6,109.6,23.6,2.4,17.6,1534,71
+733,Thai Soup Stir-Fry,vegan,Thai,289,g,226.0,9.0,18.5,31.5,6.2,18.3,748,72
+734,Peruvian Shawarma Roasted,lunch,Peruvian,1,piece,712.0,23.3,31.4,17.3,11.0,5.7,619,26
+735,Lebanese Omelette Pho Style,bowl,Lebanese,1,piece,570.0,37.7,62.0,18.1,4.7,21.9,574,167
+736,Lebanese Sayadieh Stir-Fry,wrap,Lebanese,1,piece,381.0,26.6,109.8,33.3,12.2,29.7,413,163
+737,American Falafel On Rice,lunch,American,384,g,476.0,21.9,4.7,11.3,4.7,4.7,217,35
+738,Italian Sambousek Red Curry,drink,Italian,201,ml,69.0,7.8,11.7,4.5,2.8,11.7,606,70
+739,French Shish Taouk Spicy,stew,French,431,ml,716.0,45.0,46.0,19.8,5.1,2.2,807,120
+740,Chinese Sayadieh Pesto,salad,Chinese,308,ml,337.0,4.8,29.7,16.3,1.3,6.6,777,6
+741,Italian Rice Herb 1,salad,Italian,293,ml,446.0,15.5,20.3,35.7,2.7,12.7,885,18
+742,Greek Stuffed Grape Leaves Sumac,snack,Greek,173,g,303.0,24.8,63.9,5.3,7.9,19.8,692,8
+743,French Sushi With Hummus,bowl,French,413,ml,658.0,35.3,43.1,10.1,4.8,20.5,1190,11
+744,Peruvian Waffle Tandoori,vegan,Peruvian,214,ml,252.0,7.1,26.0,15.4,10.3,19.8,449,51
+745,Lebanese Tabbouleh With Pita,salad,Lebanese,205,ml,257.0,16.3,28.4,14.4,0.8,20.4,425,12
+746,American Hummus With Pita,wrap,American,406,ml,427.0,32.3,91.5,25.3,6.1,12.8,209,55
+747,French Kafta On Rice,dinner,French,320,ml,388.0,42.5,45.3,28.5,1.4,27.8,1472,128
+748,Thai Potato Roll,vegetarian,Thai,372,ml,221.0,22.2,18.4,24.0,2.5,14.1,171,59
+749,Thai Mushroom Plate,wrap,Thai,397,ml,484.0,24.4,97.4,25.0,1.7,6.9,1122,36
+750,British Porridge With Veggies,wrap,British,1,piece,799.0,10.8,66.4,16.7,5.8,14.4,1190,35
+751,Spanish Mujadara Pho Style,lunch,Spanish,328,g,501.0,26.3,14.9,31.3,4.3,7.9,502,97
+752,British Salad Shoyu,pasta,British,498,ml,386.0,41.9,84.5,21.6,3.4,29.6,322,103
+753,French Eggplant Pho Style,soup,French,253,ml,166.0,20.0,30.4,8.7,5.0,21.7,671,92
+754,Greek Sushi Green Curry,stew,Greek,1,piece,691.0,34.1,30.7,30.5,5.7,27.9,367,46
+755,Turkish Sambousek Roasted,salad,Turkish,374,ml,322.0,13.6,16.8,6.0,3.1,16.8,826,13
+756,Moroccan Waffle Pesto,stew,Moroccan,307,g,548.0,22.4,27.1,30.0,11.4,21.0,943,147
+757,Mexican Tuna Butter,sandwich,Mexican,2,piece,525.0,19.9,108.7,12.7,6.1,7.8,1009,167
+758,Korean Pancake With Veggies,snack,Korean,200,g,607.0,12.8,73.8,26.9,5.5,16.5,812,65
+759,Japanese Eggplant Green Curry,vegetarian,Japanese,1,piece,343.0,19.6,20.3,17.0,10.0,20.3,622,114
+760,Korean Halloumi Herb,snack,Korean,427,ml,487.0,32.2,64.6,15.2,7.7,4.1,433,73
+761,Turkish Burger Korma,dinner,Turkish,369,g,456.0,40.2,23.3,20.2,3.5,8.3,170,22
+762,Lebanese Salad With Hummus,pasta,Lebanese,1,piece,720.0,13.7,78.4,18.4,5.2,8.2,1065,103
+763,Thai Porridge Tomato,dessert,Thai,400,g,531.0,3.4,27.8,17.2,6.9,27.8,899,82
+764,Greek Shawarma Vindaloo,vegan,Greek,313,ml,492.0,17.0,38.2,18.4,5.7,10.8,985,9
+765,Indian Pancake Baked,dessert,Indian,1,piece,471.0,6.9,69.7,5.6,9.5,25.8,1265,150
+766,Greek Porridge Roasted,rice,Greek,352,ml,448.0,36.9,94.2,20.5,1.3,22.7,698,79
+767,Mexican Cauliflower Tandoori,sandwich,Mexican,133,g,569.0,24.2,42.3,10.5,9.2,1.7,1246,76
+768,Chinese Burger Roasted,seafood,Chinese,2,piece,273.0,40.5,2.2,14.9,2.2,2.2,262,96
+769,Thai Eggplant Miso,wrap,Thai,1,piece,714.0,28.5,72.0,6.0,9.2,18.1,800,28
+770,Ethiopian Quinoa Green Curry,grill,Ethiopian,232,g,606.0,34.2,39.5,11.0,9.2,5.5,129,143
+771,Lebanese Shish Taouk Shoyu,dinner,Lebanese,1,piece,717.0,32.2,40.1,22.5,2.6,23.4,1173,34
+772,Turkish Halloumi On Rice,seafood,Turkish,1,piece,487.0,28.2,5.8,13.0,2.5,4.8,1037,52
+773,Vietnamese Sayadieh Stir-Fry,wrap,Vietnamese,427,g,554.0,35.2,60.3,10.1,4.3,10.5,1131,70
+774,Spanish Shish Taouk Sumac,breakfast,Spanish,439,g,361.0,28.5,65.7,30.5,0.7,20.3,391,109
+775,Lebanese Sujuk On Quinoa,wrap,Lebanese,2,piece,459.0,17.2,78.5,32.2,1.8,7.6,594,80
+776,Vietnamese Sayadieh Za'atar,lunch,Vietnamese,2,piece,610.0,25.7,58.5,23.5,1.2,1.7,585,84
+777,Lebanese Fatteh Skewers,drink,Lebanese,493,ml,230.0,13.2,51.2,7.1,7.2,27.7,731,52
+778,Japanese Sfiha Plate,grill,Japanese,374,g,310.0,40.4,41.3,15.4,9.7,25.4,688,132
+779,Korean Kafta Tahini,pasta,Korean,2,piece,498.0,30.0,112.3,10.7,8.4,13.7,1314,136
+780,Mediterranean Manousheh Plate,vegan,Mediterranean,1,piece,165.0,15.3,38.4,29.1,6.2,17.5,1008,119
+781,Brazilian Shrimp Masala,vegetarian,Brazilian,309,g,371.0,19.8,18.3,7.9,9.2,18.3,838,156
+782,American Tuna Pho Style,dinner,American,336,ml,587.0,37.6,51.5,28.9,4.6,7.9,884,56
+783,Turkish Cauliflower Ramen Style,dessert,Turkish,2,piece,437.0,6.8,35.7,27.8,10.4,25.1,1037,86
+784,American Halloumi Plate,salad,American,2,piece,469.0,19.8,27.8,32.3,4.1,9.1,420,32
+785,Moroccan Mushroom With Pita,sandwich,Moroccan,165,g,746.0,22.9,97.3,16.7,5.5,22.1,1128,60
+786,Spanish Omelette Baked,rice,Spanish,439,g,635.0,30.1,83.7,11.8,3.2,31.0,1255,63
+787,Moroccan Sushi With Hummus,dinner,Moroccan,276,ml,374.0,34.8,5.8,31.7,5.4,5.8,650,161
+788,Moroccan Cauliflower Grilled,grill,Moroccan,2,piece,481.0,33.5,58.1,15.6,8.0,9.8,318,40
+789,American Sfiha Butter,drink,American,140,g,270.0,10.8,57.8,4.9,5.8,12.4,391,163
+790,Mexican Shrimp Plate,snack,Mexican,261,ml,452.0,22.2,80.9,24.8,0.9,0.8,166,78
+791,American Stew Za'atar,lunch,American,2,piece,370.0,20.8,23.8,13.8,5.2,2.0,1432,73
+792,Brazilian Fattoush Butter,breakfast,Brazilian,469,ml,333.0,17.0,43.0,39.0,8.3,2.9,811,134
+793,American Lentil Tomato,drink,American,1,piece,61.0,14.6,31.1,1.4,3.4,13.6,1127,57
+794,Peruvian Shish Taouk Spicy,dessert,Peruvian,326,ml,497.0,6.2,80.3,5.6,10.2,10.8,174,29
+795,American Shrimp Sumac,sandwich,American,203,ml,539.0,34.0,50.6,29.7,11.1,11.6,1419,69
+796,Lebanese Stuffed Grape Leaves Masala,dessert,Lebanese,301,ml,649.0,4.1,77.7,19.7,6.8,20.0,1045,54
+797,Italian Stuffed Grape Leaves Plate,wrap,Italian,1,piece,496.0,26.0,52.4,24.1,4.3,28.7,596,76
+798,Italian Tuna Sumac,vegan,Italian,1,piece,488.0,9.5,10.6,27.1,4.6,10.6,331,138
+799,Brazilian Sfiha Vindaloo,sandwich,Brazilian,243,g,404.0,15.3,86.3,24.5,10.4,23.0,337,154
+800,Indian Tabbouleh Za'atar,rice,Indian,2,piece,816.0,26.1,53.7,36.0,0.5,8.2,961,54
+801,British Fish Harissa,dinner,British,167,g,629.0,39.9,46.4,31.6,3.1,22.1,949,58
+802,Lebanese Chickpea Sumac,dessert,Lebanese,359,g,495.0,7.4,38.6,9.3,3.7,9.9,1003,83
+803,British Fattoush Baked,bowl,British,2,piece,598.0,13.1,117.0,34.9,4.8,8.8,1599,65
+804,French Omelette Garlic,wrap,French,2,piece,760.0,35.2,59.8,9.7,12.9,19.4,1016,62
+805,Vietnamese Pasta Roll,wrap,Vietnamese,1,piece,677.0,34.3,88.7,31.3,7.6,9.6,1010,39
+806,Lebanese Potato Ramen Style,seafood,Lebanese,266,ml,432.0,28.6,32.1,23.1,6.6,19.5,967,104
+807,Lebanese Omelette Roasted,snack,Lebanese,1,piece,705.0,17.7,58.1,27.1,7.7,25.2,1143,6
+808,Korean Lamb Sumac,vegan,Korean,2,piece,292.0,21.0,15.9,9.4,7.0,8.9,473,59
+809,Korean Kibbeh With Pita,dessert,Korean,492,ml,342.0,5.9,29.6,19.8,12.5,8.3,1281,35
+810,Brazilian Shish Taouk With Pita,rice,Brazilian,398,g,768.0,20.9,86.8,28.7,10.6,7.1,1319,16
+811,Spanish Porridge Lemon,seafood,Spanish,260,ml,515.0,30.1,9.5,12.9,4.4,4.5,330,2
+812,Thai Tabbouleh Red Curry,vegetarian,Thai,1,piece,385.0,6.3,12.8,25.5,10.7,12.8,1254,22
+813,Greek Halloumi Casserole 1,rice,Greek,2,piece,413.0,42.6,75.7,7.7,7.3,21.4,531,84
+814,Chinese Noodles Yogurt,sandwich,Chinese,124,g,492.0,11.4,88.6,32.4,5.6,17.7,966,70
+815,Peruvian Fatteh Teriyaki,rice,Peruvian,2,piece,534.0,35.4,72.9,17.2,11.6,7.3,899,12
+816,Turkish Stew Ramen Style,sandwich,Turkish,151,g,794.0,41.2,93.2,22.4,1.8,25.8,451,57
+817,Brazilian Burger Stir-Fry,sandwich,Brazilian,2,piece,601.0,25.0,87.8,8.5,12.9,0.7,797,112
+818,Vietnamese Tofu With Pita,drink,Vietnamese,435,g,102.0,13.2,19.9,0.3,7.2,19.9,1150,20
+819,Korean Kafta Tomato,grill,Korean,2,piece,555.0,32.6,49.5,36.2,7.6,27.2,1534,8
+820,Lebanese Waffle Skewers,dinner,Lebanese,1,piece,390.0,25.3,61.6,30.2,12.4,26.2,168,155
+821,Lebanese Salad Za'atar 1,rice,Lebanese,314,ml,536.0,33.7,50.3,14.3,2.4,12.3,445,13
+822,Indian Kafta Miso,dinner,Indian,292,g,279.0,33.7,53.2,8.6,4.3,4.6,1306,76
+823,Spanish Tofu Lemon,pasta,Spanish,330,g,567.0,25.7,107.0,8.7,8.3,4.6,628,27
+824,Mexican Beef Wrap,bowl,Mexican,2,piece,651.0,12.5,97.0,30.5,1.6,18.9,859,24
+825,Indian Burger Red Curry,stew,Indian,435,ml,658.0,35.8,7.8,13.3,1.9,7.8,724,115
+826,Mediterranean Mujadara Ramen Style 1,seafood,Mediterranean,399,g,270.0,34.8,26.2,15.6,8.2,15.0,1113,98
+827,American Tabbouleh Shoyu,soup,American,330,ml,155.0,6.8,12.0,12.0,7.9,9.7,1570,129
+828,Mediterranean Turkey Grilled,lunch,Mediterranean,467,ml,618.0,35.2,14.1,16.0,1.0,0.8,1411,59
+829,Lebanese Fatteh Masala,wrap,Lebanese,2,piece,604.0,31.7,45.0,12.7,6.0,5.8,443,53
+830,Vietnamese Lamb Za'atar,breakfast,Vietnamese,417,g,244.0,15.0,60.8,26.6,10.4,9.4,344,58
+831,Lebanese Pancake Pesto,drink,Lebanese,2,piece,256.0,8.2,28.1,9.9,7.4,12.6,1271,112
+832,Lebanese Sujuk Stir-Fry,wrap,Lebanese,389,g,585.0,28.8,86.2,17.9,8.7,13.8,1063,36
+833,Lebanese Tofu Lemon,seafood,Lebanese,1,piece,535.0,24.3,18.8,21.8,4.7,14.8,472,84
+834,French Falafel Red Curry,soup,French,260,ml,266.0,6.1,21.3,4.3,0.9,10.6,215,101
+835,Moroccan Fatteh Herb,bowl,Moroccan,379,ml,357.0,36.8,90.7,11.1,2.8,9.2,876,146
+836,Japanese Burger Tahini,pasta,Japanese,1,piece,515.0,37.9,74.5,12.4,7.6,10.0,1101,4
+837,Chinese Soup Garlic,grill,Chinese,300,g,402.0,19.6,7.8,20.0,0.6,7.8,1015,46
+838,French Sujuk Bowl,breakfast,French,1,piece,392.0,23.2,61.1,31.5,0.9,16.3,146,131
+839,Peruvian Sambousek Za'atar,grill,Peruvian,473,ml,438.0,36.3,20.2,37.1,8.4,15.5,1463,78
+840,Lebanese Sujuk Teriyaki,salad,Lebanese,241,g,169.0,22.5,16.1,20.1,9.3,16.1,462,68
+841,Greek Pasta Harissa,rice,Greek,420,ml,516.0,20.3,61.4,14.5,4.8,20.4,379,32
+842,Indian Burger Red Curry 1,pasta,Indian,312,ml,480.0,21.4,71.6,21.4,5.6,26.7,1413,136
+843,Indian Shrimp Za'atar,vegetarian,Indian,1,piece,542.0,5.6,17.7,22.6,2.6,17.7,1089,126
+844,Peruvian Lentil Harissa,soup,Peruvian,340,ml,421.0,8.8,39.1,8.0,11.6,19.0,1174,145
+845,Lebanese Fish With Veggies,breakfast,Lebanese,223,g,694.0,14.4,20.3,13.3,10.8,11.6,1465,99
+846,Vietnamese Tabbouleh On Rice,salad,Vietnamese,384,g,222.0,23.5,16.3,8.9,11.4,12.8,930,104
+847,Japanese Eggplant Herb,sandwich,Japanese,229,ml,363.0,36.0,72.2,19.6,9.2,17.4,1465,57
+848,Peruvian Burrito Pho Style,breakfast,Peruvian,465,ml,734.0,33.8,15.0,10.3,4.2,12.5,345,168
+849,Indian Tabbouleh Grilled,stew,Indian,380,ml,662.0,18.6,54.2,19.4,2.5,25.6,386,45
+850,Lebanese Fish Pesto,salad,Lebanese,1,piece,305.0,12.7,10.6,25.5,8.6,10.6,213,81
+851,Lebanese Fattoush Za'atar,breakfast,Lebanese,418,g,383.0,8.8,49.4,28.8,4.3,23.6,1273,123
+852,Lebanese Mezze Teriyaki,pasta,Lebanese,1,piece,431.0,11.3,64.7,23.1,8.8,24.8,1183,129
+853,American Potato Skewers,snack,American,243,g,327.0,34.8,74.0,31.6,0.6,0.4,1262,142
+854,American Porridge With Veggies,bowl,American,1,piece,429.0,32.9,57.1,29.2,1.5,2.9,1516,0
+855,Chinese Sujuk On Quinoa,dinner,Chinese,2,piece,469.0,22.2,54.1,22.2,2.4,7.9,960,126
+856,Mexican Tuna Tahini,dinner,Mexican,243,ml,507.0,45.8,40.6,25.2,1.3,5.2,525,148
+857,Peruvian Sushi Casserole,wrap,Peruvian,260,g,658.0,29.3,70.4,22.8,10.6,6.9,1059,9
+858,Greek Waffle Shoyu,lunch,Greek,342,g,719.0,33.0,60.0,26.8,4.2,23.6,1411,114
+859,Italian Noodles With Pita,stew,Italian,2,piece,458.0,27.1,31.3,22.3,8.9,6.7,348,108
+860,Korean Burger Tandoori,rice,Korean,245,ml,664.0,21.0,103.6,30.5,9.3,11.1,1285,23
+861,Moroccan Lentil Ramen Style,salad,Moroccan,191,g,150.0,13.8,18.6,10.4,5.9,4.5,1208,130
+862,Indian Rice Shoyu,seafood,Indian,280,g,482.0,28.8,3.2,24.0,3.2,3.2,314,82
+863,Indian Fattoush Garlic,breakfast,Indian,389,ml,528.0,19.1,16.9,9.3,3.6,16.9,1201,134
+864,Lebanese Manousheh Harissa,bowl,Lebanese,189,g,504.0,17.3,102.6,15.3,11.2,29.6,1224,90
+865,Turkish Shawarma Pho Style 1,drink,Turkish,353,g,181.0,3.5,46.6,6.3,10.0,16.3,1241,57
+866,Lebanese Burger Stir-Fry,seafood,Lebanese,268,g,504.0,38.4,8.0,7.6,8.0,1.7,444,97
+867,British Hummus On Quinoa,drink,British,495,ml,202.0,12.9,37.1,8.1,12.1,30.3,299,122
+868,Indian Tabbouleh Pesto,vegan,Indian,326,ml,474.0,5.2,19.0,9.3,0.8,19.0,1163,12
+869,American Soup Garlic,rice,American,1,piece,444.0,34.4,65.0,10.6,6.8,7.7,839,46
+870,Mediterranean Taco With Hummus,vegetarian,Mediterranean,224,g,419.0,15.3,30.6,23.3,4.8,9.4,1218,5
+871,Peruvian Sushi Roll,lunch,Peruvian,2,piece,393.0,21.9,9.6,13.2,7.1,9.6,486,132
+872,Lebanese Shish Taouk Skewers 1,stew,Lebanese,320,ml,345.0,33.0,51.0,28.2,7.2,2.8,427,26
+873,Japanese Stuffed Grape Leaves Red Curry,lunch,Japanese,137,g,655.0,24.3,7.1,13.4,3.1,4.4,1274,77
+874,Lebanese Burrito Plate,grill,Lebanese,2,piece,524.0,21.7,17.2,9.7,3.4,15.9,648,13
+875,Ethiopian Mortadella Yogurt,salad,Ethiopian,296,g,499.0,19.2,19.2,21.0,6.2,4.6,385,94
+876,Turkish Eggplant Casserole,rice,Turkish,208,ml,668.0,31.8,81.5,19.1,2.8,1.3,1322,127
+877,Indian Sfiha Yogurt,grill,Indian,2,piece,436.0,18.6,37.2,22.0,10.1,7.1,778,46
+878,Mexican Burrito Za'atar,soup,Mexican,1,piece,422.0,16.6,12.6,9.9,6.6,8.1,1407,130
+879,Lebanese Beef Roll,breakfast,Lebanese,432,g,655.0,15.9,32.4,24.5,2.3,1.6,410,30
+880,Lebanese Stuffed Grape Leaves Plate,wrap,Lebanese,431,ml,791.0,20.0,61.2,34.6,11.2,25.2,422,154
+881,Lebanese Tuna Bowl,seafood,Lebanese,148,g,309.0,38.9,16.2,15.0,3.4,16.2,727,108
+882,Italian Beef Wrap,rice,Italian,329,ml,584.0,15.9,42.7,33.4,8.4,30.0,1387,118
+883,Indian Mujadara Stir-Fry,breakfast,Indian,197,g,401.0,7.6,46.4,33.7,9.6,12.4,1356,73
+884,Mediterranean Pancake With Hummus,dinner,Mediterranean,446,ml,554.0,30.4,55.5,28.1,6.8,9.8,1018,66
+885,Greek Sayadieh Casserole,pasta,Greek,388,g,669.0,24.1,75.8,16.0,5.3,17.6,1303,51
+886,Korean Sambousek Garlic,vegetarian,Korean,233,g,567.0,27.0,16.5,16.7,8.5,16.5,1418,100
+887,Indian Falafel Harissa,rice,Indian,446,g,629.0,27.1,84.9,14.2,7.2,29.9,1206,115
+888,Lebanese Soup Sumac,pasta,Lebanese,2,piece,547.0,28.4,96.1,27.0,12.3,7.0,1047,25
+889,Indian Halloumi Korma,vegan,Indian,422,g,387.0,10.1,32.9,12.7,2.6,17.3,1294,27
+890,Lebanese Sayadieh Skewers,salad,Lebanese,203,g,523.0,13.2,22.2,16.8,8.4,8.9,645,32
+891,Peruvian Sambousek Korma,lunch,Peruvian,284,g,493.0,28.2,33.4,31.8,9.9,24.9,756,101
+892,Vietnamese Lamb Korma,rice,Vietnamese,276,g,652.0,13.7,99.5,29.3,12.2,15.0,1265,42
+893,Mediterranean Sayadieh Miso,vegetarian,Mediterranean,322,g,180.0,17.8,29.4,24.1,0.8,14.5,205,27
+894,Peruvian Stuffed Grape Leaves Roll,vegetarian,Peruvian,375,ml,400.0,13.8,38.7,12.8,2.2,8.1,537,16
+895,Italian Potato Bowl,seafood,Italian,432,ml,503.0,40.3,21.9,5.6,2.5,9.6,1004,127
+896,Korean Halloumi Garlic,snack,Korean,163,g,672.0,27.4,11.6,19.4,9.4,11.6,1068,139
+897,Lebanese Lamb Stir-Fry,seafood,Lebanese,367,ml,428.0,23.3,8.5,25.8,5.0,8.5,1492,155
+898,Lebanese Salad Lemon,dinner,Lebanese,1,piece,542.0,32.2,32.4,19.0,10.6,17.9,838,16
+899,Lebanese Fatteh Sumac,drink,Lebanese,242,g,159.0,7.5,7.3,3.0,6.3,7.3,1176,48
+900,Vietnamese Mujadara Butter,soup,Vietnamese,343,ml,164.0,14.3,30.3,11.9,10.4,4.7,316,87
+901,Italian Salad Garlic,dinner,Italian,326,g,476.0,37.2,55.4,29.7,5.1,22.1,175,50
+902,Indian Mortadella Miso,pasta,Indian,2,piece,428.0,35.3,69.8,31.8,6.0,11.6,1254,96
+903,Ethiopian Rice Plate,dinner,Ethiopian,219,ml,366.0,50.4,14.1,27.4,5.1,12.8,824,139
+904,Thai Fattoush Butter,stew,Thai,1,piece,620.0,43.4,36.2,22.4,8.1,17.4,1165,21
+905,Vietnamese Curry Skewers,vegetarian,Vietnamese,388,ml,573.0,24.6,33.7,13.0,12.2,10.6,492,33
+906,Indian Sambousek Harissa,vegan,Indian,279,ml,311.0,17.7,35.9,30.8,2.0,22.5,512,106
+907,Brazilian Burger Ramen Style,soup,Brazilian,1,piece,359.0,22.6,28.4,6.1,9.6,24.9,372,103
+908,Chinese Salad Tandoori,dessert,Chinese,1,piece,311.0,2.5,31.5,15.5,6.5,11.2,201,123
+909,Vietnamese Omelette Stir-Fry,vegetarian,Vietnamese,2,piece,215.0,5.6,23.4,32.3,6.9,13.4,612,17
+910,Greek Lamb Skewers,lunch,Greek,232,ml,499.0,20.4,9.5,25.9,5.0,1.1,951,8
+911,British Rice Pesto,grill,British,192,g,534.0,39.3,52.4,16.4,3.0,0.6,865,113
+912,Spanish Shrimp Grilled,breakfast,Spanish,2,piece,644.0,14.3,36.6,7.8,9.6,6.2,704,24
+913,Chinese Potato On Rice,breakfast,Chinese,373,ml,488.0,18.0,22.3,8.3,1.4,20.9,713,115
+914,British Stew Stir-Fry,breakfast,British,410,g,434.0,28.6,40.4,15.9,6.1,18.0,1244,94
+915,Italian Shrimp Sumac,rice,Italian,191,g,515.0,18.5,91.2,32.5,4.9,26.7,1464,111
+916,Italian Sujuk Pho Style,breakfast,Italian,307,ml,200.0,18.8,35.0,18.9,5.3,9.9,467,138
+917,Lebanese Pancake Vindaloo,vegan,Lebanese,399,g,496.0,11.3,33.5,7.1,10.1,2.5,988,7
+918,Japanese Lentil Shoyu,grill,Japanese,461,ml,412.0,33.4,15.2,10.5,11.3,15.2,977,134
+919,Mexican Rice Garlic,seafood,Mexican,125,g,593.0,35.4,2.3,20.7,2.3,2.3,866,125
+920,Greek Stew Lemon,drink,Greek,379,g,117.0,4.1,16.0,9.7,6.2,16.0,659,26
+921,American Salad Stir-Fry,pasta,American,273,ml,425.0,13.2,56.9,24.4,9.1,2.0,635,0
+922,Vietnamese Soup Green Curry,rice,Vietnamese,1,piece,589.0,39.0,106.5,16.3,7.5,21.7,1159,120
+923,Lebanese Chickpea Wrap,seafood,Lebanese,144,g,628.0,43.1,3.6,24.2,3.6,3.6,160,81
+924,Indian Noodles Ramen Style,drink,Indian,1,piece,238.0,2.1,27.3,10.5,10.6,14.7,653,111
+925,Indian Fish Pesto,wrap,Indian,416,g,743.0,18.3,42.4,18.9,4.8,19.0,697,92
+926,Ethiopian Taco Skewers,lunch,Ethiopian,299,ml,451.0,35.1,5.8,11.0,5.8,5.8,207,83
+927,Lebanese Kafta Tandoori,rice,Lebanese,386,ml,505.0,12.2,80.4,10.1,5.9,15.4,1239,6
+928,Peruvian Sujuk With Veggies,drink,Peruvian,2,piece,207.0,2.0,37.0,8.3,2.5,27.0,454,32
+929,Lebanese Pasta Pho Style,soup,Lebanese,257,g,374.0,8.5,24.3,6.5,10.5,0.0,201,130
+930,Vietnamese Burger Garlic,sandwich,Vietnamese,1,piece,391.0,24.1,104.2,24.2,11.9,25.8,1455,41
+931,Turkish Curry Herb,stew,Turkish,2,piece,601.0,33.5,19.6,23.2,10.4,6.6,145,74
+932,Ethiopian Fish Ramen Style,rice,Ethiopian,440,ml,429.0,31.9,72.5,28.0,2.8,26.4,699,22
+933,Brazilian Fatteh Sumac,wrap,Brazilian,369,ml,475.0,16.9,82.0,32.9,8.0,22.8,1371,8
+934,Lebanese Beef With Veggies,seafood,Lebanese,235,ml,340.0,42.9,15.1,24.7,7.4,12.4,1320,46
+935,Mexican Omelette Za'atar,stew,Mexican,153,g,314.0,38.7,12.3,18.2,10.1,12.3,1130,103
+936,Lebanese Lamb Spicy,salad,Lebanese,495,ml,269.0,17.0,35.3,14.3,6.4,1.1,1227,47
+937,Lebanese Waffle Bowl,lunch,Lebanese,380,g,653.0,41.2,29.7,14.1,3.6,23.3,203,90
+938,Korean Shrimp Masala,dessert,Korean,283,g,300.0,4.1,48.6,14.6,2.3,13.6,715,146
+939,Spanish Fattoush On Quinoa,sandwich,Spanish,199,g,381.0,13.4,41.7,21.1,1.7,3.0,676,21
+940,Turkish Grilled Veggies Butter,sandwich,Turkish,322,ml,748.0,29.2,84.7,26.4,3.9,20.7,1319,102
+941,Spanish Fish Wrap,dinner,Spanish,316,ml,693.0,34.2,60.6,30.4,10.9,14.0,1297,124
+942,Turkish Chicken Garlic,salad,Turkish,324,ml,360.0,25.9,15.9,32.9,3.4,15.9,1504,151
+943,Lebanese Porridge With Hummus,breakfast,Lebanese,1,piece,544.0,18.3,17.4,34.3,12.5,6.5,347,116
+944,Ethiopian Curry Ramen Style,rice,Ethiopian,2,piece,435.0,32.8,90.4,7.1,11.5,17.6,515,158
+945,Thai Omelette Skewers,wrap,Thai,448,ml,580.0,25.8,109.9,24.4,12.0,27.0,461,45
+946,Mediterranean Mortadella Teriyaki,dessert,Mediterranean,295,g,234.0,10.2,57.6,18.0,5.8,30.6,1304,46
+947,Brazilian Sushi On Rice,breakfast,Brazilian,2,piece,469.0,24.7,43.9,25.4,9.9,26.8,1460,65
+948,Mexican Chicken Shoyu,soup,Mexican,228,g,187.0,14.1,10.4,15.8,8.3,4.7,488,38
+949,Moroccan Manousheh Roasted,salad,Moroccan,292,ml,387.0,16.9,13.1,36.4,11.1,13.1,131,40
+950,Japanese Shish Taouk Miso,snack,Japanese,236,ml,577.0,32.4,45.8,8.4,7.9,8.1,228,122
+951,Spanish Quinoa Plate,vegetarian,Spanish,2,piece,507.0,7.3,13.3,10.2,2.5,13.3,930,83
+952,Lebanese Shish Taouk Shoyu 1,rice,Lebanese,386,g,733.0,23.2,54.3,25.2,6.4,18.5,1135,163
+953,Vietnamese Sujuk On Quinoa,bowl,Vietnamese,1,piece,793.0,11.6,55.8,23.7,0.7,20.9,665,56
+954,Lebanese Falafel Spicy,bowl,Lebanese,316,g,546.0,12.2,44.9,18.4,10.8,19.7,534,90
+955,Turkish Rice Casserole,vegetarian,Turkish,403,g,169.0,10.8,43.0,8.9,3.4,11.2,325,53
+956,Italian Tofu Korma,pasta,Italian,421,ml,490.0,9.9,55.2,10.5,1.4,3.8,776,88
+957,Lebanese Sayadieh With Veggies,dessert,Lebanese,466,ml,312.0,4.0,82.6,12.8,3.9,27.1,942,92
+958,Brazilian Fattoush Red Curry,vegetarian,Brazilian,1,piece,464.0,18.3,10.4,29.8,4.9,10.4,448,7
+959,Lebanese Lamb Butter,seafood,Lebanese,321,ml,299.0,24.9,29.3,23.8,3.5,10.4,390,152
+960,French Taco Yogurt,breakfast,French,2,piece,301.0,35.8,65.5,24.2,12.6,0.2,891,46
+961,Indian Fish Shoyu,sandwich,Indian,322,g,537.0,35.6,61.9,10.2,12.0,12.6,939,44
+962,French Stuffed Grape Leaves Korma,dessert,French,442,g,373.0,3.3,38.4,8.2,2.4,17.8,264,99
+963,Mediterranean Fatteh Wrap,sandwich,Mediterranean,1,piece,518.0,38.3,58.3,9.1,0.5,6.2,268,109
+964,Turkish Lentil Baked,drink,Turkish,297,ml,151.0,11.0,45.1,5.7,3.0,32.7,435,60
+965,Chinese Rice Roll,dessert,Chinese,200,ml,401.0,2.3,76.8,6.3,5.4,8.0,640,130
+966,Lebanese Taco Vindaloo,breakfast,Lebanese,313,g,353.0,24.0,34.9,27.5,3.5,13.5,622,24
+967,Lebanese Stuffed Grape Leaves Korma,sandwich,Lebanese,265,ml,801.0,26.1,108.7,9.5,9.1,16.2,1106,44
+968,Thai Tofu Pho Style,breakfast,Thai,199,g,320.0,28.0,51.9,26.6,6.5,17.2,1145,79
+969,Vietnamese Lentil Plate,breakfast,Vietnamese,430,ml,608.0,20.1,31.7,22.7,2.8,22.8,1158,70
+970,Japanese Mujadara Pho Style,rice,Japanese,1,piece,520.0,28.7,102.2,15.4,10.4,10.7,1165,85
+971,Moroccan Sfiha Skewers,breakfast,Moroccan,306,g,271.0,19.3,12.8,21.6,6.7,12.8,264,159
+972,American Mushroom With Hummus,soup,American,132,g,117.0,16.3,11.2,6.8,6.9,11.2,387,51
+973,Lebanese Pancake Green Curry,dessert,Lebanese,2,piece,617.0,2.5,74.2,22.6,8.6,22.2,136,143
+974,Indian Halloumi Grilled,stew,Indian,2,piece,659.0,24.7,26.2,16.0,4.2,12.5,993,3
+975,Lebanese Turkey Lemon,dessert,Lebanese,197,g,202.0,3.1,71.4,9.9,3.5,1.7,670,89
+976,Indian Sambousek Shoyu,grill,Indian,347,g,619.0,21.2,23.7,11.6,0.8,4.8,1176,61
+977,Mexican Pasta Roasted,drink,Mexican,268,ml,270.0,8.5,22.9,7.2,9.0,22.9,1523,155
+978,Turkish Pancake Green Curry,salad,Turkish,2,piece,560.0,14.2,33.1,30.4,3.9,8.2,438,123
+979,Lebanese Sujuk Green Curry,grill,Lebanese,478,ml,691.0,21.6,43.0,32.2,3.1,20.9,1424,18
+980,Peruvian Fish Vindaloo,drink,Peruvian,297,g,90.0,13.2,13.3,5.9,7.2,13.3,438,85
+981,Lebanese Kafta Red Curry,dessert,Lebanese,393,g,219.0,5.9,78.5,9.1,9.5,20.7,240,23
+982,Moroccan Falafel On Quinoa,vegetarian,Moroccan,249,ml,272.0,22.9,11.5,29.2,9.9,11.5,1121,144
+983,Italian Falafel Tahini,dinner,Italian,485,ml,378.0,47.3,38.0,19.8,10.5,24.6,1047,126
+984,Turkish Sushi Casserole,snack,Turkish,278,ml,270.0,32.2,54.3,20.8,5.6,13.8,1286,11
+985,Thai Shawarma Za'atar,lunch,Thai,212,ml,482.0,18.3,36.9,7.9,3.4,7.2,580,53
+986,Ethiopian Mortadella Za'atar,drink,Ethiopian,1,piece,144.0,7.8,50.0,12.1,4.8,7.1,556,27
+987,Mediterranean Porridge Butter,lunch,Mediterranean,254,g,445.0,40.6,42.3,22.3,5.0,32.7,1293,135
+988,Ethiopian Fish Stir-Fry,dinner,Ethiopian,426,g,753.0,28.5,37.2,35.0,12.0,24.2,525,128
+989,Mexican Burrito Pesto,seafood,Mexican,1,piece,519.0,25.6,20.1,13.5,3.4,20.1,326,66
+990,Mexican Pasta On Rice,grill,Mexican,126,g,661.0,40.1,11.6,26.1,9.7,11.6,250,146
+991,Korean Tabbouleh Za'atar,rice,Korean,237,g,713.0,33.9,104.3,7.5,5.3,7.1,1091,56
+992,Thai Mujadara Grilled,breakfast,Thai,313,ml,424.0,16.3,28.7,26.3,10.3,15.9,1450,129
+993,Greek Curry Lemon,vegan,Greek,299,ml,577.0,15.3,41.9,7.3,9.0,1.2,1143,9
+994,Chinese Mushroom With Pita,soup,Chinese,393,g,209.0,12.2,31.3,9.1,3.1,4.3,266,15
+995,Ethiopian Stew Roll,snack,Ethiopian,2,piece,352.0,12.5,63.1,19.4,2.0,19.0,1471,6
+996,Mediterranean Shish Taouk Masala,dinner,Mediterranean,427,ml,404.0,27.5,27.4,19.4,4.7,15.0,1183,128
+997,Mexican Beef Ramen Style,breakfast,Mexican,230,g,407.0,22.8,60.2,23.3,0.7,20.6,580,101
+998,Thai Mezze Harissa,snack,Thai,411,g,597.0,23.4,63.1,16.5,11.5,2.5,1023,138
+999,Peruvian Tabbouleh Tomato,vegetarian,Peruvian,251,g,348.0,22.2,31.2,28.3,5.3,5.2,1141,153
+1000,Lebanese Noodles Stir-Fry,sandwich,Lebanese,301,ml,349.0,16.0,38.7,25.1,8.1,3.5,781,136
