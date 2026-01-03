@@ -24,20 +24,89 @@ class PlacesController extends Controller
         $lat    = (float) $request->query('lat', 33.8938);
         $lng    = (float) $request->query('lng', 35.5018);
         $radius = (int)   $request->query('radius', 1500);
-        $types  = (array) $request->query('types', ['gym','nutritionist']);
+
+        // Handle types - can be comma-separated string or array
+        $typesRaw = $request->query('types', 'gym,nutritionist');
+        $types = is_string($typesRaw) ? explode(',', $typesRaw) : (array) $typesRaw;
+        $types = array_filter(array_map('trim', $types));
 
         // Optional bbox sanity (if you pass bbox)
         if ($bbox = $request->query('bbox')) {
             $this->assertValidBbox($bbox);
         }
 
-        // Delegate to service (logic unchanged)
+        // Delegate to service
         $elements = $overpass->searchAround($lat, $lng, $radius, $types);
 
+        // Convert Overpass elements to GeoJSON
+        $features = [];
+        foreach ($elements as $el) {
+            $coords = $this->extractCoords($el);
+            if (!$coords) {
+                continue;
+            }
+
+            $tags = $el['tags'] ?? [];
+            $name = $tags['name'] ?? $tags['name:en'] ?? 'Unknown';
+            $amenity = $tags['amenity'] ?? '';
+            $healthcare = $tags['healthcare'] ?? '';
+
+            $category = 'other';
+            if ($amenity === 'gym' || str_contains(strtolower($name), 'gym')) {
+                $category = 'gym';
+            } elseif ($healthcare === 'nutritionist' || str_contains(strtolower($name), 'nutrition')) {
+                $category = 'nutritionist';
+            }
+
+            // fix address precedence
+            $address = $tags['addr:full']
+                ?? (($tags['addr:housenumber'] ?? '') . ' ' . ($tags['addr:street'] ?? ''))
+                ?? '';
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => $coords,
+                ],
+                'properties' => [
+                    'id' => ($el['type'] ?? 'node') . '#' . ($el['id'] ?? '0'),
+                    'name' => $name,
+                    'category' => $category,
+                    'address' => trim($address),
+                ],
+            ];
+        }
+
         return response()->json([
-            'count' => is_array($elements) ? count($elements) : 0,
-            'items' => $elements ?? [],
+            'type' => 'FeatureCollection',
+            'features' => $features,
         ]);
+    }
+
+    private function extractCoords(array $el): ?array
+    {
+        // For node elements
+        if (isset($el['lat'], $el['lon'])) {
+            return [(float) $el['lon'], (float) $el['lat']];
+        }
+
+        // For way/relation elements with center
+        if (isset($el['center']['lat'], $el['center']['lon'])) {
+            return [(float) $el['center']['lon'], (float) $el['center']['lat']];
+        }
+
+        // For way/relation elements with bounds
+        if (isset($el['bounds'])) {
+            $b = $el['bounds'];
+            if (isset($b['minlat'], $b['minlon'], $b['maxlat'], $b['maxlon'])) {
+                $lat = ($b['minlat'] + $b['maxlat']) / 2;
+                $lon = ($b['minlon'] + $b['maxlon']) / 2;
+                return [(float) $lon, (float) $lat];
+            }
+        }
+
+        return null;
     }
 
     private function assertValidBbox(string $bboxStr): array

@@ -6,71 +6,56 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Food;
 use App\Models\MealEntry;
 
+// controllers for nearby
+use App\Http\Controllers\PlacesController;
+use App\Http\Controllers\PlacesLocalController;
+
 /*
 |--------------------------------------------------------------------------
-| Minimal API used by Meal Tracker
+| API Routes
 |--------------------------------------------------------------------------
-| GET    /api/foods/search?q=labneh&page=1
-| POST   /api/meal-entries
-| DELETE /api/meal-entries/{id}
-|--------------------------------------------------------------------------
+| Here is where you can register API routes for your application.
+| These routes are loaded by the RouteServiceProvider and all of them
+| will be assigned to the "api" middleware group. Make something great!
+|
 */
+
+// ---------------- Existing meal-tracker endpoints ----------------
 
 Route::get('/foods/search', function (Request $request) {
     $q = trim((string) $request->query('q', ''));
     $perPage = (int) $request->query('per_page', 10);
 
     $query = Food::query()
-        ->select([
-            'id',
-            'name',
-            'brand',
-            'nationality',
-            'calories',
-            'protein_g',
-            'carbs_g',
-            'fat_g',
-        ])
-        // Postgres case-insensitive search
+        ->select(['id','name','brand','nationality','calories','protein_g','carbs_g','fat_g'])
         ->when($q !== '', fn ($qq) => $qq->where('name', 'ILIKE', "%{$q}%"))
         ->orderBy('name');
 
     $page = $query->paginate($perPage);
 
-    // Transform to the shape the TS page expects
     $page->getCollection()->transform(function ($f) {
-        // Defaults since your table has no serving_* columns
         $servingUnit = 'g';
         $servingSize = 100;
-
-        $protein = (float) $f->protein_g;
-        $carbs   = (float) $f->carbs_g;
-        $fat     = (float) $f->fat_g;
-        $kcal    = (float) $f->calories;
-
         return [
             'id'            => (int) $f->id,
             'name'          => (string) $f->name,
-            'serving_unit'  => $servingUnit,         // default
-            'serving_size'  => $servingSize,         // default
-            'calories'      => (int) round($kcal),
-            'calories_kcal' => (int) round($kcal),
-            'protein'       => (int) round($protein),
-            'protein_g'     => (int) round($protein),
-            'carbs'         => (int) round($carbs),
-            'carbs_g'       => (int) round($carbs),
-            'fat'           => (int) round($fat),
-            'fat_g'         => (int) round($fat),
-            // Optional: pass through brand/nationality if you want to show them later
-            // 'brand'         => $f->brand,
-            // 'nationality'   => $f->nationality,
+            'serving_unit'  => $servingUnit,
+            'serving_size'  => $servingSize,
+            'calories'      => (int) round((float) $f->calories),
+            'calories_kcal' => (int) round((float) $f->calories),
+            'protein'       => (int) round((float) $f->protein_g),
+            'protein_g'     => (int) round((float) $f->protein_g),
+            'carbs'         => (int) round((float) $f->carbs_g),
+            'carbs_g'       => (int) round((float) $f->carbs_g),
+            'fat'           => (int) round((float) $f->fat_g),
+            'fat_g'         => (int) round((float) $f->fat_g),
         ];
     });
 
     return response()->json($page);
 });
 
-// Create a meal entry (used by the “Add” dialog)
+// create meal entry
 Route::post('/meal-entries', function (Request $request) {
     $data = $request->validate([
         'food_id'   => ['required', 'integer', 'exists:foods,id'],
@@ -90,9 +75,19 @@ Route::post('/meal-entries', function (Request $request) {
     return response()->json(['ok' => true, 'id' => $entry->id], 201);
 })->middleware('auth');
 
-// Delete a meal entry
+// delete meal entry
 Route::delete('/meal-entries/{mealEntry}', function (MealEntry $mealEntry) {
     abort_unless(Auth::id() === $mealEntry->user_id, 403);
     $mealEntry->delete();
     return response()->json(['ok' => true]);
 })->middleware('auth');
+
+// ---------------- Nearby places (both sources) ----------------
+
+// Overpass / OSM-powered nearby search
+// this is what NearbyMap.tsx fetches as:  GET /api/places?lat=..&lng=..&radius=..&types=..
+Route::get('/places', [PlacesController::class, 'index']);
+
+// Your own DB table places_local
+// this is what we added in NearbyMap.tsx as the 2nd fetch: GET /api/places-local?...
+Route::get('/places-local', [PlacesLocalController::class, 'index']);

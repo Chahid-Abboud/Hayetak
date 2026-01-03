@@ -9,16 +9,32 @@ class WorkoutPlan extends Model
 {
     use HasFactory;
 
+    protected $table = 'workout_plans';
+
     protected $fillable = [
-        'user_id', 'name', 'goal', 'notes', 'is_active', 'is_public', 'meta',
+        'user_id',
+        'name',
+        'goal',
+        'notes',
+        'is_active',
+        'is_public',
+        'meta',
     ];
 
     protected $casts = [
+        'meta' => 'array',
         'is_active' => 'boolean',
         'is_public' => 'boolean',
-        'meta'      => 'array',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function days() { return $this->hasMany(WorkoutPlanDay::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function days()
+    {
+        return $this->hasMany(WorkoutPlanDay::class, 'workout_plan_id')
+                     ->orderBy('day_index');
+    }
 }

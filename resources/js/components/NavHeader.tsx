@@ -10,15 +10,24 @@ export default function NavHeader() {
     () => [
       { href: "/dashboard", label: "Home" },
       { href: "/track-meals", label: "Meal Tracker" },
-      { href: "/workouts/log", label: "Workout Log" },
+      { href: "/workouts", label: "Workouts" }, // 👈 Single entry
       { href: "/places", label: "Nearby" },
       { href: "/profile", label: "Profile" },
     ],
     []
   );
 
-  const isActive = (href: string) =>
-    typeof window !== "undefined" && window.location.pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (typeof window === "undefined") return false;
+    const path = window.location.pathname;
+
+    // Mark "Workouts" active for ANY /workouts/* subpage
+    if (href === "/workouts") {
+      return path.startsWith("/workouts");
+    }
+
+    return path === href;
+  };
 
   return (
     <header
@@ -31,14 +40,12 @@ export default function NavHeader() {
     >
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex h-14 items-center justify-between">
-          {/* Brand -> /dashboard */}
           <Link href="/dashboard" className="flex items-center gap-2">
             <span
               className="
                 inline-flex h-9 w-9 items-center justify-center rounded-xl
                 bg-[color:var(--sidebar-foreground)]/15 backdrop-blur-sm
               "
-              aria-hidden
             >
               <span
                 className="
@@ -86,8 +93,6 @@ export default function NavHeader() {
               inline-flex items-center justify-center rounded-lg p-2 md:hidden
               bg-[color:var(--sidebar-foreground)]/10
             "
-            aria-label="Toggle menu"
-            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             <svg
@@ -112,7 +117,8 @@ export default function NavHeader() {
         <div
           className="
             md:hidden border-t bg-gradient-to-b
-            from-[var(--sidebar)] to-[color-mix(in oklab, var(--sidebar) 70%, black 30%)]
+            from-[var(--sidebar)]
+            to-[color-mix(in oklab, var(--sidebar) 70%, black 30%)]
             border-[color:var(--sidebar-border)]
           "
         >
@@ -125,7 +131,6 @@ export default function NavHeader() {
                   rounded-lg px-3 py-2 transition
                   text-[color:var(--sidebar-foreground)]/90
                   hover:bg-[color:var(--sidebar-foreground)]/10
-                  hover:text-[color:var(--sidebar-foreground)]
                 "
                 onClick={() => setOpen(false)}
               >
@@ -139,7 +144,6 @@ export default function NavHeader() {
                 bg-[color:var(--destructive)]/15
                 text-[color:var(--destructive-foreground)]/95
                 hover:bg-[color:var(--destructive)]/25
-                hover:text-[color:var(--foreground)]
               "
             >
               Logout

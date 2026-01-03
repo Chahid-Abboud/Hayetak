@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Head, usePage, router } from "@inertiajs/react";
 import NavHeader from "@/components/NavHeader";
+import WorkoutTabs from "@/components/workouts/WorkoutTabs";
 
 /* =============== Types =============== */
 type Exercise = {
@@ -10,7 +11,14 @@ type Exercise = {
   equipment?: string | null;
   demo_url?: string | null;
 };
-type Day = { id: number; day_index: number; title?: string | null; exercises: Exercise[] } | null;
+type Day =
+  | {
+      id: number;
+      day_index: number;
+      title?: string | null;
+      exercises: Exercise[];
+    }
+  | null;
 type Plan = { id: number; name: string; days: Day[] } | null;
 
 type WorkoutLogSet = {
@@ -38,10 +46,16 @@ type Props = {
 };
 
 /* =============== Helpers/consts =============== */
-const MUSCLES = ["chest","back","shoulders","legs","glutes","biceps","triceps","core","calves"] as const;
+const MUSCLES = ["chest", "back", "shoulders", "legs", "glutes", "biceps", "triceps", "core", "calves"] as const;
 const PAGE_SIZE = 40;
 const normalize = (s: string) => s.toLowerCase().trim();
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString(); } catch { return iso; } };
+const fmtDate = (iso: string) => {
+  try {
+    return new Date(iso).toLocaleDateString();
+  } catch {
+    return iso;
+  }
+};
 
 function groupSetsByExercise(sets?: WorkoutLogSet[] | null) {
   const map = new Map<string, WorkoutLogSet[]>();
@@ -66,17 +80,27 @@ export default function LogPage() {
     return () => document.documentElement.removeAttribute("data-page");
   }, []);
 
-  const safeExercises: Exercise[] = Array.isArray((page.props as any).exercises) ? (page.props as any).exercises : [];
-  const safeRecentLogs: WorkoutLog[] = Array.isArray(recentLogs) ? recentLogs : [];
+  const safeExercises: Exercise[] = Array.isArray((page.props as any).exercises)
+    ? (page.props as any).exercises
+    : [];
+  const safeRecentLogs: WorkoutLog[] = Array.isArray(recentLogs)
+    ? recentLogs
+    : [];
 
   const propsRef = useRef<Props>(page.props);
-  useEffect(() => { propsRef.current = page.props; }, [page.props]);
+  useEffect(() => {
+    propsRef.current = page.props;
+  }, [page.props]);
 
   const latestLog = safeRecentLogs[0];
-  const activeLogIdRef = useRef<number | undefined>(flash?.activeLogId ?? latestLog?.id);
+  const activeLogIdRef = useRef<number | undefined>(
+    flash?.activeLogId ?? latestLog?.id
+  );
 
   const [isPickerOpen, setPickerOpen] = useState(false);
-  const [pickedDayId, setPickedDayId] = useState<number | "none">((currentDay?.id as number) ?? "none");
+  const [pickedDayId, setPickedDayId] = useState<number | "none">(
+    (currentDay?.id as number) ?? "none"
+  );
 
   const [weights, setWeights] = useState<Record<number, string>>({});
   const [reps, setReps] = useState<Record<number, string>>({});
@@ -85,7 +109,10 @@ export default function LogPage() {
   const [startedLocally, setStartedLocally] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const exercisesById = useMemo(() => new Map(safeExercises.map((e) => [e.id, e])), [safeExercises]);
+  const exercisesById = useMemo(
+    () => new Map(safeExercises.map((e) => [e.id, e])),
+    [safeExercises]
+  );
   const [fsSelected, setFsSelected] = useState<number[]>([]);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -101,20 +128,29 @@ export default function LogPage() {
   const filteredLibrary = useMemo(() => {
     const q = normalize(debounced);
     let list = safeExercises;
-    if (q) list = list.filter((e) => normalize(e.name).includes(q) || normalize(e.primary_muscle).includes(q));
+    if (q)
+      list = list.filter(
+        (e) =>
+          normalize(e.name).includes(q) ||
+          normalize(e.primary_muscle).includes(q)
+      );
     if (muscleFilters.length) {
       const s = new Set(muscleFilters);
       list = list.filter((e) => s.has(e.primary_muscle));
     }
     return [...list].sort((a, b) =>
       sortBy === "muscle"
-        ? normalize(a.primary_muscle).localeCompare(normalize(b.primary_muscle)) ||
-          normalize(a.name).localeCompare(normalize(b.name))
+        ? normalize(a.primary_muscle).localeCompare(
+            normalize(b.primary_muscle)
+          ) || normalize(a.name).localeCompare(normalize(b.name))
         : normalize(a.name).localeCompare(normalize(b.name))
     );
   }, [safeExercises, debounced, muscleFilters, sortBy]);
 
-  const pagedLibrary = useMemo(() => filteredLibrary.slice(0, visibleCount), [filteredLibrary, visibleCount]);
+  const pagedLibrary = useMemo(
+    () => filteredLibrary.slice(0, visibleCount),
+    [filteredLibrary, visibleCount]
+  );
 
   const toggleFsAdd = (exId: number) =>
     setFsSelected((prev) => (prev.includes(exId) ? prev : [...prev, exId]));
@@ -132,8 +168,15 @@ export default function LogPage() {
       .filter((s) => s.exercise?.id === exerciseId)
       .sort((a, b) => a.set_number - b.set_number);
 
-  const openStartDialog = () => { setPickerOpen(true); setPickedDayId((currentDay?.id as number) ?? "none"); };
-  const confirmStart = () => { setPickerOpen(false); setStartedLocally(true); setStatus(null); };
+  const openStartDialog = () => {
+    setPickerOpen(true);
+    setPickedDayId((currentDay?.id as number) ?? "none");
+  };
+  const confirmStart = () => {
+    setPickerOpen(false);
+    setStartedLocally(true);
+    setStatus(null);
+  };
 
   const afterStartedEnsureId = (cb: (newLogId: number) => void) => {
     router.reload({
@@ -141,7 +184,9 @@ export default function LogPage() {
       onSuccess: () => {
         const p = propsRef.current;
         const fromFlash = p.flash?.activeLogId;
-        const fromRecent = Array.isArray(p.recentLogs) ? p.recentLogs[0]?.id : undefined;
+        const fromRecent = Array.isArray(p.recentLogs)
+          ? p.recentLogs[0]?.id
+          : undefined;
         const id = fromFlash ?? fromRecent;
         if (!id) return setStatus("Could not determine new workout ID.");
         activeLogIdRef.current = id;
@@ -154,7 +199,10 @@ export default function LogPage() {
     if (activeLogIdRef.current) return after?.(activeLogIdRef.current);
     router.post(
       "/workouts/log/start",
-      { workout_date: today, workout_plan_day_id: pickedDayId === "none" ? null : pickedDayId },
+      {
+        workout_date: today,
+        workout_plan_day_id: pickedDayId === "none" ? null : pickedDayId,
+      },
       { onSuccess: () => afterStartedEnsureId((id) => after?.(id)) }
     );
   };
@@ -166,14 +214,24 @@ export default function LogPage() {
     const repsNum = r ? Number(r) : NaN;
     const weightNum = w?.length ? Number(w) : null;
 
-    if (!Number.isFinite(repsNum) || repsNum <= 0) return setStatus("Please enter reps (>0).");
-    if (w && isNaN(Number(w))) return setStatus("Weight must be a number (or leave empty for bodyweight).");
+    if (!Number.isFinite(repsNum) || repsNum <= 0)
+      return setStatus("Please enter reps (>0).");
+    if (w && isNaN(Number(w)))
+      return setStatus(
+        "Weight must be a number (or leave empty for bodyweight)."
+      );
 
     const send = (logId: number) => {
-      const next = (setsForExercise(exerciseId).slice(-1)[0]?.set_number ?? 0) + 1;
+      const next =
+        (setsForExercise(exerciseId).slice(-1)[0]?.set_number ?? 0) + 1;
       router.post(
         `/workouts/log/${logId}/add-set`,
-        { exercise_id: exerciseId, set_number: next, weight_kg: weightNum, reps: repsNum },
+        {
+          exercise_id: exerciseId,
+          set_number: next,
+          weight_kg: weightNum,
+          reps: repsNum,
+        },
         {
           preserveScroll: true,
           onSuccess: () => {
@@ -191,9 +249,18 @@ export default function LogPage() {
 
   const saveWorkout = () => {
     const id = activeLogIdRef.current;
-    if (!id) return setStatus("You haven’t added any sets yet. Add at least one set before saving.");
-    const hasAnySets = !!(Array.isArray(propsRef.current.recentLogs) && propsRef.current.recentLogs[0]?.sets?.length);
-    if (!hasAnySets) return setStatus("Your workout has no sets yet. Add at least one set before saving.");
+    if (!id)
+      return setStatus(
+        "You haven’t added any sets yet. Add at least one set before saving."
+      );
+    const hasAnySets = !!(
+      Array.isArray(propsRef.current.recentLogs) &&
+      propsRef.current.recentLogs[0]?.sets?.length
+    );
+    if (!hasAnySets)
+      return setStatus(
+        "Your workout has no sets yet. Add at least one set before saving."
+      );
 
     setSaving(true);
     router.post(
@@ -209,11 +276,15 @@ export default function LogPage() {
     );
   };
 
-  const recentNonEmpty = safeRecentLogs.filter((l) => (l.sets?.length ?? 0) > 0);
+  const recentNonEmpty = safeRecentLogs.filter(
+    (l) => (l.sets?.length ?? 0) > 0
+  );
 
   const freestyleExercises: Exercise[] =
     pickedDayId === "none"
-      ? fsSelected.map((id) => exercisesById.get(id)).filter((x): x is Exercise => !!x)
+      ? fsSelected
+          .map((id) => exercisesById.get(id))
+          .filter((x): x is Exercise => !!x)
       : [];
 
   const showLoggingArea =
@@ -226,50 +297,89 @@ export default function LogPage() {
       <Head title="Workout Log" />
       <NavHeader />
 
-      <main className="mx-auto max-w-7xl px-6 py-8 space-y-10">
-        <div aria-live="polite" className="sr-only">{status ?? ""}</div>
+      <main className="mx-auto max-w-7xl p-4 md:p-6 space-y-8">
+        <WorkoutTabs active="log" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Workout Log</h1>
-
-          {/* Start button — match site button style via tokens */}
-          <button
-            onClick={openStartDialog}
-            className="rounded-lg px-4 py-2 font-medium"
-            style={{
-              color: "var(--secondary)",
-            }}
-          >
-            Start Today’s Workout
-          </button>
+        <div aria-live="polite" className="sr-only">
+          {status ?? ""}
         </div>
+
+        {/* Header card */}
+        <section
+          className="
+            rounded-2xl border bg-card px-4 py-3 shadow-sm
+            flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between
+          "
+        >
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Workout Log
+            </h1>
+            <p className="text-xs md:text-sm text-muted-foreground">
+              Start today’s session, log sets from your plan or freestyle, and
+              review your recent workouts.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="text-xs text-muted-foreground">
+              Today: <span className="font-medium">{fmtDate(today)}</span>
+            </div>
+            <button
+              onClick={openStartDialog}
+              className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+              style={{
+                backgroundColor: "var(--secondary)",
+                color: "var(--secondary-foreground)",
+              }}
+            >
+              Start Today’s Workout
+            </button>
+          </div>
+        </section>
 
         {/* Start picker */}
         {isPickerOpen && (
           <section className="rounded-2xl border p-4 bg-card shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <div className="font-medium">Choose plan day for {fmtDate(today)}:</div>
-              <label className="sr-only" htmlFor="day-picker">Workout day</label>
+              <div className="font-medium">
+                Choose plan day for {fmtDate(today)}:
+              </div>
+              <label className="sr-only" htmlFor="day-picker">
+                Workout day
+              </label>
               <select
                 id="day-picker"
-                className="border rounded px-2 py-1"
+                className="border rounded px-2 py-1 bg-background"
                 value={pickedDayId === "none" ? "" : pickedDayId}
-                onChange={(e) => setPickedDayId(e.target.value ? Number(e.target.value) : "none")}
+                onChange={(e) =>
+                  setPickedDayId(
+                    e.target.value ? Number(e.target.value) : "none"
+                  )
+                }
               >
                 <option value="">No plan (freestyle)</option>
                 {plan?.days?.filter(Boolean).map((d) => (
                   <option key={d!.id} value={d!.id}>
-                    Day {d!.day_index}{d!.title ? ` · ${d!.title}` : ""}
+                    Day {d!.day_index}
+                    {d!.title ? ` · ${d!.title}` : ""}
                   </option>
                 ))}
               </select>
               <div className="md:ml-auto flex items-center gap-2">
-                <button onClick={() => setPickerOpen(false)} className="px-3 py-1.5 rounded border">Cancel</button>
+                <button
+                  onClick={() => setPickerOpen(false)}
+                  className="px-3 py-1.5 rounded border text-sm"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={confirmStart}
-                  className="px-3 py-1.5 rounded font-medium"
-                  style={{ backgroundColor: "var(--secondary)", color: "var(--secondary-foreground)" }}
+                  className="px-3 py-1.5 rounded text-sm font-medium"
+                  style={{
+                    backgroundColor: "var(--secondary)",
+                    color: "var(--secondary-foreground)",
+                  }}
                 >
                   Start
                 </button>
@@ -279,150 +389,387 @@ export default function LogPage() {
         )}
 
         {/* Today row */}
-        <section className="rounded-2xl border p-6 bg-card shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+        <section className="rounded-2xl border p-6 bg-card shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">Today</h2>
-            <div className="text-sm text-muted-foreground">{fmtDate(today)}</div>
+            <div className="text-sm text-muted-foreground">
+              {fmtDate(today)}
+            </div>
           </div>
 
-          {/* Freestyle library when no plan selected */}
-          {startedLocally && pickedDayId === "none" && (
-            <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-              {/* Selected list */}
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  Pick exercises from the library, then add your sets below.
-                </div>
+          {/* Content area: main logging + optional freestyle library */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            {/* Logging area / messages */}
+            <div className="space-y-4">
+              {/* Freestyle selected exercises */}
+              {startedLocally && pickedDayId === "none" && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Pick exercises from the library, then add your sets below.
+                  </p>
 
-                {freestyleExercises.length ? (
+                  {freestyleExercises.length ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {freestyleExercises.map((ex) => {
+                        const prevSets = setsForExercise(ex.id);
+                        const last = prevSets.slice(-1)[0];
+                        const weightValue =
+                          weights[ex.id] ??
+                          (last?.weight_kg != null
+                            ? String(last.weight_kg)
+                            : "");
+
+                        return (
+                          <div
+                            key={ex.id}
+                            className="rounded-xl border bg-card p-4"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="font-semibold">{ex.name}</div>
+                                <div className="text-xs text-muted-foreground capitalize">
+                                  {ex.primary_muscle}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {ex.demo_url ? (
+                                  <a
+                                    href={ex.demo_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs hover:underline"
+                                    style={{ color: "var(--accent)" }}
+                                  >
+                                    demo
+                                  </a>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() => removeFs(ex.id)}
+                                  className="text-xs hover:underline"
+                                  style={{ color: "var(--destructive)" }}
+                                  aria-label="Remove from today"
+                                >
+                                  remove
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Inputs */}
+                            <div className="mt-3 grid grid-cols-[6rem,6rem,auto] items-end gap-2">
+                              <div>
+                                <label
+                                  htmlFor={`w-${ex.id}`}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  Weight (kg)
+                                </label>
+                                <input
+                                  id={`w-${ex.id}`}
+                                  type="number"
+                                  inputMode="decimal"
+                                  placeholder="kg"
+                                  className="mt-1 w-full rounded border px-3 py-1 bg-background"
+                                  value={weightValue}
+                                  onChange={(e) =>
+                                    setWeights((p) => ({
+                                      ...p,
+                                      [ex.id]: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={`r-${ex.id}`}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  Reps
+                                </label>
+                                <input
+                                  id={`r-${ex.id}`}
+                                  type="number"
+                                  inputMode="numeric"
+                                  placeholder="reps"
+                                  className="mt-1 w-full rounded border px-3 py-1 bg-background"
+                                  value={reps[ex.id] ?? ""}
+                                  onChange={(e) =>
+                                    setReps((p) => ({
+                                      ...p,
+                                      [ex.id]: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="flex">
+                                <button
+                                  onClick={() => addSet(ex.id)}
+                                  className="ml-auto rounded px-3 py-2 text-sm font-medium"
+                                  style={{
+                                    backgroundColor: "var(--primary)",
+                                    color: "var(--primary-foreground)",
+                                  }}
+                                >
+                                  Add Set
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Existing sets */}
+                            {prevSets.length ? (
+                              <div className="mt-3 space-y-1 text-sm">
+                                {prevSets.map((s) => (
+                                  <div key={s.id} className="flex justify-between">
+                                    <div className="text-muted-foreground">
+                                      Set {s.set_number}
+                                    </div>
+                                    <div className="tabular-nums">
+                                      {s.weight_kg ?? "BW"} kg × {s.reps}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="mt-3 text-sm text-muted-foreground/70">
+                                No sets yet.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No exercises selected yet — add some from the library →
+                    </div>
+                  )}
+
+                  {/* Save Button */}
+                  {freestyleExercises.length > 0 && (
+                    <div className="mt-4 flex items-center justify-end">
+                      <button
+                        disabled={saving}
+                        onClick={saveWorkout}
+                        className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+                        style={{
+                          backgroundColor: "var(--primary)",
+                          color: "var(--primary-foreground)",
+                        }}
+                      >
+                        {saving ? "Saving…" : "Save Workout"}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Planned-day logging OR empty-state */}
+              {!showLoggingArea ? (
+                <div className="text-sm text-foreground/80">
+                  {startedLocally ? (
+                    pickedDayId === "none" ? (
+                      <>Pick exercises from the library on the right.</>
+                    ) : (
+                      <>
+                        This day has no exercises. Add some in the{" "}
+                        <a
+                          href="/workouts/plan"
+                          className="hover:underline"
+                          style={{ color: "var(--accent)" }}
+                        >
+                          Planner
+                        </a>
+                        .
+                      </>
+                    )
+                  ) : (
+                    <>
+                      No workout chosen for today yet. Click{" "}
+                      <button
+                        type="button"
+                        onClick={openStartDialog}
+                        className="inline align-baseline underline"
+                        style={{
+                          color: "var(--accent)",
+                          background: "transparent",
+                          padding: 0,
+                          border: 0,
+                        }}
+                      >
+                        Start Today’s Workout
+                      </button>{" "}
+                      to pick a plan day or freestyle.
+                    </>
+                  )}
+                </div>
+              ) : pickedDayId !== "none" ? (
+                <>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {freestyleExercises.map((ex) => {
+                    {dayForForm!.exercises.map((ex) => {
                       const prevSets = setsForExercise(ex.id);
                       const last = prevSets.slice(-1)[0];
-                      const weightValue = weights[ex.id] ?? (last?.weight_kg != null ? String(last.weight_kg) : "");
-
+                      const weightValue =
+                        weights[ex.id] ??
+                        (last?.weight_kg != null
+                          ? String(last.weight_kg)
+                          : "");
                       return (
                         <div key={ex.id} className="rounded-xl border bg-card p-4">
                           <div className="flex items-start justify-between">
                             <div>
                               <div className="font-semibold">{ex.name}</div>
-                              <div className="text-xs text-muted-foreground capitalize">{ex.primary_muscle}</div>
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {ex.primary_muscle}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              {ex.demo_url ? (
-                                <a
-                                  href={ex.demo_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs hover:underline"
-                                  style={{ color: "var(--accent)" }}   // teal link style
-                                >
-                                  demo
-                                </a>
-                              ) : null}
-                              <button
-                                type="button"
-                                onClick={() => removeFs(ex.id)}
+                            {ex.demo_url ? (
+                              <a
+                                href={ex.demo_url}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="text-xs hover:underline"
-                                style={{ color: "var(--destructive)" }}
-                                aria-label="Remove from today"
+                                style={{ color: "var(--accent)" }}
                               >
-                                remove
-                              </button>
-                            </div>
+                                demo
+                              </a>
+                            ) : null}
                           </div>
 
-                          {/* Inputs */}
                           <div className="mt-3 grid grid-cols-[6rem,6rem,auto] items-end gap-2">
                             <div>
-                              <label htmlFor={`w-${ex.id}`} className="text-xs text-muted-foreground">Weight (kg)</label>
+                              <label htmlFor={`w-${ex.id}`} className="text-xs text-muted-foreground">
+                                Weight (kg)
+                              </label>
                               <input
                                 id={`w-${ex.id}`}
                                 type="number"
                                 inputMode="decimal"
                                 placeholder="kg"
-                                className="mt-1 w-full rounded border px-3 py-1"
+                                className="mt-1 w-full rounded border px-3 py-1 bg-background"
                                 value={weightValue}
-                                onChange={(e) => setWeights((p) => ({ ...p, [ex.id]: e.target.value }))}
+                                onChange={(e) =>
+                                  setWeights((p) => ({
+                                    ...p,
+                                    [ex.id]: e.target.value,
+                                  }))
+                                }
                               />
                             </div>
                             <div>
-                              <label htmlFor={`r-${ex.id}`} className="text-xs text-muted-foreground">Reps</label>
+                              <label htmlFor={`r-${ex.id}`} className="text-xs text-muted-foreground">
+                                Reps
+                              </label>
                               <input
                                 id={`r-${ex.id}`}
                                 type="number"
                                 inputMode="numeric"
                                 placeholder="reps"
-                                className="mt-1 w-full rounded border px-3 py-1"
+                                className="mt-1 w-full rounded border px-3 py-1 bg-background"
                                 value={reps[ex.id] ?? ""}
-                                onChange={(e) => setReps((p) => ({ ...p, [ex.id]: e.target.value }))}
+                                onChange={(e) =>
+                                  setReps((p) => ({
+                                    ...p,
+                                    [ex.id]: e.target.value,
+                                  }))
+                                }
                               />
                             </div>
                             <div className="flex">
-                              <button onClick={() => addSet(ex.id)} className="ml-auto rounded px-3 py-2 font-medium"
-                                style={{ backgroundColor: "var(--foreground)", color: "var(--background)" }}>
+                              <button
+                                onClick={() => addSet(ex.id)}
+                                className="ml-auto rounded px-3 py-2 text-sm font-medium"
+                                style={{
+                                  backgroundColor: "var(--foreground)",
+                                  color: "var(--background)",
+                                }}
+                              >
                                 Add Set
                               </button>
                             </div>
                           </div>
 
-                          {/* Existing sets */}
                           {prevSets.length ? (
                             <div className="mt-3 space-y-1 text-sm">
                               {prevSets.map((s) => (
                                 <div key={s.id} className="flex justify-between">
-                                  <div className="text-muted-foreground">Set {s.set_number}</div>
-                                  <div className="tabular-nums">{s.weight_kg ?? "BW"} kg × {s.reps}</div>
+                                  <div className="text-muted-foreground">
+                                    Set {s.set_number}
+                                  </div>
+                                  <div className="tabular-nums">
+                                    {s.weight_kg ?? "BW"} kg × {s.reps}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <div className="mt-3 text-sm text-gray-400">No sets yet.</div>
+                            <div className="mt-3 text-sm text-muted-foreground/70">
+                              No sets yet.
+                            </div>
                           )}
                         </div>
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    No exercises selected yet — add some from the library →
-                  </div>
-                )}
 
-                {/* Save */}
-                {freestyleExercises.length > 0 && (
                   <div className="mt-6 flex items-center justify-end">
                     <button
                       disabled={saving}
                       onClick={saveWorkout}
-                      className="rounded-lg px-4 py-2 font-medium disabled:opacity-60"
-                      style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
+                      className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+                      style={{
+                        backgroundColor: "var(--primary)",
+                        color: "var(--primary-foreground)",
+                      }}
                     >
                       {saving ? "Saving…" : "Save Workout"}
                     </button>
                   </div>
-                )}
-              </div>
+                </>
+              ) : null}
+            </div>
 
-              {/* Library */}
-              <aside className="space-y-3">
+            {/* Right side: freestyle library (when applicable) + tiny hint when using plan */}
+            <aside className="space-y-3">
+              {startedLocally && pickedDayId !== "none" && (
+                <div className="rounded-xl border bg-background/60 p-3 text-xs text-muted-foreground">
+                  Logging from{" "}
+                  <span className="font-medium">
+                    Day {dayForForm?.day_index}
+                    {dayForForm?.title ? ` · ${dayForForm.title}` : ""}
+                  </span>
+                  . You can still switch to freestyle by starting a new
+                  workout and choosing “No plan”.
+                </div>
+              )}
+
+              {/* Library shown only for freestyle mode */}
+              {startedLocally && pickedDayId === "none" && (
                 <div className="rounded-2xl border bg-card shadow-sm">
                   <div className="sticky top-[60px] z-10 border-b bg-card p-3">
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold">Exercise Library</h3>
-                        <span className="text-xs text-muted-foreground">{filteredLibrary.length} results</span>
+                        <h3 className="text-base font-semibold">
+                          Exercise Library
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                          {filteredLibrary.length} results
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <label htmlFor="search" className="sr-only">Search exercises</label>
+                        <label htmlFor="search" className="sr-only">
+                          Search exercises
+                        </label>
                         <input
                           id="search"
                           type="search"
                           placeholder="Search by name or muscle…"
                           value={search}
-                          onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-                          className="flex-1 rounded border px-3 py-2"
+                          onChange={(e) => {
+                            setSearch(e.target.value);
+                            setVisibleCount(PAGE_SIZE);
+                          }}
+                          className="flex-1 rounded border px-3 py-2 bg-background"
                         />
                       </div>
 
@@ -434,13 +781,21 @@ export default function LogPage() {
                               key={m}
                               type="button"
                               onClick={() => {
-                                setMuscleFilters((prev) => (active ? prev.filter((x) => x !== m) : [...prev, m]));
+                                setMuscleFilters((prev) =>
+                                  active
+                                    ? prev.filter((x) => x !== m)
+                                    : [...prev, m]
+                                );
                                 setVisibleCount(PAGE_SIZE);
                               }}
                               className="rounded px-2 py-1 text-xs border"
                               style={
                                 active
-                                  ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)", borderColor: "var(--primary)" }
+                                  ? {
+                                      backgroundColor: "var(--primary)",
+                                      color: "var(--primary-foreground)",
+                                      borderColor: "var(--primary)",
+                                    }
                                   : { backgroundColor: "var(--card)" }
                               }
                               aria-pressed={active}
@@ -461,12 +816,19 @@ export default function LogPage() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <label htmlFor="sort" className="text-xs text-muted-foreground">Sort</label>
+                        <label
+                          htmlFor="sort"
+                          className="text-xs text-muted-foreground"
+                        >
+                          Sort
+                        </label>
                         <select
                           id="sort"
                           value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value as any)}
-                          className="rounded border px-2 py-1 text-sm"
+                          onChange={(e) =>
+                            setSortBy(e.target.value as "name" | "muscle")
+                          }
+                          className="rounded border px-2 py-1 text-sm bg-background"
                         >
                           <option value="name">Name (A→Z)</option>
                           <option value="muscle">Muscle group</option>
@@ -481,8 +843,16 @@ export default function LogPage() {
                       pagedLibrary.map((ex) => {
                         const added = isFsAdded(ex.id);
                         return (
-                          <div key={ex.id} className="rounded-xl border p-3">
-                            <div className="line-clamp-2 font-medium" title={ex.name}>{ex.name}</div>
+                          <div
+                            key={ex.id}
+                            className="rounded-xl border p-3 bg-background/80"
+                          >
+                            <div
+                              className="line-clamp-2 font-medium"
+                              title={ex.name}
+                            >
+                              {ex.name}
+                            </div>
                             <div className="mt-0.5 text-xs text-muted-foreground capitalize">
                               {ex.primary_muscle} · {ex.equipment ?? "—"}
                             </div>
@@ -494,8 +864,14 @@ export default function LogPage() {
                                 className="rounded px-2 py-1 text-xs"
                                 style={
                                   added
-                                    ? { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
-                                    : { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }
+                                    ? {
+                                        backgroundColor: "var(--muted)",
+                                        color: "var(--muted-foreground)",
+                                      }
+                                    : {
+                                        backgroundColor: "var(--primary)",
+                                        color: "var(--primary-foreground)",
+                                      }
                                 }
                                 aria-disabled={added}
                               >
@@ -507,7 +883,7 @@ export default function LogPage() {
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-xs hover:underline"
-                                  style={{ color: "var(--accent)" }}  // teal link style
+                                  style={{ color: "var(--accent)" }}
                                 >
                                   demo
                                 </a>
@@ -517,7 +893,9 @@ export default function LogPage() {
                         );
                       })
                     ) : (
-                      <div className="text-sm text-muted-foreground">No exercises match your filters.</div>
+                      <div className="text-sm text-muted-foreground">
+                        No exercises match your filters.
+                      </div>
                     )}
                   </div>
 
@@ -525,188 +903,27 @@ export default function LogPage() {
                     <div className="flex justify-center border-t p-3">
                       <button
                         type="button"
-                        onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                        className="rounded border px-4 py-2 hover:bg-muted"
+                        onClick={() =>
+                          setVisibleCount((c) => c + PAGE_SIZE)
+                        }
+                        className="rounded border px-4 py-2 hover:bg-muted text-xs"
                       >
-                        Load more ({filteredLibrary.length - pagedLibrary.length} left)
+                        Load more (
+                        {filteredLibrary.length - pagedLibrary.length} left)
                       </button>
                     </div>
                   )}
                 </div>
-              </aside>
-            </div>
-          )}
-
-          {/* Planned-day logging OR empty-state */}
-          {!showLoggingArea ? (
-            <div className="text-foreground/80">
-              {startedLocally ? (
-                pickedDayId === "none"
-                  ? <>Pick exercises from the library on the right to start logging your freestyle workout.</>
-                  : <>This day has no exercises. Add some in the{" "}
-                      <a href="/workouts/plan" className="hover:underline" style={{ color: "var(--accent)" }}>
-                        Planner
-                      </a>.
-                    </>
-              ) : (
-                <>No workout chosen for today yet. Click{" "}
-                  <a
-                    href="#start"
-                    onClick={(e) => { e.preventDefault(); openStartDialog(); }}
-                    className="inline align-baseline hover:underline"
-                    style={{ color: "var(--accent)", background: "transparent", padding: 0, border: 0 }}
-                  >
-                    Start Today’s Workout
-                    </a>{" "}
-                  to pick a plan day or freestyle.</>
               )}
-            </div>
-          ) : pickedDayId !== "none" ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-2">
-                {dayForForm!.exercises.map((ex) => {
-                  const prevSets = setsForExercise(ex.id);
-                  const last = prevSets.slice(-1)[0];
-                  const weightValue = weights[ex.id] ?? (last?.weight_kg != null ? String(last.weight_kg) : "");
-                  return (
-                    <div key={ex.id} className="rounded-xl border p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="font-semibold">{ex.name}</div>
-                          <div className="text-xs text-muted-foreground capitalize">{ex.primary_muscle}</div>
-                        </div>
-                        {ex.demo_url ? (
-                          <a href={ex.demo_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: "var(--accent)" }}>
-                            demo
-                          </a>
-                        ) : null}
-                      </div>
 
-                      <div className="mt-3 grid grid-cols-[6rem,6rem,auto] items-end gap-2">
-                        <div>
-                          <label htmlFor={`w-${ex.id}`} className="text-xs text-muted-foreground">Weight (kg)</label>
-                          <input
-                            id={`w-${ex.id}`}
-                            type="number" inputMode="decimal" placeholder="kg"
-                            className="mt-1 w-full rounded border px-3 py-1"
-                            value={weightValue}
-                            onChange={(e) => setWeights((p) => ({ ...p, [ex.id]: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor={`r-${ex.id}`} className="text-xs text-muted-foreground">Reps</label>
-                          <input
-                            id={`r-${ex.id}`}
-                            type="number" inputMode="numeric" placeholder="reps"
-                            className="mt-1 w-full rounded border px-3 py-1"
-                            value={reps[ex.id] ?? ""}
-                            onChange={(e) => setReps((p) => ({ ...p, [ex.id]: e.target.value }))}
-                          />
-                        </div>
-                        <div className="flex">
-                          <button onClick={() => addSet(ex.id)} className="ml-auto rounded px-3 py-2 font-medium"
-                            style={{ backgroundColor: "var(--foreground)", color: "var(--background)" }}>
-                            Add Set
-                          </button>
-                        </div>
-                      </div>
-
-                      {prevSets.length ? (
-                        <div className="mt-3 space-y-1 text-sm">
-                          {prevSets.map((s) => (
-                            <div key={s.id} className="flex justify-between">
-                              <div className="text-muted-foreground">Set {s.set_number}</div>
-                              <div className="tabular-nums">{s.weight_kg ?? "BW"} kg × {s.reps}</div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="mt-3 text-sm text-gray-400">No sets yet.</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 flex items-center justify-end">
-                <button
-                  disabled={saving}
-                  onClick={saveWorkout}
-                  className="rounded-lg px-4 py-2 font-medium disabled:opacity-60"
-                  style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-                >
-                  {saving ? "Saving…" : "Save Workout"}
-                </button>
-              </div>
-            </>
-          ) : null}
-        </section>
-
-        {/* Plan snapshot */}
-        <section className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold">Your Plan</h2>
-          {plan?.days?.length ? (
-            <div className="grid gap-6 md:grid-cols-2">
-              {plan.days.filter(Boolean).map((d) => (
-                <div key={d!.id} className="rounded-xl border p-4">
-                  <div className="font-semibold">
-                    Day {d!.day_index} {d!.title ? <span className="text-muted-foreground">· {d!.title}</span> : null}
-                  </div>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground/90">
-                    {d!.exercises?.length ? (
-                      d!.exercises.map((ex) => (
-                        <li key={ex.id}>
-                          {ex.name} <span className="lowercase text-muted-foreground">({ex.primary_muscle})</span>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="text-gray-400">No exercises.</li>
-                    )}
-                  </ul>
+              {!startedLocally && (
+                <div className="rounded-xl border bg-background/60 p-3 text-xs text-muted-foreground">
+                  You’ll see the freestyle exercise library here after you start
+                  a workout with “No plan”.
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-foreground/80">
-              No workout plan yet.{" "}
-              <a href="/workouts/plan" className="hover:underline" style={{ color: "var(--accent)" }}>
-                Create one
-              </a>.
-            </div>
-          )}
-        </section>
-
-        {/* Recent logs */}
-        <section className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold">Recent Logs</h2>
-          {recentNonEmpty.length ? (
-            <div className="space-y-4">
-              {recentNonEmpty.map((l) => {
-                const grouped = groupSetsByExercise(l.sets);
-                return (
-                  <div key={l.id} className="rounded-xl border p-4">
-                    <div className="font-medium">{fmtDate(l.workout_date)}</div>
-                    <div className="mt-2 grid gap-3 text-sm md:grid-cols-2 lg:grid-cols-3">
-                      {grouped.map(([exName, sets]) => (
-                        <div key={exName} className="rounded-lg border p-2">
-                          <div className="truncate font-medium">{exName}</div>
-                          <div className="mt-1 tabular-nums text-foreground/80">
-                            {sets.map((s, idx) => (
-                              <span key={s.id}>
-                                {s.weight_kg ?? "BW"}×{s.reps}{idx < sets.length - 1 ? ", " : ""}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-foreground/80">No recent workouts yet.</div>
-          )}
+              )}
+            </aside>
+          </div>
         </section>
       </main>
     </>

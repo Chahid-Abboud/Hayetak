@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import mapboxgl, { Map, LngLatLike, MapLayerMouseEvent } from "mapbox-gl";
-// import "mapbox-gl/dist/mapbox-gl.css"; // ensure this is imported once in your app
+import mapboxgl, { Map, LngLatLike } from "mapbox-gl";
 
 type Place = {
   id: string | number;
@@ -12,19 +11,20 @@ type Place = {
 };
 
 type Props = {
-  accessToken?: string;              // if not set, will try window.MAPBOX_TOKEN or meta tag
+  accessToken?: string;
   initialCenter?: { lat: number; lon: number };
   initialZoom?: number;
-  radiusKm: number;                  // controlled from ElasticSlider
+  radiusKm: number;
   onRadiusChange?: (km: number) => void;
   showGym?: boolean;
   showNutritionist?: boolean;
   onToggleGym?: (v: boolean) => void;
   onToggleNutritionist?: (v: boolean) => void;
   onResults?: (items: Place[]) => void;
+  focusPlaceId?: string | number | null;
 };
 
-const DEFAULT_CENTER = { lat: 33.8938, lon: 35.5018 }; // Beirut
+const DEFAULT_CENTER = { lat: 33.8938, lon: 35.5018 };
 
 export default function NearbyMap({
   accessToken,
@@ -37,24 +37,29 @@ export default function NearbyMap({
   onToggleGym,
   onToggleNutritionist,
   onResults,
+  focusPlaceId = null,
 }: Props) {
-  // Resolve token
   const token =
     accessToken ||
     (window as any)?.MAPBOX_TOKEN ||
-    document
-      .querySelector('meta[name="mapbox-token"]')
-      ?.getAttribute("content") ||
+    document.querySelector('meta[name="mapbox-token"]')?.getAttribute("content") ||
     "";
 
   const mapRef = useRef<Map | null>(null);
   const divRef = useRef<HTMLDivElement | null>(null);
-  const [center, setCenter] = useState(initialCenter);
+
+  const [userLoc, setUserLoc] = useState(initialCenter);
+  const [viewCenter, setViewCenter] = useState(initialCenter);
+
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Prepare URL for API fetch
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const userSetRef = useRef(false);
+
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
+
   const typesParam = useMemo(() => {
     const t: string[] = [];
     if (showGym) t.push("gym");
@@ -63,46 +68,86 @@ export default function NearbyMap({
   }, [showGym, showNutritionist]);
 
   const fetchController = useRef<AbortController | null>(null);
-  const fetchPlaces = useCallback(
-    async (c: { lat: number; lon: number }, rKm: number) => {
-      if (!typesParam) {
-        setPlaces([]);
-        onResults?.([]);
-        return;
+
+  /* ---------- popup helper (stable) ---------- */
+  const showPopupAt = useCallback(
+    (lng: number, lat: number, data: { name: string; address?: string; type?: string }) => {
+      const m = mapRef.current;
+      if (!m) return;
+      if (!popupRef.current) {
+        popupRef.current = new mapboxgl.Popup({
+          closeButton: true,
+          closeOnMove: true,
+          offset: 16,
+        });
       }
+      const typeLabel = data.type ? data.type.toUpperCase() : "";
+      popupRef.current
+        .setLngLat([lng, lat])
+        .setHTML(
+          `
+        <div style="
+          background:white;
+          border-radius:12px;
+          padding:10px 12px 8px 12px;
+          box-shadow:0 12px 30px rgba(0,0,0,0.18);
+          min-width:160px;
+        ">
+          <div style="font-weight:600; color:#0f172a; margin-bottom:2px;">
+            ${escapeHtml(data.name || "Unknown")}
+          </div>
+          <div style="font-size:12px; color:#475569; margin-bottom:6px;">
+            ${escapeHtml(data.address || "")}
+          </div>
+          ${
+            typeLabel
+              ? `<span style="display:inline-block;font-size:10px;font-weight:600;background:#e2fff4;color:#047857;border-radius:9999px;padding:2px 10px;">
+                  ${escapeHtml(typeLabel)}
+                 </span>`
+              : ""
+          }
+        </div>
+        `
+        )
+        .addTo(m);
+    },
+    []
+  );
+
+  /* ---------- fetch places ---------- */
+  const fetchPlaces = useCallback(
+    async (origin: { lat: number; lon: number }, rKm: number) => {
       setLoading(true);
       setError(null);
 
-      // abort previous
       fetchController.current?.abort();
       fetchController.current = new AbortController();
 
       const qs = new URLSearchParams({
-        lat: String(c.lat),
-        lon: String(c.lon),
-        radius_km: String(rKm),
+        lat: String(origin.lat),
+        lng: String(origin.lon),
+        radius: String(Math.round(rKm * 1000)),
         types: typesParam,
       }).toString();
 
       try {
-        const res = await fetch(`/api/places?${qs}`, {
+        const res = await fetch(`/api/places-local?${qs}`, {
           signal: fetchController.current.signal,
           headers: { Accept: "application/json" },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // Expecting { features: [{ id, name, lat, lon, type, address }] } or plain array
         const list: Place[] = Array.isArray(data?.features)
           ? data.features.map(normalizeFeature)
-          : Array.isArray(data)
-          ? data.map(normalizeFeature)
           : [];
 
         setPlaces(list);
         onResults?.(list);
       } catch (e: any) {
-        if (e.name !== "AbortError") setError(String(e.message ?? e));
+        if (e.name !== "AbortError") {
+          setError(String(e.message ?? e));
+        }
       } finally {
         setLoading(false);
       }
@@ -110,14 +155,12 @@ export default function NearbyMap({
     [typesParam, onResults]
   );
 
-  // init map
+  /* ---------- init map ---------- */
   useEffect(() => {
     if (!divRef.current) return;
     if (mapRef.current) return;
 
-    if (!token) {
-      console.warn("Mapbox token missing. Set window.MAPBOX_TOKEN or <meta name='mapbox-token'>.");
-    }
+    if (!token) console.warn("Mapbox token missing.");
     mapboxgl.accessToken = token;
 
     const m = new mapboxgl.Map({
@@ -125,79 +168,93 @@ export default function NearbyMap({
       style: "mapbox://styles/mapbox/streets-v12",
       center: [initialCenter.lon, initialCenter.lat] as LngLatLike,
       zoom: initialZoom,
+      dragRotate: false,
+      pitchWithRotate: false,
     });
     mapRef.current = m;
 
-    // controls
     m.addControl(new mapboxgl.NavigationControl(), "top-right");
-    const geo = new mapboxgl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: false,
-      showAccuracyCircle: false,
-    });
-    m.addControl(geo, "top-right");
 
     m.on("load", () => {
       addSourcesAndLayers(m);
-      drawRadiusCircle(m, center, radiusKm);
+      drawRadiusCircle(m, initialCenter, radiusKm);
       updatePlacesLayer(m, places);
     });
 
-    // move handler (debounced fetch)
-    let raf = 0;
-    const handleMoveEnd = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const c = m.getCenter();
-        const newCenter = { lat: c.lat, lon: c.lng };
-        setCenter(newCenter);
-      });
-    };
-    m.on("moveend", handleMoveEnd);
-
-    // click popup
-    m.on("click", "places-unclustered", (e: MapLayerMouseEvent) => {
-      const feat = e.features?.[0];
+    // click on a place on the map
+    m.on("click", "places-unclustered", (e) => {
+      const feat = e.features && e.features[0];
       if (!feat) return;
       const props: any = feat.properties || {};
-      const coordinates = (feat.geometry as any).coordinates.slice() as [number, number];
-      const name = props.name || "Unknown";
-      const address = props.address || "";
-      new mapboxgl.Popup({ closeOnMove: true })
-        .setLngLat(coordinates)
-        .setHTML(
-          `<div style="font-weight:600">${escapeHtml(name)}</div>
-           <div style="font-size:12px;color:#555">${escapeHtml(address)}</div>`
-        )
-        .addTo(m);
+      const coords = (feat.geometry as any).coordinates as [number, number];
+      const coerced = normalizePlaceType(props.type || props.category || "");
+      showPopupAt(coords[0], coords[1], {
+        name: props.name,
+        address: props.address,
+        type: coerced,
+      });
+    });
+
+    m.on("moveend", () => {
+      const c = m.getCenter();
+      setViewCenter({ lat: c.lat, lon: c.lng });
     });
 
     return () => {
-      raf && cancelAnimationFrame(raf);
       m.remove();
       mapRef.current = null;
     };
-  }, []); // eslint-disable-line
+  }, []); // once
 
-  // fetch when center/radius/types change
-  useEffect(() => {
-    fetchPlaces(center, radiusKm);
-  }, [center.lat, center.lon, radiusKm, typesParam]); // eslint-disable-line
-
-  // redraw radius circle and data layers when inputs change
+  /* ---------- set user marker ---------- */
   useEffect(() => {
     const m = mapRef.current;
     if (!m) return;
-    drawRadiusCircle(m, center, radiusKm);
+    if (!initialCenter) return;
+
+    if (!userSetRef.current) {
+      userSetRef.current = true;
+      setUserLoc(initialCenter);
+      setViewCenter(initialCenter);
+
+      // user marker in your theme
+      const el = document.createElement("div");
+      el.className =
+        "rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 border-2 border-slate-950/10 shadow-lg w-4 h-4";
+      el.style.boxShadow = "0 8px 25px rgba(0,0,0,0.3)";
+
+      userMarkerRef.current = new mapboxgl.Marker({ element: el })
+        .setLngLat([initialCenter.lon, initialCenter.lat])
+        .addTo(m);
+
+      m.setCenter([initialCenter.lon, initialCenter.lat]);
+      m.setZoom(initialZoom ?? 12);
+
+      drawRadiusCircle(m, initialCenter, radiusKm);
+      fetchPlaces(initialCenter, radiusKm);
+    }
+  }, [initialCenter, initialZoom, radiusKm, fetchPlaces]);
+
+  /* ---------- radius / filters ---------- */
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m) return;
+    drawRadiusCircle(m, userLoc, radiusKm);
+    fetchPlaces(userLoc, radiusKm);
+  }, [radiusKm, typesParam]); // eslint-disable-line
+
+  /* ---------- update layer when places change ---------- */
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m) return;
     updatePlacesLayer(m, places);
-  }, [center, radiusKm, places]);
+  }, [places]);
 
-  // external toggles
+  /* ---------- visibility toggle ---------- */
   useEffect(() => {
     const m = mapRef.current;
     if (!m) return;
-    // simple visibility toggle via filter
-    const types = [];
+    const types: string[] = [];
     if (showGym) types.push("gym");
     if (showNutritionist) types.push("nutritionist");
     if (m.getLayer("places-unclustered")) {
@@ -211,46 +268,59 @@ export default function NearbyMap({
     }
   }, [showGym, showNutritionist]);
 
+  /* ---------- focus from list ---------- */
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m) return;
+    if (!focusPlaceId) return;
+    const target = places.find((p) => String(p.id) === String(focusPlaceId));
+    if (!target) return;
+
+    m.flyTo({
+      center: [target.lon, target.lat],
+      zoom: 15,
+      essential: true,
+    });
+
+    showPopupAt(target.lon, target.lat, {
+      name: target.name,
+      address: target.address || "",
+      type: target.type || "",
+    });
+  }, [focusPlaceId, places, showPopupAt]);
+
   return (
     <div className="relative">
       {/* toolbar */}
       <div className="absolute left-2 top-2 z-10 flex items-center gap-2 rounded-xl border bg-card/90 p-2 shadow">
         <button
           type="button"
-          onClick={() => {
-            if (onToggleGym) onToggleGym(!showGym);
-          }}
+          onClick={() => onToggleGym?.(!showGym)}
           className={`rounded-lg px-2 py-1 text-xs font-medium border ${
             showGym ? "bg-emerald-500 text-white border-emerald-600" : "bg-background text-foreground border-border"
           }`}
-          aria-pressed={showGym}
         >
           Gyms
         </button>
         <button
           type="button"
-          onClick={() => {
-            if (onToggleNutritionist) onToggleNutritionist(!showNutritionist);
-          }}
+          onClick={() => onToggleNutritionist?.(!showNutritionist)}
           className={`rounded-lg px-2 py-1 text-xs font-medium border ${
             showNutritionist ? "bg-blue-600 text-white border-blue-700" : "bg-background text-foreground border-border"
           }`}
-          aria-pressed={showNutritionist}
         >
           Nutritionists
         </button>
       </div>
 
-      {/* map */}
       <div ref={divRef} className="h-[480px] w-full rounded-2xl border shadow-sm" />
 
-      {/* footer status */}
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
         <div>
-          Center: {center.lat.toFixed(5)}, {center.lon.toFixed(5)} · Radius: {radiusKm} km
+          View: {viewCenter.lat.toFixed(5)}, {viewCenter.lon.toFixed(5)} · Radius from user: {radiusKm} km
         </div>
         <div>
-          {loading ? "Loading…" : error ? <span className="text-red-600">Error: {error}</span> : `${places.length} places`}
+          {loading ? "Loading…" : error ? <span className="text-red-600">{error}</span> : `${places.length} places`}
         </div>
       </div>
     </div>
@@ -260,89 +330,54 @@ export default function NearbyMap({
 /* ---------------- helpers ---------------- */
 
 function normalizeFeature(raw: any): Place {
+  const rawType =
+    raw.type ??
+    raw.category ??
+    raw.properties?.category ??
+    raw.properties?.type ??
+    "";
+  const coerced = normalizePlaceType(rawType);
   return {
-    id: raw.id ?? raw._id ?? `${raw.lat},${raw.lon}`,
+    id: raw.id ?? raw.properties?.id ?? `${raw.lat},${raw.lon}`,
     name: raw.name ?? raw.properties?.name ?? "Unknown",
     lat: Number(raw.lat ?? raw.geometry?.coordinates?.[1] ?? 0),
     lon: Number(raw.lon ?? raw.geometry?.coordinates?.[0] ?? 0),
-    type:
-      (raw.type ??
-        raw.category ??
-        raw.properties?.type ??
-        raw.properties?.category) || "other",
+    type: coerced,
     address: raw.address ?? raw.properties?.address ?? null,
   };
 }
 
+function normalizePlaceType(value: string): "gym" | "nutritionist" | "other" {
+  const v = (value || "").toLowerCase();
+  if (v.includes("gym")) return "gym";
+  if (v.includes("nutri") || v.includes("diet")) return "nutritionist";
+  return "other";
+}
+
 function addSourcesAndLayers(map: Map) {
-  // places source (empty GeoJSON; we’ll setData later)
+  // no clustering
   if (!map.getSource("places")) {
     map.addSource("places", {
       type: "geojson",
       data: { type: "FeatureCollection", features: [] },
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 60,
+      cluster: false,
     });
   }
 
-  // clusters
-  if (!map.getLayer("clusters")) {
-    map.addLayer({
-      id: "clusters",
-      type: "circle",
-      source: "places",
-      filter: ["has", "point_count"],
-      paint: {
-        "circle-color": [
-          "step",
-          ["get", "point_count"],
-          "#7dd3fc", 10,
-          "#60a5fa", 25,
-          "#4f46e5",
-        ],
-        "circle-radius": [
-          "step",
-          ["get", "point_count"],
-          16, 10, 20, 25, 28,
-        ],
-        "circle-stroke-width": 1,
-        "circle-stroke-color": "#ffffff",
-      },
-    });
-  }
-
-  if (!map.getLayer("cluster-count")) {
-    map.addLayer({
-      id: "cluster-count",
-      type: "symbol",
-      source: "places",
-      filter: ["has", "point_count"],
-      layout: {
-        "text-field": ["get", "point_count_abbreviated"],
-        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-        "text-size": 12,
-      },
-      paint: { "text-color": "#ffffff" },
-    });
-  }
-
-  // unclustered points
   if (!map.getLayer("places-unclustered")) {
     map.addLayer({
       id: "places-unclustered",
       type: "circle",
       source: "places",
-      filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": [
           "match",
           ["get", "type"],
           "gym",
-          "#10b981", // emerald
+          "#10b981", // green
           "nutritionist",
           "#2563eb", // blue
-          /* other */ "#a78bfa", // violet
+          "#a78bfa", // fallback
         ],
         "circle-radius": 6,
         "circle-stroke-width": 1,
@@ -351,7 +386,6 @@ function addSourcesAndLayers(map: Map) {
     });
   }
 
-  // radius fill + stroke
   if (!map.getSource("radius")) {
     map.addSource("radius", {
       type: "geojson",
@@ -385,7 +419,7 @@ function addSourcesAndLayers(map: Map) {
 function updatePlacesLayer(map: Map, list: Place[]) {
   const src = map.getSource("places") as mapboxgl.GeoJSONSource | undefined;
   if (!src) return;
-  const fc = {
+  src.setData({
     type: "FeatureCollection",
     features: list.map((p) => ({
       type: "Feature",
@@ -397,8 +431,7 @@ function updatePlacesLayer(map: Map, list: Place[]) {
         address: p.address ?? "",
       },
     })),
-  } as GeoJSON.FeatureCollection;
-  src.setData(fc);
+  } as GeoJSON.FeatureCollection);
 }
 
 function drawRadiusCircle(map: Map, center: { lat: number; lon: number }, radiusKm: number) {
@@ -411,12 +444,9 @@ function drawRadiusCircle(map: Map, center: { lat: number; lon: number }, radius
   });
 }
 
-/**
- * Creates a GeoJSON polygon approximating a circle using the Haversine formula.
- */
 function circlePolygon(lon: number, lat: number, radiusKm: number, steps = 64): GeoJSON.Feature {
   const coords: [number, number][] = [];
-  const d = radiusKm / 6371; // angular distance (Earth radius in km)
+  const d = radiusKm / 6371;
   const φ1 = (lat * Math.PI) / 180;
   const λ1 = (lon * Math.PI) / 180;
 

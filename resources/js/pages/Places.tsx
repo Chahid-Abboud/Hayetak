@@ -1,12 +1,9 @@
 // resources/js/pages/Places.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Head } from "@inertiajs/react";
-
-// Use RELATIVE imports to avoid @ alias issues
 import NavHeader from "../components/NavHeader";
 import NearbyMap from "../components/NearbyMap";
 
-// Local place type (keeps TS happy)
 type Place = {
   id: string | number;
   name: string;
@@ -16,7 +13,6 @@ type Place = {
   address?: string | null;
 };
 
-// ----- Lightweight local slider (avoids ElasticSlider filename case conflict) -----
 function SimpleSlider({
   title = "Search radius",
   units = "km",
@@ -50,24 +46,7 @@ function SimpleSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        aria-label={title}
-        style={{ WebkitAppearance: "none", appearance: "none" }}
       />
-      <style>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          height: 16px; width: 16px; border-radius: 9999px;
-          background: var(--primary); border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.25); margin-top: -7px;
-        }
-        input[type="range"]::-moz-range-thumb {
-          height: 16px; width: 16px; border-radius: 9999px;
-          background: var(--primary); border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-        }
-        input[type="range"]::-webkit-slider-runnable-track,
-        input[type="range"]::-moz-range-track { height: 8px; background: var(--muted); border-radius: 9999px; }
-      `}</style>
       <div className="mt-1 text-xs text-muted-foreground">
         Drag or use arrow keys ({step} {units} steps).
       </div>
@@ -75,9 +54,7 @@ function SimpleSlider({
   );
 }
 
-// ----------------------------------------------------------------------------------
-
-const DEFAULT_RADIUS_KM = 2; // 2 km
+const DEFAULT_RADIUS_KM = 2;
 
 export default function Places() {
   const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
@@ -88,11 +65,12 @@ export default function Places() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // geolocation
   const [center, setCenter] = useState<{ lat: number; lon: number } | null>(null);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
-  // Locate once
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | number | null>(null);
+
+  // locate once
   useEffect(() => {
     if (!("geolocation" in navigator)) {
       setGeoMsg("Geolocation not supported by this browser.");
@@ -116,12 +94,11 @@ export default function Places() {
     );
   }, []);
 
-  // quick counts by type
   const counts = useMemo(() => {
     return results.reduce(
       (acc, p) => {
         const t = (p.type ?? "").toLowerCase();
-        if (t.includes("nutrition")) acc.nutritionist += 1;
+        if (t.includes("nutri")) acc.nutritionist += 1;
         else acc.gym += 1;
         return acc;
       },
@@ -129,7 +106,6 @@ export default function Places() {
     );
   }, [results]);
 
-  // when filters change, show "Loading…" until next results callback
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -141,22 +117,17 @@ export default function Places() {
       <NavHeader />
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        {/* Header */}
         <div className="mb-5 flex items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Nearby</h1>
-            <p className="text-sm text-muted-foreground">
-              Explore gyms and nutritionists around you.
-            </p>
+            <p className="text-sm text-muted-foreground">Explore gyms and nutritionists around you.</p>
           </div>
           <div className="text-sm text-muted-foreground">
             {loading ? "Loading…" : error ? <span className="text-red-600">{error}</span> : `${results.length} results`}
           </div>
         </div>
 
-        {/* Controls */}
         <div className="mb-4 flex flex-wrap items-end gap-4 md:flex-nowrap">
-          {/* Radius */}
           <div className="min-w-[260px] flex-1">
             <SimpleSlider
               title="Search radius"
@@ -169,7 +140,6 @@ export default function Places() {
             />
           </div>
 
-          {/* Types */}
           <label className="min-w-[260px] flex flex-1 flex-col gap-1">
             <span className="text-sm font-medium">Types</span>
             <select
@@ -204,7 +174,6 @@ export default function Places() {
             )}
           </label>
 
-          {/* Counts */}
           <div className="min-w-[260px] flex-1">
             <div className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm">
               <span>
@@ -217,12 +186,10 @@ export default function Places() {
           </div>
         </div>
 
-        {/* Map + List */}
         <div className="grid gap-4 md:grid-cols-5">
           <div className="md:col-span-3">
             {center ? (
               <NearbyMap
-                // No ref prop here (fixes: Property 'ref' does not exist on type 'Props')
                 initialCenter={center}
                 initialZoom={12}
                 radiusKm={radiusKm}
@@ -235,12 +202,11 @@ export default function Places() {
                   setResults(list as Place[]);
                   setLoading(false);
                 }}
+                focusPlaceId={selectedPlaceId}
               />
             ) : (
               <div className="flex h-[480px] items-center justify-center rounded-xl border">
-                <div className="text-sm text-muted-foreground">
-                  {geoMsg ?? "Waiting for location permission…"}
-                </div>
+                <div className="text-sm text-muted-foreground">{geoMsg ?? "Waiting for location permission…"}</div>
               </div>
             )}
           </div>
@@ -250,23 +216,22 @@ export default function Places() {
               <div className="mb-2 text-sm font-medium">Results</div>
               <ul className="max-h-[480px] space-y-2 overflow-auto pr-1">
                 {results.length === 0 && !loading && !error && (
-                  <li className="text-sm text-muted-foreground">
-                    No places found in this radius.
-                  </li>
+                  <li className="text-sm text-muted-foreground">No places found in this radius.</li>
                 )}
                 {results.map((p, i) => {
                   const key = `${p.id ?? `${p.name}-${i}`}`;
                   return (
                     <li
                       key={key}
-                      className="cursor-pointer rounded-md border p-2 transition hover:bg-muted/40"
+                      className={`cursor-pointer rounded-md border p-2 transition hover:bg-muted/40 ${
+                        selectedPlaceId && String(selectedPlaceId) === String(p.id) ? "bg-muted/60" : ""
+                      }`}
                       title="Show on map"
-                      // If NearbyMap later exposes an imperative method, call it here.
-                      onClick={() => {}}
+                      onClick={() => setSelectedPlaceId(p.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium">{p.name || "(no name)"}</div>
-                        <div className="text-xs text-muted-foreground">{p.type || ""}</div>
+                        <div className="text-xs text-muted-foreground">Feature</div>
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">{p.address || ""}</div>
                     </li>

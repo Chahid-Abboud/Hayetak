@@ -48,10 +48,7 @@ class MealEntryController extends Controller
 
     public function destroy(MealEntry $entry)
     {
-        if ($entry->user_id !== Auth::id()) {
-            abort(403);
-        }
-
+        abort_if($entry->user_id !== Auth::id(), 403);
         $entry->delete();
         return back()->with('success', 'Removed.');
     }
@@ -73,7 +70,7 @@ class MealEntryController extends Controller
 
     private function summaries(int $userId, string $date, bool $includeEntries = true)
     {
-        // IMPORTANT: use existing columns in foods: calories, protein_g, carbs_g, fat_g
+        // Only use existing columns: calories, protein_g, carbs_g, fat_g
         $dailyTotals = DB::table('meal_entries as me')
             ->join('foods as f', 'f.id', '=', 'me.food_id')
             ->selectRaw("
@@ -110,7 +107,7 @@ class MealEntryController extends Controller
 
         foreach ($byMealRaw as $row) {
             $key = in_array($row->meal_type, ['breakfast','lunch','dinner','snack','drink'], true)
-                ? $row->meal_type : 'breakfast';
+                ? $row->meal_type : 'snack';
             $byMeal[$key] = [
                 'calories' => (float) $row->calories,
                 'protein'  => (float) $row->protein,
@@ -141,11 +138,11 @@ class MealEntryController extends Controller
                             'name'         => (string) $f->name,
                             'serving_unit' => (string) ($f->serving_unit ?? 'g'),
                             'serving_size' => (float) ($f->serving_size ?? 100),
-                            // multiply by servings so the list shows the actual added amount
-                            'calories'     => (float) ( ($f->calories  ?? 0) * $ratio ),
-                            'protein'      => (float) ( ($f->protein_g ?? 0) * $ratio ),
-                            'carbs'        => (float) ( ($f->carbs_g   ?? 0) * $ratio ),
-                            'fat'          => (float) ( ($f->fat_g     ?? 0) * $ratio ),
+                            // multiply by servings using existing columns
+                            'calories'     => (float) (($f->calories  ?? 0) * $ratio),
+                            'protein'      => (float) (($f->protein_g ?? 0) * $ratio),
+                            'carbs'        => (float) (($f->carbs_g   ?? 0) * $ratio),
+                            'fat'          => (float) (($f->fat_g     ?? 0) * $ratio),
                         ],
                     ];
                 })->values();

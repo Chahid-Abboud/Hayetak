@@ -8,7 +8,7 @@ use App\Http\Controllers\Auth\RegisterWizardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WaterIntakeController;
 use App\Http\Controllers\PlacesController;
-use App\Http\Controllers\TrackMealsController;
+// use App\Http\Controllers\TrackMealsController; // ⛔️ remove/disable this import
 use App\Http\Controllers\FoodController;
 use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\Workout\WorkoutPlanController;
@@ -57,9 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // ✅ Meal tracking pages now routed through the controller (loads entries + totals)
-    Route::get('/track-meals', [TrackMealsController::class, 'index'])->name('track-meals.index');
-    Route::get('/meal-tracker', [TrackMealsController::class, 'index'])->name('meal.tracker');
+    // ✅ Meal tracking page now uses MealEntryController only (single source of truth)
+    Route::get('/track-meals', [MealEntryController::class, 'index'])->name('track-meals.index');
+    Route::get('/meal-tracker', [MealEntryController::class, 'index'])->name('meal.tracker');
 
     // Planner (future use)
     Route::get('/planner', fn () => Inertia::render('planner'))->name('planner');
@@ -69,16 +69,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/nearby', fn () => Inertia::render('Places'))->name('nearby');
 
     /*
-    |--------------------------------------------------------------------------
-    | Workouts
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/workouts/log', [WorkoutLogController::class, 'index'])->name('workouts.log');
-    Route::post('/workouts/log/start', [WorkoutLogController::class, 'start'])->name('workouts.log.start');
-    Route::post('/workouts/log/{log}/add-set', [WorkoutLogController::class, 'addSet'])->name('workouts.log.addSet');
-    Route::post('/workouts/log/{log}/finish', [WorkoutLogController::class, 'finish'])->name('workouts.log.finish');
-    Route::get('/workouts/plan', [WorkoutPlanController::class, 'index'])->name('workouts.plan');
-    Route::get('/workouts/progress', [WorkoutLogController::class, 'progress'])->name('workouts.progress');
+|--------------------------------------------------------------------------
+| Workouts
+|--------------------------------------------------------------------------
+*/
+Route::get('/workouts', fn () => redirect()->route('workouts.plan'))->name('workouts.index'); // NEW
+
+Route::get('/workouts/log', [WorkoutLogController::class, 'index'])->name('workouts.log');
+Route::post('/workouts/log/start', [WorkoutLogController::class, 'start'])->name('workouts.log.start');
+Route::post('/workouts/log/{log}/add-set', [WorkoutLogController::class, 'addSet'])->name('workouts.log.addSet');
+Route::post('/workouts/log/{log}/finish', [WorkoutLogController::class, 'finish'])->name('workouts.log.finish');
+
+Route::get('/workouts/plan', [WorkoutPlanController::class, 'index'])->name('workouts.plan');
+Route::post('/workouts/plan', [WorkoutPlanController::class, 'store'])->name('workouts.plan.store');  // Add this line
+
+Route::get('/workouts/progress', [WorkoutLogController::class, 'progress'])->name('workouts.progress');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -87,9 +93,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
     Route::post('/water', [WaterIntakeController::class, 'store'])->name('water.store');
 
-    // Meals & diet logs
-    Route::post('/track-meals/diet', [TrackMealsController::class, 'storeDiet'])->name('track-meals.diet.store');
-    Route::post('/track-meals/log', [TrackMealsController::class, 'storeLog'])->name('track-meals.log.store');
+    // Meals & diet logs (keep if you still use them elsewhere)
+    // Route::post('/track-meals/diet', [TrackMealsController::class, 'storeDiet'])->name('track-meals.diet.store');
+    // Route::post('/track-meals/log', [TrackMealsController::class, 'storeLog'])->name('track-meals.log.store');
 
     // Individual meal entries (React frontend)
     Route::post('/meal-entries', [MealEntryController::class, 'store'])->name('meal.entries.store');
@@ -101,11 +107,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/profile', fn () => Inertia::render('settings/profile'))->name('profile.show');
-
-    // Uncomment these if you later re-enable ProfileController endpoints
-    // Route::post('/profile/update', [ProfileController::class, 'updateProfileBasic'])->name('profile.update.basic');
-    // Route::post('/profile/prefs', [ProfileController::class, 'updatePrefs'])->name('profile.prefs');
-    // Route::post('/profile/measurements', [ProfileController::class, 'addMeasurement'])->name('profile.measurements.add');
 });
 
 /*
