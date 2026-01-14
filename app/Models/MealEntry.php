@@ -9,10 +9,11 @@ class MealEntry extends Model
 {
     protected $fillable = ['user_id','food_id','meal_type','servings','eaten_at'];
 
-    protected $casts = [
-        'eaten_at' => 'date',
-        'servings' => 'decimal:2',
-    ];
+  protected $casts = [
+    'eaten_at' => 'date:Y-m-d',
+    'servings' => 'decimal:2',
+];
+
 
     public function food(): BelongsTo {
         return $this->belongsTo(Food::class);
