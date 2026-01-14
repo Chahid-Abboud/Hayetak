@@ -1,75 +1,61 @@
 <?php
-// app/Http/Controllers/FoodController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Food;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class FoodController extends Controller
 {
     public function search(Request $request)
     {
-        $q        = trim((string) $request->query('q', ''));
-        $category = $request->query('category'); // 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink'
-        $page     = max(1, (int) $request->query('page', 1));
-        $perPage  = 20;
+        // ✅ Intelephense-friendly: $request is typed, user is known
+        $user = $request->user(); // or Auth::user()
 
-        $foods = Food::query()
-            // be explicit about columns we need
+        $q = trim((string) $request->query('q', ''));
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 15;
+
+        // Optional filters
+        $category = $request->query('category'); // ex: "Breakfast"
+        $mealType = $request->query('meal_type'); // ex: "breakfast"
+        $excludeAllergens = (bool) $request->boolean('exclude_allergens', false);
+
+        // Example: user allergies stored somewhere (adjust to your schema)
+        // If you store allergies as json array: $user->allergies (or $user->prefs->allergies)
+        $userAllergens = [];
+        if ($excludeAllergens && $user) {
+            // adjust these paths based on your DB
+            $userAllergens = (array) ($user->allergies ?? []);
+        }
+
+        $query = Food::query()
             ->select([
-                'id',
-                'name',
-                'brand',
-                'serving_size',
-                'serving_unit',
-                'calories',
-                'protein_g',
-                'carbs_g',
-                'fat_g',
-                'meal_types',
-                'tags',
+                'id', 'name', 'category', 'serving_size', 'serving_unit',
+                'calories', 'protein_g', 'carbs_g', 'fat_g', 'allergens',
             ])
-            // case-insensitive search for Postgres
-            ->when($q !== '', fn ($qq) =>
-                $qq->whereRaw('name ILIKE ?', ["%{$q}%"])
-            )
-            // filter by meal type if provided
-            ->when(in_array($category, ['breakfast','lunch','dinner','snack','drink'], true), fn ($qq) =>
-                $qq->whereRaw('? = ANY(meal_types)', [$category])
-            )
+            ->when($q !== '', fn ($qq) => $qq->where('name', 'ilike', "%{$q}%"))
+            ->when($category, fn ($qq) => $qq->where('category', $category));
+
+        // ✅ Exclude allergens (Postgres jsonb array or text)
+        if ($excludeAllergens && !empty($userAllergens)) {
+            // If allergens is jsonb array: ["milk","nuts"]
+            // This excludes any food where allergens overlaps the user list
+            $query->whereRaw('NOT (allergens ?| array[' . implode(',', array_fill(0, count($userAllergens), '?')) . '])', $userAllergens);
+        }
+
+        $foods = $query
             ->orderBy('name')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        // Map items to include aliases your TS accepts
-        $foods->getCollection()->transform(function (Food $f) {
-            // numbers (allow decimals for grams)
-            $cal = (int)   ($f->calories ?? 0);
-            $pro = (float) ($f->protein_g ?? 0);
-            $car = (float) ($f->carbs_g   ?? 0);
-            $fat = (float) ($f->fat_g     ?? 0);
-
-            return [
-                'id'            => (int) $f->id,
-                'name'          => (string) $f->name,
-                'serving_unit'  => (string) ($f->serving_unit ?? 'g'),
-                'serving_size'  => (float)  ($f->serving_size ?? 100),
-
-                // calories
-                'calories'      => $cal,
-                'calories_kcal' => $cal, // alias for the TS union type
-
-                // macros — provide both *_g and plain names
-                'protein_g'     => $pro,
-                'protein'       => $pro,
-                'carbs_g'       => $car,
-                'carbs'         => $car,
-                'fat_g'         => $fat,
-                'fat'           => $fat,
-            ];
-        });
-
-        return response()->json($foods);
+        return response()->json([
+            'data' => $foods->items(),
+            'meta' => [
+                'current_page' => $foods->currentPage(),
+                'last_page' => $foods->lastPage(),
+                'total' => $foods->total(),
+            ],
+        ]);
     }
 }

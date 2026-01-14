@@ -93,7 +93,9 @@ const Chip = memo(function Chip({
 
 // ===================== Main Page =====================
 export default function PlannerPage() {
-  const { plan, exercises } = usePage<Props>().props;
+  const page = usePage<Partial<Props>>().props;
+const plan: Plan = (page.plan as Plan) ?? null;
+const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [];
 
   const [daysPerWeek, setDaysPerWeek] = useState<number>(
     plan?.days_per_week ?? 3
@@ -1139,7 +1141,7 @@ function buildInitialDays(plan: Plan): DayDraft[] {
     map.set(d.day_index, {
       day_index: d.day_index,
       title: d.title ?? "",
-      exercises: d.exercises.map((e) => ({
+      exercises: (Array.isArray(d.exercises) ? d.exercises : []).map((e) => ({
         exercise_id: e.id,
         target_sets: e.pivot?.target_sets ?? 3,
         target_reps: e.pivot?.target_reps ?? 10,

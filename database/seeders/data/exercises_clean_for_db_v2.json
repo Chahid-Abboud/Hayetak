@@ -1,0 +1,6274 @@
+[
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Assisted Dip",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bar Dip",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "elbows": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Bench Press With Bounce",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Decline Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Floor Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Incline Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Board Bench Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Cable Chest Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Close-Grip Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Close-Grip Feet-Up Bench Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Decline Push-Up",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Chest Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Decline Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Floor Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Incline Bench Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Pullover",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Push-Up",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Push-Up Row",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "low",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Squeeze Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Feet-Up Bench Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Incline Push-Up",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Incline Smith Machine Bench Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kettlebell Floor Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kneeling Push-Up",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kneeling Smith Machine Bench Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "medicine ball",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Medicin Ball Chest Pass",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low",
+      "elbows": "low"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "medicine ball"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Push-Up",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight (rings)",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Push-Ups With Feet in Rings",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight (rings)",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Push-Ups With Hands in Rings",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight (rings)",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Ring Dip",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Smith Machine Bench Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Smith Machine Decline Bench Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Smith Machine Incline Bench Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "machine",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Spoto Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Cable Chest Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Resistance Band Chest Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Superman Push-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Triceps Dip",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Wide-Grip Bench Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Clap Push-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "high",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Alternating Dumbbell Shoulder Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Arnold Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Axle Jerk",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Band External Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Band Internal Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Band Pull-Apart",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Barbell Front Raise",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell High Pull",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Overhead Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Rear Delt Row",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Upright Row",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Behind the Neck Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Bosu Ball Lateral Raise",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bradford Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Front Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Lateral Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Rear Delt Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Cable Upright Row",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Cuban Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Front Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Horizontal Internal Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Horizontal External Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Lateral Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Shoulder Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Upright Row",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Y-Raise",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Face Pull",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "weight plate",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Front Hold",
+    "difficulty": "intermediate",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "weight plate"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Handstand Push-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hang Snatch",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hang Power Clean",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "lower_back": "high",
+      "knees": "medium",
+      "wrists": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hang Power Snatch",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "wrists": "medium",
+      "knees": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hang Power Snatch High Pull",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hang Snatch High Pull",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "High Incline Dumbbell Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Incline Dumbbell Y-Raise",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Jerk Balance",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "knees": "medium",
+      "lower_back": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kettlebell Halo",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low",
+      "neck": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kettlebell Shoulder Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kettlebell Windmill",
+    "difficulty": "advanced",
+    "movement_pattern": "hinge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "medium",
+      "hips": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Landmine Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Lateral Raise Machine",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Lying Dumbbell External Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Lying Dumbbell Internal Shoulder Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Machine Shoulder Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Military Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Monkey Row",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "One-Arm Landmine Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Overhead Dumbbell Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Overhead Press Behind Neck",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "weight plate",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Plate Front Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "weight plate"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Power Jerk",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Power Snatch",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Power Snatch High Pull",
+    "difficulty": "advanced",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Press Behind Neck",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Push Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Reverse Fly Machine",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Seated Dumbbell Lateral Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Seated Barbell Shoulder Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Seated Dumbbell Shoulder Press",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Seated Dumbbell Rear Delt Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Seated Dumbbell Shoulder Press (Neutral Grip)",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Seated Smith Machine Shoulder Press",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution",
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Snatch Balance",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "lower_back": "high",
+      "knees": "high",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Split Jerk",
+    "difficulty": "advanced",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "knees": "high",
+      "lower_back": "high",
+      "hips": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Squat Jerk",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "high",
+      "knees": "high",
+      "lower_back": "high",
+      "ankles": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Standing Dumbbell Rear Delt Row",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing High Pulley Rear Delt Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Resistance Band Lateral Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Sumo High Pull",
+    "difficulty": "advanced",
+    "movement_pattern": "hinge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "lower_back": "high",
+      "hips": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Towel Lateral Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Turkish Get-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "medium",
+      "hips": "medium",
+      "knees": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "wrist_pain_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Wall Handstand Push-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "wrists": "high",
+      "neck": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Wall Slides",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low",
+      "neck": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution",
+      "lower_back_caution",
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Z-Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "high",
+      "hips": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Face Pull (Rope)",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Reverse Fly",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Shoulder External Rotation",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Barbell Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Curl With Bar",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Curl With Rope",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Hammer Curl With Rope",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Concentration Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low",
+      "wrists": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Hammer Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Preacher Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "ez bar",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "EZ-Bar Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "wrists": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "ez_bar"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Incline Dumbbell Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Incline Dumbbell Hammer Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Machine Bicep Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Machine Preacher Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Overhead Cable Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low",
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "ez bar + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Preacher Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "ez_bar",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Reverse Barbell Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Reverse Dumbbell Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "ez bar",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Reverse EZ-Bar Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "ez_bar"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "ez bar + bench",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Spider Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "ez_bar",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Barbell Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Dumbbell Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low",
+      "wrists": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Zottman Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "pull",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "biceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Barbell Lying Triceps Extension",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bodyweight Triceps Extension",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "shoulders": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Overhead Triceps Extension",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low",
+      "shoulders": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Pushdown With Bar",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Pushdown With Rope",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Close-Grip Push-Up",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "medium",
+      "shoulders": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Diamond Push-Up",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "wrists": "high",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Kickback",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Lying Triceps Extension",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Overhead Triceps Extension",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "medium",
+      "elbows": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Dumbbell Skull Crusher",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "ez bar",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "EZ-Bar Skull Crusher",
+    "difficulty": "intermediate",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "ez_bar"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "JM Press",
+    "difficulty": "advanced",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "high",
+      "shoulders": "medium",
+      "wrists": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Machine Triceps Extension",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "One-Arm Cable Pushdown",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Triceps Pushdown",
+    "difficulty": "beginner",
+    "movement_pattern": "push",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "elbows": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "triceps",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Air Squat",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "hips": "medium",
+      "ankles": "medium",
+      "lower_back": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bands",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Banded Hip March",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "hips": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "hip_flexors",
+    "equipment_list": [
+      "bands"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Hack Squat",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "lower_back": "medium",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Lunge",
+    "difficulty": "advanced",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "high",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Barbell Walking Lunge",
+    "difficulty": "advanced",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "high",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Belt Squat",
+    "difficulty": "intermediate",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "lower_back": "low",
+      "hips": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bodyweight Lunge",
+    "difficulty": "beginner",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Bodyweight Leg Curl",
+    "difficulty": "intermediate",
+    "movement_pattern": "hinge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "lower_back": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "hamstrings",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bench",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Box Jump",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "knees": "high",
+      "ankles": "high",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "legs",
+    "equipment_list": [
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell + bench",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Box Squat",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "high"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "barbell",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight + bench",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Bulgarian Split Squat",
+    "difficulty": "intermediate",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "bodyweight",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "cable machine",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cable Machine Hip Adduction",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "hips": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "adductors",
+    "equipment_list": [
+      "cable"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Chair Squat",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "hips": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution",
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Curtsy Lunge",
+    "difficulty": "intermediate",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "glutes",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bench",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Depth Jump",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "knees": "high",
+      "ankles": "high"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "legs",
+    "equipment_list": [
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Lunge",
+    "difficulty": "intermediate",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Squat",
+    "difficulty": "intermediate",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells + bench",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Step-Up",
+    "difficulty": "intermediate",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "dumbbells",
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "dumbbells",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Dumbbell Walking Lunge",
+    "difficulty": "advanced",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "dumbbells"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "barbell",
+    "conditions": [
+      "knee_pain_caution",
+      "wrist_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Front Squat",
+    "difficulty": "advanced",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "wrists": "high",
+      "lower_back": "medium",
+      "hips": "medium",
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "barbell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Goblet Squat",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Hack Squat Machine",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "lower_back": "low",
+      "hips": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Hip Adduction Machine",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "hips": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "adductors",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Hip Abduction Machine",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "hips": "low"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "abductors",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Jumping Lunge",
+    "difficulty": "advanced",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "knees": "high",
+      "ankles": "high",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "legs",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "kettlebell",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Kettlebell Front Squat",
+    "difficulty": "intermediate",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "kettlebell"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Leg Extension",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "knee_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Leg Press",
+    "difficulty": "beginner",
+    "movement_pattern": "squat",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "hips": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Leg Press Calf Raise",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "ankles": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "calves",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "machine",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Lying Leg Curl",
+    "difficulty": "beginner",
+    "movement_pattern": "hinge",
+    "canonical_exercise_id": null,
+    "home_friendly": false,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium"
+    },
+    "exercise_type": "strength",
+    "primary_muscle": "hamstrings",
+    "equipment_list": [
+      "machine"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Burpee",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "knees": "medium",
+      "wrists": "medium",
+      "shoulders": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Jumping Jack",
+    "difficulty": "beginner",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "knees": "low",
+      "ankles": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "High Knees (Running in Place)",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "ankles": "medium",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Mountain Climbers",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "wrists": "medium",
+      "shoulders": "medium",
+      "lower_back": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "jump rope",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Jump Rope",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "ankles": "medium",
+      "knees": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "jump rope"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Shadow Boxing",
+    "difficulty": "beginner",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Squat Jumps",
+    "difficulty": "advanced",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "high",
+      "ankles": "high",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Side Skaters",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "knees": "medium",
+      "ankles": "medium",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bench",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Chair Step-Ups",
+    "difficulty": "beginner",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "medium",
+      "hips": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bench"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Line Jumps",
+    "difficulty": "intermediate",
+    "movement_pattern": "cardio",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "ankles": "medium",
+      "knees": "medium"
+    },
+    "exercise_type": "cardio",
+    "primary_muscle": "cardio",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "towel",
+    "conditions": [],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Towel Calf Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "ankles": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "calves",
+    "equipment_list": [
+      "towel"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "towel",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Supine Hamstring Stretch (with Towel)",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "hips": "low",
+      "knees": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "hamstrings",
+    "equipment_list": [
+      "towel"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Quadriceps Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "knees": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "quads",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "hip_pain_caution",
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Kneeling Hip Flexor Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "lunge",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "hips": "low",
+      "knees": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "hip_flexors",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "hip_pain_caution",
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "IT Band Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "hips": "low",
+      "knees": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "hips",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Knee-to-Chest Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "core",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "lower_back": "low",
+      "hips": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "glutes",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Cross-Body Shoulder Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "towel",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Shoulder Stretch with Towel (Internal Rotation)",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "towel"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Neck Side Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "neck": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "neck",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "hip_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Buttock Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "hips": "low",
+      "lower_back": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "glutes",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Inner Thigh Stretch (Butterfly)",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "frontal",
+    "joint_stress": {
+      "hips": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "adductors",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "knee_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Child's Pose",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "hips": "low",
+      "knees": "low",
+      "shoulders": "low",
+      "lower_back": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "lower_back",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "wrist_pain_caution",
+      "neck_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Cat-Cow Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "wrists": "medium",
+      "knees": "low",
+      "lower_back": "low",
+      "neck": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "spine",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Doorway Chest and Shoulder Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "chest",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "lower_back_caution",
+      "hip_pain_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Supine Spinal Twist (Lower Trunk Rotation)",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "lower_back": "low",
+      "hips": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "lower_back",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "chair",
+    "conditions": [
+      "hip_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "compound",
+    "name": "Seated Trunk Rotation with Hip Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "hips": "low",
+      "lower_back": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "hips",
+    "equipment_list": [
+      "chair"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "hip_pain_caution",
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Piriformis Stretch (Knee Toward Opposite Shoulder)",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "multi",
+    "joint_stress": {
+      "hips": "low",
+      "lower_back": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "glutes",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "lower_back_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Standing Trunk Rotation Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "lower_back": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "back",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Wall Climb Stretch",
+    "difficulty": "beginner",
+    "movement_pattern": "other",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "sagittal",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "mobility",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  },
+  {
+    "secondary_muscles": [],
+    "cues": [],
+    "equipment": "bodyweight",
+    "conditions": [
+      "shoulder_impingement_caution"
+    ],
+    "demo_url": null,
+    "common_mistakes": [],
+    "ai_summary": null,
+    "mechanic": "isolation",
+    "name": "Shoulder Stretch with Rotation (Hand Behind Back)",
+    "difficulty": "beginner",
+    "movement_pattern": "rotation",
+    "canonical_exercise_id": null,
+    "home_friendly": true,
+    "description": null,
+    "plane": "transverse",
+    "joint_stress": {
+      "shoulders": "low"
+    },
+    "exercise_type": "stretch",
+    "primary_muscle": "shoulders",
+    "equipment_list": [
+      "bodyweight"
+    ],
+    "tags": []
+  }
+]

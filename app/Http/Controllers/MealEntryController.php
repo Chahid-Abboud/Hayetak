@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MealEntry;
+use App\Models\UserPref;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,13 +18,49 @@ class MealEntryController extends Controller
             ? Carbon::parse($request->date)->format('Y-m-d')
             : now()->format('Y-m-d');
 
-        [$dailyTotals, $byMeal, $entries] = $this->summaries(Auth::id(), $date);
+        $userId = Auth::id();
+
+        [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date);
+
+        $pref = UserPref::where('user_id', $userId)->first();
+        $targets = $this->targetsFromPref($pref);
+        $recommendations = $this->recommendationsFromPref($pref);
 
         return Inertia::render('track_meal/track_meals', [
-            'date'        => $date,
-            'dailyTotals' => $dailyTotals,
-            'mealTotals'  => $byMeal,
-            'entries'     => $entries,
+            'date'            => $date,
+            'dailyTotals'     => $dailyTotals,
+            'mealTotals'      => $byMeal,
+            'entries'         => $entries,
+            'targets'         => $targets,
+            'recommendations' => $recommendations,
+        ]);
+    }
+
+    /**
+     * ✅ Day API for dynamic UI (calendar, no reload)
+     * GET /api/meal-tracker/day?date=YYYY-MM-DD
+     */
+    public function day(Request $request)
+    {
+        $date = $request->date
+            ? Carbon::parse($request->date)->format('Y-m-d')
+            : now()->format('Y-m-d');
+
+        $userId = Auth::id();
+
+        [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date, true);
+
+        $pref = UserPref::where('user_id', $userId)->first();
+        $targets = $this->targetsFromPref($pref);
+        $recommendations = $this->recommendationsFromPref($pref);
+
+        return response()->json([
+            'date'            => $date,
+            'dailyTotals'     => $dailyTotals,
+            'mealTotals'      => $byMeal,
+            'entries'         => $entries,
+            'targets'         => $targets,
+            'recommendations' => $recommendations,
         ]);
     }
 
@@ -53,24 +90,55 @@ class MealEntryController extends Controller
         return back()->with('success', 'Removed.');
     }
 
-    public function dailyMacros(Request $request)
+    private function targetsFromPref(?UserPref $pref): ?array
     {
-        $date = $request->date
-            ? Carbon::parse($request->date)->format('Y-m-d')
-            : now()->format('Y-m-d');
+        if (!$pref) return null;
 
-        [$dailyTotals, $byMeal] = $this->summaries(Auth::id(), $date, false);
+        $cal = $pref->daily_goal_calories;
+        $p   = $pref->daily_goal_protein_g;
+        $c   = $pref->daily_goal_carbs_g;
+        $f   = $pref->daily_goal_fat_g;
 
-        return response()->json([
-            'date'        => $date,
-            'dailyTotals' => $dailyTotals,
-            'mealTotals'  => $byMeal,
-        ]);
+        // if all missing, return null
+        if ($cal === null && $p === null && $c === null && $f === null) return null;
+
+        return [
+            'calories' => (float) ($cal ?? 0),
+            'protein'  => (float) ($p ?? 0),
+            'carbs'    => (float) ($c ?? 0),
+            'fat'      => (float) ($f ?? 0),
+        ];
+    }
+
+    /**
+     * Optional dietary recommendations:
+     * - if user already has targets, we can reuse them as recommendations (simple & consistent)
+     * - else if tdee_kcal exists, compute a sane split (25% P / 45% C / 30% F)
+     */
+    private function recommendationsFromPref(?UserPref $pref): ?array
+    {
+        if (!$pref) return null;
+
+        $targets = $this->targetsFromPref($pref);
+        if ($targets) return $targets;
+
+        $tdee = (int) ($pref->tdee_kcal ?? 0);
+        if ($tdee <= 0) return null;
+
+        $protein = ($tdee * 0.25) / 4.0;
+        $carbs   = ($tdee * 0.45) / 4.0;
+        $fat     = ($tdee * 0.30) / 9.0;
+
+        return [
+            'calories' => (float) $tdee,
+            'protein'  => round($protein, 1),
+            'carbs'    => round($carbs, 1),
+            'fat'      => round($fat, 1),
+        ];
     }
 
     private function summaries(int $userId, string $date, bool $includeEntries = true)
     {
-        // Only use existing columns: calories, protein_g, carbs_g, fat_g
         $dailyTotals = DB::table('meal_entries as me')
             ->join('foods as f', 'f.id', '=', 'me.food_id')
             ->selectRaw("
@@ -138,8 +206,7 @@ class MealEntryController extends Controller
                             'name'         => (string) $f->name,
                             'serving_unit' => (string) ($f->serving_unit ?? 'g'),
                             'serving_size' => (float) ($f->serving_size ?? 100),
-                            // multiply by servings using existing columns
-                            'calories'     => (float) (($f->calories  ?? 0) * $ratio),
+                            'calories'     => (float) (($f->calories   ?? 0) * $ratio),
                             'protein'      => (float) (($f->protein_g ?? 0) * $ratio),
                             'carbs'        => (float) (($f->carbs_g   ?? 0) * $ratio),
                             'fat'          => (float) (($f->fat_g     ?? 0) * $ratio),

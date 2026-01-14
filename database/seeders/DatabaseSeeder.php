@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,8 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Demo user (keep)
         User::firstOrCreate(
             ['email' => 'test@example.com'],
             [
@@ -25,9 +23,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-           $this->call([
-        ExercisesSeeder::class,
-    ]);
-      $this->call(ImportMySqlDumpSeeder::class);
+        // Run import seeders
+        $this->call([
+            ImportFoodsFromCsvSeeder::class,
+            ImportExercisesFromJsonSeeder::class,
+        ]);
     }
 }
