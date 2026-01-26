@@ -5,27 +5,30 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WorkoutPlan extends Model
+class NutritionPlan extends Model
 {
     use HasFactory;
 
-    protected $table = 'workout_plans';
+    protected $table = 'nutrition_plans';
 
     protected $fillable = [
         'user_id',
-        'ai_request_id', // ✅ NEW
+        'ai_request_id',
         'name',
         'goal',
-        'notes',
+        'start_date',
+        'duration_days',
         'is_active',
-        'is_public',
+        'targets_json',
         'meta',
     ];
 
     protected $casts = [
-        'meta'      => 'array',
-        'is_active' => 'boolean',
-        'is_public' => 'boolean',
+        'start_date'   => 'date',
+        'duration_days'=> 'integer',
+        'is_active'    => 'boolean',
+        'targets_json' => 'array',
+        'meta'         => 'array',
     ];
 
     public function user()
@@ -40,7 +43,7 @@ class WorkoutPlan extends Model
 
     public function days()
     {
-        return $this->hasMany(WorkoutPlanDay::class, 'workout_plan_id')
+        return $this->hasMany(NutritionPlanDay::class, 'nutrition_plan_id')
             ->orderBy('day_index');
     }
 }
