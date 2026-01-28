@@ -49,6 +49,98 @@ type PerMealTotals = Record<
   Totals
 >;
 
+type ProgressPoint = { week: string; [muscle: string]: number | string };
+type Motivation = { title: string; lines: string[] } | null;
+
+// ✅ NEW: Plan types (from HomeController props)
+type FoodLite = {
+  id: number;
+  name: string;
+  category?: string | null;
+  serving_size?: number | string | null;
+  serving_unit?: string | null;
+  calories?: number | null;
+  protein_g?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
+};
+
+type NutritionPlanItemLite = {
+  id: number;
+  food_id: number;
+  servings?: string | number | null;
+  grams?: string | number | null;
+  sort_order?: number | null;
+  notes?: string | null;
+  food?: FoodLite | null;
+};
+
+type NutritionPlanMealLite = {
+  id: number;
+  meal_type: "breakfast" | "lunch" | "dinner" | "snack" | "drink" | string;
+  order: number;
+  notes?: string | null;
+  items: NutritionPlanItemLite[];
+};
+
+type NutritionPlanDayLite = {
+  id: number;
+  day_index: number;
+  date: string; // YYYY-MM-DD
+  notes?: string | null;
+  meals: NutritionPlanMealLite[];
+};
+
+type NutritionPlanLite = {
+  id: number;
+  name: string;
+  goal?: string | null;
+  start_date: string; // YYYY-MM-DD
+  duration_days: number;
+  is_active: boolean;
+  meta?: any;
+  days: NutritionPlanDayLite[];
+};
+
+type WorkoutExerciseLite = {
+  id: number;
+  name: string;
+  primary_muscle?: string | null;
+  equipment?: string | null;
+  difficulty?: string | null;
+  pivot?: {
+    workout_plan_day_id?: number;
+    exercise_id?: number;
+    order_index?: number | null;
+    sets?: number | null;
+    reps_min?: number | null;
+    reps_max?: number | null;
+    rest_seconds?: number | null;
+    notes?: string | null;
+  };
+};
+
+type WorkoutPlanDayLite = {
+  id: number;
+  workout_plan_id: number;
+  day_index: number;
+  name: string;
+  notes?: string | null;
+  exercises: WorkoutExerciseLite[];
+};
+
+type WorkoutPlanLite = {
+  id: number;
+  user_id: number;
+  name: string;
+  goal?: string | null;
+  start_date: string; // YYYY-MM-DD
+  duration_days: number;
+  is_active: boolean;
+  meta?: any;
+  days: WorkoutPlanDayLite[];
+};
+
 type HomeProps = {
   auth: { user: AuthUser };
   isGuest?: boolean;
@@ -68,10 +160,11 @@ type HomeProps = {
     fat: number;
   } | null;
   mealTotals?: PerMealTotals | null;
-};
 
-type ProgressPoint = { week: string; [muscle: string]: number | string };
-type Motivation = { title: string; lines: string[] } | null;
+  // ✅ NEW: generated plans
+  nutritionPlan?: NutritionPlanLite | null;
+  workoutPlan?: WorkoutPlanLite | null;
+};
 
 export default function Home() {
   const {
@@ -82,6 +175,10 @@ export default function Home() {
     todayLog,
     todayMacros,
     mealTotals,
+
+    // ✅ NEW
+    nutritionPlan,
+    workoutPlan,
   } = usePage<HomeProps>().props;
 
   const isGuest = typeof isGuestProp === "boolean" ? isGuestProp : !auth?.user;
@@ -187,20 +284,19 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Today’s Macros</h2>
 
-            {/* Turned into a real button */}
-          <button
-            type="button"
-            onClick={() => router.visit("/track-meals")}
-            className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium"
-            style={{
-              backgroundColor: "var(--primary)",
-              color: "var(--primary-foreground)",
-            }}
-          >
-            Open Meal Tracker
-          </button>
-          </div>
-
+              {/* Turned into a real button */}
+              <button
+                type="button"
+                onClick={() => router.visit("/track-meals")}
+                className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                }}
+              >
+                Open Meal Tracker
+              </button>
+            </div>
 
             {/* Totals */}
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -224,6 +320,101 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ✅ NEW: Generated Plans section (added, without removing your existing UI) */}
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Your Generated Plans</h2>
+              <p className="text-muted-foreground">
+                These are the latest active plans created for you during onboarding.
+                If you just finished setup and don’t see them yet, your queue worker may still be processing.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.visit("/track-meals")}
+                className="rounded-lg px-4 py-2 font-medium"
+                style={{
+                  backgroundColor: "var(--secondary)",
+                  color: "var(--secondary-foreground)",
+                }}
+              >
+                Meal Tracker
+              </button>
+
+              <button
+                onClick={() => router.visit("/workouts/plan")}
+                className="rounded-lg px-4 py-2 font-medium"
+                style={{
+                  background: "color-mix(in oklab, var(--primary) 12%, white)",
+                  color:
+                    "color-mix(in oklab, var(--primary-foreground) 60%, var(--foreground))",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                Workout Planner
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* Nutrition Plan */}
+            <div className="rounded-xl border p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Nutrition Plan</h3>
+                <span className="text-xs text-muted-foreground">
+                  {nutritionPlan?.is_active ? "Active" : nutritionPlan ? "Inactive" : "—"}
+                </span>
+              </div>
+
+              {isGuest ? (
+                <div className="text-sm text-muted-foreground">
+                  Sign in to see your generated nutrition plan.
+                </div>
+              ) : !nutritionPlan ? (
+                <div className="text-sm text-muted-foreground">
+                  No active nutrition plan found yet.
+                  <div className="mt-2 text-xs">
+                    If you use <code>QUEUE_CONNECTION=database</code>, make sure you run:
+                    <div className="mt-1">
+                      <code>php artisan queue:work</code>
+                    </div>
+                    Or just run <code>composer run dev</code>.
+                  </div>
+                </div>
+              ) : (
+                <NutritionPlanPreview plan={nutritionPlan} />
+              )}
+            </div>
+
+            {/* Workout Plan */}
+            <div className="rounded-xl border p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Workout Plan</h3>
+                <span className="text-xs text-muted-foreground">
+                  {workoutPlan?.is_active ? "Active" : workoutPlan ? "Inactive" : "—"}
+                </span>
+              </div>
+
+              {isGuest ? (
+                <div className="text-sm text-muted-foreground">
+                  Sign in to see your generated workout plan.
+                </div>
+              ) : !workoutPlan ? (
+                <div className="text-sm text-muted-foreground">
+                  No active workout plan found yet.
+                  <div className="mt-2 text-xs">
+                    Same note: if queue is database, a worker must be running.
+                  </div>
+                </div>
+              ) : (
+                <WorkoutPlanPreview plan={workoutPlan} />
+              )}
             </div>
           </div>
         </section>
@@ -340,6 +531,161 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ✅ NEW: previews (added at bottom so we don’t remove anything from your old page)
+function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const day =
+    plan.days?.find((d) => d.date === todayISO) ??
+    plan.days?.find((d) => d.day_index === 1) ??
+    plan.days?.[0];
+
+  return (
+    <div className="text-sm">
+      <div className="mb-2">
+        <div className="font-semibold">{plan.name}</div>
+        <div className="text-xs text-muted-foreground">
+          Goal: {plan.goal ?? "—"} · Start: {plan.start_date} · Duration:{" "}
+          {plan.duration_days} day(s)
+        </div>
+      </div>
+
+      {!day ? (
+        <div className="text-sm text-muted-foreground">No days found in this plan.</div>
+      ) : (
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="font-medium">
+              Day {day.day_index}{" "}
+              <span className="text-xs text-muted-foreground">({day.date})</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {(day.meals ?? [])
+              .slice()
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((meal) => (
+                <div key={meal.id} className="rounded-md border p-2">
+                  <div className="text-xs font-semibold capitalize">
+                    {meal.meal_type}
+                  </div>
+
+                  {(meal.items ?? []).length ? (
+                    <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                      {(meal.items ?? [])
+                        .slice()
+                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                        .map((it) => {
+                          const qty =
+                            it.grams != null
+                              ? `${it.grams} g`
+                              : it.servings != null
+                              ? `${it.servings} serving(s)`
+                              : "—";
+                          return (
+                            <li key={it.id} className="flex items-center justify-between gap-2">
+                              <span className="truncate">
+                                {it.food?.name ?? `Food #${it.food_id}`}
+                              </span>
+                              <span className="tabular-nums">{qty}</span>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  ) : (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      No items for this meal.
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
+  const day1 =
+    plan.days?.find((d) => d.day_index === 1) ??
+    plan.days?.[0];
+
+  return (
+    <div className="text-sm">
+      <div className="mb-2">
+        <div className="font-semibold">{plan.name}</div>
+        <div className="text-xs text-muted-foreground">
+          Goal: {plan.goal ?? "—"} · Start: {plan.start_date} · Duration:{" "}
+          {plan.duration_days} day(s)
+        </div>
+      </div>
+
+      {!day1 ? (
+        <div className="text-sm text-muted-foreground">No days found in this plan.</div>
+      ) : (
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 font-medium">
+            Day {day1.day_index}: {day1.name}
+          </div>
+
+          {(day1.exercises ?? []).length ? (
+            <ul className="space-y-2">
+              {day1.exercises
+                .slice()
+                .sort((a, b) => (a.pivot?.order_index ?? 0) - (b.pivot?.order_index ?? 0))
+                .slice(0, 8)
+                .map((ex) => {
+                  const sets = ex.pivot?.sets ?? 0;
+                  const rmin = ex.pivot?.reps_min;
+                  const rmax = ex.pivot?.reps_max;
+                  const repText =
+                    rmin != null && rmax != null
+                      ? `${rmin}-${rmax}`
+                      : rmin != null
+                      ? `${rmin}`
+                      : rmax != null
+                      ? `${rmax}`
+                      : "—";
+
+                  return (
+                    <li key={ex.id} className="rounded-md border p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="truncate text-xs font-semibold">
+                          {ex.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {sets} sets · {repText} reps
+                        </div>
+                      </div>
+
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {ex.primary_muscle ? `Primary: ${ex.primary_muscle}` : ""}
+                        {ex.equipment ? ` · Equipment: ${ex.equipment}` : ""}
+                        {ex.difficulty ? ` · ${ex.difficulty}` : ""}
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              No exercises found for Day 1.
+            </div>
+          )}
+
+          {(day1.exercises ?? []).length > 8 ? (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Showing first 8 exercises… open Planner to view full day.
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProgressMini() {
   const [series, setSeries] = useState<ProgressPoint[]>([]);
   useEffect(() => {
@@ -355,7 +701,7 @@ function ProgressMini() {
         Log a few workouts to unlock progress.
       </div>
     );
-    }
+  }
 
   const last4 = series.slice(-4);
   const muscles = [

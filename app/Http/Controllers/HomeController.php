@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\WaterIntake;
 use App\Models\MealLog;
 
+// ✅ Add these
+use App\Models\NutritionPlan;
+use App\Models\WorkoutPlan;
+
 class HomeController extends Controller
 {
     public function index()
@@ -92,8 +96,6 @@ class HomeController extends Controller
         $mealTotals  = null;
 
         if ($user && Schema::hasTable('meal_entries') && Schema::hasTable('foods')) {
-            // IMPORTANT: your foods table uses `calories`, not `calories_kcal`,
-            // and macros can be NULL. Use COALESCE(...) in sums.
             $daily = DB::table('meal_entries as me')
                 ->join('foods as f', 'f.id', '=', 'me.food_id')
                 ->selectRaw("
@@ -150,6 +152,32 @@ class HomeController extends Controller
             }
         }
 
+        // ✅ NEW: Load active generated plans for showing on the dashboard
+        $nutritionPlan = null;
+        $workoutPlan   = null;
+
+        if ($user) {
+            // Latest ACTIVE nutrition plan (load nested relations + food names)
+            $nutritionPlan = NutritionPlan::query()
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->latest('id')
+                ->with([
+                    'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g'
+                ])
+                ->first();
+
+            // Latest ACTIVE workout plan (load nested relations + exercise names)
+            $workoutPlan = WorkoutPlan::query()
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->latest('id')
+                ->with([
+                    'days.exercises:id,name,primary_muscle,equipment,difficulty'
+                ])
+                ->first();
+        }
+
         return Inertia::render('dashboard', [
             'auth'        => ['user' => $user ? [
                 'id'         => $user->id,
@@ -165,6 +193,10 @@ class HomeController extends Controller
             'latestLog'   => $latestLog,
             'todayMacros' => $todayMacros,
             'mealTotals'  => $mealTotals,
+
+            // ✅ NEW PROPS (safe arrays for TSX)
+            'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,
+            'workoutPlan'   => $workoutPlan ? $workoutPlan->toArray() : null,
         ]);
     }
 }
