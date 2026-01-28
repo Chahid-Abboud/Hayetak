@@ -12,6 +12,7 @@ use App\Http\Controllers\MealEntryController;
 use App\Http\Controllers\Workout\WorkoutPlanController;
 use App\Http\Controllers\Workout\WorkoutLogController;
 use App\Http\Controllers\PlacesLocalController;
+use App\Http\Controllers\Ai\PlanGenerationController;
 
 /**
  * ✅ NEW (Meal Tracker APIs + Favorites APIs)
@@ -158,6 +159,7 @@ Route::get('/api/places', [PlacesController::class, 'index'])
     ->name('api.places');
 
 Route::get('/api/places-local', [PlacesLocalController::class, 'index'])->name('api.places.local');
+Route::middleware('auth:sanctum')->post('/ai/generate-plans', [PlanGenerationController::class, 'generate']);
 
 /*
 |--------------------------------------------------------------------------
