@@ -14,12 +14,11 @@ use App\Http\Controllers\Workout\WorkoutLogController;
 use App\Http\Controllers\PlacesLocalController;
 use App\Http\Controllers\Ai\PlanGenerationController;
 
-/**
- * ✅ NEW (Meal Tracker APIs + Favorites APIs)
- * Make sure these controllers exist (commands below).
- */
 use App\Http\Controllers\MealTrackerApiController;
 use App\Http\Controllers\FoodFavoriteController;
+
+// ✅ ADD THIS
+use App\Http\Controllers\Settings\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,7 +47,6 @@ require __DIR__ . '/auth.php';
 /*
 |--------------------------------------------------------------------------
 | Authenticated area (no guests)
-| Keep 'verified' only if you use email verification.
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -66,17 +64,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | App pages (private)
     |--------------------------------------------------------------------------
     */
-
-    // ✅ Meal tracking page (Inertia) - single source of truth
     Route::get('/track-meals', [MealEntryController::class, 'index'])->name('track-meals.index');
-
-    // Optional alias route (same page)
     Route::get('/meal-tracker', [MealEntryController::class, 'index'])->name('meal.tracker');
 
-    // Planner (future use)
     Route::get('/planner', fn () => Inertia::render('planner'))->name('planner');
 
-    // Places pages (Mapbox etc.)
     Route::get('/places', fn () => Inertia::render('Places'))->name('places');
     Route::get('/nearby', fn () => Inertia::render('Places'))->name('nearby');
 
@@ -104,54 +96,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     */
     Route::post('/water', [WaterIntakeController::class, 'store'])->name('water.store');
 
-    // Individual meal entries (React frontend uses these)
     Route::post('/meal-entries', [MealEntryController::class, 'store'])->name('meal.entries.store');
     Route::delete('/meal-entries/{entry}', [MealEntryController::class, 'destroy'])->name('meal.entries.destroy');
 
     /*
     |--------------------------------------------------------------------------
-    | ✅ Private APIs (require auth)
-    | Put these here so we can:
-    | - filter foods by the logged-in user's allergies
-    | - return favorite flags safely
+    | Private APIs
     |--------------------------------------------------------------------------
     */
-
-    /**
-     * Smart food search
-     * GET /api/foods/search?q=...&meal_type=breakfast&category=...&exclude_allergens=1&page=1
-     */
     Route::get('/api/foods/search', [FoodController::class, 'search'])->name('foods.search');
 
-    /**
-     * Favorites
-     * POST /api/foods/{food}/favorite  -> toggle favorite
-     * GET  /api/foods/favorites        -> list favorites
-     */
     Route::post('/api/foods/{food}/favorite', [FoodFavoriteController::class, 'toggle'])->name('foods.favorite.toggle');
     Route::get('/api/foods/favorites', [FoodFavoriteController::class, 'index'])->name('foods.favorites.index');
 
-    /**
-     * Meal tracker dynamic endpoints (calendar + day view + copy/reuse)
-     * GET  /api/meal-tracker/day?date=YYYY-MM-DD&meal_type=breakfast
-     * GET  /api/meal-tracker/month?month=YYYY-MM
-     * POST /api/meal-tracker/copy-day {from_date,to_date,replace}
-     */
     Route::get('/api/meal-tracker/day', [MealTrackerApiController::class, 'day'])->name('meal.tracker.day');
     Route::get('/api/meal-tracker/month', [MealTrackerApiController::class, 'month'])->name('meal.tracker.month');
     Route::post('/api/meal-tracker/copy-day', [MealTrackerApiController::class, 'copyDay'])->name('meal.tracker.copyDay');
 
     /*
     |--------------------------------------------------------------------------
-    | Profile (render-only)
+    | ✅ Profile (FIXED: use controller so props are passed)
     |--------------------------------------------------------------------------
     */
-    Route::get('/profile', fn () => Inertia::render('settings/profile'))->name('profile.show');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.show');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Public APIs (safe to expose; throttle where needed)
+| Public APIs
 |--------------------------------------------------------------------------
 */
 Route::get('/api/places', [PlacesController::class, 'index'])

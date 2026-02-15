@@ -1,6 +1,6 @@
 // resources/js/pages/dashboard.tsx
 import { Head, usePage, router } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BmiCard from "@/components/BmiCard";
 import WaterCard from "@/components/WaterCard";
 import NavHeader from "@/components/NavHeader";
@@ -52,7 +52,7 @@ type PerMealTotals = Record<
 type ProgressPoint = { week: string; [muscle: string]: number | string };
 type Motivation = { title: string; lines: string[] } | null;
 
-// ✅ NEW: Plan types (from HomeController props)
+// Plan types (from HomeController props)
 type FoodLite = {
   id: number;
   name: string;
@@ -147,11 +147,9 @@ type HomeProps = {
   userProfile: UserProfile;
   water?: WaterState;
 
-  // Optional logs
   todayLog?: DayLog;
   latestLog?: DayLog;
 
-  // Summaries
   todayMacros?: {
     date: string;
     calories: number;
@@ -161,10 +159,91 @@ type HomeProps = {
   } | null;
   mealTotals?: PerMealTotals | null;
 
-  // ✅ NEW: generated plans
   nutritionPlan?: NutritionPlanLite | null;
   workoutPlan?: WorkoutPlanLite | null;
 };
+
+const FOCUS_RING =
+  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+function ActionButton({
+  onClick,
+  children,
+  variant = "primary",
+  className = "",
+  type = "button",
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "soft";
+  className?: string;
+  type?: "button" | "submit";
+}) {
+  const base =
+    "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 active:opacity-100";
+  const styles: React.CSSProperties =
+    variant === "primary"
+      ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }
+      : variant === "secondary"
+      ? {
+          backgroundColor: "var(--secondary)",
+          color: "var(--secondary-foreground)",
+        }
+      : {
+          background: "color-mix(in oklab, var(--primary) 12%, white)",
+          color:
+            "color-mix(in oklab, var(--primary-foreground) 60%, var(--foreground))",
+          border: "1px solid var(--border)",
+        };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={`${base} ${FOCUS_RING} ${className}`}
+      style={styles}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CardSection({
+  title,
+  description,
+  actions,
+  children,
+  "aria-labelledby": ariaLabelledby,
+}: {
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  "aria-labelledby"?: string;
+}) {
+  const headingId =
+    ariaLabelledby ?? title.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <section
+      className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm"
+      aria-labelledby={headingId}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h2 id={headingId} className="text-xl font-semibold">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {actions ? <div className="flex gap-3">{actions}</div> : null}
+      </div>
+
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
 
 export default function Home() {
   const {
@@ -175,8 +254,6 @@ export default function Home() {
     todayLog,
     todayMacros,
     mealTotals,
-
-    // ✅ NEW
     nutritionPlan,
     workoutPlan,
   } = usePage<HomeProps>().props;
@@ -190,31 +267,38 @@ export default function Home() {
     (isGuest ? "guest" : "there");
 
   // --- BMI input coercion from DB/user profile ---
-  const hRaw = userProfile?.height_cm;
-  const wRaw = userProfile?.weight_kg;
-  const heightNum =
-    typeof hRaw === "string"
-      ? Number(hRaw)
-      : typeof hRaw === "number"
-      ? hRaw
-      : undefined;
-  const weightNum =
-    typeof wRaw === "string"
-      ? Number(wRaw)
-      : typeof wRaw === "number"
-      ? wRaw
-      : undefined;
-  const profileSafe =
-    typeof heightNum === "number" &&
-    isFinite(heightNum) &&
-    heightNum > 0 &&
-    typeof weightNum === "number" &&
-    isFinite(weightNum) &&
-    weightNum > 0
-      ? { height_cm: heightNum, weight_kg: weightNum }
-      : undefined;
+  const profileSafe = useMemo(() => {
+    const hRaw = userProfile?.height_cm;
+    const wRaw = userProfile?.weight_kg;
 
-  // --- Optional day log grouping (if sent from controller) ---
+    const heightNum =
+      typeof hRaw === "string"
+        ? Number(hRaw)
+        : typeof hRaw === "number"
+        ? hRaw
+        : undefined;
+
+    const weightNum =
+      typeof wRaw === "string"
+        ? Number(wRaw)
+        : typeof wRaw === "number"
+        ? wRaw
+        : undefined;
+
+    if (
+      typeof heightNum === "number" &&
+      isFinite(heightNum) &&
+      heightNum > 0 &&
+      typeof weightNum === "number" &&
+      isFinite(weightNum) &&
+      weightNum > 0
+    ) {
+      return { height_cm: heightNum, weight_kg: weightNum };
+    }
+    return undefined;
+  }, [userProfile?.height_cm, userProfile?.weight_kg]);
+
+  // --- Optional day log grouping (kept, even if not currently displayed) ---
   const logToShow = todayLog ?? null;
   const grouped: Record<string, TodayLogItem[]> = {
     breakfast: [],
@@ -235,6 +319,7 @@ export default function Home() {
     carbs: 0,
     fat: 0,
   };
+
   const perMeal: PerMealTotals =
     mealTotals ?? {
       breakfast: { calories: 0, protein: 0, carbs: 0, fat: 0 },
@@ -246,7 +331,6 @@ export default function Home() {
 
   const round = (n: number) => Math.round(n);
 
-  // --- Workout actions ---
   const todayISO = new Date().toISOString().slice(0, 10);
 
   const startTodayWorkout = () => {
@@ -260,14 +344,27 @@ export default function Home() {
   return (
     <>
       <Head title="Home" />
+
+      {/* Skip link for keyboard users */}
+      <a
+        href="#main-content"
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 rounded-md bg-card px-3 py-2 text-sm font-semibold shadow ${FOCUS_RING}`}
+      >
+        Skip to main content
+      </a>
+
       <NavHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-8 space-y-10">
+      <main
+        id="main-content"
+        className="mx-auto max-w-6xl px-6 py-8 space-y-10"
+      >
         {/* Page heading */}
-        <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-3xl font-bold tracking-tight">
-              Welcome to Hayetak, {displayName}
+              Welcome to Hayetak,{" "}
+              <span className="capitalize">{displayName}</span>
             </h1>
             <p className="text-muted-foreground">
               {isGuest
@@ -275,116 +372,99 @@ export default function Home() {
                 : "Here’s your personalized dashboard."}
             </p>
           </div>
-          {/* (Removed) Explore Nearby button */}
-        </section>
+        </header>
 
-        {/* Macros card */}
-        <section className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Today’s Macros</h2>
+        {/* Macros */}
+        <CardSection
+          title="Today’s Macros"
+          description="A quick summary of your daily intake and per-meal breakdown."
+          actions={
+            <ActionButton
+              variant="primary"
+              onClick={() => router.visit("/track-meals")}
+            >
+              Open Meal Tracker
+            </ActionButton>
+          }
+          aria-labelledby="todays-macros"
+        >
+          {/* Totals as a definition list for better semantics */}
+          <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label="Calories" value={`${round(macros.calories)} kcal`} />
+            <Stat label="Protein" value={`${round(macros.protein)} g`} />
+            <Stat label="Carbs" value={`${round(macros.carbs)} g`} />
+            <Stat label="Fat" value={`${round(macros.fat)} g`} />
+          </dl>
 
-              {/* Turned into a real button */}
-              <button
-                type="button"
-                onClick={() => router.visit("/track-meals")}
-                className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }}
-              >
-                Open Meal Tracker
-              </button>
-            </div>
-
-            {/* Totals */}
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Stat label="Calories" value={`${round(macros.calories)} kcal`} />
-              <Stat label="Protein" value={`${round(macros.protein)} g`} />
-              <Stat label="Carbs" value={`${round(macros.carbs)} g`} />
-              <Stat label="Fat" value={`${round(macros.fat)} g`} />
-            </div>
-
-            {/* Per-meal */}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-              {(
-                ["breakfast", "lunch", "dinner", "snack", "drink"] as const
-              ).map((mt) => (
-                <div key={mt} className="rounded-xl border p-3">
-                  <div className="text-sm font-medium capitalize">{mt}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {round(perMeal[mt].calories)} kcal · P{" "}
-                    {round(perMeal[mt].protein)} · C{" "}
-                    {round(perMeal[mt].carbs)} · F {round(perMeal[mt].fat)}
-                  </div>
+          {/* Per-meal */}
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+            {(
+              ["breakfast", "lunch", "dinner", "snack", "drink"] as const
+            ).map((mt) => (
+              <div key={mt} className="rounded-xl border p-3">
+                <div className="text-sm font-medium capitalize">{mt}</div>
+                <div className="text-xs text-muted-foreground">
+                  {round(perMeal[mt].calories)} kcal · P{" "}
+                  {round(perMeal[mt].protein)} · C {round(perMeal[mt].carbs)} ·
+                  F {round(perMeal[mt].fat)}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        </section>
+        </CardSection>
 
-        {/* ✅ NEW: Generated Plans section (added, without removing your existing UI) */}
-        <section className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Your Generated Plans</h2>
-              <p className="text-muted-foreground">
-                These are the latest active plans created for you during onboarding.
-                If you just finished setup and don’t see them yet, your queue worker may still be processing.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
+        {/* Generated Plans */}
+        <CardSection
+          title="Your Generated Plans"
+          description="Latest plans created during onboarding. If you don’t see them yet, your queue worker may still be processing."
+          actions={
+            <>
+              <ActionButton
+                variant="secondary"
                 onClick={() => router.visit("/track-meals")}
-                className="rounded-lg px-4 py-2 font-medium"
-                style={{
-                  backgroundColor: "var(--secondary)",
-                  color: "var(--secondary-foreground)",
-                }}
               >
                 Meal Tracker
-              </button>
-
-              <button
+              </ActionButton>
+              <ActionButton
+                variant="soft"
                 onClick={() => router.visit("/workouts/plan")}
-                className="rounded-lg px-4 py-2 font-medium"
-                style={{
-                  background: "color-mix(in oklab, var(--primary) 12%, white)",
-                  color:
-                    "color-mix(in oklab, var(--primary-foreground) 60%, var(--foreground))",
-                  border: "1px solid var(--border)",
-                }}
               >
                 Workout Planner
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              </ActionButton>
+            </>
+          }
+          aria-labelledby="generated-plans"
+        >
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Nutrition Plan */}
             <div className="rounded-xl border p-4">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">Nutrition Plan</h3>
                 <span className="text-xs text-muted-foreground">
-                  {nutritionPlan?.is_active ? "Active" : nutritionPlan ? "Inactive" : "—"}
+                  {nutritionPlan?.is_active
+                    ? "Active"
+                    : nutritionPlan
+                    ? "Inactive"
+                    : "—"}
                 </span>
               </div>
 
               {isGuest ? (
-                <div className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Sign in to see your generated nutrition plan.
-                </div>
+                </p>
               ) : !nutritionPlan ? (
                 <div className="text-sm text-muted-foreground">
-                  No active nutrition plan found yet.
-                  <div className="mt-2 text-xs">
-                    If you use <code>QUEUE_CONNECTION=database</code>, make sure you run:
-                    <div className="mt-1">
+                  <p>No active nutrition plan found yet.</p>
+                  <div className="mt-2 rounded-lg border bg-muted/30 p-3 text-xs">
+                    <p className="font-medium text-foreground">Queue note</p>
+                    <p className="mt-1">
+                      If you use <code>QUEUE_CONNECTION=database</code>, run a
+                      worker:
+                    </p>
+                    <p className="mt-1">
                       <code>php artisan queue:work</code>
-                    </div>
-                    Or just run <code>composer run dev</code>.
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -394,50 +474,49 @@ export default function Home() {
 
             {/* Workout Plan */}
             <div className="rounded-xl border p-4">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold">Workout Plan</h3>
                 <span className="text-xs text-muted-foreground">
-                  {workoutPlan?.is_active ? "Active" : workoutPlan ? "Inactive" : "—"}
+                  {workoutPlan?.is_active
+                    ? "Active"
+                    : workoutPlan
+                    ? "Inactive"
+                    : "—"}
                 </span>
               </div>
 
               {isGuest ? (
-                <div className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Sign in to see your generated workout plan.
-                </div>
+                </p>
               ) : !workoutPlan ? (
                 <div className="text-sm text-muted-foreground">
-                  No active workout plan found yet.
-                  <div className="mt-2 text-xs">
-                    Same note: if queue is database, a worker must be running.
-                  </div>
+                  <p>No active workout plan found yet.</p>
+                  <p className="mt-2 text-xs">
+                    If queue is database, a worker must be running.
+                  </p>
                 </div>
               ) : (
                 <WorkoutPlanPreview plan={workoutPlan} />
               )}
             </div>
           </div>
-        </section>
+        </CardSection>
 
         {/* BMI + Water */}
-        <section>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* BMI */}
-            <div className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">BMI</h2>
-              </div>
+        <section aria-label="Health stats" className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">BMI</h2>
+            <div className="mt-4">
               <BmiCard isGuest={isGuest} profile={profileSafe} />
             </div>
+          </div>
 
-            {/* Water */}
-            <div className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Water Intake</h2>
-              </div>
+          <div className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">Water Intake</h2>
+            <div className="mt-4">
               <WaterCard
                 isGuest={isGuest}
-                // Use DB-provided water state; default to 2L target
                 water={water ?? { today_ml: 0, target_ml: 2000 }}
                 onQuickAdd={(ml: number) =>
                   router.post("/water", { ml }, { preserveScroll: true })
@@ -448,65 +527,38 @@ export default function Home() {
         </section>
 
         {/* Workouts */}
-        <section className="rounded-2xl border bg-card text-card-foreground p-6 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Log Workouts</h2>
-              <p className="text-muted-foreground">
-                Start a session, then record sets & reps. See weekly progress by
-                muscle group.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Primary */}
-              <button
-                onClick={startTodayWorkout}
-                className="rounded-lg px-4 py-2 font-medium"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }}
-              >
+        <CardSection
+          title="Log Workouts"
+          description="Start a session, then record sets & reps. See weekly progress by muscle group."
+          actions={
+            <>
+              <ActionButton variant="primary" onClick={startTodayWorkout}>
                 Start Today’s Workout
-              </button>
-
-              {/* Secondary color (emerald) to distinguish from primary) */}
-              <button
+              </ActionButton>
+              <ActionButton
+                variant="secondary"
                 onClick={() => router.visit("/workouts/log")}
-                className="rounded-lg px-4 py-2 font-medium"
-                style={{
-                  backgroundColor: "var(--secondary)",
-                  color: "var(--secondary-foreground)",
-                }}
               >
                 Open Workout Log
-              </button>
-
-              {/* Soft pill / outline-ish */}
-              <button
+              </ActionButton>
+              <ActionButton
+                variant="soft"
                 onClick={() => router.visit("/workouts/plan")}
-                className="rounded-lg px-4 py-2 font-medium"
-                style={{
-                  background: "color-mix(in oklab, var(--primary) 12%, white)",
-                  color:
-                    "color-mix(in oklab, var(--primary-foreground) 60%, var(--foreground))",
-                  border: "1px solid var(--border)",
-                }}
               >
                 Planner
-              </button>
-            </div>
-          </div>
-
-          {/* Mini progress + motivation */}
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+              </ActionButton>
+            </>
+          }
+          aria-labelledby="log-workouts"
+        >
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="rounded-xl border p-4 lg:col-span-2">
               <h3 className="mb-2 text-sm font-semibold text-foreground">
                 Weekly Progress (avg top-set weight)
               </h3>
               <ProgressMini />
             </div>
+
             <div className="rounded-xl border p-4">
               <h3 className="mb-2 text-sm font-semibold text-foreground">
                 Motivation
@@ -514,7 +566,7 @@ export default function Home() {
               <MotivationBox />
             </div>
           </div>
-        </section>
+        </CardSection>
       </main>
     </>
   );
@@ -523,15 +575,14 @@ export default function Home() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border p-4">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
-      </div>
-      <div className="text-lg font-semibold">{value}</div>
+      </dt>
+      <dd className="text-lg font-semibold">{value}</dd>
     </div>
   );
 }
 
-// ✅ NEW: previews (added at bottom so we don’t remove anything from your old page)
 function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
   const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -551,7 +602,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
       </div>
 
       {!day ? (
-        <div className="text-sm text-muted-foreground">No days found in this plan.</div>
+        <p className="text-sm text-muted-foreground">No days found in this plan.</p>
       ) : (
         <div className="rounded-lg border p-3">
           <div className="mb-2 flex items-center justify-between">
@@ -575,7 +626,9 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                     <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
                       {(meal.items ?? [])
                         .slice()
-                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                        .sort(
+                          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+                        )
                         .map((it) => {
                           const qty =
                             it.grams != null
@@ -584,7 +637,10 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                               ? `${it.servings} serving(s)`
                               : "—";
                           return (
-                            <li key={it.id} className="flex items-center justify-between gap-2">
+                            <li
+                              key={it.id}
+                              className="flex items-center justify-between gap-2"
+                            >
                               <span className="truncate">
                                 {it.food?.name ?? `Food #${it.food_id}`}
                               </span>
@@ -594,9 +650,9 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                         })}
                     </ul>
                   ) : (
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       No items for this meal.
-                    </div>
+                    </p>
                   )}
                 </div>
               ))}
@@ -608,9 +664,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
 }
 
 function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
-  const day1 =
-    plan.days?.find((d) => d.day_index === 1) ??
-    plan.days?.[0];
+  const day1 = plan.days?.find((d) => d.day_index === 1) ?? plan.days?.[0];
 
   return (
     <div className="text-sm">
@@ -623,7 +677,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
       </div>
 
       {!day1 ? (
-        <div className="text-sm text-muted-foreground">No days found in this plan.</div>
+        <p className="text-sm text-muted-foreground">No days found in this plan.</p>
       ) : (
         <div className="rounded-lg border p-3">
           <div className="mb-2 font-medium">
@@ -634,7 +688,10 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
             <ul className="space-y-2">
               {day1.exercises
                 .slice()
-                .sort((a, b) => (a.pivot?.order_index ?? 0) - (b.pivot?.order_index ?? 0))
+                .sort(
+                  (a, b) =>
+                    (a.pivot?.order_index ?? 0) - (b.pivot?.order_index ?? 0)
+                )
                 .slice(0, 8)
                 .map((ex) => {
                   const sets = ex.pivot?.sets ?? 0;
@@ -670,15 +727,15 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                 })}
             </ul>
           ) : (
-            <div className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               No exercises found for Day 1.
-            </div>
+            </p>
           )}
 
           {(day1.exercises ?? []).length > 8 ? (
-            <div className="mt-2 text-xs text-muted-foreground">
-              Showing first 8 exercises… open Planner to view full day.
-            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Showing first 8 exercises… open Planner to view the full day.
+            </p>
           ) : null}
         </div>
       )}
@@ -688,40 +745,51 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
 function ProgressMini() {
   const [series, setSeries] = useState<ProgressPoint[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
-    fetch("/workouts/progress?weeks=8")
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    fetch("/workouts/progress?weeks=8", { signal: ac.signal })
       .then((r) => r.json())
       .then((d) => setSeries(Array.isArray(d.series) ? d.series : []))
-      .catch(() => setSeries([]));
+      .catch(() => {
+        // ignore abort errors, treat others as empty
+        setSeries([]);
+      });
+
+    return () => ac.abort();
   }, []);
 
   if (!series.length) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Log a few workouts to unlock progress.
-      </div>
+      </p>
     );
   }
 
   const last4 = series.slice(-4);
-  const muscles = [
-    "chest",
-    "back",
-    "shoulders",
-    "legs",
-    "biceps",
-    "triceps",
-    "core",
-  ];
+  const muscles = useMemo(
+    () => ["chest", "back", "shoulders", "legs", "biceps", "triceps", "core"],
+    []
+  );
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
+        <caption className="sr-only">
+          Weekly progress table showing average top-set weight by muscle group.
+        </caption>
         <thead>
           <tr className="text-left text-muted-foreground">
-            <th className="py-1 pr-4">Week</th>
+            <th scope="col" className="py-1 pr-4">
+              Week
+            </th>
             {muscles.map((m) => (
-              <th key={m} className="py-1 pr-4 capitalize">
+              <th key={m} scope="col" className="py-1 pr-4 capitalize">
                 {m}
               </th>
             ))}
@@ -730,7 +798,9 @@ function ProgressMini() {
         <tbody>
           {last4.map((row, i) => (
             <tr key={i} className="border-t">
-              <td className="py-1 pr-4 font-medium">{String(row.week)}</td>
+              <th scope="row" className="py-1 pr-4 font-medium">
+                {String(row.week)}
+              </th>
               {muscles.map((m) => (
                 <td key={m} className="py-1 pr-4 tabular-nums">
                   {typeof row[m] === "number" ? `${row[m]} kg` : "—"}
@@ -744,30 +814,69 @@ function ProgressMini() {
   );
 }
 
+/**
+ * Minimal client-side sanitizer:
+ * - removes <script> tags
+ * - strips "on*" event handler attributes
+ * - keeps basic inline tags if present (e.g., <strong>, <em>, <br>)
+ *
+ * NOTE: Real sanitization is best done server-side or with a vetted lib.
+ */
+function sanitizeMotivationHtml(input: string): string {
+  if (typeof window === "undefined") return input;
+
+  try {
+    const doc = new DOMParser().parseFromString(input, "text/html");
+    // remove scripts
+    doc.querySelectorAll("script").forEach((n) => n.remove());
+    // strip on* attributes
+    doc.querySelectorAll("*").forEach((el) => {
+      [...el.attributes].forEach((attr) => {
+        if (attr.name.toLowerCase().startsWith("on")) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    return doc.body.innerHTML;
+  } catch {
+    return input;
+  }
+}
+
 function MotivationBox() {
   const [motivation, setMotivation] = useState<Motivation>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    fetch("/workouts/progress?weeks=8")
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    fetch("/workouts/progress?weeks=8", { signal: ac.signal })
       .then((r) => r.json())
       .then((d) => setMotivation(d.motivation ?? null))
       .catch(() => setMotivation(null));
+
+    return () => ac.abort();
   }, []);
 
   if (!motivation) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Keep logging to see weekly wins ✨
-      </div>
+      </p>
     );
   }
 
   return (
-    <div className="text-sm">
+    <div className="text-sm" aria-live="polite">
       <div className="mb-1 font-semibold">{motivation.title}</div>
       <ul className="list-disc space-y-1 pl-5">
         {motivation.lines.map((l: string, i: number) => (
-          <li key={i} dangerouslySetInnerHTML={{ __html: l }} />
+          <li
+            key={i}
+            dangerouslySetInnerHTML={{ __html: sanitizeMotivationHtml(l) }}
+          />
         ))}
       </ul>
     </div>
