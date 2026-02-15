@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\AiRequest;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+
+class AiExportTrainingData extends Command
+{
+    protected $signature = 'ai:export-training-data
+        {--out=storage/app/ai/training/train.jsonl : Output jsonl path}
+        {--limit=0 : Limit rows (0 = no limit)}
+        {--type=plan_generator : AiRequest type filter}
+        {--status=succeeded : AiRequest status filter}
+        {--with-workout=1 : Include workout_plan in target}
+    ';
+
+    protected $description = 'Export successful AI plan generations as (input_context -> output_json) JSONL for training';
+
+    public function handle(): int
+    {
+        $out = base_path($this->option('out'));
+        $limit = (int) $this->option('limit');
+        $type = (string) $this->option('type');
+        $status = (string) $this->option('status');
+        $withWorkout = (int) $this->option('with-workout') === 1;
+
+        File::ensureDirectoryExists(dirname($out));
+
+        $q = AiRequest::query()
+            ->where('type', $type)
+            ->where('status', $status)
+            ->whereNotNull('input_context_json')
+            ->whereNotNull('output_json')
+            ->orderBy('id', 'asc');
+
+        if ($limit > 0) {
+            $q->limit($limit);
+        }
+
+        $count = 0;
+        $fh = fopen($out, 'w');
+
+        $q->chunkById(500, function ($rows) use (&$count, $fh, $withWorkout) {
+            foreach ($rows as $r) {
+                // Ensure arrays (your model likely casts json columns to array already,
+                // but handle strings safely too)
+                $ctx = $r->input_context_json;
+                if (is_string($ctx)) $ctx = json_decode($ctx, true);
+
+                $outJson = $r->output_json;
+                if (is_string($outJson)) $outJson = json_decode($outJson, true);
+
+                if (!is_array($ctx) || !is_array($outJson)) {
+                    continue;
+                }
+
+                // We train ONLY the structured plan output
+                $target = [
+                    'nutrition_plan' => $outJson['nutrition_plan'] ?? null,
+                ];
+                if ($withWorkout) {
+                    $target['workout_plan'] = $outJson['workout_plan'] ?? null;
+                }
+
+                // Skip if nutrition_plan missing
+                if (!$target['nutrition_plan']) continue;
+
+                // Make a stable instruction prompt (this is what the model learns)
+                $example = [
+                    "schema" => "hayetak_plan_v1",
+                    "instruction" => "Generate a nutrition_plan (and workout_plan if requested) strictly as JSON that matches the schema.",
+                    "input_context" => $ctx,
+                    "target_json" => $target,
+                ];
+
+                fwrite($fh, json_encode($example, JSON_UNESCAPED_UNICODE) . "\n");
+                $count++;
+            }
+        });
+
+        fclose($fh);
+
+        $this->info("✅ Exported {$count} examples to: {$out}");
+        $this->line("Tip: start small: --limit=2000 then grow.");
+        return self::SUCCESS;
+    }
+}

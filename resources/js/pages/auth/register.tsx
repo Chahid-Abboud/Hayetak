@@ -1,5 +1,5 @@
 // resources/js/pages/auth/register.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Head, useForm } from "@inertiajs/react";
 
 /* ---------- Props & Types ---------- */
@@ -88,6 +88,9 @@ const ACTIVITY_LEVELS: ActivityLevel[] = [
 const clamp = (v: number, min: number, max: number) =>
   Math.min(Math.max(v, min), max);
 
+const FOCUS_RING =
+  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
 // NEW total steps (2FA step removed; 2FA will be forced server-side after register)
 const computeTotalSteps = (tried: "yes" | "no" | "") =>
   tried === "yes" ? 6 : 5;
@@ -135,15 +138,96 @@ function preventNonNumericKeys(
   if (blocked.includes(e.key)) e.preventDefault();
 }
 
-/* ---------- Nicely-styled checkbox control ---------- */
+/* ---------- UI helpers (small, no deps) ---------- */
+function SectionCard({
+  title,
+  description,
+  children,
+  headingRef,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  headingRef?: React.RefObject<HTMLHeadingElement>;
+}) {
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <h2 ref={headingRef} tabIndex={-1} className="text-lg font-medium">
+          {title}
+        </h2>
+        {description ? (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ErrorText({ id, children }: { id: string; children: string }) {
+  return (
+    <p id={id} className="mt-1 text-sm text-destructive">
+      {children}
+    </p>
+  );
+}
+
+function Field({
+  id,
+  label,
+  hint,
+  error,
+  children,
+  required,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errId = error ? `${id}-error` : undefined;
+  const describedBy = [hintId, errId].filter(Boolean).join(" ") || undefined;
+
+  return (
+    <div className="space-y-1">
+      <label htmlFor={id} className="block text-sm font-medium">
+        {label} {required ? <span className="text-destructive">*</span> : null}
+      </label>
+      <div
+        className="rounded-md"
+        aria-describedby={describedBy}
+        aria-invalid={!!error}
+      >
+        {/* child should have id={id} */}
+        {children}
+      </div>
+      {hint ? (
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+      {error ? <ErrorText id={errId!}>{error}</ErrorText> : null}
+    </div>
+  );
+}
+
+/* Tile checkbox (keeps your styling, improves focus) */
 function CheckTile({
   checked,
   onChange,
   label,
+  name,
+  value,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: React.ReactNode;
+  name?: string;
+  value?: string;
 }) {
   return (
     <label
@@ -154,12 +238,100 @@ function CheckTile({
     >
       <input
         type="checkbox"
-        className="h-4 w-4 shrink-0 rounded border-input accent-[#0EA5A4] focus:ring-0"
+        name={name}
+        value={value}
+        className={`h-4 w-4 shrink-0 rounded border-input accent-[#0EA5A4] ${FOCUS_RING}`}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
       <span className="text-sm">{label}</span>
     </label>
+  );
+}
+
+/* Pill radio group (styled like your buttons, correct semantics) */
+function RadioPills<T extends string>({
+  name,
+  value,
+  onChange,
+  options,
+  legend,
+  error,
+}: {
+  name: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  legend: string;
+  error?: string;
+}) {
+  const errId = error ? `${name}-error` : undefined;
+
+  return (
+    <fieldset className="space-y-2" aria-describedby={errId}>
+      <legend className="text-sm font-medium">{legend}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <label key={opt.value} className="cursor-pointer">
+              <input
+                type="radio"
+                name={name}
+                value={opt.value}
+                className="sr-only"
+                checked={active}
+                onChange={() => onChange(opt.value)}
+              />
+              <span
+                className={[
+                  "inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium capitalize transition",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted",
+                  FOCUS_RING,
+                ].join(" ")}
+              >
+                {opt.label}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {error ? <ErrorText id={errId!}>{error}</ErrorText> : null}
+    </fieldset>
+  );
+}
+
+/* Primary/secondary buttons */
+function Button({
+  children,
+  onClick,
+  variant = "primary",
+  type = "button",
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary";
+  type?: "button" | "submit";
+  disabled?: boolean;
+}) {
+  const base =
+    "inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-semibold transition";
+  const styles =
+    variant === "primary"
+      ? "bg-primary text-primary-foreground hover:opacity-90"
+      : "border hover:bg-muted";
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${styles} ${FOCUS_RING} disabled:opacity-50`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -203,12 +375,12 @@ function RegisterWizard(props: Props) {
     // Goals
     dietary_goal: "",
     fitness_goal: "",
-    diet_name: "",
+    diet_name: "", // final diet name that will be submitted
     allergies: [] as string[],
 
     // Activity & Training
     activity_level: "" as ActivityLevel | "",
-    workout_days_per_week: "" as string, // keep as string for loose typing; cast on submit
+    workout_days_per_week: "" as string,
     workout_location: "" as WorkoutLocation,
 
     // Diet experience
@@ -221,8 +393,12 @@ function RegisterWizard(props: Props) {
     password: "",
     password_confirmation: "",
 
-    // FORCE 2FA after register. Backend should redirect to authenticator setup page.
+    // FORCE 2FA after register.
     force_enable_2fa: true,
+
+    // NEW (client-only helper field): store "other diet" text separately
+    diet_other_name: "",
+    diet_choice: "" as string, // selected from list OR "Other"
   });
 
   const totalSteps = useMemo(
@@ -233,6 +409,13 @@ function RegisterWizard(props: Props) {
   useEffect(() => {
     if (step > totalSteps) setStep(totalSteps);
   }, [totalSteps, step]);
+
+  // focus management
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    // Focus the step heading when step changes (better for SR/keyboard)
+    stepHeadingRef.current?.focus();
+  }, [step]);
 
   const reasons = [
     "Too restrictive",
@@ -248,9 +431,9 @@ function RegisterWizard(props: Props) {
   ];
 
   const back = () => setStep((s) => Math.max(1, s - 1));
+
   const next = () => {
     if (!validateStep(step)) return;
-    // Leaving step 4: if "no", jump straight to final step
     if (step === 4 && data.tried_diet_before === "no") {
       setStep(totalSteps);
     } else {
@@ -260,17 +443,26 @@ function RegisterWizard(props: Props) {
 
   const submit = () => {
     if (!validateStep(totalSteps)) return;
-    // cast numeric strings just before submit
-    transform((d) => ({
-      ...d,
-      age: d.age ? Number(d.age) : null,
-      height_cm: d.height_cm ? Number(d.height_cm) : null,
-      weight_kg: d.weight_kg ? Number(d.weight_kg) : null,
-      workout_days_per_week:
-        d.workout_days_per_week !== "" ? Number(d.workout_days_per_week) : null,
-      force_enable_2fa: true, // ensure it remains true even if someone tampers with the UI
-    }));
-    post("/register"); // server should redirect to your 2FA QR setup page
+
+    transform((d) => {
+      // ensure diet_name is correct at submit time
+      const finalDiet =
+        d.diet_choice === "Other" ? d.diet_other_name.trim() : d.diet_choice;
+
+      return {
+        ...d,
+        diet_name: finalDiet,
+        // cast numeric strings just before submit
+        age: d.age ? Number(d.age) : null,
+        height_cm: d.height_cm ? Number(d.height_cm) : null,
+        weight_kg: d.weight_kg ? Number(d.weight_kg) : null,
+        workout_days_per_week:
+          d.workout_days_per_week !== "" ? Number(d.workout_days_per_week) : null,
+        force_enable_2fa: true,
+      };
+    });
+
+    post("/register");
   };
 
   // Numeric wrappers
@@ -292,7 +484,6 @@ function RegisterWizard(props: Props) {
       setData(key, formatted as any);
     };
 
-  // Live warning for workout days
   const workoutDaysNum = Number(data.workout_days_per_week);
   const workoutDaysWarning =
     data.workout_days_per_week !== "" &&
@@ -338,9 +529,12 @@ function RegisterWizard(props: Props) {
     if (s === 2) {
       if (!data.dietary_goal) ce.dietary_goal = "Select a dietary goal.";
       if (!data.fitness_goal) ce.fitness_goal = "Select a fitness goal.";
-      if (!data.diet_name) ce.diet_name = "Select or type a diet.";
-      if (data.diet_name === "Other" && data.diet_name.trim() === "Other")
-        ce.diet_name = "Please type your diet name after choosing Other.";
+
+      if (!data.diet_choice) ce.diet_choice = "Select a diet.";
+      if (data.diet_choice === "Other") {
+        if (!data.diet_other_name.trim())
+          ce.diet_other_name = "Please type your diet name.";
+      }
     }
 
     if (s === 3) {
@@ -372,7 +566,6 @@ function RegisterWizard(props: Props) {
         ce.diet_failure_other = "Keep the 'Other' reason under 120 characters.";
     }
 
-    // Final step validation (6 if tried=yes, 5 if no)
     if (s === totalSteps) {
       if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
         ce.email = "Enter a valid email address.";
@@ -394,150 +587,206 @@ function RegisterWizard(props: Props) {
     [totalSteps]
   );
 
+  // Error summary for current step (helps SR users)
+  const stepErrors = useMemo(() => {
+    const out: { field: string; message: string }[] = [];
+    Object.entries(clientErrors).forEach(([k, v]) => out.push({ field: k, message: v }));
+    // include server errors if present and no client error for that field
+    Object.entries(errors ?? {}).forEach(([k, v]) => {
+      if (!clientErrors[k]) out.push({ field: k, message: String(v) });
+    });
+    return out;
+  }, [clientErrors, errors]);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Create your Hayetak account</h1>
+      <header className="space-y-2">
+        <h1 className="text-2xl font-semibold">Create your Hayetak account</h1>
+        <p className="text-sm text-muted-foreground">
+          Step {step} of {totalSteps}. This takes about 2–3 minutes.
+        </p>
 
-      {/* Progress bar */}
-      <div className="flex gap-2" aria-label={`Step ${step} of ${totalSteps}`}>
-        {prog.map((i) => (
-          <div
-            key={i}
-            className={`h-2 flex-1 rounded ${
-              i <= step ? "bg-primary" : "bg-muted"
-            }`}
-          />
-        ))}
-      </div>
+        {/* Progress bar (decorative) */}
+        <div className="flex gap-2" aria-hidden="true">
+          {prog.map((i) => (
+            <div
+              key={i}
+              className={`h-2 flex-1 rounded ${i <= step ? "bg-primary" : "bg-muted"}`}
+            />
+          ))}
+        </div>
+      </header>
+
+      {/* Error summary for screen readers + quick scan */}
+      {stepErrors.length > 0 ? (
+        <div
+          className="rounded-md border bg-muted/30 p-3"
+          role="alert"
+          aria-live="polite"
+        >
+          <p className="text-sm font-medium">Please fix the following:</p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+            {stepErrors.slice(0, 6).map((e) => (
+              <li key={e.field}>{e.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* Step 1: Basic */}
       {step === 1 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Basic Information</h2>
+        <SectionCard
+          title="Basic Information"
+          headingRef={stepHeadingRef}
+          description="Tell us a bit about you. This helps the AI personalize your plans."
+        >
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm">First name</label>
+            <Field
+              id="first_name"
+              label="First name"
+              required
+              error={showServerOrClientError("first_name")}
+            >
               <input
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                id="first_name"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.first_name}
                 maxLength={40}
+                autoComplete="given-name"
                 onChange={(e) => setData("first_name", e.target.value)}
               />
-              {showServerOrClientError("first_name") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("first_name")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Last name</label>
+            <Field
+              id="last_name"
+              label="Last name"
+              required
+              error={showServerOrClientError("last_name")}
+            >
               <input
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                id="last_name"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.last_name}
                 maxLength={40}
+                autoComplete="family-name"
                 onChange={(e) => setData("last_name", e.target.value)}
               />
-              {showServerOrClientError("last_name") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("last_name")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Username (optional, unique)</label>
+            <Field
+              id="username"
+              label="Username (optional, unique)"
+              hint="Letters, numbers, underscore (_) and dot (.) only."
+              error={showServerOrClientError("username")}
+            >
               <input
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                id="username"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.username}
                 maxLength={24}
-                placeholder="letters, numbers, _ or ."
+                placeholder="e.g. cha.hid_01"
                 pattern="^[A-Za-z0-9_.]+$"
+                autoComplete="username"
                 onChange={(e) => setData("username", e.target.value)}
               />
-              {showServerOrClientError("username") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("username")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Gender</label>
-              {/* text-black requested for dropdowns */}
-              <select
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-black"
-                value={data.gender}
-                onChange={(e) => setData("gender", e.target.value as Gender)}
-              >
-                <option className="text-black" value="">
-                  Select
-                </option>
-                <option className="text-black" value="male">
-                  Male
-                </option>
-                <option className="text-black" value="female">
-                  Female
-                </option>
-                <option className="text-black" value="other">
-                  Other
-                </option>
-              </select>
-              {showServerOrClientError("gender") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("gender")}
-                </p>
-              )}
-            </div>
+            {/* Gender as radios for semantics */}
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">
+                Gender <span className="text-destructive">*</span>
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { value: "male", label: "Male" },
+                    { value: "female", label: "Female" },
+                    { value: "other", label: "Other" },
+                  ] as const
+                ).map((opt) => {
+                  const active = data.gender === opt.value;
+                  return (
+                    <label key={opt.value} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={opt.value}
+                        className="sr-only"
+                        checked={active}
+                        onChange={() => setData("gender", opt.value)}
+                      />
+                      <span
+                        className={[
+                          "inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted",
+                          FOCUS_RING,
+                        ].join(" ")}
+                      >
+                        {opt.label}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {showServerOrClientError("gender") ? (
+                <ErrorText id="gender-error">{showServerOrClientError("gender")}</ErrorText>
+              ) : null}
+            </fieldset>
 
-            {/* numeric text inputs (no arrows) */}
-            <div>
-              <label className="block text-sm">Age</label>
+            <Field
+              id="age"
+              label="Age"
+              required
+              error={showServerOrClientError("age")}
+            >
               <input
+                id="age"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 placeholder="e.g. 20"
                 value={data.age}
                 onKeyDown={(e) => preventNonNumericKeys(e, false)}
                 onChange={onNumericChange("age", false)}
                 onBlur={onNumericBlur("age", { min: 13, max: 100 })}
               />
-              {showServerOrClientError("age") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("age")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Height (cm)</label>
+            <Field
+              id="height_cm"
+              label="Height (cm)"
+              required
+              error={showServerOrClientError("height_cm")}
+            >
               <input
+                id="height_cm"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 placeholder="e.g. 180"
                 value={data.height_cm}
                 onKeyDown={(e) => preventNonNumericKeys(e, false)}
                 onChange={onNumericChange("height_cm", false)}
                 onBlur={onNumericBlur("height_cm", { min: 80, max: 250 })}
               />
-              {showServerOrClientError("height_cm") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("height_cm")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Weight (kg)</label>
+            <Field
+              id="weight_kg"
+              label="Weight (kg)"
+              required
+              error={showServerOrClientError("weight_kg")}
+            >
               <input
+                id="weight_kg"
                 type="text"
                 inputMode="decimal"
                 pattern="[0-9.]*"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 placeholder="e.g. 72.5"
                 value={data.weight_kg}
                 onKeyDown={(e) => preventNonNumericKeys(e, true)}
@@ -548,56 +797,58 @@ function RegisterWizard(props: Props) {
                   allowDecimal: true,
                 })}
               />
-              {showServerOrClientError("weight_kg") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("weight_kg")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            {/* Medical history (styled checkbox) */}
             <div className="md:col-span-2 space-y-2">
               <CheckTile
                 checked={data.has_medical_history}
                 onChange={(v) => setData("has_medical_history", v)}
                 label="I have a medical history relevant to diet/exercise"
+                name="has_medical_history"
               />
-              {data.has_medical_history && (
-                <div>
+
+              {data.has_medical_history ? (
+                <Field
+                  id="medical_history"
+                  label="Medical history"
+                  required
+                  error={showServerOrClientError("medical_history")}
+                  hint="Briefly list conditions (e.g., diabetes, thyroid, injuries)."
+                >
                   <textarea
-                    className="min-h-[90px] w-full rounded-md border bg-transparent px-3 py-2"
-                    placeholder="Briefly list conditions (e.g., diabetes, thyroid, injuries)..."
+                    id="medical_history"
+                    className={`min-h-[90px] w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                    placeholder="Type here..."
                     maxLength={500}
                     value={data.medical_history}
                     onChange={(e) => setData("medical_history", e.target.value)}
                   />
-                  {showServerOrClientError("medical_history") && (
-                    <p className="text-sm text-destructive">
-                      {showServerOrClientError("medical_history")}
-                    </p>
-                  )}
-                </div>
-              )}
+                </Field>
+              ) : null}
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <button className="rounded-md bg-primary px-5 py-2 text-primary-foreground" onClick={next}>
+          <div className="flex justify-end pt-2">
+            <Button variant="primary" onClick={next}>
               Next
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Step 2: Goals & Dietary */}
       {step === 2 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Goals & Dietary</h2>
+        <SectionCard title="Goals & Dietary" headingRef={stepHeadingRef}>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm">Dietary Goal</label>
+            <Field
+              id="dietary_goal"
+              label="Dietary Goal"
+              required
+              error={showServerOrClientError("dietary_goal")}
+            >
               <select
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-black"
+                id="dietary_goal"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
                 value={data.dietary_goal}
                 onChange={(e) => setData("dietary_goal", e.target.value)}
               >
@@ -610,17 +861,17 @@ function RegisterWizard(props: Props) {
                   </option>
                 ))}
               </select>
-              {showServerOrClientError("dietary_goal") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("dietary_goal")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Fitness Goal</label>
+            <Field
+              id="fitness_goal"
+              label="Fitness Goal"
+              required
+              error={showServerOrClientError("fitness_goal")}
+            >
               <select
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-black"
+                id="fitness_goal"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
                 value={data.fitness_goal}
                 onChange={(e) => setData("fitness_goal", e.target.value)}
               >
@@ -633,55 +884,91 @@ function RegisterWizard(props: Props) {
                   </option>
                 ))}
               </select>
-              {showServerOrClientError("fitness_goal") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("fitness_goal")}
-                </p>
-              )}
+            </Field>
+
+            {/* Diet selection (pills) + “Other” input */}
+            <div className="md:col-span-2 space-y-2">
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">
+                  Diet <span className="text-destructive">*</span>
+                </legend>
+
+                <div className="flex flex-wrap gap-2">
+                  {[...dietOptions, "Other"].map((d) => {
+                    const active = data.diet_choice === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        className={[
+                          "rounded-md border px-3 py-1 text-sm font-medium transition",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted",
+                          FOCUS_RING,
+                        ].join(" ")}
+                        onClick={() => {
+                          setData("diet_choice", d);
+                          if (d !== "Other") {
+                            // set final diet immediately for non-other
+                            setData("diet_name", d);
+                            setData("diet_other_name", "");
+                          } else {
+                            // keep diet_name empty until user types
+                            setData("diet_name", "");
+                          }
+                        }}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {data.diet_choice === "Other" ? (
+                  <Field
+                    id="diet_other_name"
+                    label="Type your diet name"
+                    required
+                    error={showServerOrClientError("diet_other_name")}
+                    hint="Example: Low FODMAP, Gluten-Free, etc."
+                  >
+                    <input
+                      id="diet_other_name"
+                      className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                      maxLength={40}
+                      value={data.diet_other_name}
+                      onChange={(e) => {
+                        setData("diet_other_name", e.target.value);
+                        setData("diet_name", e.target.value);
+                      }}
+                    />
+                  </Field>
+                ) : null}
+
+                {showServerOrClientError("diet_choice") ? (
+                  <ErrorText id="diet_choice-error">
+                    {showServerOrClientError("diet_choice")}
+                  </ErrorText>
+                ) : null}
+              </fieldset>
             </div>
 
+            {/* Allergies */}
             <div className="md:col-span-2">
-              <label className="block text-sm">Diet</label>
-              <div className="mb-2 flex flex-wrap gap-2">
-                {dietOptions.map((d) => (
-                  <button
-                    type="button"
-                    key={d}
-                    className={`rounded-md border px-3 py-1 ${
-                      data.diet_name === d ? "bg-primary text-primary-foreground" : ""
-                    }`}
-                    onClick={() => setData("diet_name", d)}
-                  >
-                    {d}
-                  </button>
-                ))}
+              <div className="flex items-baseline justify-between gap-2">
+                <label className="block text-sm font-medium">
+                  Allergies (multi-select)
+                </label>
                 <button
                   type="button"
-                  className={`rounded-md border px-3 py-1 ${
-                    data.diet_name === "Other" ? "bg-primary text-primary-foreground" : ""
-                  }`}
-                  onClick={() => setData("diet_name", "Other")}
+                  className={`text-xs text-primary hover:underline ${FOCUS_RING} rounded-md`}
+                  onClick={() => setData("allergies", [])}
                 >
-                  Other
+                  Clear
                 </button>
               </div>
-              {data.diet_name === "Other" && (
-                <input
-                  placeholder="Type your diet name"
-                  className="w-full rounded-md border bg-transparent px-3 py-2"
-                  maxLength={40}
-                  onChange={(e) => setData("diet_name", e.target.value)}
-                />
-              )}
-              {showServerOrClientError("diet_name") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("diet_name")}
-                </p>
-              )}
-            </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm">Allergies (multi-select)</label>
               <div className="mt-2 grid gap-2 sm:grid-cols-2 md:grid-cols-3">
                 {allergyOptions.map((a) => {
                   const active = data.allergies.includes(a);
@@ -691,45 +978,52 @@ function RegisterWizard(props: Props) {
                       checked={active}
                       onChange={(v) => {
                         if (v) setData("allergies", [...data.allergies, a]);
-                        else setData("allergies", data.allergies.filter((x) => x !== a));
+                        else
+                          setData(
+                            "allergies",
+                            data.allergies.filter((x) => x !== a)
+                          );
                       }}
                       label={a}
+                      name="allergies"
+                      value={a}
                     />
                   );
                 })}
               </div>
-              {showServerOrClientError("allergies") && (
-                <p className="text-sm text-destructive">
+
+              {showServerOrClientError("allergies") ? (
+                <p className="mt-2 text-sm text-destructive">
                   {showServerOrClientError("allergies")}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <button className="rounded-md border px-4 py-2" onClick={back}>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" onClick={back}>
               Back
-            </button>
-            <button
-              className="rounded-md bg-primary px-5 py-2 text-primary-foreground"
-              onClick={next}
-            >
+            </Button>
+            <Button variant="primary" onClick={next}>
               Next
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Step 3: Activity & Training */}
       {step === 3 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Activity & Training</h2>
-
+        <SectionCard title="Activity & Training" headingRef={stepHeadingRef}>
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="block text-sm">Activity Level</label>
+            <Field
+              id="activity_level"
+              label="Activity Level"
+              required
+              error={showServerOrClientError("activity_level")}
+            >
               <select
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-black"
+                id="activity_level"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
                 value={data.activity_level}
                 onChange={(e) =>
                   setData("activity_level", e.target.value as ActivityLevel)
@@ -744,22 +1038,28 @@ function RegisterWizard(props: Props) {
                   </option>
                 ))}
               </select>
-              {showServerOrClientError("activity_level") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("activity_level")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Planned Workouts / Week</label>
+            <Field
+              id="workout_days_per_week"
+              label="Planned Workouts / Week"
+              required
+              error={showServerOrClientError("workout_days_per_week")}
+              hint={
+                workoutDaysWarning
+                  ? workoutDaysWarning
+                  : "We’ll tailor your plan frequency."
+              }
+            >
               <input
+                id="workout_days_per_week"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`w-full rounded-md border bg-transparent px-3 py-2 ${
-                  workoutDaysWarning ? "border-amber-500" : ""
-                }`}
+                className={[
+                  `w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`,
+                  workoutDaysWarning ? "border-amber-500" : "",
+                ].join(" ")}
                 placeholder="e.g. 3"
                 value={data.workout_days_per_week}
                 onKeyDown={(e) => preventNonNumericKeys(e, false)}
@@ -767,107 +1067,71 @@ function RegisterWizard(props: Props) {
                 onBlur={onNumericBlur("workout_days_per_week", { min: 1, max: 7 })}
                 aria-invalid={!!workoutDaysWarning}
               />
-              {workoutDaysWarning ? (
-                <p className="mt-1 text-xs text-amber-600">{workoutDaysWarning}</p>
-              ) : (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  We’ll tailor your plan frequency.
-                </p>
-              )}
-              {showServerOrClientError("workout_days_per_week") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("workout_days_per_week")}
-                </p>
-              )}
-            </div>
+            </Field>
 
             <div className="md:col-span-2">
-              <label className="block text-sm mb-2">Where will you train?</label>
-              <div className="flex flex-wrap gap-2">
-                {(["home", "gym", "both"] as WorkoutLocation[]).map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    className={`rounded-md border px-4 py-2 capitalize ${
-                      data.workout_location === loc
-                        ? "bg-primary text-primary-foreground"
-                        : ""
-                    }`}
-                    onClick={() => setData("workout_location", loc)}
-                  >
-                    {loc}
-                  </button>
-                ))}
-              </div>
-              {showServerOrClientError("workout_location") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("workout_location")}
-                </p>
-              )}
+              <RadioPills<WorkoutLocation>
+                name="workout_location"
+                value={data.workout_location}
+                onChange={(v) => setData("workout_location", v)}
+                legend="Where will you train?"
+                options={[
+                  { value: "home", label: "Home" },
+                  { value: "gym", label: "Gym" },
+                  { value: "both", label: "Both" },
+                ]}
+                error={showServerOrClientError("workout_location")}
+              />
             </div>
           </div>
 
-          <div className="flex justify-between">
-            <button className="rounded-md border px-4 py-2" onClick={back}>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" onClick={back}>
               Back
-            </button>
-            <button
-              className="rounded-md bg-primary px-5 py-2 text-primary-foreground"
-              onClick={next}
-            >
+            </Button>
+            <Button variant="primary" onClick={next}>
               Next
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Step 4: Tried diet before? */}
       {step === 4 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">
-            Have you tried any dietary plans before?
-          </h2>
-          <div className="flex gap-3">
-            {(["yes", "no"] as const).map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={`rounded-md border px-4 py-2 capitalize ${
-                  data.tried_diet_before === opt
-                    ? "bg-primary text-primary-foreground"
-                    : ""
-                }`}
-                onClick={() => setData("tried_diet_before", opt)}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-          {showServerOrClientError("tried_diet_before") && (
-            <p className="text-sm text-destructive">
-              {showServerOrClientError("tried_diet_before")}
-            </p>
-          )}
+        <SectionCard
+          title="Have you tried any dietary plans before?"
+          headingRef={stepHeadingRef}
+        >
+          <RadioPills<"yes" | "no" | "">
+            name="tried_diet_before"
+            value={data.tried_diet_before}
+            onChange={(v) => setData("tried_diet_before", v)}
+            legend="Choose one"
+            options={[
+              { value: "yes", label: "Yes" },
+              { value: "no", label: "No" },
+            ]}
+            error={showServerOrClientError("tried_diet_before")}
+          />
 
-          <div className="flex justify-between">
-            <button className="rounded-md border px-4 py-2" onClick={back}>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" onClick={back}>
               Back
-            </button>
-            <button
-              className="rounded-md bg-primary px-5 py-2 text-primary-foreground"
-              onClick={next}
-            >
+            </Button>
+            <Button variant="primary" onClick={next}>
               Next
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Step 5: Why didn’t it work? (only if tried=yes) */}
       {step === 5 && data.tried_diet_before === "yes" && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Why didn’t it work out for you?</h2>
-          <p className="text-sm text-muted-foreground">Select all that apply</p>
+        <SectionCard
+          title="Why didn’t it work out for you?"
+          description="Select all that apply."
+          headingRef={stepHeadingRef}
+        >
           <div className="grid gap-2 sm:grid-cols-2">
             {reasons.map((r) => {
               const checked = data.diet_failure_reasons.includes(r);
@@ -888,51 +1152,49 @@ function RegisterWizard(props: Props) {
                       );
                   }}
                   label={r}
+                  name="diet_failure_reasons"
+                  value={r}
                 />
               );
             })}
           </div>
 
-          <div>
-            <label className="block text-sm">Other (optional)</label>
+          <Field
+            id="diet_failure_other"
+            label="Other (optional)"
+            error={showServerOrClientError("diet_failure_other")}
+            hint="Keep it short (max 120 characters)."
+          >
             <input
-              className="w-full rounded-md border bg-transparent px-3 py-2"
+              id="diet_failure_other"
+              className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
               maxLength={120}
               placeholder="Your reason"
               value={data.diet_failure_other}
               onChange={(e) => setData("diet_failure_other", e.target.value)}
             />
-            {showServerOrClientError("diet_failure_reasons") && (
-              <p className="text-sm text-destructive">
-                {showServerOrClientError("diet_failure_reasons")}
-              </p>
-            )}
-            {showServerOrClientError("diet_failure_other") && (
-              <p className="text-sm text-destructive">
-                {showServerOrClientError("diet_failure_other")}
-              </p>
-            )}
-          </div>
+          </Field>
 
-          <div className="flex justify-between">
-            <button className="rounded-md border px-4 py-2" onClick={back}>
+          {showServerOrClientError("diet_failure_reasons") ? (
+            <p className="text-sm text-destructive">
+              {showServerOrClientError("diet_failure_reasons")}
+            </p>
+          ) : null}
+
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" onClick={back}>
               Back
-            </button>
-            <button
-              className="rounded-md bg-primary px-5 py-2 text-primary-foreground"
-              onClick={next}
-            >
+            </Button>
+            <Button variant="primary" onClick={next}>
               Next
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
 
       {/* Final Step: Credentials */}
       {step === totalSteps && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Login Details</h2>
-
+        <SectionCard title="Login Details" headingRef={stepHeadingRef}>
           <div className="rounded-md border bg-muted/30 p-3 text-sm">
             <p>
               After you create your account, you will be{" "}
@@ -942,87 +1204,96 @@ function RegisterWizard(props: Props) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="block text-sm">Email</label>
+            <Field
+              id="email"
+              label="Email"
+              required
+              error={showServerOrClientError("email")}
+            >
               <input
+                id="email"
                 type="email"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.email}
                 maxLength={120}
                 inputMode="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 onChange={(e) => setData("email", e.target.value.trim())}
               />
-              {showServerOrClientError("email") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("email")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Password</label>
+            <Field
+              id="password"
+              label="Password"
+              required
+              error={showServerOrClientError("password")}
+              hint="Use 8+ characters. Adding numbers & symbols helps."
+            >
               <input
+                id="password"
                 type="password"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.password}
                 maxLength={72}
+                autoComplete="new-password"
                 onChange={(e) => setData("password", e.target.value)}
                 placeholder="At least 8 characters"
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Use 8+ characters. Adding numbers & symbols helps.
-              </p>
-              {showServerOrClientError("password") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("password")}
-                </p>
-              )}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm">Confirm Password</label>
+            <Field
+              id="password_confirmation"
+              label="Confirm Password"
+              required
+              error={showServerOrClientError("password_confirmation")}
+            >
               <input
+                id="password_confirmation"
                 type="password"
-                className="w-full rounded-md border bg-transparent px-3 py-2"
+                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
                 value={data.password_confirmation}
                 maxLength={72}
+                autoComplete="new-password"
                 onChange={(e) =>
                   setData("password_confirmation", e.target.value)
                 }
               />
-              {showServerOrClientError("password_confirmation") && (
-                <p className="text-sm text-destructive">
-                  {showServerOrClientError("password_confirmation")}
-                </p>
-              )}
-            </div>
+            </Field>
           </div>
 
-          <div className="flex justify-between">
-            <button className="rounded-md border px-4 py-2" onClick={back}>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" onClick={back}>
               Back
-            </button>
-            <button
-              className="rounded-md bg-primary px-5 py-2 text-primary-foreground disabled:opacity-50"
-              disabled={processing}
-              onClick={submit}
-            >
+            </Button>
+            <Button variant="primary" onClick={submit} disabled={processing}>
               Create Account
-            </button>
+            </Button>
           </div>
-        </section>
+        </SectionCard>
       )}
     </div>
   );
 }
 
-/* ---------- Page wrapper: centers content; avoids large empty background ---------- */
+/* ---------- Page wrapper ---------- */
 export default function Register(props: Props) {
   return (
     <>
       <Head title="Create your account" />
-      <main className="min-h-[100svh] bg-background grid place-items-center">
+
+      {/* Skip link */}
+      <a
+        href="#register-main"
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 rounded-md bg-card px-3 py-2 text-sm font-semibold shadow ${FOCUS_RING}`}
+      >
+        Skip to form
+      </a>
+
+      <main
+        id="register-main"
+        className="min-h-[100svh] bg-background grid place-items-center"
+      >
         <div className="w-full max-w-3xl px-6 py-10 md:py-16">
           <div className="rounded-xl border bg-card/40 backdrop-blur-sm shadow-sm">
             <div className="p-6 md:p-8">

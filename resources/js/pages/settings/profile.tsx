@@ -1,16 +1,18 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Head, usePage, router } from "@inertiajs/react";
 import NavHeader from "@/components/NavHeader";
 
 /* ---------- Types ---------- */
+type NumericLike = number | string;
+
 type UserProfile = {
   first_name: string | null;
   last_name: string | null;
   username: string | null;
   gender: string | null;
-  age: number | null;
-  height_cm: number | null;
-  weight_kg: number | null;
+  age: NumericLike | null;
+  height_cm: NumericLike | null;
+  weight_kg: NumericLike | null;
 } | null;
 
 type Prefs = {
@@ -23,8 +25,18 @@ type Prefs = {
 
 type Measurement = { date: string; type: "weight" | "height"; value: number };
 
+/**
+ * OPTIONAL (not currently provided in your props).
+ * If/when you implement exercise progress charts, send a normalized series like this.
+ */
+type ExerciseProgressPoint = {
+  date: string; // YYYY-MM-DD
+  exerciseName: string;
+  maxWeight: number | null; // kg
+  reps: number | null;
+};
+
 type PageProps = {
-  // From middleware
   auth?: {
     user?: {
       id: number;
@@ -34,21 +46,23 @@ type PageProps = {
       last_name?: string | null;
       username?: string | null;
       gender?: string | null;
-      age?: number | null;
-      height_cm?: number | null;
-      weight_kg?: number | null;
+      age?: NumericLike | null;
+      height_cm?: NumericLike | null;
+      weight_kg?: NumericLike | null;
       two_factor_enabled?: boolean;
     } | null;
   };
   flash?: { status?: string; success?: string; error?: string };
 
-  // From controller/route (optional)
   displayName?: string;
   userProfile?: UserProfile;
   prefs?: Prefs;
   dietName?: string;
   weightHistory?: Measurement[];
   heightHistory?: Measurement[];
+
+  // If your backend adds it later:
+  // exerciseProgress?: ExerciseProgressPoint[];
 };
 
 /* ---------- Safe defaults ---------- */
@@ -57,9 +71,9 @@ const DEFAULT_PROFILE = {
   last_name: "",
   username: "",
   gender: "",
-  age: null,
-  height_cm: null,
-  weight_kg: null,
+  age: null as number | null,
+  height_cm: null as number | null,
+  weight_kg: null as number | null,
 };
 
 const DEFAULT_PREFS: NonNullable<Prefs> = {
@@ -91,75 +105,211 @@ const DIET_TYPES = [
   { value: "other", label: "Other" },
 ] as const;
 
-/* ---------- Small UI bits ---------- */
-const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="inline-flex items-center rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700">
-    {children}
-  </span>
-);
+/* ---------- Helpers ---------- */
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
 
-const SideLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
-  <a href={href} className="block rounded-lg px-3 py-2 text-sm text-gray-800 hover:bg-gray-100">
-    {children}
-  </a>
-);
+function formatMaybeNumber(n: number | string | null | undefined, suffix?: string) {
+  if (n === null || n === undefined || n === "") return "—";
+  const num = typeof n === "string" ? Number(n) : n;
+  if (!Number.isFinite(num)) return "—";
+  return suffix ? `${num}${suffix}` : String(num);
+}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function latestMeasurementValue(list: Measurement[]) {
+  if (!list?.length) return null;
+  // Assumes date is YYYY-MM-DD
+  const sorted = [...list].sort((a, b) => (a.date > b.date ? 1 : -1));
+  return sorted[sorted.length - 1]?.value ?? null;
+}
+
+function sanitizeChip(input: string) {
+  return input.trim().replace(/\s+/g, " ");
+}
+
+/* ---------- Small UI bits (token-friendly) ---------- */
+function SectionCard({
+  id,
+  title,
+  description,
+  actions,
+  children,
+}: {
+  id?: string;
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <div className="text-xs text-gray-700">{label}</div>
-      <div className="text-gray-900">{children}</div>
+    <section
+      id={id}
+      className="scroll-mt-24 rounded-2xl border border-border bg-card text-card-foreground shadow-sm"
+      aria-labelledby={id ? `${id}-title` : undefined}
+    >
+      <div className="flex flex-col gap-2 border-b border-border p-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2
+            id={id ? `${id}-title` : undefined}
+            className="text-lg font-semibold tracking-tight"
+          >
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {actions ? <div className="shrink-0">{actions}</div> : null}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function Button({
+  variant = "primary",
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "ghost" | "outline";
+}) {
+  const base =
+    "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed";
+  const styles: Record<string, string> = {
+    primary:
+      "bg-primary text-primary-foreground hover:opacity-90 border border-transparent",
+    secondary:
+      "bg-secondary text-secondary-foreground hover:opacity-90 border border-transparent",
+    outline:
+      "border border-border bg-transparent text-foreground hover:bg-muted",
+    ghost: "bg-transparent text-foreground hover:bg-muted",
+  };
+  return <button className={cx(base, styles[variant], className)} {...props} />;
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground">
+      {children}
+    </span>
+  );
+}
+
+function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-foreground">{value}</div>
     </div>
   );
 }
 
 function LabeledInput({
+  id,
   label,
   value,
   onChange,
   type = "text",
   inputMode,
   placeholder,
-  className = "",
+  description,
 }: {
+  id: string;
   label: string;
   value: string | number;
   onChange: (v: string) => void;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   placeholder?: string;
-  className?: string;
+  description?: string;
 }) {
+  const descId = description ? `${id}-desc` : undefined;
   return (
-    <div className={className}>
-      <label className="text-xs text-gray-700">{label}</label>
+    <div>
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
+      {description ? (
+        <p id={descId} className="mt-1 text-xs text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
       <input
+        id={id}
         type={type}
         inputMode={inputMode}
-        className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-gray-900 placeholder-gray-400"
+        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
         placeholder={placeholder}
         value={value as any}
         onChange={(e) => onChange(e.target.value)}
+        aria-describedby={descId}
       />
     </div>
   );
 }
 
+function LabeledSelect({
+  id,
+  label,
+  value,
+  onChange,
+  children,
+  description,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+  description?: string;
+}) {
+  const descId = description ? `${id}-desc` : undefined;
+  return (
+    <div>
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
+      {description ? (
+        <p id={descId} className="mt-1 text-xs text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
+      <select
+        id={id}
+        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-describedby={descId}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
 function LabeledDate({
+  id,
   label,
   value,
   onChange,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <label className="text-xs text-gray-700">{label}</label>
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
       <input
+        id={id}
         type="date"
-        className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
+        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -167,25 +317,156 @@ function LabeledDate({
   );
 }
 
-function ListCard({ title, data }: { title: string; data: Measurement[] }) {
+function EmptyState({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="rounded-xl border bg-white p-3 text-gray-900">
-      <div className="font-medium">{title}</div>
-      {data?.length ? (
-        <ul className="mt-2 space-y-1 text-sm text-gray-800">
-          {data
-            .slice(-6)
-            .reverse()
-            .map((m, i) => (
-              <li key={i} className="flex justify-between">
-                <span>{m.date}</span>
-                <span className="tabular-nums">{m.value}</span>
-              </li>
-            ))}
-        </ul>
-      ) : (
-        <div className="mt-2 text-sm text-gray-700">No entries yet.</div>
-      )}
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <div className="text-sm font-semibold text-foreground">{title}</div>
+      <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+      {action ? <div className="mt-3">{action}</div> : null}
+    </div>
+  );
+}
+
+/* ---------- Lightweight SVG Line Chart (no deps) ---------- */
+type ChartPoint = { xLabel: string; xValue: number; yValue: number };
+
+function LineChart({
+  title,
+  points,
+  ySuffix,
+}: {
+  title: string;
+  points: ChartPoint[];
+  ySuffix?: string;
+}) {
+  // Basic guardrails
+  if (!points?.length) {
+    return (
+      <EmptyState
+        title={`${title}: No data yet`}
+        body="Add a few entries below to see your progress over time."
+      />
+    );
+  }
+
+  const width = 720;
+  const height = 220;
+  const padX = 28;
+  const padY = 18;
+
+  const xs = points.map((p) => p.xValue);
+  const ys = points.map((p) => p.yValue);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  // Avoid flatline divide-by-zero
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+
+  const toX = (x: number) => padX + ((x - minX) / spanX) * (width - padX * 2);
+  const toY = (y: number) =>
+    height - padY - ((y - minY) / spanY) * (height - padY * 2);
+
+  const d = points
+    .map((p, idx) => `${idx === 0 ? "M" : "L"} ${toX(p.xValue)} ${toY(p.yValue)}`)
+    .join(" ");
+
+  const last = points[points.length - 1];
+  const first = points[0];
+
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="text-sm font-semibold text-foreground">{title}</div>
+        <div className="text-xs text-muted-foreground">
+          {first?.xLabel} → {last?.xLabel} ·{" "}
+          <span className="tabular-nums text-foreground">
+            {first?.yValue}
+            {ySuffix ?? ""} → {last?.yValue}
+            {ySuffix ?? ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label={`${title} line chart`}
+          className="h-[220px] w-full min-w-[520px]"
+        >
+          {/* grid lines (minimal) */}
+          <line
+            x1={padX}
+            y1={padY}
+            x2={padX}
+            y2={height - padY}
+            stroke="var(--border)"
+            strokeWidth="1"
+          />
+          <line
+            x1={padX}
+            y1={height - padY}
+            x2={width - padX}
+            y2={height - padY}
+            stroke="var(--border)"
+            strokeWidth="1"
+          />
+
+          {/* path */}
+          <path d={d} fill="none" stroke="var(--primary)" strokeWidth="2.5" />
+
+          {/* points */}
+          {points.map((p, i) => (
+            <circle
+              key={`${p.xLabel}-${i}`}
+              cx={toX(p.xValue)}
+              cy={toY(p.yValue)}
+              r={3.25}
+              fill="var(--primary)"
+            />
+          ))}
+        </svg>
+      </div>
+
+      {/* Screen-reader friendly summary table */}
+      <details className="mt-2">
+        <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+          View data table
+        </summary>
+        <div className="mt-2 overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="py-2 pr-4">Date</th>
+                <th className="py-2 pr-4">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((p, i) => (
+                <tr key={`${p.xLabel}-${i}`} className="border-t border-border">
+                  <td className="py-2 pr-4">{p.xLabel}</td>
+                  <td className="py-2 pr-4 tabular-nums">
+                    {p.yValue}
+                    {ySuffix ?? ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }
@@ -202,41 +483,63 @@ export default function ProfilePage() {
     const u = page.auth.user;
     providedProfile = {
       first_name: u.first_name ?? null,
-      last_name:  u.last_name ?? null,
-      username:   u.username ?? null,
-      gender:     u.gender ?? null,
-      age:        (typeof u.age === "number" ? u.age : u.age ?? null) as number | null,
-      height_cm:  (typeof u.height_cm === "number" ? u.height_cm : u.height_cm ?? null) as number | null,
-      weight_kg:  (typeof u.weight_kg === "number" ? u.weight_kg : u.weight_kg ?? null) as number | null,
+      last_name: u.last_name ?? null,
+      username: u.username ?? null,
+      gender: u.gender ?? null,
+      age: u.age ?? null,
+      height_cm: u.height_cm ?? null,
+      weight_kg: u.weight_kg ?? null,
     };
   }
 
-  // Normalize props (prevents “cannot read property of undefined”)
+  const authUser = page.auth?.user ?? null;
+  const email = authUser?.email ?? "—";
+  const twoFactorEnabled = !!authUser?.two_factor_enabled;
+
+  const userProfile = (providedProfile ?? DEFAULT_PROFILE) as NonNullable<
+    typeof DEFAULT_PROFILE
+  >;
+
+  // ✅ fallback username so it shows even if userProfile prop is missing
+  const shownUsername = (userProfile as any).username || authUser?.username || "";
+
+  const prefs = (page.prefs ?? DEFAULT_PREFS) as NonNullable<Prefs>;
+  const dietName = page.dietName ?? "";
+
+  const weightHistory = Array.isArray(page.weightHistory) ? page.weightHistory : [];
+  const heightHistory = Array.isArray(page.heightHistory) ? page.heightHistory : [];
+
   const displayName =
     page.displayName ??
     (providedProfile
-      ? `${providedProfile.first_name ?? ""} ${providedProfile.last_name ?? ""}`.trim() ||
-        page.auth?.user?.username ||
-        page.auth?.user?.name ||
+      ? `${(providedProfile as any).first_name ?? ""} ${(providedProfile as any).last_name ?? ""}`
+          .trim() ||
+        authUser?.username ||
+        authUser?.name ||
         "there"
-      : page.auth?.user?.username || page.auth?.user?.name || "there");
-
-  const userProfile = providedProfile ?? DEFAULT_PROFILE;
-  const prefs = page.prefs ?? DEFAULT_PREFS;
-  const dietName = page.dietName ?? "";
-  const weightHistory = Array.isArray(page.weightHistory) ? page.weightHistory : [];
-  const heightHistory = Array.isArray(page.heightHistory) ? page.heightHistory : [];
+      : authUser?.username || authUser?.name || "there");
 
   // Local edit state
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingPrefs, setEditingPrefs] = useState(false);
 
+  // Focus management when toggling edit modes
+  const profileFirstFieldRef = useRef<HTMLInputElement | null>(null);
+  const prefsFirstFieldRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (editingProfile) profileFirstFieldRef.current?.focus();
+  }, [editingProfile]);
+  useEffect(() => {
+    if (editingPrefs) prefsFirstFieldRef.current?.focus();
+  }, [editingPrefs]);
+
   // Bound inputs
-  const [firstName, setFirstName] = useState(userProfile.first_name ?? "");
-  const [lastName, setLastName] = useState(userProfile.last_name ?? "");
-  const [username, setUsername] = useState(userProfile.username ?? "");
-  const [gender, setGender] = useState<string>(userProfile.gender ?? "");
-  const [age, setAge] = useState<number | string>(userProfile.age ?? "");
+  const [firstName, setFirstName] = useState((userProfile as any).first_name ?? "");
+  const [lastName, setLastName] = useState((userProfile as any).last_name ?? "");
+  const [username, setUsername] = useState((userProfile as any).username ?? "");
+  const [gender, setGender] = useState<string>((userProfile as any).gender ?? "");
+  const [age, setAge] = useState<number | string>((userProfile as any).age ?? "");
 
   const [dietType, setDietType] = useState<string>(prefs.diet_type ?? "");
   const [dietOther, setDietOther] = useState<string>(prefs.diet_other ?? "");
@@ -254,13 +557,49 @@ export default function ProfilePage() {
   const [mType, setMType] = useState<"weight" | "height">("weight");
   const [mValue, setMValue] = useState<string>("");
 
+  // Derived labels
   const dietTypeLabel = useMemo(() => {
-    const labelFromType =
+    const fromType =
       DIET_TYPES.find((d) => d.value === (prefs?.diet_type ?? ""))?.label ?? null;
-    return labelFromType ?? dietName ?? "—";
-  }, [prefs, dietName]);
+    // If type is "other", show the custom label if present.
+    if (prefs?.diet_type === "other" && prefs?.diet_other) return prefs.diet_other;
+    return fromType ?? dietName ?? "—";
+  }, [prefs?.diet_type, prefs?.diet_other, dietName]);
 
-  /* ---------- Actions ---------- */
+  // Latest stats
+  const latestWeight = useMemo(
+    () => latestMeasurementValue(weightHistory),
+    [weightHistory]
+  );
+  const latestHeight = useMemo(
+    () => latestMeasurementValue(heightHistory),
+    [heightHistory]
+  );
+
+  // Charts: map to normalized x
+  const weightPoints: ChartPoint[] = useMemo(() => {
+    const normalized = [...weightHistory]
+      .filter((m) => m.type === "weight" && Number.isFinite(m.value))
+      .sort((a, b) => (a.date > b.date ? 1 : -1));
+    return normalized.map((m) => ({
+      xLabel: m.date,
+      xValue: new Date(m.date).getTime(),
+      yValue: m.value,
+    }));
+  }, [weightHistory]);
+
+  const heightPoints: ChartPoint[] = useMemo(() => {
+    const normalized = [...heightHistory]
+      .filter((m) => m.type === "height" && Number.isFinite(m.value))
+      .sort((a, b) => (a.date > b.date ? 1 : -1));
+    return normalized.map((m) => ({
+      xLabel: m.date,
+      xValue: new Date(m.date).getTime(),
+      yValue: m.value,
+    }));
+  }, [heightHistory]);
+
+  /* ---------- Actions (keep routes intact) ---------- */
   const saveProfile = () => {
     const ageNum = typeof age === "string" && age !== "" ? Number(age) : age;
     router.patch(
@@ -291,7 +630,7 @@ export default function ProfilePage() {
   };
 
   const addAllergy = () => {
-    const a = newAllergy.trim();
+    const a = sanitizeChip(newAllergy);
     if (!a || allergies.includes(a)) return;
     setAllergies((prev) => [...prev, a]);
     setNewAllergy("");
@@ -304,6 +643,7 @@ export default function ProfilePage() {
   const addMeasurement = () => {
     const valueNum = Number(mValue);
     if (!mDate || !valueNum || valueNum <= 0) return;
+
     router.post(
       "/settings/profile/measurements",
       { date: mDate, type: mType, value: valueNum },
@@ -318,173 +658,356 @@ export default function ProfilePage() {
     );
   };
 
+  // IDs (avoid collisions + improve label associations)
+  const ids = {
+    profileFirst: useId(),
+    profileLast: useId(),
+    profileUser: useId(),
+    profileGender: useId(),
+    profileAge: useId(),
+
+    prefsDietGoal: useId(),
+    prefsDietType: useId(),
+    prefsDietOther: useId(),
+
+    mDate: useId(),
+    mType: useId(),
+    mValue: useId(),
+    allergyInput: useId(),
+  };
+
+  const flash = page.flash ?? {};
+  const flashMsg = flash.success || flash.error || flash.status || "";
+
   return (
     <>
       <Head title="Profile — Hayetak" />
       <NavHeader />
 
-      {/* 12-column grid so the sidebar is 100% reliable */}
-      <main className="mx-auto max-w-6xl px-6 py-6 grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* ----- Sidebar (3/12 columns) ----- */}
-        <aside className="md:col-span-3 rounded-2xl border bg-white p-3 h-max sticky top-20 text-gray-900">
-          <div className="mb-2 px-2 text-xs uppercase tracking-wide text-gray-500">
-            Profile
+      {/* Skip link for keyboard users */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-foreground focus:shadow"
+      >
+        Skip to profile content
+      </a>
+
+      <main
+        id="main"
+        className="mx-auto max-w-6xl px-6 py-6 grid grid-cols-1 md:grid-cols-12 gap-6"
+      >
+        {/* Sidebar */}
+        <aside className="md:col-span-3">
+          <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:sticky md:top-20">
+            <div className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">
+              Profile sections
+            </div>
+            <nav aria-label="Profile page navigation" className="space-y-1">
+              <a
+                href="#overview"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Overview
+              </a>
+              <a
+                href="#details"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Profile details
+              </a>
+              <a
+                href="#preferences"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Preferences
+              </a>
+              <a
+                href="#progress"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Progress
+              </a>
+              <a
+                href="#logs"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Logs & history
+              </a>
+            </nav>
           </div>
-          <nav className="space-y-1">
-            <SideLink href="#info">User Info</SideLink>
-            <SideLink href="#prefs">Preferences</SideLink>
-            <SideLink href="#graphs">Graphs</SideLink>
-            <SideLink href="#logs">Height / Weight Log</SideLink>
-          </nav>
         </aside>
 
-        {/* ----- Content (9/12 columns) ----- */}
+        {/* Content */}
         <div className="md:col-span-9 space-y-6">
-          {/* Welcome / actions */}
-          <section className="rounded-2xl border bg-white p-5 shadow-sm text-gray-900">
-            <h2 className="text-xl font-semibold">
-              Welcome {displayName || "there"}, this is your profile
-            </h2>
-            <p className="text-sm text-gray-700">
-              Review and update your info, preferences, and measurements.
-            </p>
-          </section>
+          {/* Flash message */}
+          {flashMsg ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className={cx(
+                "rounded-xl border border-border p-4 text-sm",
+                flash.error
+                  ? "bg-destructive/10 text-foreground"
+                  : "bg-muted/30 text-foreground"
+              )}
+            >
+              {flashMsg}
+            </div>
+          ) : null}
 
-          {/* Profile snapshot + edit */}
-          <section id="info" className="scroll-mt-24 rounded-2xl border bg-white p-5 shadow-sm text-gray-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Your profile snapshot</h3>
-              <button
+          {/* Overview */}
+          <SectionCard
+            id="overview"
+            title={`Welcome, ${displayName || "there"}`}
+            description="Review and update your info, preferences, and progress."
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <FieldRow label="Email" value={email} />
+              <FieldRow
+                label="Two-factor auth"
+                value={twoFactorEnabled ? "Enabled" : "Not enabled"}
+              />
+              <FieldRow
+                label="Username"
+                value={shownUsername ? `@${shownUsername}` : "—"}
+              />
+              <FieldRow label="Age" value={formatMaybeNumber((userProfile as any).age)} />
+              <FieldRow
+                label="Current weight"
+                value={
+                  latestWeight != null
+                    ? `${latestWeight} kg`
+                    : formatMaybeNumber((userProfile as any).weight_kg, " kg")
+                }
+              />
+              <FieldRow
+                label="Current height"
+                value={
+                  latestHeight != null
+                    ? `${latestHeight} cm`
+                    : formatMaybeNumber((userProfile as any).height_cm, " cm")
+                }
+              />
+              <FieldRow label="Dietary goal" value={prefs?.dietary_goal || "—"} />
+              <FieldRow label="Diet type" value={dietTypeLabel} />
+              <FieldRow
+                label="Fitness goals"
+                value={
+                  prefs?.fitness_goals?.length ? (
+                    <span className="flex flex-wrap gap-1">
+                      {prefs.fitness_goals.slice(0, 4).map((g, i) => (
+                        <Badge key={`${g}-${i}`}>{g}</Badge>
+                      ))}
+                      {prefs.fitness_goals.length > 4 ? (
+                        <Badge>+{prefs.fitness_goals.length - 4} more</Badge>
+                      ) : null}
+                    </span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+            </div>
+          </SectionCard>
+
+          {/* Profile details */}
+          <SectionCard
+            id="details"
+            title="Profile details"
+            description="Keep your identity details accurate. Height/weight logs are managed in the Logs section."
+            actions={
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setEditingProfile((v) => !v)}
-                className="text-sm"
-                style={{ color: "var(--primary)" }}
               >
                 {editingProfile ? "Cancel" : "Edit"}
-              </button>
-            </div>
-
+              </Button>
+            }
+          >
             {!editingProfile ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Field label="Name">
-                  {(userProfile.first_name ?? "")} {(userProfile.last_name ?? "")}
-                </Field>
-                <Field label="Username">{userProfile.username || "—"}</Field>
-                <Field label="Gender">{userProfile.gender || "—"}</Field>
-                <Field label="Age">
-                  {typeof userProfile.age === "number" ? userProfile.age : "—"}
-                </Field>
-                <Field label="Height">
-                  {typeof userProfile.height_cm === "number" ? `${userProfile.height_cm} cm` : "—"}
-                </Field>
-                <Field label="Weight">
-                  {typeof userProfile.weight_kg === "number" ? `${userProfile.weight_kg} kg` : "—"}
-                </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FieldRow
+                  label="Name"
+                  value={`${(userProfile as any).first_name ?? ""} ${(userProfile as any).last_name ?? ""}`.trim() || "—"}
+                />
+                <FieldRow label="Username" value={shownUsername || "—"} />
+                <FieldRow label="Gender" value={(userProfile as any).gender || "—"} />
+                <FieldRow label="Age" value={formatMaybeNumber((userProfile as any).age)} />
+                <FieldRow
+                  label="Height (profile)"
+                  value={formatMaybeNumber((userProfile as any).height_cm, " cm")}
+                />
+                <FieldRow
+                  label="Weight (profile)"
+                  value={formatMaybeNumber((userProfile as any).weight_kg, " kg")}
+                />
               </div>
             ) : (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <LabeledInput label="First name" value={firstName} onChange={setFirstName} />
-                <LabeledInput label="Last name" value={lastName} onChange={setLastName} />
-                <LabeledInput label="Username" value={username} onChange={setUsername} />
+              <form
+                className="grid gap-4 sm:grid-cols-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveProfile();
+                }}
+              >
                 <div>
-                  <label className="text-xs text-gray-700" htmlFor="gender">
-                    Gender
+                  <label htmlFor={ids.profileFirst} className="text-sm font-medium text-foreground">
+                    First name
                   </label>
-                  <select
-                    id="gender"
-                    className="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-white text-gray-900"
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">—</option>
-                    {GENDER_OPTIONS.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
+                  <input
+                    ref={profileFirstFieldRef}
+                    id={ids.profileFirst}
+                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    autoComplete="given-name"
+                  />
                 </div>
+
                 <div>
-                  <label className="text-xs text-gray-700" htmlFor="age">
+                  <label htmlFor={ids.profileLast} className="text-sm font-medium text-foreground">
+                    Last name
+                  </label>
+                  <input
+                    id={ids.profileLast}
+                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    autoComplete="family-name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor={ids.profileUser} className="text-sm font-medium text-foreground">
+                    Username
+                  </label>
+                  <input
+                    id={ids.profileUser}
+                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                  />
+                </div>
+
+                <LabeledSelect
+                  id={ids.profileGender}
+                  label="Gender"
+                  value={gender}
+                  onChange={setGender}
+                >
+                  <option value="">—</option>
+                  {GENDER_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </LabeledSelect>
+
+                <div>
+                  <label htmlFor={ids.profileAge} className="text-sm font-medium text-foreground">
                     Age
                   </label>
                   <input
-                    id="age"
+                    id={ids.profileAge}
                     type="number"
                     min={0}
-                    className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
-                    value={age}
+                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    value={age as any}
                     onChange={(e) => setAge(e.target.value)}
+                    inputMode="numeric"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <button
-                    type="button"
-                    onClick={saveProfile}
-                    className="rounded-lg px-4 py-2 text-sm font-medium"
-                    style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
-                  >
-                    Save profile
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
 
-          {/* Goals & prefs */}
-          <section id="prefs" className="scroll-mt-24 rounded-2xl border bg-white p-5 shadow-sm text-gray-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Your goals and preferences</h3>
-              <button
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                  <Button type="submit" variant="primary">
+                    Save profile
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingProfile(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
+          </SectionCard>
+
+          {/* Preferences */}
+          <SectionCard
+            id="preferences"
+            title="Preferences"
+            description="These help personalize your plans (diet types, goals, allergies)."
+            actions={
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setEditingPrefs((v) => !v)}
-                className="text-sm"
-                style={{ color: "var(--primary)" }}
               >
                 {editingPrefs ? "Cancel" : "Edit"}
-              </button>
-            </div>
-
+              </Button>
+            }
+          >
             {!editingPrefs ? (
-              prefs ? (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <Field label="Dietary goal">{prefs.dietary_goal || "—"}</Field>
-                  <Field label="Diet type">{useMemo(() => {
-                    const labelFromType =
-                      DIET_TYPES.find((d) => d.value === (prefs?.diet_type ?? ""))?.label ?? null;
-                    return labelFromType ?? (page.dietName ?? "") ?? "—";
-                  // eslint-disable-next-line react-hooks/exhaustive-deps
-                  }, [prefs, page.dietName])}</Field>
-                  <div>
-                    <div className="text-xs text-gray-700">Fitness goals</div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {prefs.fitness_goals?.length
-                        ? prefs.fitness_goals.map((fg, i) => <Badge key={i}>{fg}</Badge>)
-                        : "—"}
-                    </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FieldRow label="Dietary goal" value={prefs?.dietary_goal || "—"} />
+                <FieldRow label="Diet type" value={dietTypeLabel} />
+
+                <div className="rounded-xl border border-border bg-background/40 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Fitness goals
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-700">Allergies</div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {prefs.allergies?.length
-                        ? prefs.allergies.map((al, i) => <Badge key={i}>{al}</Badge>)
-                        : "—"}
-                    </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {prefs?.fitness_goals?.length ? (
+                      prefs.fitness_goals.map((fg, i) => <Badge key={`${fg}-${i}`}>{fg}</Badge>)
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <p className="mt-2 text-sm text-gray-700">No preferences saved yet.</p>
-              )
+
+                <div className="rounded-xl border border-border bg-background/40 p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Allergies
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {prefs?.allergies?.length ? (
+                      prefs.allergies.map((al, i) => <Badge key={`${al}-${i}`}>{al}</Badge>)
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <LabeledInput label="Dietary goal" value={dietaryGoal} onChange={setDietaryGoal} />
+              <form
+                className="grid gap-4 sm:grid-cols-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  savePrefs();
+                }}
+              >
+                <div className="sm:col-span-2">
+                  <LabeledInput
+                    id={ids.prefsDietGoal}
+                    label="Dietary goal"
+                    value={dietaryGoal}
+                    onChange={setDietaryGoal}
+                    placeholder="e.g., fat loss, maintenance, performance"
+                    description="Short phrase is enough. This helps guide plan targets."
+                  />
+                </div>
+
                 <div>
-                  <label className="text-xs text-gray-700" htmlFor="dietType">
+                  <label htmlFor={ids.prefsDietType} className="text-sm font-medium text-foreground">
                     Diet type
                   </label>
                   <select
-                    id="dietType"
-                    className="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-white text-gray-900"
+                    id={ids.prefsDietType}
+                    className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                     value={dietType}
                     onChange={(e) => setDietType(e.target.value)}
                   >
@@ -497,26 +1020,38 @@ export default function ProfilePage() {
                   </select>
                 </div>
 
-                {dietType === "other" && (
-                  <LabeledInput
-                    className="sm:col-span-2"
-                    label="Diet type (other)"
-                    value={dietOther}
-                    onChange={setDietOther}
-                  />
+                {dietType === "other" ? (
+                  <div>
+                    <label htmlFor={ids.prefsDietOther} className="text-sm font-medium text-foreground">
+                      Diet type (other)
+                    </label>
+                    <input
+                      ref={prefsFirstFieldRef}
+                      id={ids.prefsDietOther}
+                      className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      value={dietOther}
+                      onChange={(e) => setDietOther(e.target.value)}
+                      placeholder="Type your diet name"
+                    />
+                  </div>
+                ) : (
+                  <div className="sr-only">
+                    <input ref={prefsFirstFieldRef} />
+                  </div>
                 )}
 
                 <div className="sm:col-span-2">
-                  <div className="text-xs text-gray-700">Fitness goals</div>
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="text-sm font-medium text-foreground">Fitness goals</div>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {FITNESS_GOAL_OPTIONS.map((g) => {
                       const checked = fitnessGoals.includes(g);
                       return (
                         <label
                           key={g}
-                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                            checked ? "bg-gray-100" : ""
-                          }`}
+                          className={cx(
+                            "flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm hover:bg-muted focus-within:ring-2 focus-within:ring-ring",
+                            checked && "bg-muted/40"
+                          )}
                         >
                           <input
                             type="checkbox"
@@ -527,7 +1062,7 @@ export default function ProfilePage() {
                               )
                             }
                           />
-                          <span className="text-gray-800">{g}</span>
+                          <span>{g}</span>
                         </label>
                       );
                     })}
@@ -535,32 +1070,38 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <div className="text-xs text-gray-700">Allergies</div>
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <div className="text-sm font-medium text-foreground">Allergies</div>
+
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {allergies.length ? (
                       allergies.map((a) => (
                         <span
                           key={a}
-                          className="inline-flex items-center rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700"
+                          className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
                         >
                           {a}
                           <button
                             type="button"
-                            className="ml-2 text-red-600 hover:underline"
+                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
                             onClick={() => removeAllergy(a)}
-                            aria-label={`Remove ${a}`}
+                            aria-label={`Remove allergy ${a}`}
                           >
                             ×
                           </button>
                         </span>
                       ))
                     ) : (
-                      <span className="text-sm text-gray-700">—</span>
+                      <span className="text-sm text-muted-foreground">No allergies added.</span>
                     )}
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
+
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <label className="sr-only" htmlFor={ids.allergyInput}>
+                      Add an allergy
+                    </label>
                     <input
-                      className="flex-1 border border-gray-300 rounded px-3 py-2 text-gray-900"
+                      id={ids.allergyInput}
+                      className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="Add an allergy (e.g., peanuts)"
                       value={newAllergy}
                       onChange={(e) => setNewAllergy(e.target.value)}
@@ -571,81 +1112,168 @@ export default function ProfilePage() {
                         }
                       }}
                     />
-                    <button type="button" onClick={addAllergy} className="rounded border px-3 py-2 text-sm">
+                    <Button type="button" variant="outline" onClick={addAllergy}>
                       Add
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
-                <div className="sm:col-span-2">
-                  <button
-                    type="button"
-                    onClick={savePrefs}
-                    className="rounded-lg px-4 py-2 text-sm font-medium"
-                    style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
-                  >
+                <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                  <Button type="submit" variant="primary">
                     Save preferences
-                  </button>
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingPrefs(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
+          </SectionCard>
+
+          {/* Progress (Charts) */}
+          <SectionCard
+            id="progress"
+            title="Progress"
+            description="Visualize your trends from logged measurements and workout data."
+          >
+            <div className="grid gap-4">
+              <LineChart title="Weight over time" points={weightPoints} ySuffix=" kg" />
+
+              {heightPoints.length >= 2 ? (
+                <LineChart title="Height over time" points={heightPoints} ySuffix=" cm" />
+              ) : (
+                <EmptyState
+                  title="Height chart (optional)"
+                  body="Height entries are rare. Add at least 2 height measurements if you want to visualize a height trend."
+                />
+              )}
+
+              <div className="rounded-xl border border-border bg-background/40 p-4">
+                <div className="text-sm font-semibold text-foreground">
+                  Exercise progress (max weight & reps)
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  This section will show progress per exercise (e.g., Bench Press) as line charts
+                  once the backend provides normalized exercise progress data.
+                </p>
+                <div className="mt-3 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Status:</span> waiting for backend data.
                 </div>
               </div>
-            )}
-          </section>
+            </div>
+          </SectionCard>
 
-          {/* Graphs placeholder */}
-          <section id="graphs" className="scroll-mt-24 rounded-2xl border bg-white p-5 shadow-sm text-gray-900">
-            <h3 className="text-lg font-semibold">Graphs</h3>
-            <p className="text-sm text-gray-700">Weight & height trend charts coming soon.</p>
-          </section>
+          {/* Logs & history */}
+          <SectionCard
+            id="logs"
+            title="Logs & history"
+            description="Add measurements, then review recent entries. Charts update automatically."
+          >
+            <div className="grid gap-4">
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <div className="text-sm font-semibold text-foreground">Add a measurement</div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Log weight (kg) regularly. Height (cm) is optional.
+                </p>
 
-          {/* Measurements (height / weight by date) */}
-          <section id="logs" className="scroll-mt-24 rounded-2xl border bg-white p-5 shadow-sm text-gray-900">
-            <h3 className="text-lg font-semibold">Measurements</h3>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-[10rem,10rem,1fr,auto]">
-              <LabeledDate label="Date" value={mDate} onChange={setMDate} />
-              <div>
-                <label className="text-xs text-gray-700" htmlFor="mtype">Type</label>
-                <select
-                  id="mtype"
-                  className="mt-1 w-full border border-gray-300 rounded px-3 py-2 bg-white text-gray-900"
-                  value={mType}
-                  onChange={(e) => setMType(e.target.value as "weight" | "height")}
+                <form
+                  className="mt-4 grid gap-3 sm:grid-cols-[12rem,12rem,1fr,auto]"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addMeasurement();
+                  }}
                 >
-                  <option value="weight">Weight (kg)</option>
-                  <option value="height">Height (cm)</option>
-                </select>
+                  <LabeledDate id={ids.mDate} label="Date" value={mDate} onChange={setMDate} />
+
+                  <div>
+                    <label htmlFor={ids.mType} className="text-sm font-medium text-foreground">
+                      Type
+                    </label>
+                    <select
+                      id={ids.mType}
+                      className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      value={mType}
+                      onChange={(e) => setMType(e.target.value as "weight" | "height")}
+                    >
+                      <option value="weight">Weight (kg)</option>
+                      <option value="height">Height (cm)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor={ids.mValue} className="text-sm font-medium text-foreground">
+                      Value
+                    </label>
+                    <input
+                      id={ids.mValue}
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.1"
+                      className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder={mType === "weight" ? "e.g., 72" : "e.g., 175"}
+                      value={mValue}
+                      onChange={(e) => setMValue(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button type="submit" variant="primary" className="w-full">
+                      Add
+                    </Button>
+                  </div>
+                </form>
+
+                {(!mDate || !mValue || Number(mValue) <= 0) && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Tip: choose a date and enter a value greater than 0.
+                  </p>
+                )}
               </div>
-              <LabeledInput
-                label="Value"
-                type="number"
-                inputMode="decimal"
-                placeholder={mType === "weight" ? "e.g., 72" : "e.g., 175"}
-                value={mValue}
-                onChange={setMValue}
-              />
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={addMeasurement}
-                  className="w-full rounded-lg px-4 py-2 text-sm font-medium"
-                  style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
-                >
-                  Add
-                </button>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <RecentListCard title="Recent Weight (kg)" data={weightHistory} />
+                <RecentListCard title="Recent Height (cm)" data={heightHistory} />
               </div>
             </div>
+          </SectionCard>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <ListCard title="Recent Weight (kg)" data={weightHistory} />
-              <ListCard title="Recent Height (cm)" data={heightHistory} />
-            </div>
-          </section>
-
-          <footer className="px-1 py-2 text-xs text-gray-600">
-            Data is read from your database via Laravel. React escapes output by default.
+          <footer className="px-1 py-2 text-xs text-muted-foreground">
+            Data is loaded from your database via Laravel. (React escapes output by default.)
           </footer>
         </div>
       </main>
     </>
+  );
+}
+
+function RecentListCard({ title, data }: { title: string; data: Measurement[] }) {
+  const items = useMemo(() => {
+    const safe = Array.isArray(data) ? data : [];
+    return safe.slice().sort((a, b) => (a.date > b.date ? 1 : -1));
+  }, [data]);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 shadow-sm">
+      <div className="text-sm font-semibold">{title}</div>
+      {items.length ? (
+        <ul className="mt-3 space-y-2 text-sm">
+          {items
+            .slice(-8)
+            .reverse()
+            .map((m, i) => (
+              <li
+                key={`${m.date}-${i}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2"
+              >
+                <span className="text-muted-foreground">{m.date}</span>
+                <span className="tabular-nums font-medium text-foreground">{m.value}</span>
+              </li>
+            ))}
+        </ul>
+      ) : (
+        <div className="mt-3 text-sm text-muted-foreground">No entries yet.</div>
+      )}
+    </div>
   );
 }

@@ -14,14 +14,10 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    /**
-     * Show the user's profile page with all props your React page needs.
-     */
     public function edit(Request $request): Response
     {
         $u = $request->user();
 
-        // --- Profile snapshot (what the page reads) ---
         $userProfile = [
             'first_name' => $u->first_name,
             'last_name'  => $u->last_name,
@@ -32,8 +28,9 @@ class ProfileController extends Controller
             'weight_kg'  => $u->weight_kg,
         ];
 
-        // --- Map your single 'fitness_goal' + 'diet_name' to the UI's "prefs" shape ---
+        // Map your stored fields -> prefs shape the React page expects
         $dietName = $u->diet_name;
+
         $knownDietSlugs = ['balanced','high_protein','low_carb','mediterranean','keto','vegan','vegetarian'];
         $slug = $dietName ? strtolower(str_replace([' ', '-'], ['_', '_'], trim($dietName))) : null;
         $dietType = in_array($slug, $knownDietSlugs, true) ? $slug : ($slug ? 'other' : null);
@@ -47,44 +44,45 @@ class ProfileController extends Controller
             'allergies'     => is_array($u->allergies) ? $u->allergies : [],
         ];
 
-        // --- Measurement histories (tolerant of schema differences) ---
+        // ✅ Your real measurements schema uses measured_at + weight_kg
         $weightHistory = [];
         $heightHistory = [];
+
         if (Schema::hasTable('measurements')) {
-            // Preferred shape: user_id, date, type ('weight'|'height'), value (number)
-            if (
-                Schema::hasColumn('measurements', 'user_id') &&
-                Schema::hasColumn('measurements', 'date') &&
-                Schema::hasColumn('measurements', 'type') &&
-                Schema::hasColumn('measurements', 'value')
-            ) {
-                $weightHistory = DB::table('measurements')
-                    ->where('user_id', $u->id)->where('type', 'weight')
-                    ->orderBy('date', 'desc')->limit(30)
-                    ->get(['date', 'type', 'value'])
-                    ->map(fn($r) => ['date' => $r->date, 'type' => 'weight', 'value' => (float) $r->value])
-                    ->all();
+            $hasUserId = Schema::hasColumn('measurements', 'user_id');
+            $hasMeasuredAt = Schema::hasColumn('measurements', 'measured_at');
 
-                $heightHistory = DB::table('measurements')
-                    ->where('user_id', $u->id)->where('type', 'height')
-                    ->orderBy('date', 'desc')->limit(30)
-                    ->get(['date', 'type', 'value'])
-                    ->map(fn($r) => ['date' => $r->date, 'type' => 'height', 'value' => (float) $r->value])
-                    ->all();
+            if ($hasUserId && $hasMeasuredAt) {
+                // Weight history
+                if (Schema::hasColumn('measurements', 'weight_kg')) {
+                    $weightHistory = DB::table('measurements')
+                        ->where('user_id', $u->id)
+                        ->whereNotNull('weight_kg')
+                        ->orderBy('measured_at', 'desc')
+                        ->limit(60)
+                        ->get(['measured_at', 'weight_kg'])
+                        ->map(fn($r) => [
+                            'date'  => (string) $r->measured_at, // React expects "date"
+                            'type'  => 'weight',
+                            'value' => (float) $r->weight_kg,
+                        ])
+                        ->all();
+                }
 
-            // Fallback shape: separate weight_kg/height_cm columns
-            } else {
-                $rows = DB::table('measurements')
-                    ->where('user_id', $u->id)
-                    ->orderBy('date', 'desc')->limit(30)->get();
-
-                foreach ($rows as $r) {
-                    if (isset($r->weight_kg) && $r->weight_kg !== null) {
-                        $weightHistory[] = ['date' => $r->date, 'type' => 'weight', 'value' => (float) $r->weight_kg];
-                    }
-                    if (isset($r->height_cm) && $r->height_cm !== null) {
-                        $heightHistory[] = ['date' => $r->date, 'type' => 'height', 'value' => (float) $r->height_cm];
-                    }
+                // Height history (ONLY if your table has height_cm — your dump does not)
+                if (Schema::hasColumn('measurements', 'height_cm')) {
+                    $heightHistory = DB::table('measurements')
+                        ->where('user_id', $u->id)
+                        ->whereNotNull('height_cm')
+                        ->orderBy('measured_at', 'desc')
+                        ->limit(60)
+                        ->get(['measured_at', 'height_cm'])
+                        ->map(fn($r) => [
+                            'date'  => (string) $r->measured_at,
+                            'type'  => 'height',
+                            'value' => (float) $r->height_cm,
+                        ])
+                        ->all();
                 }
             }
         }
@@ -95,15 +93,15 @@ class ProfileController extends Controller
             'prefs'         => $prefs,
             'dietName'      => $dietName,
             'weightHistory' => $weightHistory,
-            'heightHistory' => $heightHistory,
-            'status'        => $request->session()->get('status'),
+            'heightHistory' => $heightHistory, // will be [] unless you add height_cm column
+            'flash'         => [
+                'status'  => session('status'),
+                'success' => session('success'),
+                'error'   => session('error'),
+            ],
         ]);
     }
 
-    /**
-     * Save basic profile info (first/last/username/gender/age/height/weight).
-     * Match your React "Save profile" action.
-     */
     public function updateBasics(Request $request): RedirectResponse
     {
         $u = $request->user();
@@ -114,26 +112,24 @@ class ProfileController extends Controller
             'username'   => ['nullable','string','max:24','regex:/^[A-Za-z0-9_.]+$/', Rule::unique('users','username')->ignore($u->id)],
             'gender'     => ['nullable', Rule::in(['male','female','other'])],
             'age'        => ['nullable','integer','between:13,100'],
+
+            // Keep these because your users table has them
             'height_cm'  => ['nullable','integer','between:80,250'],
             'weight_kg'  => ['nullable','numeric','between:25,400'],
         ]);
 
         $u->fill($data)->save();
 
-        return back()->with('status', 'profile-updated');
+        return back()->with('status', 'profile-updated')->with('success', 'Profile updated.');
     }
 
-    /**
-     * Save preferences (diet, goals, allergies).
-     * Maps your UI props back to your users table columns.
-     */
     public function updatePrefs(Request $request): RedirectResponse
     {
         $u = $request->user();
 
         $data = $request->validate([
-            'diet_type'       => ['nullable','string','max:60'],    // balanced/high_protein/.../other
-            'diet_other'      => ['nullable','string','max:60'],    // free-text if 'other'
+            'diet_type'       => ['nullable','string','max:60'],
+            'diet_other'      => ['nullable','string','max:60'],
             'dietary_goal'    => ['nullable','string','max:60'],
             'fitness_goals'   => ['nullable','array'],
             'fitness_goals.*' => ['string','max:60'],
@@ -141,7 +137,6 @@ class ProfileController extends Controller
             'allergies.*'     => ['string','max:60'],
         ]);
 
-        // Convert diet_type back to your diet_name column
         $dietName = null;
         if (!empty($data['diet_type'])) {
             $dietName = $data['diet_type'] === 'other'
@@ -151,83 +146,81 @@ class ProfileController extends Controller
 
         $u->diet_name    = $dietName;
         $u->dietary_goal = $data['dietary_goal'] ?? null;
-        // You store a single 'fitness_goal'; collapse array to first item
         $u->fitness_goal = isset($data['fitness_goals'][0]) ? $data['fitness_goals'][0] : null;
         $u->allergies    = $data['allergies'] ?? [];
 
         $u->save();
 
-        return back()->with('status', 'prefs-updated');
+        return back()->with('status', 'prefs-updated')->with('success', 'Preferences updated.');
     }
 
-    /**
-     * Store a new measurement (weight or height).
-     * Supports both "type/value" schema and legacy weight_kg/height_cm columns.
-     */
     public function storeMeasurement(Request $request): RedirectResponse
     {
         $u = $request->user();
 
         $data = $request->validate([
-            'date'  => ['required','date'],
+            'date'  => ['required','date'], // UI sends "date"
             'type'  => ['required', Rule::in(['weight','height'])],
             'value' => ['required','numeric','min:1'],
         ]);
 
         if (!Schema::hasTable('measurements')) {
-            return back()->with('status', 'no-measurements-table');
+            return back()->with('error', 'Measurements table not found.');
         }
 
-        // Preferred generic schema
-        if (
-            Schema::hasColumn('measurements', 'user_id') &&
-            Schema::hasColumn('measurements', 'date') &&
-            Schema::hasColumn('measurements', 'type') &&
-            Schema::hasColumn('measurements', 'value')
-        ) {
-            DB::table('measurements')->insert([
-                'user_id'    => $u->id,
-                'date'       => $data['date'],
-                'type'       => $data['type'],
-                'value'      => $data['value'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        // ✅ Your schema uses measured_at (date)
+        $dateColumn = Schema::hasColumn('measurements', 'measured_at')
+            ? 'measured_at'
+            : (Schema::hasColumn('measurements', 'date') ? 'date' : null);
 
-        // Fallback separate columns
-        } else {
-            if ($data['type'] === 'weight' && Schema::hasColumn('measurements', 'weight_kg')) {
-                DB::table('measurements')->insert([
-                    'user_id'    => $u->id,
-                    'date'       => $data['date'],
-                    'weight_kg'  => $data['value'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                // Optionally keep on profile
-                $u->weight_kg = $data['value']; $u->save();
+        if (!$dateColumn || !Schema::hasColumn('measurements', 'user_id')) {
+            return back()->with('error', 'Measurements schema is missing user_id/date fields.');
+        }
 
-            } elseif ($data['type'] === 'height' && Schema::hasColumn('measurements', 'height_cm')) {
-                DB::table('measurements')->insert([
-                    'user_id'    => $u->id,
-                    'date'       => $data['date'],
-                    'height_cm'  => $data['value'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $u->height_cm = $data['value']; $u->save();
-
-            } else {
-                return back()->with('status', 'measurements-schema-unknown');
+        // Weight path (supported by your dump)
+        if ($data['type'] === 'weight') {
+            if (!Schema::hasColumn('measurements', 'weight_kg')) {
+                return back()->with('error', 'This database does not support weight_kg in measurements.');
             }
+
+            // Upsert per (user_id, measured_at) — matches your unique index
+            DB::table('measurements')->updateOrInsert(
+                ['user_id' => $u->id, $dateColumn => $data['date']],
+                ['weight_kg' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
+            );
+
+            // Optional: keep latest on users table
+            $u->weight_kg = $data['value'];
+            $u->save();
+
+            return back()->with('status', 'measurement-added')->with('success', 'Weight saved.');
         }
 
-        return back()->with('status', 'measurement-added');
+        // Height path (NOT supported by your dump unless you add height_cm column)
+        if ($data['type'] === 'height') {
+            // If you later add measurements.height_cm, this will work automatically:
+            if (Schema::hasColumn('measurements', 'height_cm')) {
+                DB::table('measurements')->updateOrInsert(
+                    ['user_id' => $u->id, $dateColumn => $data['date']],
+                    ['height_cm' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
+                );
+                $u->height_cm = (int) $data['value'];
+                $u->save();
+
+                return back()->with('status', 'measurement-added')->with('success', 'Height saved.');
+            }
+
+            // Otherwise: store on user only (so UI still updates profile height)
+            $u->height_cm = (int) $data['value'];
+            $u->save();
+
+            return back()->with('status', 'height-saved-user-only')
+                ->with('error', 'Height history is not enabled in measurements table (no height_cm column). Height updated on profile only.');
+        }
+
+        return back()->with('error', 'Unknown measurement type.');
     }
 
-    /**
-     * Keep your original delete (unchanged).
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate([
