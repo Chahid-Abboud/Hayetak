@@ -237,8 +237,11 @@ export default function LogPage() {
           onSuccess: () => {
             setWeights((prev) => ({ ...prev, [exerciseId]: "" }));
             setReps((prev) => ({ ...prev, [exerciseId]: "" }));
-            setStatus("Set added.");
+            setStatus("Set saved.");
             router.reload({ only: ["recentLogs"] });
+          },
+          onError: () => {
+            setStatus("Could not save set. Please try again.");
           },
         }
       );
@@ -300,9 +303,19 @@ export default function LogPage() {
       <main className="mx-auto max-w-7xl p-4 md:p-6 space-y-8">
         <WorkoutTabs active="log" />
 
-        <div aria-live="polite" className="sr-only">
-          {status ?? ""}
-        </div>
+        {status && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-lg border px-4 py-2 text-sm"
+            style={{
+              backgroundColor: "var(--muted)",
+              color: "var(--muted-foreground)",
+            }}
+          >
+            {status}
+          </div>
+        )}
 
         {/* Header card */}
         <section
