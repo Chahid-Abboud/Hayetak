@@ -28,18 +28,30 @@ class WorkoutLogController extends Controller
         $weekday    = (int) $today->isoWeekday(); // 1..7
         $currentDay = optional($plan?->days->firstWhere('day_index', $weekday)) ?: $plan?->days->first();
 
-        // Recent logs (order by performed_at), alias performed_at -> workout_date for the UI
+        // Recent logs (order by performed_at), with sets for the UI
         $recentLogs = WorkoutLog::query()
             ->where('user_id', $userId)
+            ->with(['sets.exercise:id,name'])
             ->orderByDesc('performed_at')
             ->orderByDesc('id')
             ->limit(14)
-            ->get(['id','performed_at','workout_plan_day_id'])
+            ->get()
             ->map(function ($l) {
+                $sets = $l->sets->map(function ($s) {
+                    return [
+                        'id'         => (int) $s->id,
+                        'exercise'   => $s->exercise ? ['id' => (int) $s->exercise->id, 'name' => $s->exercise->name] : null,
+                        'weight_kg'  => $s->weight_kg,
+                        'reps'       => (int) $s->reps,
+                        'set_number' => (int) $s->order_index + 1, // 1-based for frontend
+                    ];
+                })->sortBy('order_index')->values()->all();
+
                 return [
                     'id'                   => (int) $l->id,
-                    'workout_date'         => $l->performed_at,   // alias for the frontend
+                    'workout_date'         => $l->performed_at,
                     'workout_plan_day_id'  => $l->workout_plan_day_id,
+                    'sets'                 => $sets,
                 ];
             });
 
@@ -89,11 +101,14 @@ class WorkoutLogController extends Controller
             'reps'        => ['required', 'integer', 'min:1', 'max:50'],
         ]);
 
+        // DB uses order_index (0-based); frontend sends set_number (1-based)
+        $orderIndex = $data['set_number'] - 1;
+
         WorkoutLogSet::updateOrCreate(
             [
                 'workout_log_id' => $log->id,
                 'exercise_id'    => $data['exercise_id'],
-                'set_number'     => $data['set_number'],
+                'order_index'    => $orderIndex,
             ],
             [
                 'weight_kg' => $data['weight_kg'],

@@ -18,11 +18,13 @@ class MealTrackerApiController extends Controller
         $date = Carbon::parse($date)->format('Y-m-d');
 
         $mealType = $request->query('meal_type');
-        $summary = $this->svc->daySummary(Auth::id(), $date);
+        $userId = Auth::id();
+        $summary = $this->svc->daySummary($userId, $date);
 
         return response()->json([
             ...$summary,
-            'recommendations' => $this->svc->recommendedFoods(Auth::id(), $date, is_string($mealType) ? $mealType : null),
+            'userAllergies'   => $this->svc->userAllergies($userId),
+            'recommendations' => $this->svc->recommendedFoods($userId, $date, is_string($mealType) ? $mealType : null),
         ]);
     }
 
