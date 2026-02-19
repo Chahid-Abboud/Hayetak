@@ -204,7 +204,7 @@ class MealTrackerService
         $q = Food::query()
             ->select(['id','name','category','serving_size','serving_unit','calories','protein_g','carbs_g','fat_g','allergens','meal_types'])
             ->when($mealType && in_array($mealType, ['breakfast','lunch','dinner','snack','drink'], true), function ($qq) use ($mealType) {
-                $qq->whereJsonContains('meal_types', $mealType);
+                $qq->whereRaw('? IN (SELECT unnest(meal_types)::text)', [$mealType]);
             });
 
         // exclude allergens

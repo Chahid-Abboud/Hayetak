@@ -68,11 +68,12 @@ type SearchFood = {
 
   // filtering helpers (if backend returns them)
   category?: string | null;
-  meal_types?: string[] | null;
+  meal_types?: string[] | string | null;
   allergens?: string[] | string | null;
 };
 
 const ZERO: Totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+const DEFAULT_TARGETS: Totals = { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 const MEALS: MealType[] = ["breakfast", "lunch", "dinner", "snack", "drink"];
 
 const CARD =
@@ -120,15 +121,20 @@ function foodMatchesMealFilter(food: SearchFood, filterMeal: MealType) {
   const fCat = food.category ? normalizeToken(food.category) : "";
   const mealWord = normalizeToken(filterMeal);
 
-  // 1) category string match (if your foods.category is "Breakfast", "Snack", etc.)
+  // 1) category string match
   if (fCat && fCat === mealWord) return true;
 
-  // 2) meal_types jsonb match (if your foods.meal_types includes "breakfast", etc.)
-  const mt = Array.isArray(food.meal_types) ? food.meal_types : [];
-  if (mt.some((x) => normalizeToken(String(x)) === mealWord)) return true;
+  // 2) meal_types match (array or PostgreSQL-style "{breakfast,lunch}" string)
+  let mt: string[] = [];
+  const rawMt = food.meal_types;
+  if (Array.isArray(rawMt)) {
+    mt = rawMt.map((x: unknown) => String(x));
+  } else if (typeof rawMt === "string" && rawMt) {
+    mt = rawMt.replace(/[{}]/g, "").split(",").map((x: string) => x.trim()).filter(Boolean);
+  }
+  if (mt.some((x) => normalizeToken(x) === mealWord)) return true;
 
-  // 3) if backend doesn't send category/meal_types, we cannot confidently match
-  // In that case: do NOT hide it (fail-soft). Filtering should never erase everything.
+  // 3) fail-soft: no category/meal_types = don't hide (backend may have pre-filtered)
   if (!food.category && !food.meal_types) return true;
 
   return false;
@@ -219,6 +225,7 @@ export default function TrackMealsPage() {
   // server results (unfiltered client-side)
   const [results, setResults] = useState<SearchFood[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Reset paging only when search/filter changes (not when date changes)
   useEffect(() => {
@@ -269,17 +276,15 @@ export default function TrackMealsPage() {
     let list = results;
 
     // ✅ apply category filter client-side too (fixes regression + avoids “empty” when backend param mismatch)
-    if (filterMealType) {
-      list = list.filter((f) => foodMatchesMealFilter(f, filterMealType));
-    }
+    // Backend filters by meal_types; trust it (no client-side meal filter)
 
-    // ✅ apply allergen exclusion client-side (prevents “removes everything” bug)
+    // apply allergen exclusion client-side (prevents “removes everything” bug)
     if (excludeAllergens && userAllergies.length > 0) {
       list = list.filter((f) => !foodHasUserAllergen(f, userAllergies));
     }
 
     return list;
-  }, [results, filterMealType, excludeAllergens, userAllergies]);
+  }, [results, excludeAllergens, userAllergies]);
 
   // ---------------- Add modal ----------------
   const [openAdd, setOpenAdd] = useState(false);
@@ -335,15 +340,21 @@ export default function TrackMealsPage() {
     const servings = computeServings();
     if (!(servings > 0)) return;
 
-    await axios.post("/meal-entries", {
-      food_id: selected.id,
-      meal_type: mealType, // ✅ always add to selected mealType, not filterMealType
-      servings,
-      eaten_at: date,
-    });
-
-    closeAddDialog();
-    await fetchDay(date);
+    try {
+      await axios.post("/meal-entries", {
+        food_id: selected.id,
+        meal_type: mealType,
+        servings,
+        eaten_at: date,
+      });
+      closeAddDialog();
+      setStatusMessage("Meal added to your daily tracking successfully.");
+      await fetchDay(date);
+      setTimeout(() => setStatusMessage(null), 4000);
+    } catch {
+      setStatusMessage("Could not add meal. Please try again.");
+      setTimeout(() => setStatusMessage(null), 4000);
+    }
   };
 
   const removeEntry = async (id: number) => {
@@ -355,7 +366,8 @@ export default function TrackMealsPage() {
   const dailyTotals = day.dailyTotals ?? ZERO;
   const mealTotals = day.mealTotals ?? safeMealTotals(null);
   const entries = Array.isArray(day.entries) ? day.entries : [];
-  const targets = day.targets ?? null;
+  const targets = day.targets ?? DEFAULT_TARGETS;
+  const hasUserTargets = !!day.targets;
 
   const macro = (n: number) => Math.round(n);
 
@@ -422,11 +434,25 @@ export default function TrackMealsPage() {
             <StatCard label="Fat" value={`${macro(dailyTotals.fat)} g`} unit="g" consumed={dailyTotals.fat} target={targets?.fat} />
           </div>
 
-          {!targets && (
+          {!hasUserTargets && (
             <div className="mt-2 text-[11px] opacity-80">
-              No targets yet. Set them in your profile (daily goal calories / protein / carbs / fat).
+              Using default goals. Set your own in profile for personalized tracking.
             </div>
           )}
+
+        {statusMessage && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-3 rounded-lg border px-4 py-2 text-sm"
+            style={{
+              backgroundColor: "var(--muted)",
+              color: "var(--muted-foreground)",
+            }}
+          >
+            {statusMessage}
+          </div>
+        )}
         </section>
 
         {/* Meal type tabs (also sets filter) */}

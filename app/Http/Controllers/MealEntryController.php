@@ -80,6 +80,10 @@ class MealEntryController extends Controller
 
         MealEntry::create($validated);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Meal added to your day successfully.']);
+        }
+
         return back()->with('success', 'Added to your day.');
     }
 
