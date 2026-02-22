@@ -6,6 +6,7 @@ use App\Models\Food;
 use App\Models\FoodFavorite;
 use App\Models\MealEntry;
 use App\Models\UserPref;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -14,16 +15,116 @@ class MealTrackerService
     public function targets(int $userId): ?array
     {
         $pref = UserPref::where('user_id', $userId)->first();
-        if (!$pref) return null;
+        $fromPrefs = $this->targetsFromPrefs($pref);
+        if ($fromPrefs) {
+            return $fromPrefs;
+        }
 
-        $t = [
-            'calories' => $pref->daily_goal_calories,
-            'protein'  => (float) ($pref->daily_goal_protein_g ?? 0),
-            'carbs'    => (float) ($pref->daily_goal_carbs_g ?? 0),
-            'fat'      => (float) ($pref->daily_goal_fat_g ?? 0),
+        $user = User::query()->find($userId);
+        if (!$user) {
+            return null;
+        }
+
+        return $this->targetsFromUserProfile($user, $pref);
+    }
+
+    private function targetsFromPrefs(?UserPref $pref): ?array
+    {
+        if (!$pref) {
+            return null;
+        }
+
+        $calories = (float) ($pref->daily_goal_calories ?? 0);
+        $protein = (float) ($pref->daily_goal_protein_g ?? 0);
+        $carbs = (float) ($pref->daily_goal_carbs_g ?? 0);
+        $fat = (float) ($pref->daily_goal_fat_g ?? 0);
+
+        if ($calories <= 0 && $protein <= 0 && $carbs <= 0 && $fat <= 0) {
+            return null;
+        }
+
+        // If calories are absent but macros exist, derive calories from macro energy.
+        if ($calories <= 0) {
+            $calories = ($protein * 4) + ($carbs * 4) + ($fat * 9);
+        }
+
+        return [
+            'calories' => round($calories, 1),
+            'protein' => round(max(0, $protein), 1),
+            'carbs' => round(max(0, $carbs), 1),
+            'fat' => round(max(0, $fat), 1),
         ];
+    }
 
-        return ($t['calories'] || $t['protein'] || $t['carbs'] || $t['fat']) ? $t : null;
+    private function targetsFromUserProfile(User $user, ?UserPref $pref): array
+    {
+        $weightKg = max(25.0, (float) ($user->weight_kg ?? 75));
+        $heightCm = max(120.0, (float) ($user->height_cm ?? 170));
+        $age = max(13, (int) ($user->age ?? 25));
+        $gender = strtolower((string) ($user->gender ?? 'male'));
+        $goalText = strtolower(trim(((string) ($user->dietary_goal ?? '')) . ' ' . ((string) ($user->fitness_goal ?? ''))));
+        $activityFactor = $this->resolveActivityFactor((string) ($user->activity_level ?? ''), (int) ($user->workout_days_per_week ?? 0), $pref);
+
+        $bmr = $gender === 'female'
+            ? ((10 * $weightKg) + (6.25 * $heightCm) - (5 * $age) - 161)
+            : ((10 * $weightKg) + (6.25 * $heightCm) - (5 * $age) + 5);
+
+        $tdee = max(1200.0, $bmr * $activityFactor);
+
+        $calorieMultiplier = 1.0;
+        $proteinPerKg = 1.6;
+
+        if (
+            str_contains($goalText, 'lose')
+            || str_contains($goalText, 'loss')
+            || str_contains($goalText, 'fat')
+            || str_contains($goalText, 'cut')
+        ) {
+            $calorieMultiplier = 0.85;
+            $proteinPerKg = 1.8;
+        } elseif (
+            str_contains($goalText, 'gain')
+            || str_contains($goalText, 'bulk')
+            || str_contains($goalText, 'muscle')
+        ) {
+            $calorieMultiplier = 1.10;
+            $proteinPerKg = 2.0;
+        }
+
+        $targetCalories = max(1200.0, $tdee * $calorieMultiplier);
+        $proteinG = max(0.0, $weightKg * $proteinPerKg);
+        $fatG = max(0.0, max($weightKg * 0.6, ($targetCalories * 0.25) / 9));
+        $carbsG = max(0.0, ($targetCalories - (($proteinG * 4) + ($fatG * 9))) / 4);
+
+        return [
+            'calories' => round($targetCalories, 1),
+            'protein' => round($proteinG, 1),
+            'carbs' => round($carbsG, 1),
+            'fat' => round($fatG, 1),
+        ];
+    }
+
+    private function resolveActivityFactor(string $activityLevel, int $workoutDays, ?UserPref $pref): float
+    {
+        $activityLevel = strtolower(trim($activityLevel));
+        $fromPref = (float) ($pref?->activity_factor ?? 0);
+        if ($fromPref > 0) {
+            return $fromPref;
+        }
+
+        return match ($activityLevel) {
+            'sedentary' => 1.20,
+            'lightly active' => 1.375,
+            'moderately active' => 1.55,
+            'very active' => 1.725,
+            'athlete' => 1.90,
+            default => match (true) {
+                $workoutDays >= 6 => 1.725,
+                $workoutDays >= 3 => 1.55,
+                $workoutDays >= 1 => 1.375,
+                default => 1.20,
+            },
+        };
     }
 
     public function userAllergies(int $userId): array
@@ -216,10 +317,10 @@ class MealTrackerService
 
         // simple scoring: “distance” from ideal per-item remaining macros
         $q->orderByRaw("
-            ABS(COALESCE(protein_g,0) - ?) +
-            ABS(COALESCE(carbs_g,0)   - ?) +
-            ABS(COALESCE(fat_g,0)     - ?) +
-            (ABS(COALESCE(calories,0) - ?) / 10.0)
+            ABS(COALESCE(protein_g,0)::numeric - ?::numeric) +
+            ABS(COALESCE(carbs_g,0)::numeric   - ?::numeric) +
+            ABS(COALESCE(fat_g,0)::numeric     - ?::numeric) +
+            (ABS(COALESCE(calories,0)::numeric - ?::numeric) / 10.0)
         ", [$tp, $tc, $tf, max(1, $rem['calories'] / 3.0)]);
 
         return $q->limit($limit)->get()->map(function ($f) use ($userId) {

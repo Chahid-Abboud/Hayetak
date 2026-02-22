@@ -6,6 +6,7 @@ import NavHeader from "@/components/NavHeader";
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "drink";
 type MealTotals = Record<MealType, Totals>;
+type MacroKey = keyof Totals;
 type Unit = string;
 
 type EntryItem = {
@@ -428,10 +429,10 @@ export default function TrackMealsPage() {
           </h2>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatCard label="Calories" value={`${macro(dailyTotals.calories)} kcal`} unit="kcal" consumed={dailyTotals.calories} target={targets?.calories} />
-            <StatCard label="Protein" value={`${macro(dailyTotals.protein)} g`} unit="g" consumed={dailyTotals.protein} target={targets?.protein} />
-            <StatCard label="Carbs" value={`${macro(dailyTotals.carbs)} g`} unit="g" consumed={dailyTotals.carbs} target={targets?.carbs} />
-            <StatCard label="Fat" value={`${macro(dailyTotals.fat)} g`} unit="g" consumed={dailyTotals.fat} target={targets?.fat} />
+            <StatCard label="Calories" macroKey="calories" value={`${macro(dailyTotals.calories)} kcal`} unit="kcal" consumed={dailyTotals.calories} target={targets?.calories} />
+            <StatCard label="Protein" macroKey="protein" value={`${macro(dailyTotals.protein)} g`} unit="g" consumed={dailyTotals.protein} target={targets?.protein} />
+            <StatCard label="Carbs" macroKey="carbs" value={`${macro(dailyTotals.carbs)} g`} unit="g" consumed={dailyTotals.carbs} target={targets?.carbs} />
+            <StatCard label="Fat" macroKey="fat" value={`${macro(dailyTotals.fat)} g`} unit="g" consumed={dailyTotals.fat} target={targets?.fat} />
           </div>
 
           {!hasUserTargets && (
@@ -807,12 +808,14 @@ export default function TrackMealsPage() {
 /** Stat card with percent of target */
 function StatCard({
   label,
+  macroKey,
   value,
   consumed,
   target,
   unit,
 }: {
   label: string;
+  macroKey: MacroKey;
   value: string;
   consumed?: number;
   target?: number;
@@ -822,6 +825,7 @@ function StatCard({
   const pct = hasTarget ? Math.max(0, Math.round((consumed! / Math.max(1, target!)) * 100)) : null;
   const basePct = pct === null ? 0 : Math.min(100, pct);
   const overflowPct = pct === null ? 0 : Math.min(100, Math.max(0, pct - 100));
+  const feedback = hasTarget ? macroFeedback(macroKey, consumed!, target!) : null;
 
   return (
     <div className={CARD_SM}>
@@ -855,6 +859,19 @@ function StatCard({
             <div className="mt-1 text-[11px] opacity-80">
               {Math.round(consumed!)} {unit} / {Math.round(target!)} {unit} ({pct}%)
             </div>
+            {feedback ? (
+              <div
+                className={`mt-1 text-[11px] ${
+                  feedback.tone === "good"
+                    ? "text-emerald-600 dark:text-emerald-300"
+                    : feedback.tone === "warn"
+                      ? "text-amber-600 dark:text-amber-300"
+                      : "text-red-600 dark:text-red-300"
+                }`}
+              >
+                {feedback.message}
+              </div>
+            ) : null}
           </>
         ) : (
           <div className="text-[11px] opacity-80">No target set for {label.toLowerCase()}.</div>
@@ -862,4 +879,48 @@ function StatCard({
       </div>
     </div>
   );
+}
+
+function macroFeedback(macro: MacroKey, consumed: number, target: number): { message: string; tone: "good" | "warn" | "risk" } {
+  const ratio = target > 0 ? consumed / target : 0;
+
+  if (ratio < 0.5) {
+    return { message: "Way behind your target for now.", tone: "warn" };
+  }
+  if (ratio < 0.85) {
+    return { message: "Behind target. Try to close the gap in your next meals.", tone: "warn" };
+  }
+  if (ratio < 1.0) {
+    return { message: "Close to target. You are on track.", tone: "good" };
+  }
+  if (ratio <= 1.1) {
+    return { message: "Target reached.", tone: "good" };
+  }
+
+  if (macro === "protein") {
+    if (ratio <= 1.3) {
+      return { message: "A bit over protein target. Usually manageable if calories stay controlled.", tone: "warn" };
+    }
+    return { message: "Protein is well above target. Not usually as risky as fat, but still more than needed.", tone: "warn" };
+  }
+
+  if (macro === "fat") {
+    if (ratio <= 1.2) {
+      return { message: "Slightly over fat target. Consider leaner choices for remaining meals.", tone: "warn" };
+    }
+    return { message: "Fat intake is high above target. This can quickly push total calories up.", tone: "risk" };
+  }
+
+  if (macro === "calories") {
+    if (ratio <= 1.2) {
+      return { message: "Slight calorie surplus.", tone: "warn" };
+    }
+    return { message: "Calorie intake is well above target today.", tone: "risk" };
+  }
+
+  // carbs
+  if (ratio <= 1.2) {
+    return { message: "Slightly over carb target.", tone: "warn" };
+  }
+  return { message: "Carb intake is well above target.", tone: "risk" };
 }
