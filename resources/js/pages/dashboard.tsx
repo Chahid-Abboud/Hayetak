@@ -747,6 +747,11 @@ function ProgressMini() {
   const [series, setSeries] = useState<ProgressPoint[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
+  const muscles = useMemo(
+    () => ["chest", "back", "shoulders", "legs", "biceps", "triceps", "core"],
+    []
+  );
+
   useEffect(() => {
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -772,10 +777,6 @@ function ProgressMini() {
   }
 
   const last4 = series.slice(-4);
-  const muscles = useMemo(
-    () => ["chest", "back", "shoulders", "legs", "biceps", "triceps", "core"],
-    []
-  );
 
   return (
     <div className="overflow-x-auto">

@@ -71,7 +71,7 @@ class CreateNewUser implements CreatesNewUsers
             'diet_failure_reasons.*' => ['string','max:80'],
             'diet_failure_other'     => ['nullable','string','max:120'],
 
-            'email'    => ['required','string','email','max:120', Rule::unique(User::class,'email')],
+            'email'    => ['required','string','email:rfc,dns','max:120', Rule::unique(User::class,'email')],
             'password' => ['required', Password::defaults()],
         ])->validate();
 

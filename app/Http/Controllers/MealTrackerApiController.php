@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MealTrackerApiController extends Controller
 {
@@ -20,11 +21,23 @@ class MealTrackerApiController extends Controller
         $mealType = $request->query('meal_type');
         $userId = Auth::id();
         $summary = $this->svc->daySummary($userId, $date);
+        $recommendations = [];
+
+        try {
+            $recommendations = $this->svc->recommendedFoods($userId, $date, is_string($mealType) ? $mealType : null);
+        } catch (\Throwable $e) {
+            // Recommendations should never break daily totals/entries payload.
+            Log::warning('Meal tracker recommendations failed', [
+                'user_id' => $userId,
+                'date' => $date,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             ...$summary,
             'userAllergies'   => $this->svc->userAllergies($userId),
-            'recommendations' => $this->svc->recommendedFoods($userId, $date, is_string($mealType) ? $mealType : null),
+            'recommendations' => $recommendations,
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MealEntry;
 use App\Models\UserPref;
+use App\Services\MealTrackerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,8 @@ use Carbon\Carbon;
 
 class MealEntryController extends Controller
 {
+    public function __construct(private MealTrackerService $mealTrackerService) {}
+
     public function index(Request $request)
     {
         $date = $request->date
@@ -23,8 +26,8 @@ class MealEntryController extends Controller
         [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date);
 
         $pref = UserPref::where('user_id', $userId)->first();
-        $targets = $this->targetsFromPref($pref);
-        $recommendations = $this->recommendationsFromPref($pref);
+        $targets = $this->mealTrackerService->targets($userId);
+        $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return Inertia::render('track_meal/track_meals', [
             'date'            => $date,
@@ -51,8 +54,8 @@ class MealEntryController extends Controller
         [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date, true);
 
         $pref = UserPref::where('user_id', $userId)->first();
-        $targets = $this->targetsFromPref($pref);
-        $recommendations = $this->recommendationsFromPref($pref);
+        $targets = $this->mealTrackerService->targets($userId);
+        $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return response()->json([
             'date'            => $date,
@@ -94,37 +97,15 @@ class MealEntryController extends Controller
         return back()->with('success', 'Removed.');
     }
 
-    private function targetsFromPref(?UserPref $pref): ?array
-    {
-        if (!$pref) return null;
-
-        $cal = $pref->daily_goal_calories;
-        $p   = $pref->daily_goal_protein_g;
-        $c   = $pref->daily_goal_carbs_g;
-        $f   = $pref->daily_goal_fat_g;
-
-        // if all missing, return null
-        if ($cal === null && $p === null && $c === null && $f === null) return null;
-
-        return [
-            'calories' => (float) ($cal ?? 0),
-            'protein'  => (float) ($p ?? 0),
-            'carbs'    => (float) ($c ?? 0),
-            'fat'      => (float) ($f ?? 0),
-        ];
-    }
-
     /**
      * Optional dietary recommendations:
      * - if user already has targets, we can reuse them as recommendations (simple & consistent)
      * - else if tdee_kcal exists, compute a sane split (25% P / 45% C / 30% F)
      */
-    private function recommendationsFromPref(?UserPref $pref): ?array
+    private function recommendationsFromPref(?UserPref $pref, ?array $targets): ?array
     {
-        if (!$pref) return null;
-
-        $targets = $this->targetsFromPref($pref);
         if ($targets) return $targets;
+        if (!$pref) return null;
 
         $tdee = (int) ($pref->tdee_kcal ?? 0);
         if ($tdee <= 0) return null;
