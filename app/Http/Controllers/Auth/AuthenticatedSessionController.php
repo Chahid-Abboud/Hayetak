@@ -24,10 +24,8 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        // Starter pack uses a custom validator instead of ->authenticate()
         $user = $request->validateCredentials();
 
-        // If 2FA feature is on and the user has it enabled → go to the challenge screen
         if (Features::enabled(Features::twoFactorAuthentication()) && $user->hasEnabledTwoFactorAuthentication()) {
             $request->session()->put([
                 'login.id' => $user->getKey(),
@@ -37,17 +35,20 @@ class AuthenticatedSessionController extends Controller
             return to_route('two-factor.login');
         }
 
-        // Otherwise, log them in…
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        // …and FORCE them to enable 2FA before accessing the app
+        if (! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+
+            return to_route('verification.notice')
+                ->with('status', 'verification-link-sent');
+        }
+
         if (Features::enabled(Features::twoFactorAuthentication())) {
-            // 👇 FIXED: use the actual route name
             return to_route('two-factor.show')->with('must_enable_2fa', true);
         }
 
-        // Fallback if 2FA feature is disabled globally
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -57,7 +58,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-       return redirect()->intended(route('dashboard'));
-
+        return redirect()->intended(route('dashboard'));
     }
 }

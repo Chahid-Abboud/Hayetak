@@ -24,6 +24,7 @@ type Prefs = {
 } | null;
 
 type Measurement = { date: string; type: "weight" | "height"; value: number };
+type ProgressMetric = "weight" | "height";
 
 /**
  * OPTIONAL (not currently provided in your props).
@@ -126,6 +127,10 @@ function latestMeasurementValue(list: Measurement[]) {
 
 function sanitizeChip(input: string) {
   return input.trim().replace(/\s+/g, " ");
+}
+
+function todayYmd() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /* ---------- Small UI bits (token-friendly) ---------- */
@@ -471,6 +476,86 @@ function LineChart({
   );
 }
 
+function MeasurementProgress({
+  weightPoints,
+  heightPoints,
+}: {
+  weightPoints: ChartPoint[];
+  heightPoints: ChartPoint[];
+}) {
+  const [metric, setMetric] = useState<ProgressMetric>("weight");
+
+  const active = metric === "weight"
+    ? { label: "Weight", unit: " kg", points: weightPoints }
+    : { label: "Height", unit: " cm", points: heightPoints };
+
+  const first = active.points[0];
+  const last = active.points[active.points.length - 1];
+  const delta = first && last ? last.yValue - first.yValue : null;
+  const deltaText = delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta.toFixed(1)}${active.unit}`;
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/40 p-3">
+        <div>
+          <div className="text-sm font-semibold text-foreground">Measurement trend</div>
+          <div className="text-xs text-muted-foreground">
+            Weight is selected by default. Switch anytime to visualize height history.
+          </div>
+        </div>
+        <div className="inline-flex rounded-lg border border-border bg-background p-1">
+          <button
+            type="button"
+            onClick={() => setMetric("weight")}
+            className={cx(
+              "rounded-md px-3 py-1.5 text-sm transition",
+              metric === "weight" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            )}
+            aria-pressed={metric === "weight"}
+          >
+            Weight
+          </button>
+          <button
+            type="button"
+            onClick={() => setMetric("height")}
+            className={cx(
+              "rounded-md px-3 py-1.5 text-sm transition",
+              metric === "height" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            )}
+            aria-pressed={metric === "height"}
+          >
+            Height
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <FieldRow
+          label={`Latest ${active.label}`}
+          value={last ? `${last.yValue}${active.unit}` : "—"}
+        />
+        <FieldRow
+          label={`Change (${active.label})`}
+          value={deltaText}
+        />
+        <FieldRow
+          label="Logged entries"
+          value={String(active.points.length)}
+        />
+      </div>
+
+      {active.points.length >= 2 ? (
+        <LineChart title={`${active.label} over time`} points={active.points} ySuffix={active.unit} />
+      ) : (
+        <EmptyState
+          title={`${active.label} chart: not enough data`}
+          body={`Add at least 2 ${active.label.toLowerCase()} entries to visualize a trend.`}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ---------- Page ---------- */
 export default function ProfilePage() {
   const page = usePage<PageProps>().props;
@@ -553,9 +638,14 @@ export default function ProfilePage() {
   const [newAllergy, setNewAllergy] = useState("");
 
   // measurements
-  const [mDate, setMDate] = useState<string>("");
+  const [mDate, setMDate] = useState<string>(todayYmd());
   const [mType, setMType] = useState<"weight" | "height">("weight");
   const [mValue, setMValue] = useState<string>("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // Derived labels
   const dietTypeLabel = useMemo(() => {
@@ -650,9 +740,35 @@ export default function ProfilePage() {
       {
         preserveScroll: true,
         onSuccess: () => {
-          setMDate("");
+          setMDate(todayYmd());
           setMValue("");
           router.reload({ only: ["weightHistory", "heightHistory", "userProfile"] });
+        },
+      }
+    );
+  };
+
+  const savePassword = () => {
+    setPasswordStatus(null);
+    setPasswordErrors({});
+
+    router.put(
+      "/settings/password",
+      {
+        current_password: currentPassword,
+        password: newPassword,
+        password_confirmation: confirmPassword,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setPasswordStatus("Password updated successfully.");
+        },
+        onError: (errors: Record<string, string>) => {
+          setPasswordErrors(errors);
         },
       }
     );
@@ -720,6 +836,12 @@ export default function ProfilePage() {
                 className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Preferences
+              </a>
+              <a
+                href="#security"
+                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Security
               </a>
               <a
                 href="#progress"
@@ -1130,6 +1252,79 @@ export default function ProfilePage() {
             )}
           </SectionCard>
 
+          {/* Security */}
+          <SectionCard
+            id="security"
+            title="Security"
+            description="Change your account password without leaving this page."
+          >
+            <form
+              className="grid gap-4 sm:grid-cols-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                savePassword();
+              }}
+            >
+              <div className="sm:col-span-2">
+                <label className="text-sm font-medium text-foreground" htmlFor="current-password">
+                  Current password
+                </label>
+                <input
+                  id="current-password"
+                  type="password"
+                  autoComplete="current-password"
+                  className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                {passwordErrors.current_password ? (
+                  <p className="mt-1 text-xs text-destructive">{passwordErrors.current_password}</p>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground" htmlFor="new-password">
+                  New password
+                </label>
+                <input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                {passwordErrors.password ? (
+                  <p className="mt-1 text-xs text-destructive">{passwordErrors.password}</p>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground" htmlFor="confirm-password">
+                  Confirm new password
+                </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                {passwordErrors.password_confirmation ? (
+                  <p className="mt-1 text-xs text-destructive">{passwordErrors.password_confirmation}</p>
+                ) : null}
+              </div>
+
+              <div className="sm:col-span-2 flex items-center gap-3">
+                <Button type="submit" variant="primary">
+                  Update password
+                </Button>
+                {passwordStatus ? <span className="text-sm text-emerald-600">{passwordStatus}</span> : null}
+              </div>
+            </form>
+          </SectionCard>
+
           {/* Progress (Charts) */}
           <SectionCard
             id="progress"
@@ -1137,16 +1332,10 @@ export default function ProfilePage() {
             description="Visualize your trends from logged measurements and workout data."
           >
             <div className="grid gap-4">
-              <LineChart title="Weight over time" points={weightPoints} ySuffix=" kg" />
-
-              {heightPoints.length >= 2 ? (
-                <LineChart title="Height over time" points={heightPoints} ySuffix=" cm" />
-              ) : (
-                <EmptyState
-                  title="Height chart (optional)"
-                  body="Height entries are rare. Add at least 2 height measurements if you want to visualize a height trend."
-                />
-              )}
+              <MeasurementProgress
+                weightPoints={weightPoints}
+                heightPoints={heightPoints}
+              />
 
               <div className="rounded-xl border border-border bg-background/40 p-4">
                 <div className="text-sm font-semibold text-foreground">

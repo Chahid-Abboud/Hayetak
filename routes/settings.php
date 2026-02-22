@@ -63,5 +63,6 @@ Route::middleware('auth')->group(function () {
      * IMPORTANT: Keep the name `two-factor.show`.
      */
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
+        ->middleware('verified')
         ->name('two-factor.show');
 });

@@ -70,7 +70,7 @@ class RegisterWizardController extends Controller
             'diet_failure_other'     => ['nullable', 'string', 'max:120'],
 
             // Credentials
-            'email'    => ['required', 'string', 'lowercase', 'email', 'max:120', Rule::unique(User::class, 'email')],
+            'email'    => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:120', Rule::unique(User::class, 'email')],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -127,6 +127,7 @@ class RegisterWizardController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $user->sendEmailVerificationNotification();
 
         /**
          * Generate initial plans in the background.
@@ -137,7 +138,7 @@ class RegisterWizardController extends Controller
         GeneratePlansForUser::dispatch($user->id, 7);
 
         return redirect()
-            ->route('two-factor.show')
-            ->with('must_enable_2fa', true);
+            ->route('verification.notice')
+            ->with('status', 'verification-link-sent');
     }
 }
