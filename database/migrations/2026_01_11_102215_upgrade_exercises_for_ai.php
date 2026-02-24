@@ -28,19 +28,21 @@ return new class extends Migration {
                 ->onDelete('set null');
         });
 
-        // 2) Convert existing json columns to jsonb (tags, conditions)
-        //    (safe even if null)
-        DB::statement("
-            ALTER TABLE exercises
-                ALTER COLUMN tags TYPE jsonb
-                USING COALESCE(tags::jsonb, '[]'::jsonb)
-        ");
+        if (DB::getDriverName() === 'pgsql') {
+            // 2) Convert existing json columns to jsonb (tags, conditions)
+            //    (safe even if null)
+            DB::statement("
+                ALTER TABLE exercises
+                    ALTER COLUMN tags TYPE jsonb
+                    USING COALESCE(tags::jsonb, '[]'::jsonb)
+            ");
 
-        DB::statement("
-            ALTER TABLE exercises
-                ALTER COLUMN conditions TYPE jsonb
-                USING COALESCE(conditions::jsonb, '[]'::jsonb)
-        ");
+            DB::statement("
+                ALTER TABLE exercises
+                    ALTER COLUMN conditions TYPE jsonb
+                    USING COALESCE(conditions::jsonb, '[]'::jsonb)
+            ");
+        }
 
         // 3) Optional: add exercise_variant_id to current plan/log tables (nullable => no breakage)
         Schema::table('workout_plan_day_exercises', function (Blueprint $table) {
@@ -63,23 +65,27 @@ return new class extends Migration {
             }
         });
 
-        // 4) Indexes for AI search + filtering
-        DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
+        if (DB::getDriverName() === 'pgsql') {
+            // 4) Indexes for AI search + filtering
+            DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 
-        // fast fuzzy search on exercise name
-        DB::statement('CREATE INDEX IF NOT EXISTS exercises_name_trgm ON exercises USING GIN (name gin_trgm_ops);');
+            // fast fuzzy search on exercise name
+            DB::statement('CREATE INDEX IF NOT EXISTS exercises_name_trgm ON exercises USING GIN (name gin_trgm_ops);');
 
-        // fast filtering on jsonb arrays/objects
-        DB::statement('CREATE INDEX IF NOT EXISTS exercises_tags_gin ON exercises USING GIN (tags);');
-        DB::statement('CREATE INDEX IF NOT EXISTS exercises_conditions_gin ON exercises USING GIN (conditions);');
+            // fast filtering on jsonb arrays/objects
+            DB::statement('CREATE INDEX IF NOT EXISTS exercises_tags_gin ON exercises USING GIN (tags);');
+            DB::statement('CREATE INDEX IF NOT EXISTS exercises_conditions_gin ON exercises USING GIN (conditions);');
+        }
     }
 
     public function down(): void
 {
-    // Drop indexes created in up()
-    DB::statement('DROP INDEX IF EXISTS exercises_conditions_gin;');
-    DB::statement('DROP INDEX IF EXISTS exercises_tags_gin;');
-    DB::statement('DROP INDEX IF EXISTS exercises_name_trgm;');
+    if (DB::getDriverName() === 'pgsql') {
+        // Drop indexes created in up()
+        DB::statement('DROP INDEX IF EXISTS exercises_conditions_gin;');
+        DB::statement('DROP INDEX IF EXISTS exercises_tags_gin;');
+        DB::statement('DROP INDEX IF EXISTS exercises_name_trgm;');
+    }
 
     // Remove variant ids from existing tables (guarded)
     Schema::table('workout_log_sets', function (Blueprint $table) {

@@ -2,16 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Head } from "@inertiajs/react";
 import NavHeader from "../components/NavHeader";
-import NearbyMap from "../components/NearbyMap";
-
-type Place = {
-  id: string | number;
-  name: string;
-  lat: number;
-  lon: number;
-  type?: string;
-  address?: string | null;
-};
+import NearbyMap, { type Place } from "../components/NearbyMap";
 
 function SimpleSlider({
   title = "Search radius",
@@ -30,6 +21,9 @@ function SimpleSlider({
   step?: number;
   onChange: (v: number) => void;
 }) {
+  const clamped = Math.min(max, Math.max(min, value));
+  const pct = ((clamped - min) / Math.max(max - min, Number.EPSILON)) * 100;
+
   return (
     <div className="w-full">
       <div className="mb-2 flex items-end justify-between">
@@ -40,11 +34,18 @@ function SimpleSlider({
       </div>
       <input
         type="range"
-        className="h-2 w-full cursor-pointer appearance-none bg-transparent"
+        className="places-range h-2 w-full cursor-pointer"
         min={min}
         max={max}
         step={step}
         value={value}
+        style={{
+          background: `linear-gradient(90deg, var(--primary) 0%, var(--primary) ${pct}%, var(--muted) ${pct}%, var(--muted) 100%)`,
+        }}
+        aria-label={title}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={clamped}
         onChange={(e) => onChange(Number(e.target.value))}
       />
       <div className="mt-1 text-xs text-muted-foreground">
@@ -76,7 +77,7 @@ export default function Places() {
       setGeoMsg("Geolocation not supported by this browser.");
       return;
     }
-    setGeoMsg("Locating…");
+    setGeoMsg("Locating...");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -97,9 +98,12 @@ export default function Places() {
   const counts = useMemo(() => {
     return results.reduce(
       (acc, p) => {
-        const t = (p.type ?? "").toLowerCase();
-        if (t.includes("nutri")) acc.nutritionist += 1;
-        else acc.gym += 1;
+        const t = (p.type ?? p.category ?? "").toLowerCase();
+        if (t.includes("nutri") || t.includes("diet") || t.includes("clinic")) {
+          acc.nutritionist += 1;
+        } else if (t.includes("gym")) {
+          acc.gym += 1;
+        }
         return acc;
       },
       { gym: 0, nutritionist: 0 }
@@ -113,7 +117,7 @@ export default function Places() {
 
   return (
     <>
-      <Head title="Nearby — Hayetak" />
+      <Head title="Nearby - Hayetak" />
       <NavHeader />
 
       <main className="mx-auto max-w-6xl px-4 py-6">
@@ -123,7 +127,7 @@ export default function Places() {
             <p className="text-sm text-muted-foreground">Explore gyms and nutritionists around you.</p>
           </div>
           <div className="text-sm text-muted-foreground">
-            {loading ? "Loading…" : error ? <span className="text-red-600">{error}</span> : `${results.length} results`}
+            {loading ? "Loading..." : error ? <span className="text-red-600">{error}</span> : `${results.length} results`}
           </div>
         </div>
 
@@ -199,14 +203,14 @@ export default function Places() {
                 onToggleGym={setShowGym}
                 onToggleNutritionist={setShowNutri}
                 onResults={(list) => {
-                  setResults(list as Place[]);
+                  setResults(list);
                   setLoading(false);
                 }}
                 focusPlaceId={selectedPlaceId}
               />
             ) : (
               <div className="flex h-[480px] items-center justify-center rounded-xl border">
-                <div className="text-sm text-muted-foreground">{geoMsg ?? "Waiting for location permission…"}</div>
+                <div className="text-sm text-muted-foreground">{geoMsg ?? "Waiting for location permission..."}</div>
               </div>
             )}
           </div>
@@ -220,20 +224,61 @@ export default function Places() {
                 )}
                 {results.map((p, i) => {
                   const key = `${p.id ?? `${p.name}-${i}`}`;
+                  const category = (p.category ?? p.type ?? "other").toString();
+                  const prettyCategory = category
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+                  const distanceLabel =
+                    typeof p.distanceM === "number" ? `${(p.distanceM / 1000).toFixed(2)} km` : null;
+                  const locationLine = [p.address, p.city].filter(Boolean).join(", ");
+                  const mapUrl = toSafeHttpUrl(p.googleMapsLink);
+                  const websiteUrl = toSafeHttpUrl(p.website);
                   return (
                     <li
                       key={key}
                       className={`cursor-pointer rounded-md border p-2 transition hover:bg-muted/40 ${
-                        selectedPlaceId && String(selectedPlaceId) === String(p.id) ? "bg-muted/60" : ""
+                        selectedPlaceId !== null && String(selectedPlaceId) === String(p.id) ? "bg-muted/60" : ""
                       }`}
                       title="Show on map"
                       onClick={() => setSelectedPlaceId(p.id)}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="font-medium">{p.name || "(no name)"}</div>
-                        <div className="text-xs text-muted-foreground">Feature</div>
+                        <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          {prettyCategory}
+                        </div>
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">{p.address || ""}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {distanceLabel && <span>{distanceLabel}</span>}
+                        {p.phone && <span>{p.phone}</span>}
+                        {p.rating !== null && p.rating !== undefined && <span>Rating: {p.rating}</span>}
+                      </div>
+                      {locationLine && <div className="mt-1 text-xs text-muted-foreground">{locationLine}</div>}
+                      {p.description && <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">{p.description}</div>}
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                        {mapUrl && (
+                          <a
+                            href={mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sky-700 underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            Open map
+                          </a>
+                        )}
+                        {websiteUrl && (
+                          <a
+                            href={websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sky-700 underline"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            Website
+                          </a>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
@@ -244,4 +289,19 @@ export default function Places() {
       </main>
     </>
   );
+}
+
+function toSafeHttpUrl(value?: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }

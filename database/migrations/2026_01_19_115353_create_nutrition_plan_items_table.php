@@ -26,21 +26,24 @@ return new class extends Migration {
             $table->index(['food_id']);
         });
 
-        // Postgres: require at least one of servings or grams
-        DB::statement("
-            ALTER TABLE nutrition_plan_items
-            ADD CONSTRAINT nutrition_plan_items_servings_or_grams_chk
-            CHECK (servings IS NOT NULL OR grams IS NOT NULL)
-        ");
+        // Postgres: require at least one of servings or grams.
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("
+                ALTER TABLE nutrition_plan_items
+                ADD CONSTRAINT nutrition_plan_items_servings_or_grams_chk
+                CHECK (servings IS NOT NULL OR grams IS NOT NULL)
+            ");
+        }
     }
 
     public function down(): void
     {
-        // Drop constraint first (Postgres)
-        DB::statement("
-            ALTER TABLE nutrition_plan_items
-            DROP CONSTRAINT IF EXISTS nutrition_plan_items_servings_or_grams_chk
-        ");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("
+                ALTER TABLE nutrition_plan_items
+                DROP CONSTRAINT IF EXISTS nutrition_plan_items_servings_or_grams_chk
+            ");
+        }
 
         Schema::dropIfExists('nutrition_plan_items');
     }

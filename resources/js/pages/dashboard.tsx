@@ -98,7 +98,7 @@ type NutritionPlanLite = {
   start_date: string; // YYYY-MM-DD
   duration_days: number;
   is_active: boolean;
-  meta?: any;
+  meta?: Record<string, unknown> | null;
   days: NutritionPlanDayLite[];
 };
 
@@ -137,7 +137,7 @@ type WorkoutPlanLite = {
   start_date: string; // YYYY-MM-DD
   duration_days: number;
   is_active: boolean;
-  meta?: any;
+  meta?: Record<string, unknown> | null;
   days: WorkoutPlanDayLite[];
 };
 

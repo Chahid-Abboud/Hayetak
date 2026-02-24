@@ -118,29 +118,6 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
-function foodMatchesMealFilter(food: SearchFood, filterMeal: MealType) {
-  const fCat = food.category ? normalizeToken(food.category) : "";
-  const mealWord = normalizeToken(filterMeal);
-
-  // 1) category string match
-  if (fCat && fCat === mealWord) return true;
-
-  // 2) meal_types match (array or PostgreSQL-style "{breakfast,lunch}" string)
-  let mt: string[] = [];
-  const rawMt = food.meal_types;
-  if (Array.isArray(rawMt)) {
-    mt = rawMt.map((x: unknown) => String(x));
-  } else if (typeof rawMt === "string" && rawMt) {
-    mt = rawMt.replace(/[{}]/g, "").split(",").map((x: string) => x.trim()).filter(Boolean);
-  }
-  if (mt.some((x) => normalizeToken(x) === mealWord)) return true;
-
-  // 3) fail-soft: no category/meal_types = don't hide (backend may have pre-filtered)
-  if (!food.category && !food.meal_types) return true;
-
-  return false;
-}
-
 function foodHasUserAllergen(food: SearchFood, userAllergies: string[]) {
   const ua = userAllergies.map(normalizeToken).filter(Boolean);
   if (ua.length === 0) return false;
@@ -267,11 +244,15 @@ export default function TrackMealsPage() {
     };
   }, [q, page, filterMealType]);
 
-  const userAllergies = Array.isArray(day.userAllergies)
-    ? day.userAllergies
-    : Array.isArray(raw.userAllergies)
-      ? raw.userAllergies
-      : [];
+  const userAllergies = useMemo(
+    () =>
+      Array.isArray(day.userAllergies)
+        ? day.userAllergies
+        : Array.isArray(raw.userAllergies)
+          ? raw.userAllergies
+          : [],
+    [day.userAllergies, raw.userAllergies]
+  );
 
   const visibleResults = useMemo(() => {
     let list = results;
