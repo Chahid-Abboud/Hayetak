@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ImportFoodsFromCsvSeeder::class,
             ImportExercisesFromJsonSeeder::class,
+            PlacesLocalSeeder::class,
         ]);
     }
 }

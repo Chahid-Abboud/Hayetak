@@ -18,6 +18,37 @@ type ActivityLevel =
   | "Very Active"
   | "Athlete";
 type WorkoutLocation = "home" | "gym" | "both" | "";
+type DietExperience = "yes" | "no" | "";
+
+type RegisterFormData = {
+  first_name: string;
+  last_name: string;
+  username: string;
+  gender: Gender;
+  age: string;
+  height_cm: string;
+  weight_kg: string;
+  has_medical_history: boolean;
+  medical_history: string;
+  dietary_goal: string;
+  fitness_goal: string;
+  diet_name: string;
+  allergies: string[];
+  activity_level: ActivityLevel | "";
+  workout_days_per_week: string;
+  workout_location: WorkoutLocation;
+  tried_diet_before: DietExperience;
+  diet_failure_reasons: string[];
+  diet_failure_other: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  force_enable_2fa: boolean;
+  diet_other_name: string;
+  diet_choice: string;
+};
+
+type NumericField = "age" | "height_cm" | "weight_kg" | "workout_days_per_week";
 
 /* ---------- Fallbacks (safe defaults) ---------- */
 const FALLBACK_DIETS = [
@@ -148,7 +179,7 @@ function SectionCard({
   title: string;
   description?: string;
   children: React.ReactNode;
-  headingRef?: React.RefObject<HTMLHeadingElement>;
+  headingRef?: React.RefObject<HTMLHeadingElement | null>;
 }) {
   return (
     <section className="space-y-4">
@@ -165,7 +196,7 @@ function SectionCard({
   );
 }
 
-function ErrorText({ id, children }: { id: string; children: string }) {
+function ErrorText({ id, children }: { id: string; children: React.ReactNode }) {
   return (
     <p id={id} className="mt-1 text-sm text-destructive">
       {children}
@@ -358,7 +389,7 @@ function RegisterWizard(props: Props) {
   const [step, setStep] = useState<number>(1);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
 
-  const { data, setData, post, processing, errors, transform } = useForm({
+  const { data, setData, post, processing, errors, transform } = useForm<RegisterFormData>({
     // Basic
     first_name: "",
     last_name: "",
@@ -384,7 +415,7 @@ function RegisterWizard(props: Props) {
     workout_location: "" as WorkoutLocation,
 
     // Diet experience
-    tried_diet_before: "" as "yes" | "no" | "",
+    tried_diet_before: "" as DietExperience,
     diet_failure_reasons: [] as string[],
     diet_failure_other: "",
 
@@ -467,21 +498,21 @@ function RegisterWizard(props: Props) {
 
   // Numeric wrappers
   const onNumericChange =
-    <K extends keyof typeof data>(key: K, allowDecimal = false) =>
+    (key: NumericField, allowDecimal = false) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = sanitizeNumericLoose(e.target.value, allowDecimal);
-      setData(key, val as any);
+      setData(key, val);
     };
 
   const onNumericBlur =
-    <K extends keyof typeof data>(
-      key: K,
+    (
+      key: NumericField,
       opts: { min: number; max: number; allowDecimal?: boolean }
     ) =>
     () => {
       const current = String(data[key] ?? "");
       const formatted = clampAndFormat(current, opts);
-      setData(key, formatted as any);
+      setData(key, formatted);
     };
 
   const workoutDaysNum = Number(data.workout_days_per_week);
@@ -579,8 +610,9 @@ function RegisterWizard(props: Props) {
     return Object.keys(ce).length === 0;
   }
 
+  const serverErrors = errors as Record<string, string | undefined>;
   const showServerOrClientError = (field: string) =>
-    clientErrors[field] || (errors as any)[field];
+    clientErrors[field] || serverErrors[field];
 
   const prog = useMemo(
     () => Array.from({ length: totalSteps }, (_, i) => i + 1),

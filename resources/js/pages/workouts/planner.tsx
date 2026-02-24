@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Head, usePage, router } from "@inertiajs/react";
+import type { Errors as InertiaErrors } from "@inertiajs/core";
 import NavHeader from "@/components/NavHeader";
 import WorkoutTabs from "@/components/workouts/WorkoutTabs";
 
@@ -19,8 +20,7 @@ type Exercise = {
   equipment?: string | null;
   demo_url?: string | null;
   // Optional: if your DB returns conditions (string[])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  conditions?: string[] | any;
+  conditions?: unknown;
 };
 
 type DayDraft = {
@@ -64,6 +64,18 @@ const MUSCLES = [
 const PAGE_SIZE = 40;
 const normalize = (s: string) => s.toLowerCase().trim();
 
+function normalizeConditions(conditions: unknown): string[] {
+  if (!Array.isArray(conditions)) return [];
+  return conditions.filter((c): c is string => typeof c === "string");
+}
+
+function stringifyErrors(errors: InertiaErrors): Record<string, string> {
+  return Object.entries(errors).reduce<Record<string, string>>((acc, [key, value]) => {
+    acc[key] = String(value);
+    return acc;
+  }, {});
+}
+
 // ===================== Small UI Primitives =====================
 const Chip = memo(function Chip({
   active,
@@ -94,8 +106,11 @@ const Chip = memo(function Chip({
 // ===================== Main Page =====================
 export default function PlannerPage() {
   const page = usePage<Partial<Props>>().props;
-const plan: Plan = (page.plan as Plan) ?? null;
-const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [];
+  const plan: Plan = (page.plan as Plan) ?? null;
+  const exercises = useMemo<Exercise[]>(
+    () => (Array.isArray(page.exercises) ? page.exercises : []),
+    [page.exercises]
+  );
 
   const [daysPerWeek, setDaysPerWeek] = useState<number>(
     plan?.days_per_week ?? 3
@@ -125,11 +140,7 @@ const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [
   const allConditions = useMemo(() => {
     const set = new Set<string>();
     exercises.forEach((e) => {
-      const conds = Array.isArray(e.conditions)
-        ? e.conditions
-        : Array.isArray((e as any)?.conditions)
-        ? (e as any).conditions
-        : [];
+      const conds = normalizeConditions(e.conditions);
       conds?.forEach((c: string) => typeof c === "string" && set.add(c));
     });
     if (set.size === 0) {
@@ -145,7 +156,7 @@ const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [
   useEffect(() => {
     setDays((prev) => syncDaysLength(prev, daysPerWeek));
     if (activeAddDay > daysPerWeek) setActiveAddDay(daysPerWeek);
-  }, [daysPerWeek]);
+  }, [daysPerWeek, activeAddDay]);
 
   // Debounce search
   useEffect(() => {
@@ -173,8 +184,8 @@ const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [
     if (conditionFilters.length) {
       const cs = new Set(conditionFilters);
       list = list.filter((e) => {
-        const conds = (e as any)?.conditions ?? [];
-        return Array.isArray(conds) ? conds.some((c) => cs.has(c)) : false;
+        const conds = normalizeConditions(e.conditions);
+        return conds.some((c) => cs.has(c));
       });
     }
 
@@ -256,7 +267,7 @@ const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [
           router.reload({ only: ["plan"] });
           setFlash("Plan saved!");
         },
-        onError: (e) => setErrors(e as any),
+        onError: (e) => setErrors(stringifyErrors(e)),
         onFinish: () => setSaving(false),
       }
     );
@@ -278,8 +289,7 @@ const exercises: Exercise[] = Array.isArray(page.exercises) ? page.exercises : [
         (e) =>
           normalize(e.primary_muscle) === normalize(muscle) &&
           (!hasCond ||
-            (Array.isArray((e as any)?.conditions) &&
-              (e as any).conditions.some((c: string) => cs.has(c))))
+            normalizeConditions(e.conditions).some((c) => cs.has(c)))
       );
       return pool
         .slice(0, count)

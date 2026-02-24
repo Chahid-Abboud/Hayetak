@@ -44,7 +44,7 @@ const CAT_TEXT_CLASS: Record<BmiCatKey, string> = {
 };
 
 // Visible, actionable guidance per category
-function ctaFor(key: BmiCatKey, bmi: number) {
+function ctaFor(key: BmiCatKey) {
   switch (key) {
     case "obese":
     case "over":
@@ -158,7 +158,7 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
     return <div className="text-muted-foreground">Weight looks invalid.</div>;
 
   const { key, label, hint } = category(bmi);
-  const cta = ctaFor(key, bmi);
+  const cta = ctaFor(key);
 
   return (
     <div>

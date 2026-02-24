@@ -7,15 +7,25 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $driver = DB::getDriverName();
+
         // Drop the bad index if it exists (it blocks history: only one plan per user ever)
         DB::statement('DROP INDEX IF EXISTS workout_plans_one_active_per_user');
 
         // Create the correct partial unique index: only one ACTIVE plan per user
-        DB::statement("
-            CREATE UNIQUE INDEX workout_plans_one_active_per_user
-            ON workout_plans (user_id)
-            WHERE is_active = true
-        ");
+        if ($driver === 'sqlite') {
+            DB::statement("
+                CREATE UNIQUE INDEX workout_plans_one_active_per_user
+                ON workout_plans (user_id)
+                WHERE is_active = 1
+            ");
+        } else {
+            DB::statement("
+                CREATE UNIQUE INDEX workout_plans_one_active_per_user
+                ON workout_plans (user_id)
+                WHERE is_active = true
+            ");
+        }
     }
 
     public function down(): void
