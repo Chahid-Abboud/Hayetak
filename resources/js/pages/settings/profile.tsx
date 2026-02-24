@@ -26,17 +26,6 @@ type Prefs = {
 type Measurement = { date: string; type: "weight" | "height"; value: number };
 type ProgressMetric = "weight" | "height";
 
-/**
- * OPTIONAL (not currently provided in your props).
- * If/when you implement exercise progress charts, send a normalized series like this.
- */
-type ExerciseProgressPoint = {
-  date: string; // YYYY-MM-DD
-  exerciseName: string;
-  maxWeight: number | null; // kg
-  reps: number | null;
-};
-
 type PageProps = {
   auth?: {
     user?: {
@@ -224,7 +213,7 @@ function LabeledInput({
 }: {
   id: string;
   label: string;
-  value: string | number;
+  value: string | number | readonly string[] | undefined;
   onChange: (v: string) => void;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
@@ -248,7 +237,7 @@ function LabeledInput({
         inputMode={inputMode}
         className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
         placeholder={placeholder}
-        value={value as any}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={descId}
       />
@@ -561,7 +550,7 @@ export default function ProfilePage() {
   const page = usePage<PageProps>().props;
 
   // 1) Pull from route-provided props if present…
-  let providedProfile = page.userProfile ?? null;
+  let providedProfile: NonNullable<UserProfile> | null = page.userProfile ?? null;
 
   // 2) …otherwise fall back to globally shared auth.user
   if (!providedProfile && page.auth?.user) {
@@ -581,23 +570,27 @@ export default function ProfilePage() {
   const email = authUser?.email ?? "—";
   const twoFactorEnabled = !!authUser?.two_factor_enabled;
 
-  const userProfile = (providedProfile ?? DEFAULT_PROFILE) as NonNullable<
-    typeof DEFAULT_PROFILE
-  >;
+  const userProfile: NonNullable<UserProfile> = providedProfile ?? DEFAULT_PROFILE;
 
   // ✅ fallback username so it shows even if userProfile prop is missing
-  const shownUsername = (userProfile as any).username || authUser?.username || "";
+  const shownUsername = userProfile.username || authUser?.username || "";
 
   const prefs = (page.prefs ?? DEFAULT_PREFS) as NonNullable<Prefs>;
   const dietName = page.dietName ?? "";
 
-  const weightHistory = Array.isArray(page.weightHistory) ? page.weightHistory : [];
-  const heightHistory = Array.isArray(page.heightHistory) ? page.heightHistory : [];
+  const weightHistory = useMemo<Measurement[]>(
+    () => (Array.isArray(page.weightHistory) ? page.weightHistory : []),
+    [page.weightHistory]
+  );
+  const heightHistory = useMemo<Measurement[]>(
+    () => (Array.isArray(page.heightHistory) ? page.heightHistory : []),
+    [page.heightHistory]
+  );
 
   const displayName =
     page.displayName ??
     (providedProfile
-      ? `${(providedProfile as any).first_name ?? ""} ${(providedProfile as any).last_name ?? ""}`
+      ? `${providedProfile.first_name ?? ""} ${providedProfile.last_name ?? ""}`
           .trim() ||
         authUser?.username ||
         authUser?.name ||
@@ -620,11 +613,11 @@ export default function ProfilePage() {
   }, [editingPrefs]);
 
   // Bound inputs
-  const [firstName, setFirstName] = useState((userProfile as any).first_name ?? "");
-  const [lastName, setLastName] = useState((userProfile as any).last_name ?? "");
-  const [username, setUsername] = useState((userProfile as any).username ?? "");
-  const [gender, setGender] = useState<string>((userProfile as any).gender ?? "");
-  const [age, setAge] = useState<number | string>((userProfile as any).age ?? "");
+  const [firstName, setFirstName] = useState(userProfile.first_name ?? "");
+  const [lastName, setLastName] = useState(userProfile.last_name ?? "");
+  const [username, setUsername] = useState(userProfile.username ?? "");
+  const [gender, setGender] = useState<string>(userProfile.gender ?? "");
+  const [age, setAge] = useState<number | string>(userProfile.age ?? "");
 
   const [dietType, setDietType] = useState<string>(prefs.diet_type ?? "");
   const [dietOther, setDietOther] = useState<string>(prefs.diet_other ?? "");
@@ -893,13 +886,13 @@ export default function ProfilePage() {
                 label="Username"
                 value={shownUsername ? `@${shownUsername}` : "—"}
               />
-              <FieldRow label="Age" value={formatMaybeNumber((userProfile as any).age)} />
+              <FieldRow label="Age" value={formatMaybeNumber(userProfile.age)} />
               <FieldRow
                 label="Current weight"
                 value={
                   latestWeight != null
                     ? `${latestWeight} kg`
-                    : formatMaybeNumber((userProfile as any).weight_kg, " kg")
+                    : formatMaybeNumber(userProfile.weight_kg, " kg")
                 }
               />
               <FieldRow
@@ -907,7 +900,7 @@ export default function ProfilePage() {
                 value={
                   latestHeight != null
                     ? `${latestHeight} cm`
-                    : formatMaybeNumber((userProfile as any).height_cm, " cm")
+                    : formatMaybeNumber(userProfile.height_cm, " cm")
                 }
               />
               <FieldRow label="Dietary goal" value={prefs?.dietary_goal || "—"} />
@@ -951,18 +944,18 @@ export default function ProfilePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <FieldRow
                   label="Name"
-                  value={`${(userProfile as any).first_name ?? ""} ${(userProfile as any).last_name ?? ""}`.trim() || "—"}
+                  value={`${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim() || "—"}
                 />
                 <FieldRow label="Username" value={shownUsername || "—"} />
-                <FieldRow label="Gender" value={(userProfile as any).gender || "—"} />
-                <FieldRow label="Age" value={formatMaybeNumber((userProfile as any).age)} />
+                <FieldRow label="Gender" value={userProfile.gender || "—"} />
+                <FieldRow label="Age" value={formatMaybeNumber(userProfile.age)} />
                 <FieldRow
                   label="Height (profile)"
-                  value={formatMaybeNumber((userProfile as any).height_cm, " cm")}
+                  value={formatMaybeNumber(userProfile.height_cm, " cm")}
                 />
                 <FieldRow
                   label="Weight (profile)"
-                  value={formatMaybeNumber((userProfile as any).weight_kg, " kg")}
+                  value={formatMaybeNumber(userProfile.weight_kg, " kg")}
                 />
               </div>
             ) : (
@@ -1036,7 +1029,7 @@ export default function ProfilePage() {
                     type="number"
                     min={0}
                     className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    value={age as any}
+                    value={age}
                     onChange={(e) => setAge(e.target.value)}
                     inputMode="numeric"
                   />

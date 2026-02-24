@@ -57,18 +57,6 @@ const fmtDate = (iso: string) => {
   }
 };
 
-function groupSetsByExercise(sets?: WorkoutLogSet[] | null) {
-  const map = new Map<string, WorkoutLogSet[]>();
-  if (!sets?.length) return Array.from(map.entries());
-  for (const s of sets) {
-    const key = s.exercise?.name ?? "Exercise";
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(s);
-  }
-  for (const [, arr] of map) arr.sort((a, b) => a.set_number - b.set_number);
-  return Array.from(map.entries());
-}
-
 /* =============== Component =============== */
 export default function LogPage() {
   const page = usePage<Props>();
@@ -80,12 +68,14 @@ export default function LogPage() {
     return () => document.documentElement.removeAttribute("data-page");
   }, []);
 
-  const safeExercises: Exercise[] = Array.isArray((page.props as any).exercises)
-    ? (page.props as any).exercises
-    : [];
-  const safeRecentLogs: WorkoutLog[] = Array.isArray(recentLogs)
-    ? recentLogs
-    : [];
+  const safeExercises = useMemo<Exercise[]>(
+    () => (Array.isArray(page.props.exercises) ? page.props.exercises : []),
+    [page.props.exercises]
+  );
+  const safeRecentLogs = useMemo<WorkoutLog[]>(
+    () => (Array.isArray(recentLogs) ? recentLogs : []),
+    [recentLogs]
+  );
 
   const propsRef = useRef<Props>(page.props);
   useEffect(() => {
@@ -278,10 +268,6 @@ export default function LogPage() {
       }
     );
   };
-
-  const recentNonEmpty = safeRecentLogs.filter(
-    (l) => (l.sets?.length ?? 0) > 0
-  );
 
   const freestyleExercises: Exercise[] =
     pickedDayId === "none"

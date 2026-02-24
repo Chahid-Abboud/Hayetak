@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Queue;
+
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
 
@@ -7,13 +9,20 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    Queue::fake();
+
     $response = $this->post(route('register.store'), [
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'first_name' => 'Test',
+        'last_name' => 'User',
+        'gender' => 'male',
+        'age' => 25,
+        'height_cm' => 175,
+        'weight_kg' => 75,
+        'email' => 'test@gmail.com',
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('verification.notice', absolute: false));
 });

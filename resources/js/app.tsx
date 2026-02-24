@@ -7,7 +7,7 @@ import { initializeTheme } from './hooks/use-appearance';
 import "mapbox-gl/dist/mapbox-gl.css";
 
 
-(window as any).MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+window.MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
