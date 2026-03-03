@@ -19,14 +19,15 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Keep shell background synced with CSS theme tokens --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: var(--background);
+                min-height: 100%;
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: var(--background);
             }
         </style>
 
@@ -43,7 +44,7 @@
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased min-h-screen bg-background text-foreground">
         @inertia
     </body>
 </html>

@@ -3,6 +3,7 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnsureTwoFactorEnabled; // ⬅️ add this
+use App\Http\Middleware\RequireRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ⬇️ add an alias you can use on route groups
         $middleware->alias([
             '2fa.enforced' => EnsureTwoFactorEnabled::class,
+            'role' => RequireRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
