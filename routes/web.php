@@ -13,6 +13,18 @@ use App\Http\Controllers\Workout\WorkoutPlanController;
 use App\Http\Controllers\Workout\WorkoutLogController;
 use App\Http\Controllers\PlacesLocalController;
 use App\Http\Controllers\Ai\PlanGenerationController;
+use App\Http\Controllers\Admin\AdminActionLogController;
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Chat\ConversationController;
+use App\Http\Controllers\Chat\MessageController;
+use App\Http\Controllers\DietitianDiscoveryController;
+use App\Http\Controllers\Professional\AssignmentController;
+use App\Http\Controllers\Professional\NutritionistDietPlanController;
+use App\Http\Controllers\Professional\TrainerProgressNoteController;
+use App\Http\Controllers\Professional\TrainerWorkoutPlanController;
+use App\Http\Controllers\UserNotificationController;
 
 use App\Http\Controllers\MealTrackerApiController;
 use App\Http\Controllers\FoodFavoriteController;
@@ -119,6 +131,59 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.show');
+
+    Route::get('/messages', fn () => Inertia::render('messages/index'))->name('messages.index');
+    Route::get('/appointments', fn () => Inertia::render('appointments/index'))->name('appointments.index');
+
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/users', fn () => Inertia::render('admin/users/index'))->name('admin.users.index');
+        Route::get('/admin/users/{user}', fn ($user) => Inertia::render('admin/users/show', ['userId' => (int) $user]))->name('admin.users.show');
+        Route::get('/admin/logs', fn () => Inertia::render('admin/logs/index'))->name('admin.logs.index');
+        Route::get('/admin/notifications', fn () => Inertia::render('admin/notifications/index'))->name('admin.notifications.index');
+    });
+
+    // RBAC APIs (session-authenticated)
+    Route::prefix('/api')->group(function () {
+        Route::get('/notifications', [UserNotificationController::class, 'index']);
+        Route::post('/notifications/{notification}/read', [UserNotificationController::class, 'markRead']);
+        Route::post('/notifications/{notification}/dismiss', [UserNotificationController::class, 'dismiss']);
+
+        Route::get('/messages/conversations', [ConversationController::class, 'index']);
+        Route::post('/messages/conversations', [ConversationController::class, 'store']);
+        Route::get('/messages/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+        Route::post('/messages/conversations/{conversation}/messages', [MessageController::class, 'store']);
+
+        Route::get('/appointments', [AppointmentController::class, 'index']);
+        Route::post('/appointments', [AppointmentController::class, 'store']);
+        Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
+
+        Route::get('/assignments', [AssignmentController::class, 'index']);
+        Route::post('/assignments', [AssignmentController::class, 'store'])->middleware('role:admin');
+        Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy'])->middleware('role:admin');
+
+        Route::get('/diet-plans', [NutritionistDietPlanController::class, 'index']);
+        Route::post('/diet-plans', [NutritionistDietPlanController::class, 'store'])->middleware('role:admin,nutritionist');
+        Route::put('/diet-plans/{dietPlan}', [NutritionistDietPlanController::class, 'update'])->middleware('role:admin,nutritionist');
+
+        Route::get('/trainer-workout-plans', [TrainerWorkoutPlanController::class, 'index']);
+        Route::post('/trainer-workout-plans', [TrainerWorkoutPlanController::class, 'store'])->middleware('role:admin,trainer');
+        Route::put('/trainer-workout-plans/{trainerWorkoutPlan}', [TrainerWorkoutPlanController::class, 'update'])->middleware('role:admin,trainer');
+
+        Route::get('/trainer-progress-notes', [TrainerProgressNoteController::class, 'index']);
+        Route::post('/trainer-progress-notes', [TrainerProgressNoteController::class, 'store'])->middleware('role:admin,trainer');
+
+        Route::get('/dietitians', [DietitianDiscoveryController::class, 'index']);
+
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/admin/users', [AdminUserController::class, 'index']);
+            Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
+            Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
+            Route::patch('/admin/users/{user}/verification', [AdminUserController::class, 'toggleVerification']);
+            Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
+            Route::post('/admin/notifications', [AdminNotificationController::class, 'store']);
+            Route::get('/admin/action-logs', [AdminActionLogController::class, 'index']);
+        });
+    });
 });
 
 /*

@@ -7,13 +7,19 @@ use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasFactory, MustVerifyEmail, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, MustVerifyEmail, Notifiable, TwoFactorAuthenticatable, SoftDeletes;
+
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_NUTRITIONIST = 'nutritionist';
+    public const ROLE_TRAINER = 'trainer';
+    public const ROLE_CLIENT = 'client';
 
     /**
      * Mass assignable attributes (must match your users table).
@@ -39,6 +45,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
 
         // Auth
         'email','password',
+        'role','verified','status',
 
         // 2FA (Fortify)
         'two_factor_secret','two_factor_recovery_codes',
@@ -70,6 +77,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'diet_failure_reasons'  => 'array',
             'workout_days_per_week' => 'integer',
             'tried_diet_before'     => 'boolean',
+            'verified'              => 'boolean',
             // 'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -79,6 +87,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
      */
     protected $attributes = [
         'has_medical_history' => false,
+        'role'                => self::ROLE_CLIENT,
+        'verified'            => false,
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -91,6 +101,91 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function measurements(): HasMany
     {
         return $this->hasMany(Measurement::class, 'user_id');
+    }
+
+    public function mealEntries(): HasMany
+    {
+        return $this->hasMany(MealEntry::class, 'user_id');
+    }
+
+    public function mealLogs(): HasMany
+    {
+        return $this->hasMany(MealLog::class, 'user_id');
+    }
+
+    public function workoutLogs(): HasMany
+    {
+        return $this->hasMany(WorkoutLog::class, 'user_id');
+    }
+
+    public function dietPlansForClient(): HasMany
+    {
+        return $this->hasMany(DietPlan::class, 'client_id');
+    }
+
+    public function dietPlansAuthored(): HasMany
+    {
+        return $this->hasMany(DietPlan::class, 'nutritionist_id');
+    }
+
+    public function trainerWorkoutPlansForClient(): HasMany
+    {
+        return $this->hasMany(TrainerWorkoutPlan::class, 'client_id');
+    }
+
+    public function trainerWorkoutPlansAuthored(): HasMany
+    {
+        return $this->hasMany(TrainerWorkoutPlan::class, 'trainer_id');
+    }
+
+    public function trainerProgressForClient(): HasMany
+    {
+        return $this->hasMany(TrainerProgressNote::class, 'client_id');
+    }
+
+    public function trainerProgressAuthored(): HasMany
+    {
+        return $this->hasMany(TrainerProgressNote::class, 'trainer_id');
+    }
+
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function notificationsReceived(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'target_user_id');
+    }
+
+    public function notificationsCreated(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'created_by');
+    }
+
+    public function adminActionLogs(): HasMany
+    {
+        return $this->hasMany(AdminActionLog::class, 'admin_id');
+    }
+
+    public function professionalAssignments(): HasMany
+    {
+        return $this->hasMany(ProfessionalClientAssignment::class, 'professional_id');
+    }
+
+    public function clientAssignments(): HasMany
+    {
+        return $this->hasMany(ProfessionalClientAssignment::class, 'client_id');
+    }
+
+    public function appointmentsAsClient(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'client_id');
+    }
+
+    public function appointmentsAsProfessional(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'professional_id');
     }
 
     /* ---------------- Mutators / Normalizers ---------------- */
@@ -169,5 +264,15 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $query->where(function ($q) use ($login) {
             $q->where('username', $login)->orWhere('email', $login);
         });
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
     }
 }

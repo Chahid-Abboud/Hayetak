@@ -1,8 +1,9 @@
 // resources/js/pages/Places.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import NavHeader from "../components/NavHeader";
 import NearbyMap, { type Place } from "../components/NearbyMap";
+import { type SharedData } from "@/types";
 
 function SimpleSlider({
   title = "Search radius",
@@ -58,6 +59,7 @@ function SimpleSlider({
 const DEFAULT_RADIUS_KM = 2;
 
 export default function Places() {
+  const { auth } = usePage<SharedData>().props;
   const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
   const [showGym, setShowGym] = useState<boolean>(true);
   const [showNutri, setShowNutri] = useState<boolean>(true);
@@ -70,6 +72,8 @@ export default function Places() {
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | number | null>(null);
+  const [dietitianArea, setDietitianArea] = useState<string>("");
+  const [dietitians, setDietitians] = useState<Array<{ id: number; name: string; status?: string | null }>>([]);
 
   // locate once
   useEffect(() => {
@@ -114,6 +118,42 @@ export default function Places() {
     setLoading(true);
     setError(null);
   }, [radiusKm, showGym, showNutri]);
+
+  useEffect(() => {
+    void (async () => {
+      const params = new URLSearchParams();
+      if (dietitianArea.trim()) {
+        params.set("area", dietitianArea.trim());
+      }
+      const res = await fetch(`/api/dietitians${params.toString() ? `?${params.toString()}` : ""}`);
+      const json = await res.json();
+      setDietitians(Array.isArray(json?.data) ? json.data : []);
+    })();
+  }, [dietitianArea]);
+
+  async function messageDietitian(userId: number) {
+    await fetch("/api/messages/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participant_id: userId }),
+    });
+    window.location.href = "/messages";
+  }
+
+  async function requestAppointment(userId: number) {
+    const when = prompt("Appointment date/time (YYYY-MM-DD HH:mm:ss)");
+    if (!when) return;
+    await fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professional_id: userId,
+        professional_role: "nutritionist",
+        scheduled_at: when,
+      }),
+    });
+    window.location.href = "/appointments";
+  }
 
   return (
     <>
@@ -284,6 +324,36 @@ export default function Places() {
                 })}
               </ul>
             </div>
+            {auth.user.role === "client" && (
+              <div className="mt-4 rounded-lg border p-3">
+                <div className="mb-2 text-sm font-medium">Dietitians</div>
+                <input
+                  className="mb-2 h-9 w-full rounded-md border bg-background px-3 text-sm"
+                  placeholder="Filter by area"
+                  value={dietitianArea}
+                  onChange={(e) => setDietitianArea(e.target.value)}
+                />
+                <ul className="max-h-72 space-y-2 overflow-auto pr-1">
+                  {dietitians.map((d) => (
+                    <li key={d.id} className="rounded border p-2">
+                      <div className="font-medium">{d.name}</div>
+                      <div className="text-xs text-muted-foreground">{d.status ?? "No area info"}</div>
+                      <div className="mt-2 flex gap-3 text-xs">
+                        <button className="text-sky-700 underline" onClick={() => void messageDietitian(d.id)}>
+                          Message
+                        </button>
+                        <button className="text-sky-700 underline" onClick={() => void requestAppointment(d.id)}>
+                          Request appointment
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                  {dietitians.length === 0 && (
+                    <li className="text-xs text-muted-foreground">No dietitians found for this area.</li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </main>

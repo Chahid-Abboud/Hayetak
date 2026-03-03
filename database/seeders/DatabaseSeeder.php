@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             ImportFoodsFromCsvSeeder::class,
             ImportExercisesFromJsonSeeder::class,
             PlacesLocalSeeder::class,
+            RbacDemoSeeder::class,
         ]);
     }
 }

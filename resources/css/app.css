@@ -168,7 +168,10 @@
 /* Base layer keeps structure intact */
 @layer base {
   *   { @apply border-border; }
-  body{ @apply bg-background text-foreground; }
+  html, body, #app { min-height: 100%; }
+  body{ @apply bg-background text-foreground; min-height: 100vh; }
+  #app { min-height: 100vh; }
+  #app > div { min-height: 100vh; }
   ::selection { background: var(--primary); color: var(--primary-foreground); }
   a { @apply underline-offset-4; }
   :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
