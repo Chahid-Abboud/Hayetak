@@ -47,6 +47,9 @@ class HandleInertiaRequests extends Middleware
                     'age'        => $u->age ?? null,
                     'height_cm'  => $u->height_cm ?? null,
                     'weight_kg'  => $u->weight_kg ?? null,
+                    'role'       => $u->role ?? 'client',
+                    'verified'   => (bool) ($u->verified ?? false),
+                    'status'     => $u->status ?? null,
                     // Two-factor state (optional, helpful for UI badges)
                     'two_factor_enabled' => (bool) ($u->two_factor_secret ?? false),
                 ] : null,
