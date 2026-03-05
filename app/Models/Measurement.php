@@ -19,20 +19,23 @@ class Measurement extends Model
     ];
 
     protected $casts = [
-        'measured_at'  => 'datetime',
-        'weight_kg'    => 'decimal:2',
+        'measured_at' => 'datetime',
+        'weight_kg' => 'decimal:2',
         'body_fat_pct' => 'decimal:2',
-        'neck_cm'      => 'decimal:1',
-        'chest_cm'     => 'decimal:1',
-        'waist_cm'     => 'decimal:1',
-        'hip_cm'       => 'decimal:1',
-        'arm_cm'       => 'decimal:1',
-        'thigh_cm'     => 'decimal:1',
-        'calf_cm'      => 'decimal:1',
-        'resting_hr'   => 'integer',
-        'systolic_bp'  => 'integer',
+        'neck_cm' => 'decimal:1',
+        'chest_cm' => 'decimal:1',
+        'waist_cm' => 'decimal:1',
+        'hip_cm' => 'decimal:1',
+        'arm_cm' => 'decimal:1',
+        'thigh_cm' => 'decimal:1',
+        'calf_cm' => 'decimal:1',
+        'resting_hr' => 'integer',
+        'systolic_bp' => 'integer',
         'diastolic_bp' => 'integer',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

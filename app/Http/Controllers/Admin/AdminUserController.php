@@ -74,4 +74,3 @@ class AdminUserController extends Controller
         return response()->json(['ok' => true]);
     }
 }
-

@@ -8,9 +8,7 @@ use App\Services\Ai\PlannerService;
 
 class PlanGenerationService
 {
-    public function __construct(private readonly PlannerService $plannerService)
-    {
-    }
+    public function __construct(private readonly PlannerService $plannerService) {}
 
     /**
      * Legacy compatibility wrapper.
@@ -38,4 +36,3 @@ class PlanGenerationService
             ->first();
     }
 }
-

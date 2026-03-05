@@ -21,4 +21,3 @@ class StoreTrainerWorkoutPlanRequest extends FormRequest
         ];
     }
 }
-

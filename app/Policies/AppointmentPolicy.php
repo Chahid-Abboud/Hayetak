@@ -31,4 +31,3 @@ class AppointmentPolicy
         return $this->view($user, $appointment);
     }
 }
-

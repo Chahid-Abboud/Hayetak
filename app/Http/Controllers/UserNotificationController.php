@@ -35,4 +35,3 @@ class UserNotificationController extends Controller
         return response()->json(['ok' => true]);
     }
 }
-

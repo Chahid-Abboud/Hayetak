@@ -9,8 +9,8 @@ use App\Services\Ai\Persistence\PlannerPersistenceService;
 use App\Services\Ai\Prompts\PlannerPrompt;
 use App\Services\Ai\Schemas\PlannerSchema;
 use App\Services\Ai\Validation\PlannerOutputValidator;
-use RuntimeException;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class PlannerService
 {
@@ -147,4 +147,3 @@ class PlannerService
         return null;
     }
 }
-

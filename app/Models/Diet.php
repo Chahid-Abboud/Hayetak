@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Diet extends Model
 {
-    protected $fillable = ['user_id','name'];
+    protected $fillable = ['user_id', 'name'];
 
     public function items(): HasMany
     {

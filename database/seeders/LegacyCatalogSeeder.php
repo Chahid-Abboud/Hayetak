@@ -11,8 +11,9 @@ class LegacyCatalogSeeder extends Seeder
     {
         $path = database_path('seeders/legacy/hayetak_5-1-26.sql');
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             $this->command?->error("SQL dump not found at: {$path}");
+
             return;
         }
 
@@ -28,8 +29,8 @@ class LegacyCatalogSeeder extends Seeder
 
         try {
             $handle = fopen($path, 'r');
-            if (!$handle) {
-                throw new \RuntimeException("Cannot open SQL file.");
+            if (! $handle) {
+                throw new \RuntimeException('Cannot open SQL file.');
             }
 
             $imported = 0;
@@ -47,8 +48,9 @@ class LegacyCatalogSeeder extends Seeder
                     }
                 }
 
-                if (!$isAllowed) {
+                if (! $isAllowed) {
                     $skipped++;
+
                     continue;
                 }
 
@@ -62,7 +64,7 @@ class LegacyCatalogSeeder extends Seeder
                     $imported++;
                 } catch (\Throwable $e) {
                     // Log and continue (better than failing the whole import)
-                    $this->command?->warn("Skipped one INSERT due to error: " . $e->getMessage());
+                    $this->command?->warn('Skipped one INSERT due to error: '.$e->getMessage());
                 }
             }
 
@@ -83,7 +85,9 @@ class LegacyCatalogSeeder extends Seeder
 
     private function resetSequence(string $table): void
     {
-        if (DB::getDriverName() !== 'pgsql') return;
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
 
         DB::statement("
             SELECT setval(

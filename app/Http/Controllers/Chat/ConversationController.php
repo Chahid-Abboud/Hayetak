@@ -55,6 +55,7 @@ class ConversationController extends Controller
         $conversation = DB::transaction(function () use ($actor, $participant) {
             $conv = Conversation::query()->create(['created_by' => $actor->id]);
             $conv->participants()->attach([$actor->id, $participant->id]);
+
             return $conv->load('participants', 'messages');
         });
 

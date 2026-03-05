@@ -28,7 +28,7 @@ class FoodSafetyFilter
         // Allow if diets_allowed is NULL or [] OR contains user's diet.
         $q->where(function (Builder $w) use ($dietName) {
             $w->whereNull('diets_allowed')
-              ->orWhereRaw("jsonb_array_length(COALESCE(diets_allowed, '[]'::jsonb)) = 0");
+                ->orWhereRaw("jsonb_array_length(COALESCE(diets_allowed, '[]'::jsonb)) = 0");
 
             if ($dietName !== '') {
                 // Case-insensitive membership check inside jsonb array
@@ -45,7 +45,7 @@ class FoodSafetyFilter
 
         // 3) Apply allergy exclusion filter (case-insensitive)
         // Exclude food if ANY allergen equals user's allergy string.
-        if (!empty($allergies)) {
+        if (! empty($allergies)) {
             foreach ($allergies as $a) {
                 $q->whereRaw(
                     "NOT EXISTS (
@@ -89,6 +89,7 @@ class FoodSafetyFilter
     private function normalizeScalar($v): string
     {
         $s = trim((string) ($v ?? ''));
+
         return $s;
     }
 
@@ -101,7 +102,9 @@ class FoodSafetyFilter
      */
     private function normalizeStringArray($value): array
     {
-        if ($value === null) return [];
+        if ($value === null) {
+            return [];
+        }
 
         // If it's a JSON string array, decode it
         if (is_string($value)) {
@@ -121,18 +124,25 @@ class FoodSafetyFilter
             }
         }
 
-        if (!is_array($value)) return [];
+        if (! is_array($value)) {
+            return [];
+        }
 
         $out = [];
         foreach ($value as $v) {
-            if ($v === null) continue;
+            if ($v === null) {
+                continue;
+            }
             $s = trim((string) $v);
-            if ($s === '') continue;
+            if ($s === '') {
+                continue;
+            }
             $out[] = $s;
         }
 
         // unique while preserving order
         $out = array_values(array_unique($out));
+
         return $out;
     }
 }

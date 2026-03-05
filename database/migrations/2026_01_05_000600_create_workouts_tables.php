@@ -114,7 +114,7 @@ return new class extends Migration
         });
 
         if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER TABLE workout_plan_days ADD CONSTRAINT workout_plan_days_day_index_chk CHECK (day_index IS NULL OR (day_index >= 1 AND day_index <= 7))");
+            DB::statement('ALTER TABLE workout_plan_days ADD CONSTRAINT workout_plan_days_day_index_chk CHECK (day_index IS NULL OR (day_index >= 1 AND day_index <= 7))');
         }
     }
 

@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('workout_plans', function (Blueprint $table) {
@@ -24,7 +25,7 @@ return new class extends Migration {
             $table->string('title', 120)->nullable();   // e.g., Push, Legs
             $table->timestamps();
 
-            $table->unique(['workout_plan_id','day_of_week'], 'uniq_plan_day');
+            $table->unique(['workout_plan_id', 'day_of_week'], 'uniq_plan_day');
         });
 
         Schema::create('workout_plan_exercises', function (Blueprint $table) {
@@ -41,8 +42,8 @@ return new class extends Migration {
 
             $table->timestamps();
 
-            $table->unique(['workout_plan_day_id','order'], 'uniq_plan_day_order');
-            $table->index(['workout_plan_day_id','exercise_id']);
+            $table->unique(['workout_plan_day_id', 'order'], 'uniq_plan_day_order');
+            $table->index(['workout_plan_day_id', 'exercise_id']);
         });
     }
 

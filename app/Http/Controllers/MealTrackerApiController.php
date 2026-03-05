@@ -36,7 +36,7 @@ class MealTrackerApiController extends Controller
 
         return response()->json([
             ...$summary,
-            'userAllergies'   => $this->svc->userAllergies($userId),
+            'userAllergies' => $this->svc->userAllergies($userId),
             'recommendations' => $recommendations,
         ]);
     }
@@ -44,7 +44,7 @@ class MealTrackerApiController extends Controller
     public function month(Request $request)
     {
         $month = $request->query('month', now()->format('Y-m')); // YYYY-MM
-        $month = Carbon::parse($month . '-01')->format('Y-m');
+        $month = Carbon::parse($month.'-01')->format('Y-m');
 
         return response()->json([
             'month' => $month,
@@ -55,15 +55,15 @@ class MealTrackerApiController extends Controller
     public function copyDay(Request $request)
     {
         $data = $request->validate([
-            'from_date' => ['required','date'],
-            'to_date'   => ['required','date'],
-            'replace'   => ['sometimes','boolean'],
+            'from_date' => ['required', 'date'],
+            'to_date' => ['required', 'date'],
+            'replace' => ['sometimes', 'boolean'],
         ]);
 
         $userId = Auth::id();
         $from = Carbon::parse($data['from_date'])->format('Y-m-d');
-        $to   = Carbon::parse($data['to_date'])->format('Y-m-d');
-        $replace = (bool)($data['replace'] ?? false);
+        $to = Carbon::parse($data['to_date'])->format('Y-m-d');
+        $replace = (bool) ($data['replace'] ?? false);
 
         DB::transaction(function () use ($userId, $from, $to, $replace) {
             if ($replace) {
@@ -73,15 +73,15 @@ class MealTrackerApiController extends Controller
             $rows = DB::table('meal_entries')
                 ->where('user_id', $userId)
                 ->whereDate('eaten_at', $from)
-                ->get(['food_id','meal_type','servings']);
+                ->get(['food_id', 'meal_type', 'servings']);
 
             foreach ($rows as $r) {
                 DB::table('meal_entries')->insert([
-                    'user_id'    => $userId,
-                    'food_id'    => $r->food_id,
-                    'meal_type'  => $r->meal_type,
-                    'servings'   => $r->servings,
-                    'eaten_at'   => $to,
+                    'user_id' => $userId,
+                    'food_id' => $r->food_id,
+                    'meal_type' => $r->meal_type,
+                    'servings' => $r->servings,
+                    'eaten_at' => $to,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

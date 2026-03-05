@@ -145,4 +145,3 @@ class OpenAIClient
         return $calls;
     }
 }
-

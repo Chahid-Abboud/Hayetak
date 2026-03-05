@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Exercise;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
-use App\Models\Exercise;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class WorkoutPlanSeeder extends Seeder
 {
@@ -18,23 +18,23 @@ class WorkoutPlanSeeder extends Seeder
          | A) Ensure a small exercise library exists
          |------------------------------------------ */
         $exerciseData = [
-            ['Barbell Bench Press','chest','barbell','intermediate'],
-            ['Overhead Press','shoulders','barbell','intermediate'],
-            ['Incline Dumbbell Press','chest','dumbbells','beginner'],
-            ['Triceps Pushdown','triceps','cable','beginner'],
-            ['Lateral Raise','shoulders','dumbbells','beginner'],
+            ['Barbell Bench Press', 'chest', 'barbell', 'intermediate'],
+            ['Overhead Press', 'shoulders', 'barbell', 'intermediate'],
+            ['Incline Dumbbell Press', 'chest', 'dumbbells', 'beginner'],
+            ['Triceps Pushdown', 'triceps', 'cable', 'beginner'],
+            ['Lateral Raise', 'shoulders', 'dumbbells', 'beginner'],
 
-            ['Conventional Deadlift','back','barbell','advanced'],
-            ['Barbell Row','back','barbell','intermediate'],
-            ['Lat Pulldown','back','machine','beginner'],
-            ['Face Pull','rear_delts','cable','beginner'],
-            ['EZ-Bar Curl','biceps','barbell','beginner'],
+            ['Conventional Deadlift', 'back', 'barbell', 'advanced'],
+            ['Barbell Row', 'back', 'barbell', 'intermediate'],
+            ['Lat Pulldown', 'back', 'machine', 'beginner'],
+            ['Face Pull', 'rear_delts', 'cable', 'beginner'],
+            ['EZ-Bar Curl', 'biceps', 'barbell', 'beginner'],
 
-            ['Back Squat','legs','barbell','intermediate'],
-            ['Leg Press','legs','machine','beginner'],
-            ['Romanian Deadlift','hamstrings','barbell','intermediate'],
-            ['Leg Curl','hamstrings','machine','beginner'],
-            ['Standing Calf Raise','calves','machine','beginner'],
+            ['Back Squat', 'legs', 'barbell', 'intermediate'],
+            ['Leg Press', 'legs', 'machine', 'beginner'],
+            ['Romanian Deadlift', 'hamstrings', 'barbell', 'intermediate'],
+            ['Leg Curl', 'hamstrings', 'machine', 'beginner'],
+            ['Standing Calf Raise', 'calves', 'machine', 'beginner'],
         ];
 
         foreach ($exerciseData as [$name,$muscle,$equipment,$difficulty]) {
@@ -42,11 +42,11 @@ class WorkoutPlanSeeder extends Seeder
                 ['name' => $name],
                 [
                     'primary_muscle' => $muscle,
-                    'equipment'      => $equipment,
-                    'difficulty'     => $difficulty,
-                    'demo_video'     => null,
-                    'tags'           => [],
-                    'conditions'     => [],
+                    'equipment' => $equipment,
+                    'difficulty' => $difficulty,
+                    'demo_video' => null,
+                    'tags' => [],
+                    'conditions' => [],
                 ]
             );
         }
@@ -73,7 +73,7 @@ class WorkoutPlanSeeder extends Seeder
             $days[$index] = WorkoutPlanDay::updateOrCreate(
                 [
                     'workout_plan_id' => $plan->id,
-                    'day_index'       => $index,
+                    'day_index' => $index,
                 ],
                 ['name' => $label]
             );
@@ -124,19 +124,19 @@ class WorkoutPlanSeeder extends Seeder
                 DB::table('workout_plan_day_exercises')->updateOrInsert(
                     [
                         'workout_plan_day_id' => $day->id,
-                        'exercise_id'          => $exercise->id,
+                        'exercise_id' => $exercise->id,
                     ],
                     [
-                        'order_index'  => $order,
-                        'sets'         => $sets,
-                        'reps_min'     => $reps,
-                        'reps_max'     => $reps,
+                        'order_index' => $order,
+                        'sets' => $sets,
+                        'reps_min' => $reps,
+                        'reps_max' => $reps,
                         'rest_seconds' => $rest,
-                        'rpe_target'   => 0,
-                        'rir_target'   => 0,
-                        'notes'        => null,
-                        'created_at'   => now(),
-                        'updated_at'   => now(),
+                        'rpe_target' => 0,
+                        'rir_target' => 0,
+                        'notes' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]
                 );
             }

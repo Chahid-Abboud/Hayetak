@@ -23,4 +23,3 @@ class StoreProfessionalAssignmentRequest extends FormRequest
         ];
     }
 }
-

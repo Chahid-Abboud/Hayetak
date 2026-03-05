@@ -39,4 +39,3 @@ class AdminNotificationController extends Controller
         return response()->json(['ok' => true, 'sent' => $created], 201);
     }
 }
-

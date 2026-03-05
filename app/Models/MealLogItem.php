@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MealLogItem extends Model
 {
-    protected $fillable = ['meal_log_id','category','label','quantity','unit','calories'];
+    protected $fillable = ['meal_log_id', 'category', 'label', 'quantity', 'unit', 'calories'];
 
     public function log(): BelongsTo
     {

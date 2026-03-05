@@ -24,11 +24,11 @@ class NutritionPlan extends Model
     ];
 
     protected $casts = [
-        'start_date'   => 'date',
-        'duration_days'=> 'integer',
-        'is_active'    => 'boolean',
+        'start_date' => 'date',
+        'duration_days' => 'integer',
+        'is_active' => 'boolean',
         'targets_json' => 'array',
-        'meta'         => 'array',
+        'meta' => 'array',
     ];
 
     public function user()

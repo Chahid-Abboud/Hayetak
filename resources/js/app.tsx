@@ -2,13 +2,11 @@ import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
-import "mapbox-gl/dist/mapbox-gl.css";
-
 
 window.MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

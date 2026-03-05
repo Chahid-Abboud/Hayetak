@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MealLog extends Model
 {
-    protected $fillable = ['user_id','consumed_at','other_notes','photo_path'];
+    protected $fillable = ['user_id', 'consumed_at', 'other_notes', 'photo_path'];
+
     protected $casts = [
         'consumed_at' => 'date',
     ];

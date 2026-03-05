@@ -24,7 +24,7 @@ class GeneratePlansForUser implements ShouldQueue
     public function handle(PlannerService $service): void
     {
         $user = User::find($this->userId);
-        if (!$user) {
+        if (! $user) {
             return;
         }
 

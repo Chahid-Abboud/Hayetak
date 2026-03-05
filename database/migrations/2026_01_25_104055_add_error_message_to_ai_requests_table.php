@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('ai_requests', function (Blueprint $table) {
             // Add nullable error_message for debugging + training logs
-            if (!Schema::hasColumn('ai_requests', 'error_message')) {
+            if (! Schema::hasColumn('ai_requests', 'error_message')) {
                 $table->text('error_message')->nullable()->after('status');
             }
         });

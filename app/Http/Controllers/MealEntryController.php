@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\MealEntry;
 use App\Models\UserPref;
 use App\Services\MealTrackerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class MealEntryController extends Controller
 {
@@ -30,11 +30,11 @@ class MealEntryController extends Controller
         $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return Inertia::render('track_meal/track_meals', [
-            'date'            => $date,
-            'dailyTotals'     => $dailyTotals,
-            'mealTotals'      => $byMeal,
-            'entries'         => $entries,
-            'targets'         => $targets,
+            'date' => $date,
+            'dailyTotals' => $dailyTotals,
+            'mealTotals' => $byMeal,
+            'entries' => $entries,
+            'targets' => $targets,
             'recommendations' => $recommendations,
         ]);
     }
@@ -58,11 +58,11 @@ class MealEntryController extends Controller
         $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return response()->json([
-            'date'            => $date,
-            'dailyTotals'     => $dailyTotals,
-            'mealTotals'      => $byMeal,
-            'entries'         => $entries,
-            'targets'         => $targets,
+            'date' => $date,
+            'dailyTotals' => $dailyTotals,
+            'mealTotals' => $byMeal,
+            'entries' => $entries,
+            'targets' => $targets,
             'recommendations' => $recommendations,
         ]);
     }
@@ -70,10 +70,10 @@ class MealEntryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'food_id'   => ['required','exists:foods,id'],
-            'meal_type' => ['required','in:breakfast,lunch,dinner,snack,drink'],
-            'servings'  => ['required','numeric','gt:0','max:1000'],
-            'eaten_at'  => ['nullable','date'],
+            'food_id' => ['required', 'exists:foods,id'],
+            'meal_type' => ['required', 'in:breakfast,lunch,dinner,snack,drink'],
+            'servings' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            'eaten_at' => ['nullable', 'date'],
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -94,6 +94,7 @@ class MealEntryController extends Controller
     {
         abort_if($entry->user_id !== Auth::id(), 403);
         $entry->delete();
+
         return back()->with('success', 'Removed.');
     }
 
@@ -104,21 +105,27 @@ class MealEntryController extends Controller
      */
     private function recommendationsFromPref(?UserPref $pref, ?array $targets): ?array
     {
-        if ($targets) return $targets;
-        if (!$pref) return null;
+        if ($targets) {
+            return $targets;
+        }
+        if (! $pref) {
+            return null;
+        }
 
         $tdee = (int) ($pref->tdee_kcal ?? 0);
-        if ($tdee <= 0) return null;
+        if ($tdee <= 0) {
+            return null;
+        }
 
         $protein = ($tdee * 0.25) / 4.0;
-        $carbs   = ($tdee * 0.45) / 4.0;
-        $fat     = ($tdee * 0.30) / 9.0;
+        $carbs = ($tdee * 0.45) / 4.0;
+        $fat = ($tdee * 0.30) / 9.0;
 
         return [
             'calories' => (float) $tdee,
-            'protein'  => round($protein, 1),
-            'carbs'    => round($carbs, 1),
-            'fat'      => round($fat, 1),
+            'protein' => round($protein, 1),
+            'carbs' => round($carbs, 1),
+            'fat' => round($fat, 1),
         ];
     }
 
@@ -126,46 +133,46 @@ class MealEntryController extends Controller
     {
         $dailyTotals = DB::table('meal_entries as me')
             ->join('foods as f', 'f.id', '=', 'me.food_id')
-            ->selectRaw("
+            ->selectRaw('
                 COALESCE(SUM(COALESCE(f.calories ,0) * me.servings),0) as calories,
                 COALESCE(SUM(COALESCE(f.protein_g,0) * me.servings),0) as protein,
                 COALESCE(SUM(COALESCE(f.carbs_g  ,0) * me.servings),0) as carbs,
                 COALESCE(SUM(COALESCE(f.fat_g    ,0) * me.servings),0) as fat
-            ")
+            ')
             ->where('me.user_id', $userId)
             ->whereDate('me.eaten_at', $date)
             ->first();
 
         $byMealRaw = DB::table('meal_entries as me')
             ->join('foods as f', 'f.id', '=', 'me.food_id')
-            ->selectRaw("
+            ->selectRaw('
                 me.meal_type,
                 COALESCE(SUM(COALESCE(f.calories ,0) * me.servings),0) as calories,
                 COALESCE(SUM(COALESCE(f.protein_g,0) * me.servings),0) as protein,
                 COALESCE(SUM(COALESCE(f.carbs_g  ,0) * me.servings),0) as carbs,
                 COALESCE(SUM(COALESCE(f.fat_g    ,0) * me.servings),0) as fat
-            ")
+            ')
             ->where('me.user_id', $userId)
             ->whereDate('me.eaten_at', $date)
             ->groupBy('me.meal_type')
             ->get();
 
         $byMeal = [
-            'breakfast' => ['calories'=>0,'protein'=>0,'carbs'=>0,'fat'=>0],
-            'lunch'     => ['calories'=>0,'protein'=>0,'carbs'=>0,'fat'=>0],
-            'dinner'    => ['calories'=>0,'protein'=>0,'carbs'=>0,'fat'=>0],
-            'snack'     => ['calories'=>0,'protein'=>0,'carbs'=>0,'fat'=>0],
-            'drink'     => ['calories'=>0,'protein'=>0,'carbs'=>0,'fat'=>0],
+            'breakfast' => ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fat' => 0],
+            'lunch' => ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fat' => 0],
+            'dinner' => ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fat' => 0],
+            'snack' => ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fat' => 0],
+            'drink' => ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fat' => 0],
         ];
 
         foreach ($byMealRaw as $row) {
-            $key = in_array($row->meal_type, ['breakfast','lunch','dinner','snack','drink'], true)
+            $key = in_array($row->meal_type, ['breakfast', 'lunch', 'dinner', 'snack', 'drink'], true)
                 ? $row->meal_type : 'snack';
             $byMeal[$key] = [
                 'calories' => (float) $row->calories,
-                'protein'  => (float) $row->protein,
-                'carbs'    => (float) $row->carbs,
-                'fat'      => (float) $row->fat,
+                'protein' => (float) $row->protein,
+                'carbs' => (float) $row->carbs,
+                'fat' => (float) $row->fat,
             ];
         }
 
@@ -182,19 +189,19 @@ class MealEntryController extends Controller
                     $f = $e->food;
 
                     return [
-                        'id'        => (int) $e->id,
+                        'id' => (int) $e->id,
                         'meal_type' => (string) $e->meal_type,
-                        'servings'  => $ratio,
-                        'eaten_at'  => $e->eaten_at ? Carbon::parse($e->eaten_at)->format('Y-m-d') : null,
-                        'food'      => [
-                            'id'           => (int) $f->id,
-                            'name'         => (string) $f->name,
+                        'servings' => $ratio,
+                        'eaten_at' => $e->eaten_at ? Carbon::parse($e->eaten_at)->format('Y-m-d') : null,
+                        'food' => [
+                            'id' => (int) $f->id,
+                            'name' => (string) $f->name,
                             'serving_unit' => (string) ($f->serving_unit ?? 'g'),
                             'serving_size' => (float) ($f->serving_size ?? 100),
-                            'calories'     => (float) (($f->calories   ?? 0) * $ratio),
-                            'protein'      => (float) (($f->protein_g ?? 0) * $ratio),
-                            'carbs'        => (float) (($f->carbs_g   ?? 0) * $ratio),
-                            'fat'          => (float) (($f->fat_g     ?? 0) * $ratio),
+                            'calories' => (float) (($f->calories ?? 0) * $ratio),
+                            'protein' => (float) (($f->protein_g ?? 0) * $ratio),
+                            'carbs' => (float) (($f->carbs_g ?? 0) * $ratio),
+                            'fat' => (float) (($f->fat_g ?? 0) * $ratio),
                         ],
                     ];
                 })->values();
@@ -203,9 +210,9 @@ class MealEntryController extends Controller
         return [
             [
                 'calories' => (float) ($dailyTotals->calories ?? 0),
-                'protein'  => (float) ($dailyTotals->protein  ?? 0),
-                'carbs'    => (float) ($dailyTotals->carbs    ?? 0),
-                'fat'      => (float) ($dailyTotals->fat      ?? 0),
+                'protein' => (float) ($dailyTotals->protein ?? 0),
+                'carbs' => (float) ($dailyTotals->carbs ?? 0),
+                'fat' => (float) ($dailyTotals->fat ?? 0),
             ],
             $byMeal,
             $entries,

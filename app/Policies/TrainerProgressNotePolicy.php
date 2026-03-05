@@ -36,4 +36,3 @@ class TrainerProgressNotePolicy
         return $user->isAdmin() || $note->trainer_id === $user->id;
     }
 }
-

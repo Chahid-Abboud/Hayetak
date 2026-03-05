@@ -45,4 +45,3 @@ class ProfessionalAccessService
         return false;
     }
 }
-

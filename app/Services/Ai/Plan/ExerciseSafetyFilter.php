@@ -44,9 +44,9 @@ class ExerciseSafetyFilter
         // 2) Pull exercises
         $exercises = Exercise::query()
             ->select([
-                'id','name','primary_muscle','equipment','equipment_list',
-                'difficulty','movement_pattern','exercise_type','mechanic','plane',
-                'home_friendly','conditions',
+                'id', 'name', 'primary_muscle', 'equipment', 'equipment_list',
+                'difficulty', 'movement_pattern', 'exercise_type', 'mechanic', 'plane',
+                'home_friendly', 'conditions',
             ])
             ->orderBy('id')
             ->get();
@@ -68,13 +68,13 @@ class ExerciseSafetyFilter
             // Home/Gym filtering
             if ($isHome) {
                 // If home: allow only home_friendly OR equipment requirements satisfied by available equipment
-                if (!$ex->home_friendly && !$this->equipmentSatisfied($ex, $availableEquipment)) {
+                if (! $ex->home_friendly && ! $this->equipmentSatisfied($ex, $availableEquipment)) {
                     continue;
                 }
             } else {
                 // If gym: still enforce equipment if the user provided a list.
                 // If user didn't specify equipment, assume gym has access.
-                if (!empty($availableEquipment) && !$this->equipmentSatisfied($ex, $availableEquipment)) {
+                if (! empty($availableEquipment) && ! $this->equipmentSatisfied($ex, $availableEquipment)) {
                     continue;
                 }
             }
@@ -82,28 +82,30 @@ class ExerciseSafetyFilter
             // Optional: if you want to enforce injury hints stored in exercises.conditions too
             // (e.g., ["knee_pain"] etc). We'll exclude if overlap.
             $conditions = $this->normalizeArray($ex->conditions ?? []);
-            if (!empty($injuries) && $this->hasIntersection($injuries, $conditions)) {
+            if (! empty($injuries) && $this->hasIntersection($injuries, $conditions)) {
                 // treat as caution by default, not full exclude
                 $isCaution = true;
             }
 
             $allowed[] = $id;
-            if ($isCaution) $caution[] = $id;
+            if ($isCaution) {
+                $caution[] = $id;
+            }
 
             if (count($catalog) < $limitCatalog) {
                 $catalog[] = [
-                    'id'              => $id,
-                    'name'            => (string) $ex->name,
-                    'primary_muscle'   => $ex->primary_muscle,
-                    'difficulty'       => $ex->difficulty,
-                    'equipment'        => $ex->equipment,
-                    'equipment_list'   => $ex->equipment_list ?? [],
-                    'home_friendly'    => (bool) $ex->home_friendly,
+                    'id' => $id,
+                    'name' => (string) $ex->name,
+                    'primary_muscle' => $ex->primary_muscle,
+                    'difficulty' => $ex->difficulty,
+                    'equipment' => $ex->equipment,
+                    'equipment_list' => $ex->equipment_list ?? [],
+                    'home_friendly' => (bool) $ex->home_friendly,
                     'movement_pattern' => $ex->movement_pattern,
-                    'exercise_type'    => $ex->exercise_type,
-                    'mechanic'         => $ex->mechanic,
-                    'plane'            => $ex->plane,
-                    'caution'          => $isCaution,
+                    'exercise_type' => $ex->exercise_type,
+                    'mechanic' => $ex->mechanic,
+                    'plane' => $ex->plane,
+                    'caution' => $isCaution,
                 ];
             }
         }
@@ -161,7 +163,9 @@ class ExerciseSafetyFilter
     private function equipmentSatisfied(Exercise $ex, array $availableEquipment): bool
     {
         // If user didn't provide equipment list, don't block.
-        if (empty($availableEquipment)) return true;
+        if (empty($availableEquipment)) {
+            return true;
+        }
 
         // equipment_list is preferred (jsonb array)
         $req = $this->normalizeArray($ex->equipment_list ?? []);
@@ -169,7 +173,9 @@ class ExerciseSafetyFilter
         // fallback to legacy equipment string
         if (empty($req)) {
             $legacy = $this->normalizeOne($ex->equipment);
-            if (!$legacy) return true;
+            if (! $legacy) {
+                return true;
+            }
 
             // bodyweight/none always allowed
             if (in_array($legacy, ['bodyweight', 'none', 'no_equipment'], true)) {
@@ -181,14 +187,18 @@ class ExerciseSafetyFilter
         }
 
         // If exercise requires only bodyweight/none, allow
-        if (count($req) === 1 && in_array($req[0], ['bodyweight','none','no_equipment'], true)) {
+        if (count($req) === 1 && in_array($req[0], ['bodyweight', 'none', 'no_equipment'], true)) {
             return true;
         }
 
         // Require ALL listed equipment items to be available (safe default)
         foreach ($req as $needed) {
-            if (in_array($needed, ['bodyweight','none','no_equipment'], true)) continue;
-            if (!in_array($needed, $availableEquipment, true)) return false;
+            if (in_array($needed, ['bodyweight', 'none', 'no_equipment'], true)) {
+                continue;
+            }
+            if (! in_array($needed, $availableEquipment, true)) {
+                return false;
+            }
         }
 
         return true;
@@ -196,34 +206,51 @@ class ExerciseSafetyFilter
 
     private function hasIntersection(array $a, array $b): bool
     {
-        if (empty($a) || empty($b)) return false;
+        if (empty($a) || empty($b)) {
+            return false;
+        }
 
         $set = array_flip($a);
         foreach ($b as $x) {
-            if (isset($set[$x])) return true;
+            if (isset($set[$x])) {
+                return true;
+            }
         }
+
         return false;
     }
 
     private function normalizeOne($value): ?string
     {
-        if ($value === null) return null;
+        if ($value === null) {
+            return null;
+        }
         $s = trim((string) $value);
-        if ($s === '') return null;
+        if ($s === '') {
+            return null;
+        }
 
         return Str::of($s)->lower()->replace(' ', '_')->replace('-', '_')->__toString();
     }
 
     private function normalizeArray($value): array
     {
-        if ($value === null) return [];
-        if (is_string($value)) $value = [$value];
-        if (!is_array($value)) return [];
+        if ($value === null) {
+            return [];
+        }
+        if (is_string($value)) {
+            $value = [$value];
+        }
+        if (! is_array($value)) {
+            return [];
+        }
 
         $out = [];
         foreach ($value as $v) {
             $n = $this->normalizeOne($v);
-            if ($n !== null) $out[] = $n;
+            if ($n !== null) {
+                $out[] = $n;
+            }
         }
 
         return array_values(array_unique($out));

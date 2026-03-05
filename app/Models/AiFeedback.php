@@ -21,8 +21,8 @@ class AiFeedback extends Model
     ];
 
     protected $casts = [
-        'rating'            => 'integer',
-        'edited_output_json'=> 'array',
+        'rating' => 'integer',
+        'edited_output_json' => 'array',
     ];
 
     public function aiRequest()

@@ -184,4 +184,3 @@ class CoachContextBuilder
             : $clean;
     }
 }
-

@@ -20,7 +20,7 @@ class NutritionPlanDay extends Model
 
     protected $casts = [
         'day_index' => 'integer',
-        'date'      => 'date',
+        'date' => 'date',
     ];
 
     public function plan()

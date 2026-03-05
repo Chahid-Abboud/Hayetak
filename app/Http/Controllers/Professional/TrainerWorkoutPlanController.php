@@ -57,4 +57,3 @@ class TrainerWorkoutPlanController extends Controller
         return response()->json(['ok' => true, 'workout_plan' => $trainerWorkoutPlan]);
     }
 }
-
