@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\User;
-use App\Services\Ai\Plan\PlanGenerationService;
+use App\Services\Ai\PlannerService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,15 +17,17 @@ class GeneratePlansForUser implements ShouldQueue
     public function __construct(
         public int $userId,
         public int $days = 7,
+        public bool $regenerate = true,
+        public ?string $reason = 'queued_generation',
     ) {}
 
-    public function handle(PlanGenerationService $service): void
+    public function handle(PlannerService $service): void
     {
         $user = User::find($this->userId);
         if (!$user) {
             return;
         }
 
-        $service->generateForUser($user, $this->days);
+        $service->generate($user, $this->regenerate, $this->reason, $user->id);
     }
 }
