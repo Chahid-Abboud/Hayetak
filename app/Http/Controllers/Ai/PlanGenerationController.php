@@ -20,7 +20,12 @@ class PlanGenerationController extends Controller
         if ($days < 1) $days = 1;
         if ($days > 14) $days = 14;
 
-        GeneratePlansForUser::dispatch($user->id, $days);
+        GeneratePlansForUser::dispatch(
+            userId: $user->id,
+            days: $days,
+            regenerate: true,
+            reason: 'legacy_api_generate_plans'
+        );
 
         return response()->json([
             'ok' => true,
