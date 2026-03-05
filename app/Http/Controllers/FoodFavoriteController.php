@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Food;
 use App\Models\FoodFavorite;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class FoodFavoriteController extends Controller
@@ -16,10 +15,12 @@ class FoodFavoriteController extends Controller
         $fav = FoodFavorite::where('user_id', $userId)->where('food_id', $food->id)->first();
         if ($fav) {
             $fav->delete();
+
             return response()->json(['is_favorite' => false]);
         }
 
         FoodFavorite::create(['user_id' => $userId, 'food_id' => $food->id]);
+
         return response()->json(['is_favorite' => true]);
     }
 

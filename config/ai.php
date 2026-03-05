@@ -29,4 +29,3 @@ return [
         'enabled' => (bool) env('AI_USAGE_LOG_ENABLED', true),
     ],
 ];
-

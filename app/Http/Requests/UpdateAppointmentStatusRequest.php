@@ -20,4 +20,3 @@ class UpdateAppointmentStatusRequest extends FormRequest
         ];
     }
 }
-

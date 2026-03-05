@@ -24,4 +24,3 @@ class ConversationResource extends JsonResource
         ];
     }
 }
-

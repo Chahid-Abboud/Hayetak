@@ -32,4 +32,3 @@ class TrainerWorkoutPlan extends Model
         return $this->belongsTo(User::class, 'trainer_id');
     }
 }
-

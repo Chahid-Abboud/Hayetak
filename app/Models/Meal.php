@@ -18,13 +18,20 @@ class Meal extends Model
     ];
 
     protected $casts = [
-        'logged_at'     => 'datetime',
-        'tot_calories'  => 'integer',
+        'logged_at' => 'datetime',
+        'tot_calories' => 'integer',
         'tot_protein_g' => 'decimal:2',
-        'tot_carbs_g'   => 'decimal:2',
-        'tot_fat_g'     => 'decimal:2',
+        'tot_carbs_g' => 'decimal:2',
+        'tot_fat_g' => 'decimal:2',
     ];
 
-    public function user()     { return $this->belongsTo(User::class); }
-    public function entries()  { return $this->hasMany(MealEntry::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function entries()
+    {
+        return $this->hasMany(MealEntry::class);
+    }
 }

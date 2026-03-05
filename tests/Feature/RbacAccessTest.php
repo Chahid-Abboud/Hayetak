@@ -55,4 +55,3 @@ test('client can start chat with assigned nutritionist', function () {
         ->postJson('/api/messages/conversations', ['participant_id' => $nutritionist->id])
         ->assertCreated();
 });
-

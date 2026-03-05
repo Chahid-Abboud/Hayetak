@@ -46,75 +46,75 @@ class UserContextBuilder
 
         return [
             'schema_version' => 'context_v1',
-            'generated_at'   => $now->toIso8601String(),
+            'generated_at' => $now->toIso8601String(),
             'history_window' => [
                 'days' => $historyDays,
                 'from' => $startDate->format('Y-m-d'),
-                'to'   => $now->format('Y-m-d'),
+                'to' => $now->format('Y-m-d'),
             ],
 
             'user' => [
-                'id'                   => $user->id,
-                'first_name'           => $user->first_name,
-                'last_name'            => $user->last_name,
-                'gender'               => $user->gender,
-                'age'                  => $user->age,
-                'height_cm'            => $user->height_cm,
-                'weight_kg'            => (float) ($latestMeasurement?->weight_kg ?? $user->weight_kg ?? 0),
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'gender' => $user->gender,
+                'age' => $user->age,
+                'height_cm' => $user->height_cm,
+                'weight_kg' => (float) ($latestMeasurement?->weight_kg ?? $user->weight_kg ?? 0),
 
                 // goals / diet
-                'dietary_goal'         => $user->dietary_goal,
-                'fitness_goal'         => $user->fitness_goal,
-                'diet_name'            => $user->diet_name,
-                'allergies'            => $this->normalizeStringArray($user->allergies ?? []),
+                'dietary_goal' => $user->dietary_goal,
+                'fitness_goal' => $user->fitness_goal,
+                'diet_name' => $user->diet_name,
+                'allergies' => $this->normalizeStringArray($user->allergies ?? []),
 
                 // training
-                'activity_level'       => $user->activity_level,
-                'workout_days_per_week'=> $user->workout_days_per_week,
-                'workout_location'     => $user->workout_location,
+                'activity_level' => $user->activity_level,
+                'workout_days_per_week' => $user->workout_days_per_week,
+                'workout_location' => $user->workout_location,
 
                 // medical
-                'has_medical_history'  => (bool) $user->has_medical_history,
-                'medical_history'      => $user->medical_history,
+                'has_medical_history' => (bool) $user->has_medical_history,
+                'medical_history' => $user->medical_history,
             ],
 
             'prefs' => [
-                'units'                 => $pref?->units ?? 'metric',
-                'home_gym'              => $pref?->home_gym,
-                'activity_factor'       => $pref?->activity_factor,
-                'bmr_kcal'              => $pref?->bmr_kcal,
-                'tdee_kcal'             => $pref?->tdee_kcal,
+                'units' => $pref?->units ?? 'metric',
+                'home_gym' => $pref?->home_gym,
+                'activity_factor' => $pref?->activity_factor,
+                'bmr_kcal' => $pref?->bmr_kcal,
+                'tdee_kcal' => $pref?->tdee_kcal,
 
                 // user targets (if you have them)
-                'daily_goal_calories'   => $pref?->daily_goal_calories,
-                'daily_goal_protein_g'  => $pref?->daily_goal_protein_g,
-                'daily_goal_carbs_g'    => $pref?->daily_goal_carbs_g,
-                'daily_goal_fat_g'      => $pref?->daily_goal_fat_g,
-                'workout_days_target'   => $pref?->workout_days_target,
+                'daily_goal_calories' => $pref?->daily_goal_calories,
+                'daily_goal_protein_g' => $pref?->daily_goal_protein_g,
+                'daily_goal_carbs_g' => $pref?->daily_goal_carbs_g,
+                'daily_goal_fat_g' => $pref?->daily_goal_fat_g,
+                'workout_days_target' => $pref?->workout_days_target,
             ],
 
             'constraints' => [
-                'injuries'            => $injuries,
+                'injuries' => $injuries,
                 'available_equipment' => $availableEquipment,
-                'workout_location'    => $user->workout_location,
-                'diet_name'           => $user->diet_name,
-                'allergies'           => $this->normalizeStringArray($user->allergies ?? []),
-                'medical_history'     => $user->medical_history,
+                'workout_location' => $user->workout_location,
+                'diet_name' => $user->diet_name,
+                'allergies' => $this->normalizeStringArray($user->allergies ?? []),
+                'medical_history' => $user->medical_history,
             ],
 
             'recent_history' => [
                 'nutrition_last_days' => [
-                    'daily'  => $nutritionDaily,   // per-day totals
+                    'daily' => $nutritionDaily,   // per-day totals
                     'totals' => $nutritionTotals,  // summed totals
                 ],
                 'workouts_last_days' => $workoutSummary,
                 'latest_measurement' => $latestMeasurement ? [
                     'measured_at' => $latestMeasurement?->measured_at?->format('Y-m-d'),
-                    'weight_kg'    => $latestMeasurement->weight_kg !== null ? (float) $latestMeasurement->weight_kg : null,
+                    'weight_kg' => $latestMeasurement->weight_kg !== null ? (float) $latestMeasurement->weight_kg : null,
                     'body_fat_pct' => $latestMeasurement->body_fat_pct !== null ? (float) $latestMeasurement->body_fat_pct : null,
-                    'waist_cm'     => $latestMeasurement->waist_cm !== null ? (float) $latestMeasurement->waist_cm : null,
-                    'hip_cm'       => $latestMeasurement->hip_cm !== null ? (float) $latestMeasurement->hip_cm : null,
-                    'notes'        => $latestMeasurement->notes,
+                    'waist_cm' => $latestMeasurement->waist_cm !== null ? (float) $latestMeasurement->waist_cm : null,
+                    'hip_cm' => $latestMeasurement->hip_cm !== null ? (float) $latestMeasurement->hip_cm : null,
+                    'notes' => $latestMeasurement->notes,
                 ] : null,
             ],
         ];
@@ -139,38 +139,38 @@ class UserContextBuilder
 
         // Make sure we return deterministic keys & numeric types
         return $rows->map(fn ($r) => [
-            'day'       => (string) $r->day,
-            'calories'  => (int) round((float) $r->calories),
+            'day' => (string) $r->day,
+            'calories' => (int) round((float) $r->calories),
             'protein_g' => (float) round((float) $r->protein_g, 1),
-            'carbs_g'   => (float) round((float) $r->carbs_g, 1),
-            'fat_g'     => (float) round((float) $r->fat_g, 1),
-            'fiber_g'   => (float) round((float) $r->fiber_g, 1),
+            'carbs_g' => (float) round((float) $r->carbs_g, 1),
+            'fat_g' => (float) round((float) $r->fat_g, 1),
+            'fiber_g' => (float) round((float) $r->fiber_g, 1),
         ])->all();
     }
 
     private function sumNutritionTotals(array $daily): array
     {
         $totals = [
-            'calories'  => 0,
+            'calories' => 0,
             'protein_g' => 0.0,
-            'carbs_g'   => 0.0,
-            'fat_g'     => 0.0,
-            'fiber_g'   => 0.0,
+            'carbs_g' => 0.0,
+            'fat_g' => 0.0,
+            'fiber_g' => 0.0,
         ];
 
         foreach ($daily as $d) {
-            $totals['calories']  += (int) ($d['calories'] ?? 0);
+            $totals['calories'] += (int) ($d['calories'] ?? 0);
             $totals['protein_g'] += (float) ($d['protein_g'] ?? 0);
-            $totals['carbs_g']   += (float) ($d['carbs_g'] ?? 0);
-            $totals['fat_g']     += (float) ($d['fat_g'] ?? 0);
-            $totals['fiber_g']   += (float) ($d['fiber_g'] ?? 0);
+            $totals['carbs_g'] += (float) ($d['carbs_g'] ?? 0);
+            $totals['fat_g'] += (float) ($d['fat_g'] ?? 0);
+            $totals['fiber_g'] += (float) ($d['fiber_g'] ?? 0);
         }
 
         // Normalize rounding
         $totals['protein_g'] = (float) round($totals['protein_g'], 1);
-        $totals['carbs_g']   = (float) round($totals['carbs_g'], 1);
-        $totals['fat_g']     = (float) round($totals['fat_g'], 1);
-        $totals['fiber_g']   = (float) round($totals['fiber_g'], 1);
+        $totals['carbs_g'] = (float) round($totals['carbs_g'], 1);
+        $totals['fat_g'] = (float) round($totals['fat_g'], 1);
+        $totals['fiber_g'] = (float) round($totals['fiber_g'], 1);
 
         return $totals;
     }
@@ -187,14 +187,14 @@ class UserContextBuilder
 
         $sessionsCount = $logs->count();
         $totalDuration = (int) $logs->sum('duration_min');
-        $totalSets     = (int) $logs->sum('sets_count');
+        $totalSets = (int) $logs->sum('sets_count');
 
         // Simple per-day sessions breakdown
         $perDay = $logs->groupBy(fn ($l) => $l->performed_at ? $l->performed_at->format('Y-m-d') : 'unknown')
             ->map(fn ($group) => [
-                'sessions'     => $group->count(),
+                'sessions' => $group->count(),
                 'duration_min' => (int) $group->sum('duration_min'),
-                'sets'         => (int) $group->sum('sets_count'),
+                'sets' => (int) $group->sum('sets_count'),
             ])
             ->sortKeys()
             ->map(fn ($v, $k) => array_merge(['day' => $k], $v))
@@ -202,24 +202,34 @@ class UserContextBuilder
             ->all();
 
         return [
-            'sessions_count'     => $sessionsCount,
+            'sessions_count' => $sessionsCount,
             'total_duration_min' => $totalDuration,
-            'total_sets'         => $totalSets,
-            'per_day'            => $perDay,
+            'total_sets' => $totalSets,
+            'per_day' => $perDay,
         ];
     }
 
     private function normalizeStringArray($value): array
     {
-        if ($value === null) return [];
-        if (is_string($value)) $value = [$value];
-        if (!is_array($value)) return [];
+        if ($value === null) {
+            return [];
+        }
+        if (is_string($value)) {
+            $value = [$value];
+        }
+        if (! is_array($value)) {
+            return [];
+        }
 
         $out = [];
         foreach ($value as $v) {
-            if ($v === null) continue;
+            if ($v === null) {
+                continue;
+            }
             $s = trim((string) $v);
-            if ($s === '') continue;
+            if ($s === '') {
+                continue;
+            }
             $out[] = $s;
         }
 

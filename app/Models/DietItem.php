@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DietItem extends Model
 {
-    protected $fillable = ['diet_id','category','label','default_portion','calories'];
+    protected $fillable = ['diet_id', 'category', 'label', 'default_portion', 'calories'];
 
     public function diet(): BelongsTo
     {

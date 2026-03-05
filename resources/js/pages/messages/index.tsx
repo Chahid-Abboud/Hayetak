@@ -1,7 +1,7 @@
 import NavHeader from '@/components/NavHeader';
+import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { type SharedData } from '@/types';
 
 type Conversation = {
     id: number;
@@ -18,7 +18,9 @@ type Message = {
 export default function MessagesPage() {
     const { auth } = usePage<SharedData>().props;
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+    const [activeConversationId, setActiveConversationId] = useState<
+        number | null
+    >(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [text, setText] = useState('');
 
@@ -29,7 +31,9 @@ export default function MessagesPage() {
     }
 
     async function loadMessages(conversationId: number) {
-        const res = await fetch(`/api/messages/conversations/${conversationId}/messages`);
+        const res = await fetch(
+            `/api/messages/conversations/${conversationId}/messages`,
+        );
         const json = await res.json();
         setMessages(Array.isArray(json?.data) ? json.data : []);
     }
@@ -46,11 +50,14 @@ export default function MessagesPage() {
 
     async function send() {
         if (!activeConversationId || !text.trim()) return;
-        await fetch(`/api/messages/conversations/${activeConversationId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ body: text }),
-        });
+        await fetch(
+            `/api/messages/conversations/${activeConversationId}/messages`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: text }),
+            },
+        );
         setText('');
         await loadMessages(activeConversationId);
     }
@@ -66,12 +73,16 @@ export default function MessagesPage() {
                         <div className="mb-2 text-sm font-medium">Threads</div>
                         <div className="space-y-2">
                             {conversations.map((c) => {
-                                const peer = c.participants.find((p) => p.id !== auth.user.id);
+                                const peer = c.participants.find(
+                                    (p) => p.id !== auth.user.id,
+                                );
                                 return (
                                     <button
                                         key={c.id}
                                         type="button"
-                                        onClick={() => setActiveConversationId(c.id)}
+                                        onClick={() =>
+                                            setActiveConversationId(c.id)
+                                        }
                                         className="block w-full rounded border px-2 py-1 text-left text-sm"
                                     >
                                         {peer?.name ?? `Conversation #${c.id}`}
@@ -80,18 +91,27 @@ export default function MessagesPage() {
                             })}
                         </div>
                     </aside>
-                    <section className="md:col-span-2 rounded border p-3">
+                    <section className="rounded border p-3 md:col-span-2">
                         <div className="mb-3 text-sm font-medium">Chat</div>
                         <div className="mb-3 max-h-80 space-y-2 overflow-auto">
                             {messages.map((m) => (
-                                <div key={m.id} className="rounded bg-slate-50 p-2 text-sm">
+                                <div
+                                    key={m.id}
+                                    className="rounded bg-slate-50 p-2 text-sm"
+                                >
                                     <div className="text-xs text-slate-500">
-                                        {m.sender_id === auth.user.id ? 'You' : `User #${m.sender_id}`}
+                                        {m.sender_id === auth.user.id
+                                            ? 'You'
+                                            : `User #${m.sender_id}`}
                                     </div>
                                     <div>{m.body}</div>
                                 </div>
                             ))}
-                            {messages.length === 0 && <div className="text-xs text-slate-500">No messages.</div>}
+                            {messages.length === 0 && (
+                                <div className="text-xs text-slate-500">
+                                    No messages.
+                                </div>
+                            )}
                         </div>
                         <div className="flex gap-2">
                             <input
@@ -100,7 +120,10 @@ export default function MessagesPage() {
                                 onChange={(e) => setText(e.target.value)}
                                 placeholder="Write a message"
                             />
-                            <button className="rounded bg-blue-700 px-3 py-1 text-sm text-white" onClick={() => void send()}>
+                            <button
+                                className="rounded bg-blue-700 px-3 py-1 text-sm text-white"
+                                onClick={() => void send()}
+                            >
                                 Send
                             </button>
                         </div>
@@ -110,4 +133,3 @@ export default function MessagesPage() {
         </>
     );
 }
-

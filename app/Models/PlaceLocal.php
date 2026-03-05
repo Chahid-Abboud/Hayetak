@@ -18,10 +18,13 @@ class PlaceLocal extends Model
     ];
 
     protected $casts = [
-        'lat'  => 'decimal:6',
-        'lng'  => 'decimal:6',
+        'lat' => 'decimal:6',
+        'lng' => 'decimal:6',
         'meta' => 'array',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

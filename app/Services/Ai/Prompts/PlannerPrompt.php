@@ -22,4 +22,3 @@ class PlannerPrompt
             .json_encode($context, JSON_UNESCAPED_SLASHES);
     }
 }
-

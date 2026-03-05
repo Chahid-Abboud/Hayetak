@@ -36,4 +36,3 @@ class TrainerWorkoutPlanPolicy
         return $user->isAdmin() || $plan->trainer_id === $user->id;
     }
 }
-

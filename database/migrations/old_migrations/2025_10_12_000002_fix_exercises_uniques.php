@@ -1,9 +1,11 @@
 <?php
+
 // database/migrations/2025_10_12_000003_fix_exercises_uniques_v2.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // 1) Drop every UNIQUE that is only on (name)

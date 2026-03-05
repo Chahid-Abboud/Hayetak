@@ -21,4 +21,3 @@ class AppointmentResource extends JsonResource
         ];
     }
 }
-

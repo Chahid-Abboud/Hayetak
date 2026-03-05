@@ -16,15 +16,22 @@ class WorkoutLogSet extends Model
     ];
 
     protected $casts = [
-        'order_index'  => 'integer',
-        'weight_kg'    => 'decimal:2',
-        'reps'         => 'integer',
-        'distance_m'   => 'integer',
+        'order_index' => 'integer',
+        'weight_kg' => 'decimal:2',
+        'reps' => 'integer',
+        'distance_m' => 'integer',
         'duration_sec' => 'integer',
-        'is_warmup'    => 'boolean',
-        'meta'         => 'array',
+        'is_warmup' => 'boolean',
+        'meta' => 'array',
     ];
 
-    public function workout()  { return $this->belongsTo(WorkoutLog::class, 'workout_log_id'); }
-    public function exercise() { return $this->belongsTo(Exercise::class); }
+    public function workout()
+    {
+        return $this->belongsTo(WorkoutLog::class, 'workout_log_id');
+    }
+
+    public function exercise()
+    {
+        return $this->belongsTo(Exercise::class);
+    }
 }

@@ -23,7 +23,7 @@ class WorkoutPlan extends Model
     ];
 
     protected $casts = [
-        'meta'      => 'array',
+        'meta' => 'array',
         'is_active' => 'boolean',
         'is_public' => 'boolean',
     ];

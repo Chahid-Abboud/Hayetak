@@ -267,4 +267,3 @@ class PlannerPersistenceService
         return [8, 12];
     }
 }
-

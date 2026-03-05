@@ -20,28 +20,28 @@ class ProfileController extends Controller
 
         $userProfile = [
             'first_name' => $u->first_name,
-            'last_name'  => $u->last_name,
-            'username'   => $u->username,
-            'gender'     => $u->gender,
-            'age'        => $u->age,
-            'height_cm'  => $u->height_cm,
-            'weight_kg'  => $u->weight_kg,
+            'last_name' => $u->last_name,
+            'username' => $u->username,
+            'gender' => $u->gender,
+            'age' => $u->age,
+            'height_cm' => $u->height_cm,
+            'weight_kg' => $u->weight_kg,
         ];
 
         // Map your stored fields -> prefs shape the React page expects
         $dietName = $u->diet_name;
 
-        $knownDietSlugs = ['balanced','high_protein','low_carb','mediterranean','keto','vegan','vegetarian'];
+        $knownDietSlugs = ['balanced', 'high_protein', 'low_carb', 'mediterranean', 'keto', 'vegan', 'vegetarian'];
         $slug = $dietName ? strtolower(str_replace([' ', '-'], ['_', '_'], trim($dietName))) : null;
         $dietType = in_array($slug, $knownDietSlugs, true) ? $slug : ($slug ? 'other' : null);
         $dietOther = $dietType === 'other' ? $dietName : null;
 
         $prefs = [
-            'dietary_goal'  => $u->dietary_goal,
+            'dietary_goal' => $u->dietary_goal,
             'fitness_goals' => $u->fitness_goal ? [$u->fitness_goal] : [],
-            'diet_type'     => $dietType,
-            'diet_other'    => $dietOther,
-            'allergies'     => is_array($u->allergies) ? $u->allergies : [],
+            'diet_type' => $dietType,
+            'diet_other' => $dietOther,
+            'allergies' => is_array($u->allergies) ? $u->allergies : [],
         ];
 
         // ✅ Your real measurements schema uses measured_at + weight_kg
@@ -61,9 +61,9 @@ class ProfileController extends Controller
                         ->orderBy('measured_at', 'desc')
                         ->limit(60)
                         ->get(['measured_at', 'weight_kg'])
-                        ->map(fn($r) => [
-                            'date'  => (string) $r->measured_at, // React expects "date"
-                            'type'  => 'weight',
+                        ->map(fn ($r) => [
+                            'date' => (string) $r->measured_at, // React expects "date"
+                            'type' => 'weight',
                             'value' => (float) $r->weight_kg,
                         ])
                         ->all();
@@ -77,9 +77,9 @@ class ProfileController extends Controller
                         ->orderBy('measured_at', 'desc')
                         ->limit(60)
                         ->get(['measured_at', 'height_cm'])
-                        ->map(fn($r) => [
-                            'date'  => (string) $r->measured_at,
-                            'type'  => 'height',
+                        ->map(fn ($r) => [
+                            'date' => (string) $r->measured_at,
+                            'type' => 'height',
                             'value' => (float) $r->height_cm,
                         ])
                         ->all();
@@ -88,16 +88,16 @@ class ProfileController extends Controller
         }
 
         return Inertia::render('settings/profile', [
-            'displayName'   => $u->first_name ?: ($u->username ?: ($u->name ?: $u->email)),
-            'userProfile'   => $userProfile,
-            'prefs'         => $prefs,
-            'dietName'      => $dietName,
+            'displayName' => $u->first_name ?: ($u->username ?: ($u->name ?: $u->email)),
+            'userProfile' => $userProfile,
+            'prefs' => $prefs,
+            'dietName' => $dietName,
             'weightHistory' => $weightHistory,
             'heightHistory' => $heightHistory, // will be [] unless you add height_cm column
-            'flash'         => [
-                'status'  => session('status'),
+            'flash' => [
+                'status' => session('status'),
                 'success' => session('success'),
-                'error'   => session('error'),
+                'error' => session('error'),
             ],
         ]);
     }
@@ -107,15 +107,15 @@ class ProfileController extends Controller
         $u = $request->user();
 
         $data = $request->validate([
-            'first_name' => ['nullable','string','max:40'],
-            'last_name'  => ['nullable','string','max:40'],
-            'username'   => ['nullable','string','max:24','regex:/^[A-Za-z0-9_.]+$/', Rule::unique('users','username')->ignore($u->id)],
-            'gender'     => ['nullable', Rule::in(['male','female','other'])],
-            'age'        => ['nullable','integer','between:13,100'],
+            'first_name' => ['nullable', 'string', 'max:40'],
+            'last_name' => ['nullable', 'string', 'max:40'],
+            'username' => ['nullable', 'string', 'max:24', 'regex:/^[A-Za-z0-9_.]+$/', Rule::unique('users', 'username')->ignore($u->id)],
+            'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
+            'age' => ['nullable', 'integer', 'between:13,100'],
 
             // Keep these because your users table has them
-            'height_cm'  => ['nullable','integer','between:80,250'],
-            'weight_kg'  => ['nullable','numeric','between:25,400'],
+            'height_cm' => ['nullable', 'integer', 'between:80,250'],
+            'weight_kg' => ['nullable', 'numeric', 'between:25,400'],
         ]);
 
         $u->fill($data)->save();
@@ -128,26 +128,26 @@ class ProfileController extends Controller
         $u = $request->user();
 
         $data = $request->validate([
-            'diet_type'       => ['nullable','string','max:60'],
-            'diet_other'      => ['nullable','string','max:60'],
-            'dietary_goal'    => ['nullable','string','max:60'],
-            'fitness_goals'   => ['nullable','array'],
-            'fitness_goals.*' => ['string','max:60'],
-            'allergies'       => ['nullable','array'],
-            'allergies.*'     => ['string','max:60'],
+            'diet_type' => ['nullable', 'string', 'max:60'],
+            'diet_other' => ['nullable', 'string', 'max:60'],
+            'dietary_goal' => ['nullable', 'string', 'max:60'],
+            'fitness_goals' => ['nullable', 'array'],
+            'fitness_goals.*' => ['string', 'max:60'],
+            'allergies' => ['nullable', 'array'],
+            'allergies.*' => ['string', 'max:60'],
         ]);
 
         $dietName = null;
-        if (!empty($data['diet_type'])) {
+        if (! empty($data['diet_type'])) {
             $dietName = $data['diet_type'] === 'other'
                 ? ($data['diet_other'] ?? null)
                 : ucfirst(str_replace('_', ' ', $data['diet_type']));
         }
 
-        $u->diet_name    = $dietName;
+        $u->diet_name = $dietName;
         $u->dietary_goal = $data['dietary_goal'] ?? null;
         $u->fitness_goal = isset($data['fitness_goals'][0]) ? $data['fitness_goals'][0] : null;
-        $u->allergies    = $data['allergies'] ?? [];
+        $u->allergies = $data['allergies'] ?? [];
 
         $u->save();
 
@@ -159,12 +159,12 @@ class ProfileController extends Controller
         $u = $request->user();
 
         $data = $request->validate([
-            'date'  => ['required','date'], // UI sends "date"
-            'type'  => ['required', Rule::in(['weight','height'])],
-            'value' => ['required','numeric','min:1'],
+            'date' => ['required', 'date'], // UI sends "date"
+            'type' => ['required', Rule::in(['weight', 'height'])],
+            'value' => ['required', 'numeric', 'min:1'],
         ]);
 
-        if (!Schema::hasTable('measurements')) {
+        if (! Schema::hasTable('measurements')) {
             return back()->with('error', 'Measurements table not found.');
         }
 
@@ -173,13 +173,13 @@ class ProfileController extends Controller
             ? 'measured_at'
             : (Schema::hasColumn('measurements', 'date') ? 'date' : null);
 
-        if (!$dateColumn || !Schema::hasColumn('measurements', 'user_id')) {
+        if (! $dateColumn || ! Schema::hasColumn('measurements', 'user_id')) {
             return back()->with('error', 'Measurements schema is missing user_id/date fields.');
         }
 
         // Weight path (supported by your dump)
         if ($data['type'] === 'weight') {
-            if (!Schema::hasColumn('measurements', 'weight_kg')) {
+            if (! Schema::hasColumn('measurements', 'weight_kg')) {
                 return back()->with('error', 'This database does not support weight_kg in measurements.');
             }
 

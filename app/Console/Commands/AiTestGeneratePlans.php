@@ -31,8 +31,9 @@ class AiTestGeneratePlans extends Command
 
         /** @var User|null $user */
         $user = User::query()->find($userId);
-        if (!$user) {
+        if (! $user) {
             $this->error("User #{$userId} not found.");
+
             return self::FAILURE;
         }
 
@@ -60,7 +61,7 @@ class AiTestGeneratePlans extends Command
         $context = $contextBuilder->build($user);
 
         // ✅ Create ai_request with input_context_json already filled
-        $aiRequest = new AiRequest();
+        $aiRequest = new AiRequest;
         $aiRequest->user_id = $user->id;
         $aiRequest->type = 'plan_generator';
         $aiRequest->status = 'processing';
@@ -93,7 +94,7 @@ class AiTestGeneratePlans extends Command
 
             // 3) Validate diet plan output
             $dietPlan = $modelOutput['nutrition_plan'] ?? null;
-            if (!$dietPlan) {
+            if (! $dietPlan) {
                 throw new \RuntimeException('Dummy model did not return nutrition_plan.');
             }
 
@@ -111,7 +112,7 @@ class AiTestGeneratePlans extends Command
 
             $this->info("✅ SUCCESS: ai_requests.id={$aiRequest->id} generated and persisted.");
 
-            $this->line("Verify in Tinker:");
+            $this->line('Verify in Tinker:');
             $this->line("  \\App\\Models\\AiRequest::find({$aiRequest->id});");
             $this->line("  \\App\\Models\\NutritionPlan::where('user_id', {$user->id})->latest('id')->first();");
 
@@ -121,7 +122,8 @@ class AiTestGeneratePlans extends Command
             $aiRequest->error_message = $e->getMessage();
             $aiRequest->save();
 
-            $this->error("❌ FAILED: " . $e->getMessage());
+            $this->error('❌ FAILED: '.$e->getMessage());
+
             return self::FAILURE;
         }
     }

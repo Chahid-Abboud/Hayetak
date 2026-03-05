@@ -15,15 +15,30 @@ class WorkoutLog extends Model
     ];
 
     protected $casts = [
-        'performed_at'        => 'datetime',
-        'duration_min'        => 'integer',
-        'meta'                => 'array',
-        'workout_plan_id'     => 'integer',
+        'performed_at' => 'datetime',
+        'duration_min' => 'integer',
+        'meta' => 'array',
+        'workout_plan_id' => 'integer',
         'workout_plan_day_id' => 'integer',
     ];
 
-    public function user()  { return $this->belongsTo(User::class); }
-    public function sets()  { return $this->hasMany(WorkoutLogSet::class); }
-    public function plan()  { return $this->belongsTo(WorkoutPlan::class, 'workout_plan_id'); }
-    public function day()   { return $this->belongsTo(WorkoutPlanDay::class, 'workout_plan_day_id'); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function sets()
+    {
+        return $this->hasMany(WorkoutLogSet::class);
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(WorkoutPlan::class, 'workout_plan_id');
+    }
+
+    public function day()
+    {
+        return $this->belongsTo(WorkoutPlanDay::class, 'workout_plan_day_id');
+    }
 }

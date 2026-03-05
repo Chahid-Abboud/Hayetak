@@ -1,14 +1,13 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Food;
-use App\Models\MealEntry;
-
-// controllers for nearby
 use App\Http\Controllers\PlacesController;
 use App\Http\Controllers\PlacesLocalController;
+use App\Models\Food;
+use App\Models\MealEntry;
+use Illuminate\Http\Request;
+// controllers for nearby
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +26,7 @@ Route::get('/foods/search', function (Request $request) {
     $perPage = (int) $request->query('per_page', 10);
 
     $query = Food::query()
-        ->select(['id','name','brand','nationality','calories','protein_g','carbs_g','fat_g'])
+        ->select(['id', 'name', 'brand', 'nationality', 'calories', 'protein_g', 'carbs_g', 'fat_g'])
         ->when($q !== '', fn ($qq) => $qq->where('name', 'ILIKE', "%{$q}%"))
         ->orderBy('name');
 
@@ -36,19 +35,20 @@ Route::get('/foods/search', function (Request $request) {
     $page->getCollection()->transform(function ($f) {
         $servingUnit = 'g';
         $servingSize = 100;
+
         return [
-            'id'            => (int) $f->id,
-            'name'          => (string) $f->name,
-            'serving_unit'  => $servingUnit,
-            'serving_size'  => $servingSize,
-            'calories'      => (int) round((float) $f->calories),
+            'id' => (int) $f->id,
+            'name' => (string) $f->name,
+            'serving_unit' => $servingUnit,
+            'serving_size' => $servingSize,
+            'calories' => (int) round((float) $f->calories),
             'calories_kcal' => (int) round((float) $f->calories),
-            'protein'       => (int) round((float) $f->protein_g),
-            'protein_g'     => (int) round((float) $f->protein_g),
-            'carbs'         => (int) round((float) $f->carbs_g),
-            'carbs_g'       => (int) round((float) $f->carbs_g),
-            'fat'           => (int) round((float) $f->fat_g),
-            'fat_g'         => (int) round((float) $f->fat_g),
+            'protein' => (int) round((float) $f->protein_g),
+            'protein_g' => (int) round((float) $f->protein_g),
+            'carbs' => (int) round((float) $f->carbs_g),
+            'carbs_g' => (int) round((float) $f->carbs_g),
+            'fat' => (int) round((float) $f->fat_g),
+            'fat_g' => (int) round((float) $f->fat_g),
         ];
     });
 
@@ -58,18 +58,18 @@ Route::get('/foods/search', function (Request $request) {
 // create meal entry
 Route::post('/meal-entries', function (Request $request) {
     $data = $request->validate([
-        'food_id'   => ['required', 'integer', 'exists:foods,id'],
+        'food_id' => ['required', 'integer', 'exists:foods,id'],
         'meal_type' => ['required', 'in:breakfast,lunch,dinner,snack,drink'],
-        'servings'  => ['required', 'numeric', 'min:0.01'],
-        'eaten_at'  => ['required', 'date_format:Y-m-d'],
+        'servings' => ['required', 'numeric', 'min:0.01'],
+        'eaten_at' => ['required', 'date_format:Y-m-d'],
     ]);
 
     $entry = MealEntry::create([
-        'user_id'   => Auth::id(),
-        'food_id'   => $data['food_id'],
+        'user_id' => Auth::id(),
+        'food_id' => $data['food_id'],
         'meal_type' => $data['meal_type'],
-        'servings'  => $data['servings'],
-        'eaten_at'  => $data['eaten_at'],
+        'servings' => $data['servings'],
+        'eaten_at' => $data['eaten_at'],
     ]);
 
     return response()->json(['ok' => true, 'id' => $entry->id], 201);
@@ -79,6 +79,7 @@ Route::post('/meal-entries', function (Request $request) {
 Route::delete('/meal-entries/{mealEntry}', function (MealEntry $mealEntry) {
     abort_unless(Auth::id() === $mealEntry->user_id, 403);
     $mealEntry->delete();
+
     return response()->json(['ok' => true]);
 })->middleware('auth');
 

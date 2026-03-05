@@ -23,4 +23,3 @@ class StoreDietPlanRequest extends FormRequest
         ];
     }
 }
-

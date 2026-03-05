@@ -14,4 +14,3 @@ interface AiTool
 
     public function execute(User $user, array $arguments): array;
 }
-

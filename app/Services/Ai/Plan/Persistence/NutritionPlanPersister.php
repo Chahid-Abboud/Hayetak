@@ -4,8 +4,8 @@ namespace App\Services\Ai\Plan\Persistence;
 
 use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
-use App\Models\NutritionPlanMeal;
 use App\Models\NutritionPlanItem;
+use App\Models\NutritionPlanMeal;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 

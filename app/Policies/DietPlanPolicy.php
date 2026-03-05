@@ -36,4 +36,3 @@ class DietPlanPolicy
         return $user->isAdmin() || $dietPlan->nutritionist_id === $user->id;
     }
 }
-

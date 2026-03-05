@@ -14,17 +14,17 @@ return new class extends Migration
 
         // Create the correct partial unique index: only one ACTIVE plan per user
         if ($driver === 'sqlite') {
-            DB::statement("
+            DB::statement('
                 CREATE UNIQUE INDEX workout_plans_one_active_per_user
                 ON workout_plans (user_id)
                 WHERE is_active = 1
-            ");
+            ');
         } else {
-            DB::statement("
+            DB::statement('
                 CREATE UNIQUE INDEX workout_plans_one_active_per_user
                 ON workout_plans (user_id)
                 WHERE is_active = true
-            ");
+            ');
         }
     }
 
@@ -34,9 +34,9 @@ return new class extends Migration
         DB::statement('DROP INDEX IF EXISTS workout_plans_one_active_per_user');
 
         // Optional: recreate the old behavior (NOT recommended, but keeps down() symmetrical)
-        DB::statement("
+        DB::statement('
             CREATE UNIQUE INDEX workout_plans_one_active_per_user
             ON workout_plans (user_id)
-        ");
+        ');
     }
 };

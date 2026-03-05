@@ -41,7 +41,7 @@ class FoodController extends Controller
             });
 
         // Exclude foods that contain any of the user's allergens
-        if ($excludeAllergens && !empty($userAllergens)) {
+        if ($excludeAllergens && ! empty($userAllergens)) {
             foreach ($userAllergens as $allergen) {
                 $query->whereJsonDoesntContain('allergens', $allergen);
             }
@@ -56,9 +56,10 @@ class FoodController extends Controller
             $mt = $arr['meal_types'] ?? null;
             if (is_string($mt)) {
                 $arr['meal_types'] = array_values(array_filter(array_map('trim', preg_split('/[,\s{}]+/', trim($mt, '{}')))));
-            } elseif (!is_array($mt)) {
+            } elseif (! is_array($mt)) {
                 $arr['meal_types'] = [];
             }
+
             return $arr;
         });
 

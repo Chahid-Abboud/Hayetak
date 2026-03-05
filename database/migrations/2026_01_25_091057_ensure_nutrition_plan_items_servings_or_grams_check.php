@@ -34,9 +34,9 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("
+        DB::statement('
             ALTER TABLE nutrition_plan_items
             DROP CONSTRAINT IF EXISTS nutrition_plan_items_servings_or_grams_chk
-        ");
+        ');
     }
 };

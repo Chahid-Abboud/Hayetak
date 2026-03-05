@@ -21,4 +21,3 @@ class StoreTrainerProgressNoteRequest extends FormRequest
         ];
     }
 }
-

@@ -31,25 +31,25 @@ class HandleInertiaRequests extends Middleware
         $u = $request->user();
 
         return array_merge(parent::share($request), [
-            'name'  => config('app.name'),
+            'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
 
             // ✅ Share a SAFE, explicit shape for the signed-in user
             'auth' => [
                 'user' => $u ? [
-                    'id'         => $u->id,
-                    'email'      => $u->email,
-                    'name'       => $u->name ?? null,
+                    'id' => $u->id,
+                    'email' => $u->email,
+                    'name' => $u->name ?? null,
                     'first_name' => $u->first_name ?? null,
-                    'last_name'  => $u->last_name ?? null,
-                    'username'   => $u->username ?? null,
-                    'gender'     => $u->gender ?? null,
-                    'age'        => $u->age ?? null,
-                    'height_cm'  => $u->height_cm ?? null,
-                    'weight_kg'  => $u->weight_kg ?? null,
-                    'role'       => $u->role ?? 'client',
-                    'verified'   => (bool) ($u->verified ?? false),
-                    'status'     => $u->status ?? null,
+                    'last_name' => $u->last_name ?? null,
+                    'username' => $u->username ?? null,
+                    'gender' => $u->gender ?? null,
+                    'age' => $u->age ?? null,
+                    'height_cm' => $u->height_cm ?? null,
+                    'weight_kg' => $u->weight_kg ?? null,
+                    'role' => $u->role ?? 'client',
+                    'verified' => (bool) ($u->verified ?? false),
+                    'status' => $u->status ?? null,
                     // Two-factor state (optional, helpful for UI badges)
                     'two_factor_enabled' => (bool) ($u->two_factor_secret ?? false),
                 ] : null,
@@ -60,9 +60,9 @@ class HandleInertiaRequests extends Middleware
 
             // ✅ Flash messages (lazy so they aren’t serialized unless accessed)
             'flash' => [
-                'status'  => fn () => $request->session()->get('status'),
+                'status' => fn () => $request->session()->get('status'),
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ]);
     }
