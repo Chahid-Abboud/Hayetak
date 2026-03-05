@@ -21,9 +21,9 @@ class NutritionPlanItem extends Model
     ];
 
     protected $casts = [
-        'servings'    => 'decimal:2',
-        'grams'       => 'decimal:2',
-        'sort_order'  => 'integer',
+        'servings' => 'decimal:2',
+        'grams' => 'decimal:2',
+        'sort_order' => 'integer',
     ];
 
     public function meal()

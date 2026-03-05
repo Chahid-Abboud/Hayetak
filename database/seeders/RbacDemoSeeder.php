@@ -144,4 +144,3 @@ class RbacDemoSeeder extends Seeder
         ]);
     }
 }
-

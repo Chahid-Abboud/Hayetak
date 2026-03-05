@@ -19,4 +19,3 @@ class AdminActionLogController extends Controller
         return response()->json($logs);
     }
 }
-

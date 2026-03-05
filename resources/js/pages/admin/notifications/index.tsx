@@ -21,7 +21,11 @@ export default function AdminNotificationsIndex() {
             body: JSON.stringify({ title, body, target_user_ids }),
         });
         const json = await res.json();
-        setMsg(res.ok ? `Sent ${json.sent ?? 0} notifications.` : 'Failed to send notifications.');
+        setMsg(
+            res.ok
+                ? `Sent ${json.sent ?? 0} notifications.`
+                : 'Failed to send notifications.',
+        );
     }
 
     return (
@@ -30,30 +34,46 @@ export default function AdminNotificationsIndex() {
             <NavHeader />
             <main className="mx-auto max-w-3xl px-4 py-6">
                 <RoleGuard roles={['admin']}>
-                <h1 className="mb-4 text-2xl font-semibold">Send In-App Notification</h1>
-                <div className="space-y-3 rounded border p-4">
-                    <label className="block text-sm">
-                        Title
-                        <input className="mt-1 w-full rounded border px-2 py-1" value={title} onChange={(e) => setTitle(e.target.value)} />
-                    </label>
-                    <label className="block text-sm">
-                        Message
-                        <textarea className="mt-1 w-full rounded border px-2 py-1" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
-                    </label>
-                    <label className="block text-sm">
-                        Target user IDs (comma separated)
-                        <input
-                            className="mt-1 w-full rounded border px-2 py-1"
-                            value={targetIds}
-                            onChange={(e) => setTargetIds(e.target.value)}
-                            placeholder="1, 4, 9"
-                        />
-                    </label>
-                    <button className="rounded bg-blue-700 px-3 py-1 text-sm text-white" onClick={() => void send()}>
-                        Send
-                    </button>
-                    {msg && <div className="text-sm text-slate-700">{msg}</div>}
-                </div>
+                    <h1 className="mb-4 text-2xl font-semibold">
+                        Send In-App Notification
+                    </h1>
+                    <div className="space-y-3 rounded border p-4">
+                        <label className="block text-sm">
+                            Title
+                            <input
+                                className="mt-1 w-full rounded border px-2 py-1"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                            />
+                        </label>
+                        <label className="block text-sm">
+                            Message
+                            <textarea
+                                className="mt-1 w-full rounded border px-2 py-1"
+                                rows={4}
+                                value={body}
+                                onChange={(e) => setBody(e.target.value)}
+                            />
+                        </label>
+                        <label className="block text-sm">
+                            Target user IDs (comma separated)
+                            <input
+                                className="mt-1 w-full rounded border px-2 py-1"
+                                value={targetIds}
+                                onChange={(e) => setTargetIds(e.target.value)}
+                                placeholder="1, 4, 9"
+                            />
+                        </label>
+                        <button
+                            className="rounded bg-blue-700 px-3 py-1 text-sm text-white"
+                            onClick={() => void send()}
+                        >
+                            Send
+                        </button>
+                        {msg && (
+                            <div className="text-sm text-slate-700">{msg}</div>
+                        )}
+                    </div>
                 </RoleGuard>
             </main>
         </>

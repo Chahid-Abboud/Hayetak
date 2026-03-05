@@ -47,12 +47,16 @@ class AiExportTrainingData extends Command
                 // Ensure arrays (your model likely casts json columns to array already,
                 // but handle strings safely too)
                 $ctx = $r->input_context_json;
-                if (is_string($ctx)) $ctx = json_decode($ctx, true);
+                if (is_string($ctx)) {
+                    $ctx = json_decode($ctx, true);
+                }
 
                 $outJson = $r->output_json;
-                if (is_string($outJson)) $outJson = json_decode($outJson, true);
+                if (is_string($outJson)) {
+                    $outJson = json_decode($outJson, true);
+                }
 
-                if (!is_array($ctx) || !is_array($outJson)) {
+                if (! is_array($ctx) || ! is_array($outJson)) {
                     continue;
                 }
 
@@ -65,17 +69,19 @@ class AiExportTrainingData extends Command
                 }
 
                 // Skip if nutrition_plan missing
-                if (!$target['nutrition_plan']) continue;
+                if (! $target['nutrition_plan']) {
+                    continue;
+                }
 
                 // Make a stable instruction prompt (this is what the model learns)
                 $example = [
-                    "schema" => "hayetak_plan_v1",
-                    "instruction" => "Generate a nutrition_plan (and workout_plan if requested) strictly as JSON that matches the schema.",
-                    "input_context" => $ctx,
-                    "target_json" => $target,
+                    'schema' => 'hayetak_plan_v1',
+                    'instruction' => 'Generate a nutrition_plan (and workout_plan if requested) strictly as JSON that matches the schema.',
+                    'input_context' => $ctx,
+                    'target_json' => $target,
                 ];
 
-                fwrite($fh, json_encode($example, JSON_UNESCAPED_UNICODE) . "\n");
+                fwrite($fh, json_encode($example, JSON_UNESCAPED_UNICODE)."\n");
                 $count++;
             }
         });
@@ -83,7 +89,8 @@ class AiExportTrainingData extends Command
         fclose($fh);
 
         $this->info("✅ Exported {$count} examples to: {$out}");
-        $this->line("Tip: start small: --limit=2000 then grow.");
+        $this->line('Tip: start small: --limit=2000 then grow.');
+
         return self::SUCCESS;
     }
 }

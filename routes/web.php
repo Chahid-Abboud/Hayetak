@@ -1,36 +1,33 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
-use App\Http\Controllers\Auth\RegisterWizardController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\WaterIntakeController;
-use App\Http\Controllers\PlacesController;
-use App\Http\Controllers\FoodController;
-use App\Http\Controllers\MealEntryController;
-use App\Http\Controllers\Workout\WorkoutPlanController;
-use App\Http\Controllers\Workout\WorkoutLogController;
-use App\Http\Controllers\PlacesLocalController;
-use App\Http\Controllers\Ai\PlanGenerationController;
 use App\Http\Controllers\Admin\AdminActionLogController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Ai\PlanGenerationController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Auth\RegisterWizardController;
 use App\Http\Controllers\Chat\ConversationController;
 use App\Http\Controllers\Chat\MessageController;
 use App\Http\Controllers\DietitianDiscoveryController;
+use App\Http\Controllers\FoodController;
+use App\Http\Controllers\FoodFavoriteController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MealEntryController;
+use App\Http\Controllers\MealTrackerApiController;
+use App\Http\Controllers\PlacesController;
+use App\Http\Controllers\PlacesLocalController;
 use App\Http\Controllers\Professional\AssignmentController;
 use App\Http\Controllers\Professional\NutritionistDietPlanController;
 use App\Http\Controllers\Professional\TrainerProgressNoteController;
 use App\Http\Controllers\Professional\TrainerWorkoutPlanController;
-use App\Http\Controllers\UserNotificationController;
-
-use App\Http\Controllers\MealTrackerApiController;
-use App\Http\Controllers\FoodFavoriteController;
-
-// ✅ ADD THIS
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\UserNotificationController;
+use App\Http\Controllers\WaterIntakeController;
+use App\Http\Controllers\Workout\WorkoutLogController;
+use App\Http\Controllers\Workout\WorkoutPlanController;
+use Illuminate\Support\Facades\Route;
+// ✅ ADD THIS
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,7 +51,7 @@ Route::middleware('guest')->group(function () {
 | Auth scaffolding (login/logout/two-factor)
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -203,7 +200,7 @@ Route::middleware('auth:sanctum')->post('/ai/generate-plans', [PlanGenerationCon
 | Settings routes (2FA setup page etc.)
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 /*
 |--------------------------------------------------------------------------

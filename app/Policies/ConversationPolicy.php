@@ -21,4 +21,3 @@ class ConversationPolicy
         return $this->view($user, $conversation);
     }
 }
-

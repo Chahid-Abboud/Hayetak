@@ -13,7 +13,7 @@ class TwoFactorRecoveryCodesMail extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param array<int, string> $codes
+     * @param  array<int, string>  $codes
      */
     public function __construct(
         public string $displayName,

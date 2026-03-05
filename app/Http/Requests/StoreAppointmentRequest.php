@@ -24,4 +24,3 @@ class StoreAppointmentRequest extends FormRequest
         ];
     }
 }
-

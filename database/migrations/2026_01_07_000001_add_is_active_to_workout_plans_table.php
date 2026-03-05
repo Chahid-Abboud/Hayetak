@@ -2,15 +2,15 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('workout_plans', function (Blueprint $table) {
-            if (!Schema::hasColumn('workout_plans', 'is_active')) {
+            if (! Schema::hasColumn('workout_plans', 'is_active')) {
                 $table->boolean('is_active')->default(false)->index();
             }
         });
@@ -36,11 +36,11 @@ return new class extends Migration
                 END $$;
             ");
         } elseif ($driver === 'sqlite') {
-            DB::statement("
+            DB::statement('
                 CREATE UNIQUE INDEX IF NOT EXISTS workout_plans_one_active_per_user
                 ON workout_plans (user_id)
                 WHERE is_active = 1
-            ");
+            ');
         }
     }
 

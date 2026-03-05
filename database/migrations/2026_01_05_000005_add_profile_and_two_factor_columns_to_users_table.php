@@ -12,77 +12,77 @@ return new class extends Migration
         // Assumes Laravel's default users table migration already ran (0001_01_01_000000_create_users_table.php).
         Schema::table('users', function (Blueprint $table) {
             // Fortify 2FA columns (add only if missing)
-            if (!Schema::hasColumn('users', 'two_factor_secret')) {
+            if (! Schema::hasColumn('users', 'two_factor_secret')) {
                 $table->text('two_factor_secret')->nullable();
             }
-            if (!Schema::hasColumn('users', 'two_factor_recovery_codes')) {
+            if (! Schema::hasColumn('users', 'two_factor_recovery_codes')) {
                 $table->text('two_factor_recovery_codes')->nullable();
             }
-            if (!Schema::hasColumn('users', 'two_factor_confirmed_at')) {
+            if (! Schema::hasColumn('users', 'two_factor_confirmed_at')) {
                 $table->timestampTz('two_factor_confirmed_at')->nullable();
             }
 
             // Profile fields
-            if (!Schema::hasColumn('users', 'first_name')) {
+            if (! Schema::hasColumn('users', 'first_name')) {
                 $table->string('first_name', 40)->nullable();
             }
-            if (!Schema::hasColumn('users', 'last_name')) {
+            if (! Schema::hasColumn('users', 'last_name')) {
                 $table->string('last_name', 40)->nullable();
             }
-            if (!Schema::hasColumn('users', 'username')) {
+            if (! Schema::hasColumn('users', 'username')) {
                 $table->string('username', 24)->nullable();
             }
-            if (!Schema::hasColumn('users', 'gender')) {
+            if (! Schema::hasColumn('users', 'gender')) {
                 $table->string('gender', 10)->nullable();
             }
-            if (!Schema::hasColumn('users', 'age')) {
+            if (! Schema::hasColumn('users', 'age')) {
                 $table->smallInteger('age')->nullable();
             }
-            if (!Schema::hasColumn('users', 'height_cm')) {
+            if (! Schema::hasColumn('users', 'height_cm')) {
                 $table->smallInteger('height_cm')->nullable();
             }
-            if (!Schema::hasColumn('users', 'weight_kg')) {
+            if (! Schema::hasColumn('users', 'weight_kg')) {
                 $table->decimal('weight_kg', 6, 2)->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'has_medical_history')) {
+            if (! Schema::hasColumn('users', 'has_medical_history')) {
                 $table->boolean('has_medical_history')->default(false);
             }
-            if (!Schema::hasColumn('users', 'medical_history')) {
+            if (! Schema::hasColumn('users', 'medical_history')) {
                 $table->text('medical_history')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'dietary_goal')) {
+            if (! Schema::hasColumn('users', 'dietary_goal')) {
                 $table->string('dietary_goal', 80)->nullable();
             }
-            if (!Schema::hasColumn('users', 'fitness_goal')) {
+            if (! Schema::hasColumn('users', 'fitness_goal')) {
                 $table->string('fitness_goal', 80)->nullable();
             }
-            if (!Schema::hasColumn('users', 'diet_name')) {
+            if (! Schema::hasColumn('users', 'diet_name')) {
                 $table->string('diet_name', 80)->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'allergies')) {
+            if (! Schema::hasColumn('users', 'allergies')) {
                 $table->json('allergies')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'activity_level')) {
+            if (! Schema::hasColumn('users', 'activity_level')) {
                 $table->string('activity_level', 24)->nullable();
             }
-            if (!Schema::hasColumn('users', 'workout_days_per_week')) {
+            if (! Schema::hasColumn('users', 'workout_days_per_week')) {
                 $table->smallInteger('workout_days_per_week')->nullable();
             }
-            if (!Schema::hasColumn('users', 'workout_location')) {
+            if (! Schema::hasColumn('users', 'workout_location')) {
                 $table->string('workout_location', 8)->nullable(); // home/gym
             }
 
-            if (!Schema::hasColumn('users', 'tried_diet_before')) {
+            if (! Schema::hasColumn('users', 'tried_diet_before')) {
                 $table->boolean('tried_diet_before')->nullable();
             }
-            if (!Schema::hasColumn('users', 'diet_failure_reasons')) {
+            if (! Schema::hasColumn('users', 'diet_failure_reasons')) {
                 $table->json('diet_failure_reasons')->nullable();
             }
-            if (!Schema::hasColumn('users', 'diet_failure_other')) {
+            if (! Schema::hasColumn('users', 'diet_failure_other')) {
                 $table->string('diet_failure_other', 120)->nullable();
             }
         });

@@ -18,13 +18,15 @@ class ImportExercisesFromJsonSeeder extends Seeder
 
             foreach ($items as $ex) {
                 // canonical_exercise_id must be bigint or null
-                if (!empty($ex['canonical_exercise_id']) && !is_numeric($ex['canonical_exercise_id'])) {
+                if (! empty($ex['canonical_exercise_id']) && ! is_numeric($ex['canonical_exercise_id'])) {
                     $ex['canonical_exercise_id'] = null;
                 }
 
                 // jsonb fields: keep arrays
-                foreach (['tags','conditions','secondary_muscles','equipment_list','joint_stress','cues','common_mistakes'] as $k) {
-                    if (!isset($ex[$k]) || $ex[$k] === '') $ex[$k] = [];
+                foreach (['tags', 'conditions', 'secondary_muscles', 'equipment_list', 'joint_stress', 'cues', 'common_mistakes'] as $k) {
+                    if (! isset($ex[$k]) || $ex[$k] === '') {
+                        $ex[$k] = [];
+                    }
                 }
 
                 DB::table('exercises')->insert([
@@ -40,7 +42,7 @@ class ImportExercisesFromJsonSeeder extends Seeder
                     'exercise_type' => $ex['exercise_type'] ?? null,
                     'mechanic' => $ex['mechanic'] ?? null,
                     'plane' => $ex['plane'] ?? null,
-                    'home_friendly' => (bool)($ex['home_friendly'] ?? false),
+                    'home_friendly' => (bool) ($ex['home_friendly'] ?? false),
                     'ai_summary' => $ex['ai_summary'] ?? null,
                     'canonical_exercise_id' => $ex['canonical_exercise_id'] ?? null,
 

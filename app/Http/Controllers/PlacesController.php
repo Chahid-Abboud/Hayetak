@@ -12,7 +12,7 @@ class PlacesController extends Controller
     public function index(Request $request, OverpassService $overpass)
     {
         // Throttle by IP to avoid hammering Overpass on pan/zoom
-        $key = 'overpass:' . $request->ip();
+        $key = 'overpass:'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 20)) { // 20 req/min
             return response()->json([
                 'message' => 'Too many requests. Slow down a bit.',
@@ -21,9 +21,9 @@ class PlacesController extends Controller
         RateLimiter::hit($key, 60); // decay (seconds)
 
         // Input
-        $lat    = (float) $request->query('lat', 33.8938);
-        $lng    = (float) $request->query('lng', 35.5018);
-        $radius = (int)   $request->query('radius', 1500);
+        $lat = (float) $request->query('lat', 33.8938);
+        $lng = (float) $request->query('lng', 35.5018);
+        $radius = (int) $request->query('radius', 1500);
 
         // Handle types - can be comma-separated string or array
         $typesRaw = $request->query('types', 'gym,nutritionist');
@@ -42,7 +42,7 @@ class PlacesController extends Controller
         $features = [];
         foreach ($elements as $el) {
             $coords = $this->extractCoords($el);
-            if (!$coords) {
+            if (! $coords) {
                 continue;
             }
 
@@ -60,7 +60,7 @@ class PlacesController extends Controller
 
             // fix address precedence
             $address = $tags['addr:full']
-                ?? (($tags['addr:housenumber'] ?? '') . ' ' . ($tags['addr:street'] ?? ''))
+                ?? (($tags['addr:housenumber'] ?? '').' '.($tags['addr:street'] ?? ''))
                 ?? '';
 
             $features[] = [
@@ -70,7 +70,7 @@ class PlacesController extends Controller
                     'coordinates' => $coords,
                 ],
                 'properties' => [
-                    'id' => ($el['type'] ?? 'node') . '#' . ($el['id'] ?? '0'),
+                    'id' => ($el['type'] ?? 'node').'#'.($el['id'] ?? '0'),
                     'name' => $name,
                     'category' => $category,
                     'address' => trim($address),
@@ -102,6 +102,7 @@ class PlacesController extends Controller
             if (isset($b['minlat'], $b['minlon'], $b['maxlat'], $b['maxlon'])) {
                 $lat = ($b['minlat'] + $b['maxlat']) / 2;
                 $lon = ($b['minlon'] + $b['maxlon']) / 2;
+
                 return [(float) $lon, (float) $lat];
             }
         }
@@ -121,6 +122,7 @@ class PlacesController extends Controller
         if (($n - $s) > 0.5 || ($e - $w) > 0.5) {
             abort(422, 'Bounding box too large—zoom in further');
         }
+
         return [$s, $w, $n, $e];
     }
 }

@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('workout_logs', function (Blueprint $table) {
@@ -16,7 +17,7 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id','workout_date']);
+            $table->index(['user_id', 'workout_date']);
         });
 
         Schema::create('workout_log_sets', function (Blueprint $table) {
@@ -28,7 +29,7 @@ return new class extends Migration {
             $table->unsignedTinyInteger('reps')->nullable();
             $table->timestamps();
 
-            $table->unique(['workout_log_id','set_number','exercise_id'], 'uniq_log_set');
+            $table->unique(['workout_log_id', 'set_number', 'exercise_id'], 'uniq_log_set');
         });
     }
 

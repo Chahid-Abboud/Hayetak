@@ -61,4 +61,3 @@ class AssignmentController extends Controller
         return response()->json(['ok' => true]);
     }
 }
-

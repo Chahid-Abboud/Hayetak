@@ -34,8 +34,8 @@ class AiRequest extends Model
 
     protected $casts = [
         'input_context_json' => 'array',
-        'output_json'        => 'array',
-        'meta'               => 'array',
+        'output_json' => 'array',
+        'meta' => 'array',
     ];
 
     public function user()

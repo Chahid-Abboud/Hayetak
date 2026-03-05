@@ -14,11 +14,14 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasFactory, MustVerifyEmail, Notifiable, TwoFactorAuthenticatable, SoftDeletes;
+    use HasFactory, MustVerifyEmail, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_NUTRITIONIST = 'nutritionist';
+
     public const ROLE_TRAINER = 'trainer';
+
     public const ROLE_CLIENT = 'client';
 
     /**
@@ -29,26 +32,26 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'name',
 
         // Basic profile
-        'first_name','last_name','username','gender','age','height_cm','weight_kg',
+        'first_name', 'last_name', 'username', 'gender', 'age', 'height_cm', 'weight_kg',
 
         // Medical
-        'has_medical_history','medical_history',
+        'has_medical_history', 'medical_history',
 
         // Goals / diet
-        'dietary_goal','fitness_goal','diet_name','allergies',
+        'dietary_goal', 'fitness_goal', 'diet_name', 'allergies',
 
         // Activity & Training
-        'activity_level','workout_days_per_week','workout_location',
+        'activity_level', 'workout_days_per_week', 'workout_location',
 
         // Diet experience
-        'tried_diet_before','diet_failure_reasons','diet_failure_other',
+        'tried_diet_before', 'diet_failure_reasons', 'diet_failure_other',
 
         // Auth
-        'email','password',
-        'role','verified','status',
+        'email', 'password',
+        'role', 'verified', 'status',
 
         // 2FA (Fortify)
-        'two_factor_secret','two_factor_recovery_codes',
+        'two_factor_secret', 'two_factor_recovery_codes',
         // 'two_factor_confirmed_at', // if you add the column
     ];
 
@@ -56,8 +59,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
      * Hidden for serialization.
      */
     protected $hidden = [
-        'password','remember_token',
-        'two_factor_secret','two_factor_recovery_codes',
+        'password', 'remember_token',
+        'two_factor_secret', 'two_factor_recovery_codes',
     ];
 
     /**
@@ -66,18 +69,18 @@ class User extends Authenticatable implements MustVerifyEmailContract
     protected function casts(): array
     {
         return [
-            'email_verified_at'     => 'datetime',
-            'password'              => 'hashed',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
 
-            'age'                   => 'integer',
-            'height_cm'             => 'integer',
-            'weight_kg'             => 'decimal:2',
-            'has_medical_history'   => 'boolean',
-            'allergies'             => 'array',
-            'diet_failure_reasons'  => 'array',
+            'age' => 'integer',
+            'height_cm' => 'integer',
+            'weight_kg' => 'decimal:2',
+            'has_medical_history' => 'boolean',
+            'allergies' => 'array',
+            'diet_failure_reasons' => 'array',
             'workout_days_per_week' => 'integer',
-            'tried_diet_before'     => 'boolean',
-            'verified'              => 'boolean',
+            'tried_diet_before' => 'boolean',
+            'verified' => 'boolean',
             // 'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -87,8 +90,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
      */
     protected $attributes = [
         'has_medical_history' => false,
-        'role'                => self::ROLE_CLIENT,
-        'verified'            => false,
+        'role' => self::ROLE_CLIENT,
+        'verified' => false,
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -111,6 +114,26 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function mealLogs(): HasMany
     {
         return $this->hasMany(MealLog::class, 'user_id');
+    }
+
+    public function aiPlans(): HasMany
+    {
+        return $this->hasMany(AiPlan::class, 'user_id');
+    }
+
+    public function aiConversations(): HasMany
+    {
+        return $this->hasMany(AiConversation::class, 'user_id');
+    }
+
+    public function aiMessages(): HasMany
+    {
+        return $this->hasMany(AiMessage::class, 'user_id');
+    }
+
+    public function aiUsageLogs(): HasMany
+    {
+        return $this->hasMany(AiUsageLog::class, 'user_id');
     }
 
     public function workoutLogs(): HasMany
@@ -229,17 +252,17 @@ class User extends Authenticatable implements MustVerifyEmailContract
     protected function syncFullNameFallback(): void
     {
         // If name already set explicitly, don't override it.
-        if (!empty($this->attributes['name'])) {
+        if (! empty($this->attributes['name'])) {
             return;
         }
 
         $first = trim((string) ($this->attributes['first_name'] ?? ''));
-        $last  = trim((string) ($this->attributes['last_name'] ?? ''));
-        $full  = trim($first.' '.$last);
+        $last = trim((string) ($this->attributes['last_name'] ?? ''));
+        $full = trim($first.' '.$last);
 
         if ($full !== '') {
             $this->attributes['name'] = $full;
-        } elseif (!empty($this->attributes['email'])) {
+        } elseif (! empty($this->attributes['email'])) {
             $this->attributes['name'] = strtok($this->attributes['email'], '@') ?: 'User';
         }
     }
@@ -249,8 +272,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function getDisplayNameAttribute(): string
     {
         $first = trim((string) ($this->first_name ?? ''));
-        $last  = trim((string) ($this->last_name ?? ''));
-        $full  = trim($first . ' ' . $last);
+        $last = trim((string) ($this->last_name ?? ''));
+        $full = trim($first.' '.$last);
 
         return $full !== '' ? $full : ($this->username ?? $this->name ?? $this->email ?? 'User');
     }
@@ -261,6 +284,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function scopeWhereLogin($query, string $login)
     {
         $login = strtolower(trim($login));
+
         return $query->where(function ($q) use ($login) {
             $q->where('username', $login)->orWhere('email', $login);
         });

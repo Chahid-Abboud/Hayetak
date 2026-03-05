@@ -48,4 +48,3 @@ class TrainerProgressNoteController extends Controller
         return response()->json(['ok' => true, 'progress_note' => $note], 201);
     }
 }
-

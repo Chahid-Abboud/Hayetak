@@ -32,7 +32,9 @@ export default function NotificationBell() {
     async function markRead(id: number) {
         await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
         setItems((prev) =>
-            prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
+            prev.map((n) =>
+                n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
+            ),
         );
     }
 
@@ -46,7 +48,7 @@ export default function NotificationBell() {
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="relative rounded-full px-3 py-1.5 text-sm font-medium transition bg-[color:var(--sidebar-foreground)]/12 text-[color:var(--sidebar-foreground)] hover:bg-[color:var(--sidebar-foreground)]/22"
+                className="relative rounded-full bg-[color:var(--sidebar-foreground)]/12 px-3 py-1.5 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-[color:var(--sidebar-foreground)]/22"
             >
                 Notifications
                 {unreadCount > 0 && (
@@ -58,20 +60,30 @@ export default function NotificationBell() {
 
             {open && (
                 <div className="absolute right-0 z-40 mt-2 w-80 rounded-xl border border-[color:var(--border)] bg-[color:var(--card)] p-3 text-[color:var(--card-foreground)] shadow-lg">
-                    <div className="mb-2 text-sm font-semibold">Notifications</div>
+                    <div className="mb-2 text-sm font-semibold">
+                        Notifications
+                    </div>
                     <div className="max-h-96 space-y-2 overflow-auto">
                         {items.length === 0 && (
-                            <div className="text-xs text-slate-500">No notifications</div>
+                            <div className="text-xs text-slate-500">
+                                No notifications
+                            </div>
                         )}
                         {items.map((item) => (
                             <div key={item.id} className="rounded border p-2">
-                                <div className="text-sm font-medium">{item.title}</div>
-                                <div className="mt-1 text-xs text-slate-600">{item.body}</div>
+                                <div className="text-sm font-medium">
+                                    {item.title}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-600">
+                                    {item.body}
+                                </div>
                                 <div className="mt-2 flex gap-2">
                                     {!item.read_at && (
                                         <button
                                             type="button"
-                                            onClick={() => void markRead(item.id)}
+                                            onClick={() =>
+                                                void markRead(item.id)
+                                            }
                                             className="text-xs text-blue-700 underline"
                                         >
                                             Mark read

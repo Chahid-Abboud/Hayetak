@@ -1,4 +1,5 @@
 <?php
+
 /**
  * routes/settings.php
  *

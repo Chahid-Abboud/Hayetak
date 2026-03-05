@@ -281,10 +281,12 @@ class PlacesLocalController extends Controller
         $value = $meta[$key] ?? null;
         if (is_array($value)) {
             $items = array_map(fn ($item): ?string => $this->nullableTrim($item), $value);
+
             return array_values(array_filter($items, fn (?string $v): bool => $v !== null));
         }
         if (is_string($value)) {
             $single = $this->nullableTrim($value);
+
             return $single === null ? [] : [$single];
         }
 
@@ -298,6 +300,7 @@ class PlacesLocalController extends Controller
         }
 
         $trimmed = trim($value);
+
         return $trimmed === '' ? null : $trimmed;
     }
 
@@ -318,6 +321,7 @@ class PlacesLocalController extends Controller
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
             sin($dLon / 2) * sin($dLon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
         return $earth * $c;
     }
 }

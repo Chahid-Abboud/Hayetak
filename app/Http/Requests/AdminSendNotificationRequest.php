@@ -21,4 +21,3 @@ class AdminSendNotificationRequest extends FormRequest
         ];
     }
 }
-

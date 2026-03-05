@@ -10,16 +10,19 @@ class ImportFoodsFromCsvSeeder extends Seeder
     private function enumArraySql(array $values, string $enumType): string
     {
         $values = array_values(array_unique(array_filter($values)));
-        if (count($values) === 0) $values = ['snack'];
+        if (count($values) === 0) {
+            $values = ['snack'];
+        }
 
-        $escaped = array_map(fn ($v) => "'" . str_replace("'", "''", $v) . "'", $values);
-        return "ARRAY[" . implode(",", $escaped) . "]::{$enumType}[]";
+        $escaped = array_map(fn ($v) => "'".str_replace("'", "''", $v)."'", $values);
+
+        return 'ARRAY['.implode(',', $escaped)."]::{$enumType}[]";
     }
 
     public function run(): void
     {
         $path = base_path('database/seeders/data/foods_clean_for_db_v2.csv');
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             throw new \RuntimeException("Missing file: {$path}");
         }
 
@@ -33,7 +36,7 @@ class ImportFoodsFromCsvSeeder extends Seeder
 
                 // meal_types is stored in CSV as JSON array (string)
                 $mealTypes = json_decode($data['meal_types'] ?? '[]', true);
-                if (!is_array($mealTypes) || count($mealTypes) === 0) {
+                if (! is_array($mealTypes) || count($mealTypes) === 0) {
                     $mealTypes = ['snack'];
                 }
                 $mealTypesSql = $this->enumArraySql($mealTypes, 'mealtypeenum');
@@ -45,7 +48,7 @@ class ImportFoodsFromCsvSeeder extends Seeder
                 $ingredientsArr = json_decode($data['ingredients'] ?? '[]', true) ?: [];
 
                 DB::table('foods')->insert([
-                    'id' => (int)$data['id'],
+                    'id' => (int) $data['id'],
                     'name' => $data['name'],
                     'brand' => $data['brand'] ?: null,
                     'nationality' => $data['nationality'] ?: null,
@@ -53,14 +56,14 @@ class ImportFoodsFromCsvSeeder extends Seeder
                     'category' => $data['category'] ?: null,
                     'serving_size' => $data['serving_size'] !== '' ? $data['serving_size'] : null,
                     'serving_unit' => $data['serving_unit'] ?: null,
-                    'calories' => $data['calories'] !== '' ? (int)$data['calories'] : null,
+                    'calories' => $data['calories'] !== '' ? (int) $data['calories'] : null,
                     'protein_g' => $data['protein_g'] !== '' ? $data['protein_g'] : null,
                     'carbs_g' => $data['carbs_g'] !== '' ? $data['carbs_g'] : null,
                     'fat_g' => $data['fat_g'] !== '' ? $data['fat_g'] : null,
                     'fiber_g' => $data['fiber_g'] !== '' ? $data['fiber_g'] : null,
                     'sugar_g' => $data['sugar_g'] !== '' ? $data['sugar_g'] : null,
-                    'sodium_mg' => $data['sodium_mg'] !== '' ? (int)$data['sodium_mg'] : null,
-                    'cholesterol_mg' => $data['cholesterol_mg'] !== '' ? (int)$data['cholesterol_mg'] : null,
+                    'sodium_mg' => $data['sodium_mg'] !== '' ? (int) $data['sodium_mg'] : null,
+                    'cholesterol_mg' => $data['cholesterol_mg'] !== '' ? (int) $data['cholesterol_mg'] : null,
 
                     // ✅ jsonb must be JSON strings (not PHP arrays)
                     'tags' => $tagsArr === null ? null : json_encode($tagsArr),

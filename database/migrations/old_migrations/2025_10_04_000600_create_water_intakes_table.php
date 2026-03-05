@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('water_intakes', function (Blueprint $table) {
@@ -14,7 +15,7 @@ return new class extends Migration {
             $table->unsignedInteger('ml'); // single addition
             $table->timestamps();
 
-            $table->index(['user_id','for_day']);
+            $table->index(['user_id', 'for_day']);
         });
     }
 

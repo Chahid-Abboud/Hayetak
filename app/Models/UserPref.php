@@ -31,22 +31,25 @@ class UserPref extends Model
     ];
 
     protected $casts = [
-        'is_public'            => 'boolean',
-        'bmr_kcal'             => 'integer',
-        'tdee_kcal'            => 'integer',
-        'activity_factor'      => 'decimal:2',
+        'is_public' => 'boolean',
+        'bmr_kcal' => 'integer',
+        'tdee_kcal' => 'integer',
+        'activity_factor' => 'decimal:2',
 
-        'daily_goal_calories'  => 'integer',
+        'daily_goal_calories' => 'integer',
         'daily_goal_protein_g' => 'decimal:1',
-        'daily_goal_carbs_g'   => 'decimal:1',
-        'daily_goal_fat_g'     => 'decimal:1',
+        'daily_goal_carbs_g' => 'decimal:1',
+        'daily_goal_fat_g' => 'decimal:1',
 
-        'water_cups_per_day'   => 'integer',
-        'workout_days_target'  => 'integer',
+        'water_cups_per_day' => 'integer',
+        'workout_days_target' => 'integer',
 
-        'notifications'        => 'array',
-        'settings'             => 'array',
+        'notifications' => 'array',
+        'settings' => 'array',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

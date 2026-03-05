@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WaterIntake;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\WaterIntake;
 
 class WaterIntakeController extends Controller
 {
@@ -20,7 +20,7 @@ class WaterIntakeController extends Controller
                 'for_day' => today()->toDateString(), // <— was 'day'
             ],
             [
-                'ml'       => 0,
+                'ml' => 0,
                 'drank_at' => now(), // keep a timestamp of the latest change
             ]
         );

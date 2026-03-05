@@ -69,4 +69,3 @@ class PlacesLocalSeeder extends Seeder
         }
     }
 }
-

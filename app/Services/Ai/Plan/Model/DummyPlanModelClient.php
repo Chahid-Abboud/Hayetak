@@ -12,12 +12,12 @@ class DummyPlanModelClient
      */
     public function generate(array $input): array
     {
-        $days = max(1, (int)($input['days'] ?? 1));
+        $days = max(1, (int) ($input['days'] ?? 1));
         $allowedFoodIds = $input['allowed_food_ids'] ?? [];
         $allowedExerciseIds = $input['allowed_exercise_ids'] ?? [];
 
         $foodId = $allowedFoodIds[0] ?? null;
-        if (!$foodId) {
+        if (! $foodId) {
             throw new \RuntimeException('DummyPlanModelClient: no allowed_food_ids provided.');
         }
 

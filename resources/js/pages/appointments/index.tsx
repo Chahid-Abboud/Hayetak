@@ -1,6 +1,6 @@
 import NavHeader from '@/components/NavHeader';
-import { Head, usePage } from '@inertiajs/react';
 import { type SharedData } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 type Appointment = {
@@ -46,31 +46,53 @@ export default function AppointmentsPage() {
                     {items.map((a) => (
                         <div key={a.id} className="rounded border p-3 text-sm">
                             <div className="font-medium">
-                                {a.professional_role} | {new Date(a.scheduled_at).toLocaleString()}
+                                {a.professional_role} |{' '}
+                                {new Date(a.scheduled_at).toLocaleString()}
                             </div>
                             <div className="text-xs text-slate-600">
-                                Client: {a.client?.name ?? '-'} | Professional: {a.professional?.name ?? '-'}
+                                Client: {a.client?.name ?? '-'} | Professional:{' '}
+                                {a.professional?.name ?? '-'}
                             </div>
                             <div className="mt-1">Status: {a.status}</div>
-                            {(auth.user.role === 'nutritionist' || auth.user.role === 'trainer' || auth.user.role === 'admin') && (
+                            {(auth.user.role === 'nutritionist' ||
+                                auth.user.role === 'trainer' ||
+                                auth.user.role === 'admin') && (
                                 <div className="mt-2 flex gap-2">
-                                    <button className="text-xs text-blue-700 underline" onClick={() => void updateStatus(a.id, 'accepted')}>
+                                    <button
+                                        className="text-xs text-blue-700 underline"
+                                        onClick={() =>
+                                            void updateStatus(a.id, 'accepted')
+                                        }
+                                    >
                                         Accept
                                     </button>
-                                    <button className="text-xs text-slate-700 underline" onClick={() => void updateStatus(a.id, 'declined')}>
+                                    <button
+                                        className="text-xs text-slate-700 underline"
+                                        onClick={() =>
+                                            void updateStatus(a.id, 'declined')
+                                        }
+                                    >
                                         Decline
                                     </button>
-                                    <button className="text-xs text-green-700 underline" onClick={() => void updateStatus(a.id, 'completed')}>
+                                    <button
+                                        className="text-xs text-green-700 underline"
+                                        onClick={() =>
+                                            void updateStatus(a.id, 'completed')
+                                        }
+                                    >
                                         Complete
                                     </button>
                                 </div>
                             )}
                         </div>
                     ))}
-                    {items.length === 0 && <div className="text-sm text-slate-500">No appointments.</div>}
+                    {items.length === 0 && (
+                        <div className="text-sm text-slate-500">
+                            No appointments.
+                        </div>
+                    )}
                 </div>
             </main>
         </>
     );
 }
-

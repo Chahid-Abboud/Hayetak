@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Workout;
 
 use App\Http\Controllers\Controller;
@@ -20,12 +21,12 @@ class WorkoutLogController extends Controller
 
         // Load plan (days + exercises ordered)
         $plan = WorkoutPlan::with([
-            'days.exercises' => fn($q) => $q->orderBy('primary_muscle')->orderBy('name'),
-            'days'           => fn($q) => $q->orderBy('day_index'),
+            'days.exercises' => fn ($q) => $q->orderBy('primary_muscle')->orderBy('name'),
+            'days' => fn ($q) => $q->orderBy('day_index'),
         ])->where('user_id', $userId)->first();
 
-        $today      = Carbon::today();
-        $weekday    = (int) $today->isoWeekday(); // 1..7
+        $today = Carbon::today();
+        $weekday = (int) $today->isoWeekday(); // 1..7
         $currentDay = optional($plan?->days->firstWhere('day_index', $weekday)) ?: $plan?->days->first();
 
         // Recent logs (order by performed_at), with sets for the UI
@@ -39,34 +40,34 @@ class WorkoutLogController extends Controller
             ->map(function ($l) {
                 $sets = $l->sets->map(function ($s) {
                     return [
-                        'id'         => (int) $s->id,
-                        'exercise'   => $s->exercise ? ['id' => (int) $s->exercise->id, 'name' => $s->exercise->name] : null,
-                        'weight_kg'  => $s->weight_kg,
-                        'reps'       => (int) $s->reps,
+                        'id' => (int) $s->id,
+                        'exercise' => $s->exercise ? ['id' => (int) $s->exercise->id, 'name' => $s->exercise->name] : null,
+                        'weight_kg' => $s->weight_kg,
+                        'reps' => (int) $s->reps,
                         'set_number' => (int) $s->order_index + 1, // 1-based for frontend
                     ];
                 })->sortBy('order_index')->values()->all();
 
                 return [
-                    'id'                   => (int) $l->id,
-                    'workout_date'         => $l->performed_at,
-                    'workout_plan_day_id'  => $l->workout_plan_day_id,
-                    'sets'                 => $sets,
+                    'id' => (int) $l->id,
+                    'workout_date' => $l->performed_at,
+                    'workout_plan_day_id' => $l->workout_plan_day_id,
+                    'sets' => $sets,
                 ];
             });
 
         // Exercise library (for freestyle picker)
         $exercises = Exercise::orderBy('primary_muscle')
             ->orderBy('name')
-            ->get(['id','name','primary_muscle','equipment','demo_url']);
+            ->get(['id', 'name', 'primary_muscle', 'equipment', 'demo_url']);
 
         return Inertia::render('workouts/log', [
-            'plan'        => $plan,
-            'currentDay'  => $currentDay,
-            'today'       => $today->toDateString(),
-            'recentLogs'  => $recentLogs,
-            'exercises'   => $exercises,
-            'flash'       => ['activeLogId' => session('activeLogId')],
+            'plan' => $plan,
+            'currentDay' => $currentDay,
+            'today' => $today->toDateString(),
+            'recentLogs' => $recentLogs,
+            'exercises' => $exercises,
+            'flash' => ['activeLogId' => session('activeLogId')],
         ]);
     }
 
@@ -74,16 +75,16 @@ class WorkoutLogController extends Controller
     {
         // Accept either performed_at or legacy workout_date
         $data = $request->validate([
-            'performed_at'        => ['nullable', 'date'],
-            'workout_date'        => ['nullable', 'date'], // legacy field from UI
+            'performed_at' => ['nullable', 'date'],
+            'workout_date' => ['nullable', 'date'], // legacy field from UI
             'workout_plan_day_id' => ['nullable', 'integer', 'exists:workout_plan_days,id'],
         ]);
 
         $when = $data['performed_at'] ?? $data['workout_date'] ?? now()->toDateString();
 
         $log = WorkoutLog::create([
-            'user_id'             => Auth::id(),
-            'performed_at'        => Carbon::parse($when),
+            'user_id' => Auth::id(),
+            'performed_at' => Carbon::parse($when),
             'workout_plan_day_id' => $data['workout_plan_day_id'] ?? null,
         ]);
 
@@ -96,9 +97,9 @@ class WorkoutLogController extends Controller
 
         $data = $request->validate([
             'exercise_id' => ['required', 'integer', 'exists:exercises,id'],
-            'set_number'  => ['required', 'integer', 'min:1', 'max:20'],
-            'weight_kg'   => ['nullable', 'numeric', 'min:0', 'max:999'],
-            'reps'        => ['required', 'integer', 'min:1', 'max:50'],
+            'set_number' => ['required', 'integer', 'min:1', 'max:20'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:999'],
+            'reps' => ['required', 'integer', 'min:1', 'max:50'],
         ]);
 
         // DB uses order_index (0-based); frontend sends set_number (1-based)
@@ -107,12 +108,12 @@ class WorkoutLogController extends Controller
         WorkoutLogSet::updateOrCreate(
             [
                 'workout_log_id' => $log->id,
-                'exercise_id'    => $data['exercise_id'],
-                'order_index'    => $orderIndex,
+                'exercise_id' => $data['exercise_id'],
+                'order_index' => $orderIndex,
             ],
             [
                 'weight_kg' => $data['weight_kg'],
-                'reps'      => $data['reps'],
+                'reps' => $data['reps'],
             ]
         );
 
@@ -125,7 +126,7 @@ class WorkoutLogController extends Controller
 
         $data = $request->validate([
             'duration_min' => ['nullable', 'integer', 'min:1', 'max:600'],
-            'notes'        => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $log->update($data);
@@ -136,7 +137,7 @@ class WorkoutLogController extends Controller
     public function progress(Request $request)
     {
         $userId = Auth::id();
-        $weeks  = (int) ($request->get('weeks', 8));
+        $weeks = (int) ($request->get('weeks', 8));
 
         // Postgres: roll up by ISO week using date_trunc('week', performed_at)
         $rows = DB::table('workout_log_sets as s')
@@ -156,7 +157,7 @@ class WorkoutLogController extends Controller
         // Build series keyed by ISO week (YYYY-Www)
         $byWeek = [];
         foreach ($rows as $r) {
-            $dt      = Carbon::parse($r->week_start);
+            $dt = Carbon::parse($r->week_start);
             $weekKey = sprintf('%d-W%02d', $dt->isoWeekYear, $dt->isoWeek);
 
             $byWeek[$weekKey] ??= [];
@@ -186,9 +187,10 @@ class WorkoutLogController extends Controller
         $last = end($series);
         $prev = prev($series);
 
-        $muscles = ['chest','back','shoulders','legs','glutes','biceps','triceps','core','calves'];
+        $muscles = ['chest', 'back', 'shoulders', 'legs', 'glutes', 'biceps', 'triceps', 'core', 'calves'];
         $lines = [];
-        $best = null; $bestDelta = 0.0;
+        $best = null;
+        $bestDelta = 0.0;
 
         foreach ($muscles as $m) {
             $a = $last[$m] ?? null;
@@ -197,9 +199,12 @@ class WorkoutLogController extends Controller
                 $delta = round($a - $b, 1);
                 if ($delta > 0) {
                     $lines[] = "↑ **{$m}** improved by **{$delta} kg** week-over-week.";
-                    if ($delta > $bestDelta) { $bestDelta = $delta; $best = $m; }
+                    if ($delta > $bestDelta) {
+                        $bestDelta = $delta;
+                        $best = $m;
+                    }
                 } elseif ($delta < 0) {
-                    $lines[] = "↔ **{$m}** dipped **".abs($delta)." kg** — deloads happen, bounce back!";
+                    $lines[] = "↔ **{$m}** dipped **".abs($delta).' kg** — deloads happen, bounce back!';
                 } else {
                     $lines[] = "→ **{$m}** held steady — consistency wins.";
                 }
@@ -208,7 +213,7 @@ class WorkoutLogController extends Controller
 
         $title = $best
             ? "Crushing it! Biggest gain in **{$best}** (+{$bestDelta} kg)"
-            : "Solid consistency — keep stacking sets!";
+            : 'Solid consistency — keep stacking sets!';
 
         return ['title' => $title, 'lines' => $lines ?: ['Keep pushing — your future self will thank you.']];
     }

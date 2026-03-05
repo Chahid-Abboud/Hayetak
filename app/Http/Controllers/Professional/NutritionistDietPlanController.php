@@ -59,4 +59,3 @@ class NutritionistDietPlanController extends Controller
         return response()->json(['ok' => true, 'diet_plan' => $dietPlan]);
     }
 }
-

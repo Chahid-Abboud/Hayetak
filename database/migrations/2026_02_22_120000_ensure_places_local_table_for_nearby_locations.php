@@ -38,4 +38,3 @@ return new class extends Migration
         // Intentionally no-op to avoid destructive data loss on rollback.
     }
 };
-

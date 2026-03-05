@@ -36,4 +36,3 @@ class DietPlan extends Model
         return $this->belongsTo(User::class, 'nutritionist_id');
     }
 }
-

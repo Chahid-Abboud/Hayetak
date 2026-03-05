@@ -1,7 +1,7 @@
 declare global {
-  interface Window {
-    MAPBOX_TOKEN?: string;
-  }
+    interface Window {
+        MAPBOX_TOKEN?: string;
+    }
 }
 
 export {};

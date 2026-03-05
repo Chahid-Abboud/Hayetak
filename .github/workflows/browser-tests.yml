@@ -44,9 +44,8 @@ jobs:
 
       - name: Add `laravel-labs/starter-kit-browser-tests` Repository
         run: |
-          composer config repositories.browser-tests '{"type": "vcs", "url": "https://github.com/laravel-labs/starter-kit-browser-tests"}' --file composer.json
-          composer remove "phpunit/phpunit" --dev --no-update
-          composer require "laravel-labs/starter-kit-browser-tests:dev-main@dev" --dev --no-update
+          composer config repositories.browser-tests vcs https://github.com/laravel-labs/starter-kit-browser-tests --file composer.json
+          composer require "laravel-labs/starter-kit-browser-tests:dev-main@dev" --dev --no-interaction --no-progress --prefer-dist --no-scripts
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader

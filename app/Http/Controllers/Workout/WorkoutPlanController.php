@@ -27,7 +27,7 @@ class WorkoutPlanController extends Controller
                 $q->select([
                     'exercises.id',
                     'exercises.name',
-                    DB::raw("exercises.primary_muscle as primary_muscle"),
+                    DB::raw('exercises.primary_muscle as primary_muscle'),
                     'exercises.equipment',
                     'exercises.demo_video as demo_url',
                 ]);
@@ -36,17 +36,17 @@ class WorkoutPlanController extends Controller
                     $q->orderBy('exercises.name');
                 } else {
                     $q->orderBy('exercises.primary_muscle')
-                      ->orderBy('exercises.name');
+                        ->orderBy('exercises.name');
                 }
             },
         ])->where('user_id', $userId)->first();
 
         // Fetch exercise library
         $exercises = Exercise::select(
-                'id', 'name',
-                DB::raw("primary_muscle as primary_muscle"),
-                'equipment', 'demo_video', 'conditions'
-            )
+            'id', 'name',
+            DB::raw('primary_muscle as primary_muscle'),
+            'equipment', 'demo_video', 'conditions'
+        )
             ->orderBy('primary_muscle')
             ->orderBy('name')
             ->get()
@@ -54,13 +54,14 @@ class WorkoutPlanController extends Controller
                 $e->demo_url = $e->demo_video ?: null;
                 unset($e->demo_video);
                 $e->conditions = is_array($e->conditions) ? $e->conditions : [];
+
                 return $e;
             });
 
         return Inertia::render('workouts/planner', [
-            'plan'      => $plan,
+            'plan' => $plan,
             'exercises' => $exercises,
-            'sort'      => $sort,
+            'sort' => $sort,
         ]);
     }
 
@@ -71,18 +72,18 @@ class WorkoutPlanController extends Controller
     {
         // Validate incoming request
         $data = $request->validate([
-            'name'           => ['nullable','string','max:100'],
-            'days'           => ['required','array'],
-            'days.*.day_index'      => ['required','integer','min:1','max:7'],
-            'days.*.title'          => ['nullable','string','max:100'],
-            'days.*.exercises'      => ['array'],
-            'days.*.exercises.*.exercise_id' => ['required','integer','exists:exercises,id'],
-            'days.*.exercises.*.target_sets' => ['required','integer'],
-            'days.*.exercises.*.target_reps' => ['required','integer'],
+            'name' => ['nullable', 'string', 'max:100'],
+            'days' => ['required', 'array'],
+            'days.*.day_index' => ['required', 'integer', 'min:1', 'max:7'],
+            'days.*.title' => ['nullable', 'string', 'max:100'],
+            'days.*.exercises' => ['array'],
+            'days.*.exercises.*.exercise_id' => ['required', 'integer', 'exists:exercises,id'],
+            'days.*.exercises.*.target_sets' => ['required', 'integer'],
+            'days.*.exercises.*.target_reps' => ['required', 'integer'],
         ]);
 
         $days = array_values($data['days']);
-        usort($days, fn($a, $b) => $a['day_index'] <=> $b['day_index']);
+        usort($days, fn ($a, $b) => $a['day_index'] <=> $b['day_index']);
 
         DB::transaction(function () use ($data, $days) {
             // Create or update the workout plan
@@ -104,21 +105,21 @@ class WorkoutPlanController extends Controller
             foreach ($days as $d) {
                 $day = $plan->days()->create([
                     'day_index' => (int) $d['day_index'],
-                    'title'     => $d['title'] ?? null,
+                    'title' => $d['title'] ?? null,
                 ]);
 
-                if (!empty($d['exercises'])) {
+                if (! empty($d['exercises'])) {
                     $attach = [];
                     foreach ($d['exercises'] as $order => $ex) {
-                        $attach[(int)$ex['exercise_id']] = [
-                            'order_index'  => $order,
-                            'sets'         => (int)$ex['target_sets'],
-                            'reps_min'     => (int)$ex['target_reps'],
-                            'reps_max'     => (int)$ex['target_reps'],
+                        $attach[(int) $ex['exercise_id']] = [
+                            'order_index' => $order,
+                            'sets' => (int) $ex['target_sets'],
+                            'reps_min' => (int) $ex['target_reps'],
+                            'reps_max' => (int) $ex['target_reps'],
                             'rest_seconds' => 60,
-                            'rpe_target'   => 0,
-                            'rir_target'   => 0,
-                            'notes'        => null,
+                            'rpe_target' => 0,
+                            'rir_target' => 0,
+                            'notes' => null,
                         ];
                     }
                     $day->exercises()->attach($attach);
