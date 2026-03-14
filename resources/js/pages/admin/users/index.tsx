@@ -33,9 +33,9 @@ export default function AdminUsersIndex() {
                     <h1 className="mb-4 text-2xl font-semibold">
                         Admin Console: Users
                     </h1>
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
                         <table className="min-w-full text-sm">
-                            <thead className="bg-slate-50 text-left">
+                            <thead className="bg-muted/40 text-left text-foreground">
                                 <tr>
                                     <th className="px-3 py-2">Name</th>
                                     <th className="px-3 py-2">Email</th>
@@ -64,7 +64,7 @@ export default function AdminUsersIndex() {
                                         <td className="px-3 py-2">
                                             <Link
                                                 href={`/admin/users/${u.id}`}
-                                                className="text-blue-700 underline"
+                                                className="font-medium text-primary underline"
                                             >
                                                 View
                                             </Link>
@@ -74,7 +74,7 @@ export default function AdminUsersIndex() {
                                 {users.length === 0 && (
                                     <tr>
                                         <td
-                                            className="px-3 py-6 text-slate-500"
+                                            className="px-3 py-6 text-muted-foreground"
                                             colSpan={6}
                                         >
                                             No users found.

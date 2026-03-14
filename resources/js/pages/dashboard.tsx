@@ -13,6 +13,9 @@ type AuthUser = {
     last_name?: string | null;
     username?: string | null;
     email: string;
+    role?: string | null;
+    verified?: boolean;
+    status?: string | null;
 } | null;
 
 type UserProfile = {
@@ -161,6 +164,24 @@ type HomeProps = {
     workoutPlan?: WorkoutPlanLite | null;
 };
 
+type AdminListItem = {
+    id: number;
+    email?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    action?: string;
+    role?: string;
+    review_status?: string;
+    target_type?: string | null;
+    created_at?: string;
+    user?: {
+        id: number;
+        email?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+    };
+};
+
 const FOCUS_RING =
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
@@ -269,6 +290,7 @@ export default function Home() {
         auth?.user?.username ||
         auth?.user?.name ||
         (isGuest ? 'guest' : 'there');
+    const userRole = auth?.user?.role ?? 'client';
 
     // --- BMI input coercion from DB/user profile ---
     const profileSafe = useMemo(() => {
@@ -346,6 +368,16 @@ export default function Home() {
             },
         );
     };
+
+    if (userRole === 'admin') {
+        return (
+            <>
+                <Head title="Admin Dashboard" />
+                <NavHeader />
+                <AdminDashboard />
+            </>
+        );
+    }
 
     return (
         <>
@@ -616,6 +648,274 @@ export default function Home() {
                 </CardSection>
             </main>
         </>
+    );
+}
+
+function AdminDashboard() {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [stats, setStats] = useState({
+        users: 0,
+        professionals: 0,
+        pendingVerifications: 0,
+        logs: 0,
+    });
+    const [recentUsers, setRecentUsers] = useState<AdminListItem[]>([]);
+    const [pendingVerifications, setPendingVerifications] = useState<
+        AdminListItem[]
+    >([]);
+    const [recentLogs, setRecentLogs] = useState<AdminListItem[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        void (async () => {
+            setLoading(true);
+            setError(null);
+
+            try {
+                const [
+                    usersResponse,
+                    trainerResponse,
+                    nutritionistResponse,
+                    pendingResponse,
+                    logsResponse,
+                ] = await Promise.all([
+                    fetch('/api/admin/users?per_page=5'),
+                    fetch('/api/admin/professionals?role=trainer&per_page=1'),
+                    fetch('/api/admin/professionals?role=nutritionist&per_page=1'),
+                    fetch(
+                        '/api/admin/professional-verifications?status=pending&per_page=5',
+                    ),
+                    fetch('/api/admin/action-logs?per_page=5'),
+                ]);
+
+                if (
+                    !usersResponse.ok ||
+                    !trainerResponse.ok ||
+                    !nutritionistResponse.ok ||
+                    !pendingResponse.ok ||
+                    !logsResponse.ok
+                ) {
+                    throw new Error('Could not load the admin overview.');
+                }
+
+                const [usersJson, trainerJson, nutritionistJson, pendingJson, logsJson] =
+                    await Promise.all([
+                        usersResponse.json(),
+                        trainerResponse.json(),
+                        nutritionistResponse.json(),
+                        pendingResponse.json(),
+                        logsResponse.json(),
+                    ]);
+
+                if (cancelled) {
+                    return;
+                }
+
+                setStats({
+                    users: Number(usersJson?.total ?? 0),
+                    professionals:
+                        Number(trainerJson?.total ?? 0) +
+                        Number(nutritionistJson?.total ?? 0),
+                    pendingVerifications: Number(pendingJson?.total ?? 0),
+                    logs: Number(logsJson?.total ?? 0),
+                });
+                setRecentUsers(Array.isArray(usersJson?.data) ? usersJson.data : []);
+                setPendingVerifications(
+                    Array.isArray(pendingJson?.data) ? pendingJson.data : [],
+                );
+                setRecentLogs(Array.isArray(logsJson?.data) ? logsJson.data : []);
+            } catch (loadError) {
+                if (!cancelled) {
+                    setError(
+                        loadError instanceof Error
+                            ? loadError.message
+                            : 'Could not load the admin overview.',
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    return (
+        <main className="mx-auto max-w-6xl space-y-8 px-6 py-8">
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        Admin Dashboard
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Quick access to user management, verifications, content,
+                        and recent system activity.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <ActionButton
+                        variant="primary"
+                        onClick={() => router.visit('/admin/users')}
+                    >
+                        Manage Users
+                    </ActionButton>
+                    <ActionButton
+                        variant="secondary"
+                        onClick={() =>
+                            router.visit('/admin/professional-verifications')
+                        }
+                    >
+                        Review Verifications
+                    </ActionButton>
+                </div>
+            </header>
+
+            {error ? (
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground">
+                    {error}
+                </div>
+            ) : null}
+
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <AdminStatCard
+                    label="Users"
+                    value={loading ? '...' : String(stats.users)}
+                    href="/admin/users"
+                />
+                <AdminStatCard
+                    label="Professionals"
+                    value={loading ? '...' : String(stats.professionals)}
+                    href="/admin/professionals"
+                />
+                <AdminStatCard
+                    label="Pending Verifications"
+                    value={loading ? '...' : String(stats.pendingVerifications)}
+                    href="/admin/professional-verifications"
+                />
+                <AdminStatCard
+                    label="Admin Logs"
+                    value={loading ? '...' : String(stats.logs)}
+                    href="/admin/logs"
+                />
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-3">
+                <AdminListCard
+                    title="Recent Users"
+                    href="/admin/users"
+                    emptyText="No users loaded."
+                    items={recentUsers.map((user) => ({
+                        id: user.id,
+                        title:
+                            [user.first_name, user.last_name]
+                                .filter(Boolean)
+                                .join(' ') || user.email || 'User',
+                        subtitle: `${user.role ?? 'user'} - ${user.email ?? ''}`,
+                    }))}
+                />
+                <AdminListCard
+                    title="Pending Verifications"
+                    href="/admin/professional-verifications"
+                    emptyText="No pending verification requests."
+                    items={pendingVerifications.map((verification) => ({
+                        id: verification.id,
+                        title:
+                            [
+                                verification.user?.first_name,
+                                verification.user?.last_name,
+                            ]
+                                .filter(Boolean)
+                                .join(' ') ||
+                            verification.user?.email ||
+                            'Professional',
+                        subtitle: `${verification.role ?? 'professional'} - ${verification.review_status ?? 'pending'}`,
+                    }))}
+                />
+                <AdminListCard
+                    title="Recent Admin Actions"
+                    href="/admin/logs"
+                    emptyText="No admin actions recorded yet."
+                    items={recentLogs.map((log) => ({
+                        id: log.id,
+                        title: log.action ?? 'Action',
+                        subtitle: log.target_type
+                            ? `Target: ${log.target_type}`
+                            : 'No target',
+                    }))}
+                />
+            </section>
+        </main>
+    );
+}
+
+function AdminStatCard({
+    label,
+    value,
+    href,
+}: {
+    label: string;
+    value: string;
+    href: string;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={() => router.visit(href)}
+            className="rounded-2xl border bg-card p-5 text-left shadow-sm transition hover:border-[color:var(--primary)]/40 hover:bg-muted/30"
+        >
+            <div className="text-sm font-medium text-muted-foreground">
+                {label}
+            </div>
+            <div className="mt-3 text-3xl font-semibold">{value}</div>
+        </button>
+    );
+}
+
+function AdminListCard({
+    title,
+    href,
+    emptyText,
+    items,
+}: {
+    title: string;
+    href: string;
+    emptyText: string;
+    items: Array<{ id: number; title: string; subtitle: string }>;
+}) {
+    return (
+        <section className="rounded-2xl border bg-card p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">{title}</h2>
+                <button
+                    type="button"
+                    onClick={() => router.visit(href)}
+                    className="text-sm font-medium text-primary"
+                >
+                    View all
+                </button>
+            </div>
+
+            {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{emptyText}</p>
+            ) : (
+                <div className="space-y-3">
+                    {items.map((item) => (
+                        <div key={item.id} className="rounded-xl border p-3">
+                            <div className="font-medium">{item.title}</div>
+                            <div className="mt-1 text-sm text-muted-foreground">
+                                {item.subtitle}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }
 

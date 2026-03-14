@@ -1,5 +1,5 @@
 // resources/js/pages/auth/register.tsx
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 /* ---------- Props & Types ---------- */
@@ -19,6 +19,7 @@ type ActivityLevel =
     | 'Athlete';
 type WorkoutLocation = 'home' | 'gym' | 'both' | '';
 type DietExperience = 'yes' | 'no' | '';
+type AccountType = 'client' | 'trainer' | 'nutritionist';
 
 type RegisterFormData = {
     first_name: string;
@@ -46,6 +47,13 @@ type RegisterFormData = {
     force_enable_2fa: boolean;
     diet_other_name: string;
     diet_choice: string;
+    account_type: AccountType;
+    verification_full_legal_name: string;
+    verification_license_number: string;
+    verification_authority: string;
+    verification_country_state: string;
+    verification_expiry_date: string;
+    verification_documents: File[];
 };
 
 type NumericField = 'age' | 'height_cm' | 'weight_kg' | 'workout_days_per_week';
@@ -446,6 +454,15 @@ function RegisterWizard(props: Props) {
             // NEW (client-only helper field): store "other diet" text separately
             diet_other_name: '',
             diet_choice: '' as string, // selected from list OR "Other"
+
+            // Account type + professional verification
+            account_type: 'client' as AccountType,
+            verification_full_legal_name: '',
+            verification_license_number: '',
+            verification_authority: '',
+            verification_country_state: '',
+            verification_expiry_date: '',
+            verification_documents: [] as File[],
         });
 
     const totalSteps = useMemo(
@@ -513,7 +530,7 @@ function RegisterWizard(props: Props) {
             };
         });
 
-        post('/register');
+        post('/register', { forceFormData: true });
     };
 
     // Numeric wrappers
@@ -548,6 +565,9 @@ function RegisterWizard(props: Props) {
         const ce: Record<string, string> = {};
 
         if (s === 1) {
+            if (!data.account_type)
+                ce.account_type = 'Please select an account type.';
+
             if (!data.first_name || String(data.first_name).trim().length < 2)
                 ce.first_name = 'Please enter at least 2 characters.';
             if (!data.last_name || String(data.last_name).trim().length < 2)
@@ -632,6 +652,35 @@ function RegisterWizard(props: Props) {
                 ce.password = 'Password must be at least 8 characters.';
             if (data.password !== data.password_confirmation)
                 ce.password_confirmation = 'Passwords do not match.';
+
+            if (
+                data.account_type === 'trainer' ||
+                data.account_type === 'nutritionist'
+            ) {
+                if (!data.verification_full_legal_name.trim()) {
+                    ce.verification_full_legal_name =
+                        'Full legal name is required.';
+                }
+                if (!data.verification_license_number.trim()) {
+                    ce.verification_license_number =
+                        'License/certification number is required.';
+                }
+                if (!data.verification_authority.trim()) {
+                    ce.verification_authority =
+                        'Issuing authority is required.';
+                }
+                if (!data.verification_country_state.trim()) {
+                    ce.verification_country_state =
+                        'Country/state is required.';
+                }
+                if (!data.verification_expiry_date) {
+                    ce.verification_expiry_date = 'Expiry date is required.';
+                }
+                if (!data.verification_documents.length) {
+                    ce.verification_documents =
+                        'Upload at least one verification document.';
+                }
+            }
         }
 
         setClientErrors(ce);
@@ -762,6 +811,27 @@ function RegisterWizard(props: Props) {
                                 }
                             />
                         </Field>
+
+                        <div className="md:col-span-2">
+                            <RadioPills<AccountType>
+                                name="account_type"
+                                value={data.account_type}
+                                onChange={(v) => setData('account_type', v)}
+                                legend="Account type"
+                                options={[
+                                    { value: 'client', label: 'Client' },
+                                    {
+                                        value: 'trainer',
+                                        label: 'Personal Trainer',
+                                    },
+                                    {
+                                        value: 'nutritionist',
+                                        label: 'Dietitian / Nutritionist',
+                                    },
+                                ]}
+                                error={showServerOrClientError('account_type')}
+                            />
+                        </div>
 
                         {/* Gender as radios for semantics */}
                         <fieldset className="space-y-2">
@@ -1438,6 +1508,151 @@ function RegisterWizard(props: Props) {
                                 }
                             />
                         </Field>
+
+                        {(data.account_type === 'trainer' ||
+                            data.account_type === 'nutritionist') && (
+                            <>
+                                <div className="md:col-span-2 rounded-md border bg-muted/30 p-3 text-sm">
+                                    Professional accounts require license
+                                    verification before activation.
+                                </div>
+
+                                <Field
+                                    id="verification_full_legal_name"
+                                    label="Full legal name"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_full_legal_name',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_full_legal_name"
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        value={
+                                            data.verification_full_legal_name
+                                        }
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_full_legal_name',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field
+                                    id="verification_license_number"
+                                    label="License / certification number"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_license_number',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_license_number"
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        value={
+                                            data.verification_license_number
+                                        }
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_license_number',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field
+                                    id="verification_authority"
+                                    label="Issuing authority"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_authority',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_authority"
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        value={data.verification_authority}
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_authority',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field
+                                    id="verification_country_state"
+                                    label="Country / state"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_country_state',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_country_state"
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        value={data.verification_country_state}
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_country_state',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field
+                                    id="verification_expiry_date"
+                                    label="License expiry date"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_expiry_date',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_expiry_date"
+                                        type="date"
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        value={data.verification_expiry_date}
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_expiry_date',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field>
+
+                                <Field
+                                    id="verification_documents"
+                                    label="Verification documents (PDF/image)"
+                                    required
+                                    error={showServerOrClientError(
+                                        'verification_documents',
+                                    )}
+                                >
+                                    <input
+                                        id="verification_documents"
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        multiple
+                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        onChange={(e) =>
+                                            setData(
+                                                'verification_documents',
+                                                Array.from(
+                                                    e.target.files ?? [],
+                                                ),
+                                            )
+                                        }
+                                    />
+                                </Field>
+                            </>
+                        )}
                     </div>
 
                     <div className="flex justify-between pt-2">
@@ -1474,12 +1689,48 @@ export default function Register(props: Props) {
 
             <main
                 id="register-main"
-                className="grid min-h-[100svh] place-items-center bg-background"
+                className="relative isolate overflow-hidden bg-background"
             >
-                <div className="w-full max-w-3xl px-6 py-10 md:py-16">
-                    <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm">
-                        <div className="p-6 md:p-8">
-                            <RegisterWizard {...props} />
+                <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,rgba(14,165,164,0.16),transparent_65%)] dark:bg-[radial-gradient(circle_at_top,rgba(45,212,191,0.18),transparent_65%)]" />
+                    <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
+                    <div className="absolute left-0 top-24 h-56 w-56 rounded-full bg-secondary/10 blur-3xl" />
+                </div>
+
+                <div className="relative mx-auto flex min-h-[100svh] w-full max-w-5xl flex-col px-4 py-6 sm:px-6 md:py-10">
+                    <div className="mb-6 flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                                Hayetak
+                            </p>
+                            <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                                Create your account
+                            </p>
+                            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                                Build your profile once, then use it across
+                                plans, coaching, tracking, and messaging.
+                            </p>
+                        </div>
+
+                        <Link
+                            href="/login"
+                            className={`shrink-0 rounded-full border border-border/80 bg-background/70 px-4 py-2 text-sm font-medium text-foreground/90 shadow-sm backdrop-blur transition hover:bg-card ${FOCUS_RING}`}
+                        >
+                            Sign in
+                        </Link>
+                    </div>
+
+                    <div className="flex-1">
+                        <div className="mx-auto w-full max-w-3xl rounded-[28px] border border-border/70 bg-card/88 shadow-xl shadow-black/5 backdrop-blur dark:shadow-black/25">
+                            <div className="border-b border-border/70 px-6 py-4 sm:px-8">
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Personalized onboarding
+                                </p>
+                            </div>
+
+                            <div className="p-6 sm:p-8 md:p-10">
+                                <RegisterWizard {...props} />
+                            </div>
                         </div>
                     </div>
                 </div>

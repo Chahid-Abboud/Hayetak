@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\GeneratePlansForUser;
+use App\Models\ProfessionalVerification;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,18 @@ class RegisterWizardController extends Controller
             // Credentials
             'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:120', Rule::unique(User::class, 'email')],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+
+            // Account type
+            'account_type' => ['required', Rule::in([User::ROLE_CLIENT, User::ROLE_TRAINER, User::ROLE_NUTRITIONIST])],
+
+            // Professional verification fields (required for trainer/nutritionist)
+            'verification_full_legal_name' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'string', 'max:160'],
+            'verification_license_number' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'string', 'max:120'],
+            'verification_authority' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'string', 'max:160'],
+            'verification_country_state' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'string', 'max:160'],
+            'verification_expiry_date' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'date', 'after:today'],
+            'verification_documents' => ['required_if:account_type,'.User::ROLE_TRAINER.','.User::ROLE_NUTRITIONIST, 'nullable', 'array', 'min:1'],
+            'verification_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ]);
 
         // Normalize wizard boolean to true/false
@@ -87,6 +100,8 @@ class RegisterWizardController extends Controller
         if ($fullName === '') {
             $fullName = strtok((string) ($validated['email'] ?? ''), '@') ?: 'User';
         }
+
+        $isProfessional = in_array($validated['account_type'], [User::ROLE_TRAINER, User::ROLE_NUTRITIONIST], true);
 
         $user = User::create([
             'name' => $fullName,
@@ -123,7 +138,29 @@ class RegisterWizardController extends Controller
             // Auth
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => $validated['account_type'],
+            'verified' => $isProfessional ? false : true,
+            'status' => $isProfessional ? 'pending_verification' : 'active',
         ]);
+
+        if ($isProfessional) {
+            $documents = [];
+            foreach ($request->file('verification_documents', []) as $file) {
+                $documents[] = $file->store('professional_verifications', 'private');
+            }
+
+            ProfessionalVerification::query()->create([
+                'user_id' => $user->id,
+                'role' => $validated['account_type'],
+                'full_legal_name' => $validated['verification_full_legal_name'],
+                'license_number' => $validated['verification_license_number'],
+                'authority' => $validated['verification_authority'],
+                'country_state' => $validated['verification_country_state'],
+                'expiry_date' => $validated['verification_expiry_date'],
+                'documents' => $documents,
+                'review_status' => 'pending',
+            ]);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -135,7 +172,9 @@ class RegisterWizardController extends Controller
          * If QUEUE_CONNECTION=sync -> runs immediately.
          * If QUEUE_CONNECTION=database -> requires queue:work running.
          */
-        GeneratePlansForUser::dispatch($user->id, 7);
+        if ($user->role === User::ROLE_CLIENT) {
+            GeneratePlansForUser::dispatch($user->id, 7);
+        }
 
         return redirect()
             ->route('verification.notice')

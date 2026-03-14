@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ProfessionalClientAssignment;
+use App\Models\ProfessionalVerification;
 use App\Models\User;
 
 test('admin api is forbidden for non admin users', function () {
@@ -23,7 +23,7 @@ test('admin api is available for admins', function () {
         ->assertOk();
 });
 
-test('client cannot start chat with unassigned nutritionist', function () {
+test('client cannot start chat with unapproved nutritionist', function () {
     $client = User::factory()->create([
         'role' => User::ROLE_CLIENT,
     ]);
@@ -36,19 +36,19 @@ test('client cannot start chat with unassigned nutritionist', function () {
         ->assertForbidden();
 });
 
-test('client can start chat with assigned nutritionist', function () {
+test('client can start chat with approved nutritionist', function () {
     $client = User::factory()->create([
         'role' => User::ROLE_CLIENT,
     ]);
     $nutritionist = User::factory()->create([
         'role' => User::ROLE_NUTRITIONIST,
+        'verified' => true,
     ]);
 
-    ProfessionalClientAssignment::query()->create([
-        'professional_id' => $nutritionist->id,
-        'client_id' => $client->id,
-        'professional_role' => User::ROLE_NUTRITIONIST,
-        'assigned_by' => $nutritionist->id,
+    ProfessionalVerification::factory()->create([
+        'user_id' => $nutritionist->id,
+        'role' => User::ROLE_NUTRITIONIST,
+        'review_status' => 'approved',
     ]);
 
     $this->actingAs($client)

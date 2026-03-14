@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\AdminReviewProfessionalVerificationRequest;
+use App\Models\ProfessionalVerification;
+use App\Services\AdminActionLogger;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class AdminProfessionalVerificationController extends Controller
+{
+    public function __construct(private readonly AdminActionLogger $logger) {}
+
+    public function index(Request $request): JsonResponse
+    {
+        $status = (string) $request->query('status', 'pending');
+
+        $rows = ProfessionalVerification::query()
+            ->with(['user:id,email,first_name,last_name,role,verified,status', 'reviewer:id,first_name,last_name,email'])
+            ->when($status !== 'all', fn ($q) => $q->where('review_status', $status))
+            ->latest('id')
+            ->paginate((int) $request->query('per_page', 20));
+
+        return response()->json($rows);
+    }
+
+    public function review(AdminReviewProfessionalVerificationRequest $request, ProfessionalVerification $professionalVerification): JsonResponse
+    {
+        $data = $request->validated();
+        $admin = $request->user();
+
+        $professionalVerification->update([
+            'review_status' => $data['review_status'],
+            'notes' => $data['notes'] ?? null,
+            'reviewed_by' => $admin->id,
+            'reviewed_at' => now(),
+        ]);
+
+        $user = $professionalVerification->user;
+        if ($data['review_status'] === 'approved') {
+            $user->update([
+                'verified' => true,
+                'status' => 'active',
+            ]);
+        } elseif ($data['review_status'] === 'rejected') {
+            $user->update([
+                'verified' => false,
+                'status' => 'rejected',
+            ]);
+        } else {
+            $user->update([
+                'verified' => false,
+                'status' => 'needs_info',
+            ]);
+        }
+
+        $this->logger->log($admin->id, 'admin.professional_verification.review', $professionalVerification, [
+            'user_id' => $user->id,
+            'review_status' => $data['review_status'],
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'verification' => $professionalVerification->fresh(['user', 'reviewer']),
+        ]);
+    }
+}
+

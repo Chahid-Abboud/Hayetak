@@ -7,11 +7,14 @@ use App\Http\Requests\CreateConversationRequest;
 use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MessageResource;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\AdminActionLogger;
+use App\Services\Messaging\WelcomeConversationService;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 
 class ConversationController extends Controller
@@ -19,19 +22,24 @@ class ConversationController extends Controller
     public function __construct(
         private readonly ProfessionalAccessService $access,
         private readonly AdminActionLogger $logger,
+        private readonly WelcomeConversationService $welcomeConversation,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
+        $this->welcomeConversation->ensureForUser($user);
 
         $conversations = Conversation::query()
             ->whereHas('participants', fn ($q) => $q->where('users.id', $user->id))
-            ->with(['participants', 'messages' => fn ($q) => $q->latest('id')->limit(1)])
-            ->latest('id')
+            ->with([
+                'participants',
+                'messages' => fn ($q) => $q->with('sender')->latest('id')->limit(1),
+            ])
+            ->latest('updated_at')
             ->get();
 
-        return response()->json(ConversationResource::collection($conversations));
+        return ConversationResource::collection($conversations);
     }
 
     public function store(CreateConversationRequest $request): JsonResponse
@@ -66,15 +74,31 @@ class ConversationController extends Controller
         return response()->json(['conversation' => new ConversationResource($conversation)], 201);
     }
 
-    public function messages(Request $request, Conversation $conversation): JsonResponse
+    public function messages(Request $request, Conversation $conversation): AnonymousResourceCollection
     {
         $this->authorize('view', $conversation);
+
+        $user = $request->user();
+
+        DB::transaction(function () use ($conversation, $user): void {
+            $conversation->participants()->updateExistingPivot($user->id, [
+                'last_read_at' => now(),
+            ]);
+
+            Message::query()
+                ->where('conversation_id', $conversation->id)
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
+            $conversation->touch();
+        });
 
         $messages = $conversation->messages()
             ->with('sender')
             ->oldest('id')
-            ->paginate((int) $request->query('per_page', 50));
+            ->paginate((int) $request->query('per_page', 100));
 
-        return response()->json(MessageResource::collection($messages));
+        return MessageResource::collection($messages);
     }
 }

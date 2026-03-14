@@ -14,7 +14,7 @@ export default function RoleGuard({
 
     if (!roles.includes(role)) {
         return (
-            <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
                 403 Unauthorized.
             </div>
         );

@@ -39,10 +39,10 @@ export default function AdminLogsIndex() {
                         {logs.map((log) => (
                             <div
                                 key={log.id}
-                                className="rounded border p-3 text-sm"
+                                className="rounded-2xl border bg-card p-3 text-sm shadow-sm"
                             >
                                 <div className="font-medium">{log.action}</div>
-                                <div className="text-xs text-slate-600">
+                                <div className="text-xs text-muted-foreground">
                                     admin #{log.admin_id} | target:{' '}
                                     {log.target_type ?? '-'} #
                                     {log.target_id ?? '-'}
@@ -50,7 +50,7 @@ export default function AdminLogsIndex() {
                             </div>
                         ))}
                         {logs.length === 0 && (
-                            <div className="text-sm text-slate-500">
+                            <div className="text-sm text-muted-foreground">
                                 No logs yet.
                             </div>
                         )}

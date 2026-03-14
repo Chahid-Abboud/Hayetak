@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ProfessionalVerification;
 use App\Models\ProfessionalClientAssignment;
 use App\Models\User;
 
@@ -26,6 +27,14 @@ class ProfessionalAccessService
             return true;
         }
 
+        if ($actor->hasRole(User::ROLE_CLIENT) && $this->isApprovedProfessional($other)) {
+            return true;
+        }
+
+        if ($other->hasRole(User::ROLE_CLIENT) && $this->isApprovedProfessional($actor)) {
+            return true;
+        }
+
         if ($actor->hasRole(User::ROLE_CLIENT) && $other->hasRole(User::ROLE_NUTRITIONIST)) {
             return $this->isAssigned($other->id, $actor->id, User::ROLE_NUTRITIONIST);
         }
@@ -43,5 +52,18 @@ class ProfessionalAccessService
         }
 
         return false;
+    }
+
+    private function isApprovedProfessional(User $user): bool
+    {
+        if (! $user->verified || ! $user->hasRole(User::ROLE_NUTRITIONIST, User::ROLE_TRAINER)) {
+            return false;
+        }
+
+        return ProfessionalVerification::query()
+            ->where('user_id', $user->id)
+            ->where('role', $user->role)
+            ->where('review_status', 'approved')
+            ->exists();
     }
 }

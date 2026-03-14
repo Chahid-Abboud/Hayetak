@@ -139,37 +139,36 @@ class WorkoutLogController extends Controller
         $userId = Auth::id();
         $weeks = (int) ($request->get('weeks', 8));
 
-        // Postgres: roll up by ISO week using date_trunc('week', performed_at)
+        // Cross-database rollup: fetch rows and aggregate by ISO week in PHP.
         $rows = DB::table('workout_log_sets as s')
             ->join('workout_logs as l', 'l.id', '=', 's.workout_log_id')
             ->join('exercises as e', 'e.id', '=', 's.exercise_id')
             ->where('l.user_id', $userId)
             ->where('l.performed_at', '>=', now()->subWeeks($weeks + 1))
-            ->selectRaw("
-                date_trunc('week', l.performed_at) AS week_start,
-                e.primary_muscle,
-                MAX(COALESCE(s.weight_kg, 0))      AS top_weight
-            ")
-            ->groupBy('week_start', 'e.primary_muscle', 'l.user_id')
-            ->orderBy('week_start')
+            ->select('l.performed_at', 'e.primary_muscle')
+            ->selectRaw('COALESCE(s.weight_kg, 0) AS top_weight')
+            ->orderBy('l.performed_at')
             ->get();
 
         // Build series keyed by ISO week (YYYY-Www)
         $byWeek = [];
         foreach ($rows as $r) {
-            $dt = Carbon::parse($r->week_start);
+            $dt = Carbon::parse($r->performed_at);
             $weekKey = sprintf('%d-W%02d', $dt->isoWeekYear, $dt->isoWeek);
+            $muscle = (string) $r->primary_muscle;
+            $topWeight = (float) $r->top_weight;
 
             $byWeek[$weekKey] ??= [];
-            $byWeek[$weekKey][$r->primary_muscle] ??= [];
-            $byWeek[$weekKey][$r->primary_muscle][] = (float) $r->top_weight;
+            $byWeek[$weekKey][$muscle] = isset($byWeek[$weekKey][$muscle])
+                ? max($byWeek[$weekKey][$muscle], $topWeight)
+                : $topWeight;
         }
 
         $series = [];
         foreach ($byWeek as $week => $muscles) {
             $entry = ['week' => $week];
-            foreach ($muscles as $m => $arr) {
-                $entry[$m] = round(array_sum($arr) / max(count($arr), 1), 1);
+            foreach ($muscles as $m => $weight) {
+                $entry[$m] = round((float) $weight, 1);
             }
             $series[] = $entry;
         }
