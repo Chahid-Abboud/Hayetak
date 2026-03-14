@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             ImportExercisesFromJsonSeeder::class,
             PlacesLocalSeeder::class,
             RbacDemoSeeder::class,
+            ProfessionalClientsDemoSeeder::class,
+            WelcomeConversationSeeder::class,
         ]);
     }
 }

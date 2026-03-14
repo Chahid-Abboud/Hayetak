@@ -11,7 +11,7 @@ class Measurement extends Model
 
     protected $fillable = [
         'user_id', 'measured_at',
-        'weight_kg', 'body_fat_pct',
+        'weight_kg', 'height_cm', 'body_fat_pct',
         'neck_cm', 'chest_cm', 'waist_cm', 'hip_cm',
         'arm_cm', 'thigh_cm', 'calf_cm',
         'resting_hr', 'systolic_bp', 'diastolic_bp',
@@ -21,6 +21,7 @@ class Measurement extends Model
     protected $casts = [
         'measured_at' => 'datetime',
         'weight_kg' => 'decimal:2',
+        'height_cm' => 'integer',
         'body_fat_pct' => 'decimal:2',
         'neck_cm' => 'decimal:1',
         'chest_cm' => 'decimal:1',

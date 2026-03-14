@@ -5,6 +5,17 @@ import { useEffect, useMemo, useState } from 'react';
 import NavHeader from '../components/NavHeader';
 import NearbyMap, { type Place } from '../components/NearbyMap';
 
+type Professional = {
+    id: number;
+    name: string;
+    role: 'nutritionist' | 'trainer' | string;
+    area?: string | null;
+    authority?: string | null;
+    city?: string | null;
+    specialties?: string[] | null;
+    canInteract?: boolean;
+};
+
 function SimpleSlider({
     title = 'Search radius',
     units = 'km',
@@ -76,10 +87,16 @@ export default function Places() {
     const [selectedPlaceId, setSelectedPlaceId] = useState<
         string | number | null
     >(null);
-    const [dietitianArea, setDietitianArea] = useState<string>('');
-    const [dietitians, setDietitians] = useState<
-        Array<{ id: number; name: string; status?: string | null }>
-    >([]);
+    const [professionalArea, setProfessionalArea] = useState<string>('');
+    const [professionalRole, setProfessionalRole] = useState<
+        'all' | 'nutritionist' | 'trainer'
+    >('all');
+    const [professionals, setProfessionals] = useState<Professional[]>([]);
+    const [loadingProfessionals, setLoadingProfessionals] =
+        useState<boolean>(false);
+    const [workingProfessionalId, setWorkingProfessionalId] = useState<
+        number | null
+    >(null);
 
     // locate once
     useEffect(() => {
@@ -125,46 +142,128 @@ export default function Places() {
     }, [results]);
 
     useEffect(() => {
-        setLoading(true);
+        if (!center) {
+            setLoading(false);
+            return;
+        }
         setError(null);
-    }, [radiusKm, showGym, showNutri]);
+    }, [center, radiusKm, showGym, showNutri]);
 
     useEffect(() => {
         void (async () => {
-            const params = new URLSearchParams();
-            if (dietitianArea.trim()) {
-                params.set('area', dietitianArea.trim());
+            setLoadingProfessionals(true);
+            try {
+                const params = new URLSearchParams();
+                if (professionalArea.trim()) {
+                    params.set('area', professionalArea.trim());
+                }
+                if (professionalRole !== 'all') params.set('role', professionalRole);
+                const res = await fetch(
+                    `/api/dietitians${params.toString() ? `?${params.toString()}` : ''}`,
+                    { headers: { Accept: 'application/json' } },
+                );
+                if (!res.ok) {
+                    throw new Error('Could not load professionals.');
+                }
+                const json = await res.json();
+                setProfessionals(Array.isArray(json?.data) ? json.data : []);
+            } catch {
+                setProfessionals([]);
+            } finally {
+                setLoadingProfessionals(false);
             }
-            const res = await fetch(
-                `/api/dietitians${params.toString() ? `?${params.toString()}` : ''}`,
-            );
-            const json = await res.json();
-            setDietitians(Array.isArray(json?.data) ? json.data : []);
         })();
-    }, [dietitianArea]);
+    }, [professionalArea, professionalRole]);
 
-    async function messageDietitian(userId: number) {
-        await fetch('/api/messages/conversations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ participant_id: userId }),
-        });
-        window.location.href = '/messages';
+    async function openConversation(userId: number) {
+        const token =
+            (
+                document.querySelector(
+                    'meta[name="csrf-token"]',
+                ) as HTMLMetaElement | null
+            )?.content ?? '';
+
+        try {
+            setWorkingProfessionalId(userId);
+            const response = await fetch('/api/messages/conversations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ participant_id: userId }),
+            });
+            const json = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not start a conversation.',
+                );
+            }
+            const conversationId = json?.conversation?.id;
+            window.location.href = conversationId
+                ? `/messages?conversation=${conversationId}`
+                : '/messages';
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Could not start a conversation.',
+            );
+        } finally {
+            setWorkingProfessionalId(null);
+        }
     }
 
-    async function requestAppointment(userId: number) {
+    async function requestAppointment(
+        userId: number,
+        role: 'nutritionist' | 'trainer' | string,
+    ) {
         const when = prompt('Appointment date/time (YYYY-MM-DD HH:mm:ss)');
         if (!when) return;
-        await fetch('/api/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                professional_id: userId,
-                professional_role: 'nutritionist',
-                scheduled_at: when,
-            }),
-        });
-        window.location.href = '/appointments';
+        const token =
+            (
+                document.querySelector(
+                    'meta[name="csrf-token"]',
+                ) as HTMLMetaElement | null
+            )?.content ?? '';
+        try {
+            setWorkingProfessionalId(userId);
+            const response = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    professional_id: userId,
+                    professional_role: role,
+                    scheduled_at: when,
+                }),
+            });
+            const json = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not request the appointment.',
+                );
+            }
+            window.location.href = '/appointments';
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Could not request the appointment.',
+            );
+        } finally {
+            setWorkingProfessionalId(null);
+        }
     }
 
     return (
@@ -177,7 +276,8 @@ export default function Places() {
                     <div>
                         <h1 className="text-2xl font-semibold">Nearby</h1>
                         <p className="text-sm text-muted-foreground">
-                            Explore gyms and nutritionists around you.
+                            Explore gyms and connect with approved dietitians
+                            and trainers nearby.
                         </p>
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -276,14 +376,14 @@ export default function Places() {
                                 initialCenter={center}
                                 initialZoom={12}
                                 radiusKm={radiusKm}
-                                onRadiusChange={setRadiusKm}
                                 showGym={showGym}
                                 showNutritionist={showNutri}
                                 onToggleGym={setShowGym}
                                 onToggleNutritionist={setShowNutri}
+                                onLoadingChange={setLoading}
+                                onErrorChange={setError}
                                 onResults={(list) => {
                                     setResults(list);
-                                    setLoading(false);
                                 }}
                                 focusPlaceId={selectedPlaceId}
                             />
@@ -411,48 +511,132 @@ export default function Places() {
                                 })}
                             </ul>
                         </div>
-                        {auth.user.role === 'client' && (
+                        {auth.user?.role === 'client' && (
                             <div className="mt-4 rounded-lg border p-3">
                                 <div className="mb-2 text-sm font-medium">
-                                    Dietitians
+                                    Professionals
                                 </div>
-                                <input
-                                    className="mb-2 h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                    placeholder="Filter by area"
-                                    value={dietitianArea}
-                                    onChange={(e) =>
-                                        setDietitianArea(e.target.value)
-                                    }
-                                />
+                                <p className="mb-3 text-xs text-muted-foreground">
+                                    Start or continue a conversation with
+                                    approved dietitians and trainers.
+                                </p>
+                                <div className="mb-3 grid gap-2 sm:grid-cols-2">
+                                    <input
+                                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                                        placeholder="Filter by area"
+                                        value={professionalArea}
+                                        onChange={(e) =>
+                                            setProfessionalArea(
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                    <select
+                                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                                        value={professionalRole}
+                                        onChange={(e) =>
+                                            setProfessionalRole(
+                                                e.target.value as
+                                                    | 'all'
+                                                    | 'nutritionist'
+                                                    | 'trainer',
+                                            )
+                                        }
+                                    >
+                                        <option value="all">
+                                            All professionals
+                                        </option>
+                                        <option value="nutritionist">
+                                            Dietitians
+                                        </option>
+                                        <option value="trainer">
+                                            Trainers
+                                        </option>
+                                    </select>
+                                </div>
                                 <ul className="max-h-72 space-y-2 overflow-auto pr-1">
-                                    {dietitians.map((d) => (
+                                    {loadingProfessionals && (
+                                        <li className="text-xs text-muted-foreground">
+                                            Loading professionals...
+                                        </li>
+                                    )}
+                                    {professionals.map((professional) => (
                                         <li
-                                            key={d.id}
-                                            className="rounded border p-2"
+                                            key={professional.id}
+                                            className="rounded-xl border p-3"
                                         >
-                                            <div className="font-medium">
-                                                {d.name}
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="font-medium">
+                                                    {professional.name}
+                                                </div>
+                                                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground capitalize">
+                                                    {professional.role ===
+                                                    'nutritionist'
+                                                        ? 'Dietitian'
+                                                        : 'Trainer'}
+                                                </span>
                                             </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {d.status ?? 'No area info'}
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {professional.area ??
+                                                    professional.city ??
+                                                    'No area info'}
                                             </div>
+                                            {professional.authority && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Authority:{' '}
+                                                    {professional.authority}
+                                                </div>
+                                            )}
+                                            {!professional.canInteract && (
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    Messaging and appointments
+                                                    are currently unavailable
+                                                    for this profile.
+                                                </div>
+                                            )}
                                             <div className="mt-2 flex gap-3 text-xs">
                                                 <button
-                                                    className="text-sky-700 underline"
+                                                    className={
+                                                        professional.canInteract
+                                                            ? 'text-sky-700 underline'
+                                                            : 'cursor-not-allowed text-muted-foreground'
+                                                    }
+                                                    disabled={
+                                                        !professional.canInteract ||
+                                                        workingProfessionalId ===
+                                                            professional.id
+                                                    }
                                                     onClick={() =>
-                                                        void messageDietitian(
-                                                            d.id,
-                                                        )
+                                                        professional.canInteract
+                                                            ? void openConversation(
+                                                                  professional.id,
+                                                              )
+                                                            : undefined
                                                     }
                                                 >
-                                                    Message
+                                                    {workingProfessionalId ===
+                                                    professional.id
+                                                        ? 'Opening...'
+                                                        : 'Open chat'}
                                                 </button>
                                                 <button
-                                                    className="text-sky-700 underline"
+                                                    className={
+                                                        professional.canInteract
+                                                            ? 'text-sky-700 underline'
+                                                            : 'cursor-not-allowed text-muted-foreground'
+                                                    }
+                                                    disabled={
+                                                        !professional.canInteract ||
+                                                        workingProfessionalId ===
+                                                            professional.id
+                                                    }
                                                     onClick={() =>
-                                                        void requestAppointment(
-                                                            d.id,
-                                                        )
+                                                        professional.canInteract
+                                                            ? void requestAppointment(
+                                                                  professional.id,
+                                                                  professional.role,
+                                                              )
+                                                            : undefined
                                                     }
                                                 >
                                                     Request appointment
@@ -460,9 +644,11 @@ export default function Places() {
                                             </div>
                                         </li>
                                     ))}
-                                    {dietitians.length === 0 && (
+                                    {!loadingProfessionals &&
+                                        professionals.length === 0 && (
                                         <li className="text-xs text-muted-foreground">
-                                            No dietitians found for this area.
+                                            No professionals found for this
+                                            filter.
                                         </li>
                                     )}
                                 </ul>

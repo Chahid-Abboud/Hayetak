@@ -35,6 +35,8 @@ type Props = {
     onToggleGym?: (v: boolean) => void;
     onToggleNutritionist?: (v: boolean) => void;
     onResults?: (items: Place[]) => void;
+    onLoadingChange?: (loading: boolean) => void;
+    onErrorChange?: (message: string | null) => void;
     focusPlaceId?: string | number | null;
 };
 
@@ -50,6 +52,8 @@ export default function NearbyMap({
     onToggleGym,
     onToggleNutritionist,
     onResults,
+    onLoadingChange,
+    onErrorChange,
     focusPlaceId = null,
 }: Props) {
     const token =
@@ -71,6 +75,7 @@ export default function NearbyMap({
     const [viewCenter, setViewCenter] = useState(initialCenter);
 
     const [places, setPlaces] = useState<Place[]>([]);
+    const placesRef = useRef<Place[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -182,6 +187,8 @@ export default function NearbyMap({
         async (origin: { lat: number; lon: number }, rKm: number) => {
             setLoading(true);
             setError(null);
+            onLoadingChange?.(true);
+            onErrorChange?.(null);
 
             fetchController.current?.abort();
             fetchController.current = new AbortController();
@@ -205,18 +212,24 @@ export default function NearbyMap({
                     ? data.features.map(normalizeFeature)
                     : [];
 
+                placesRef.current = list;
                 setPlaces(list);
                 onResults?.(list);
             } catch (e: unknown) {
                 if (!isAbortError(e)) {
                     const message = e instanceof Error ? e.message : String(e);
+                    placesRef.current = [];
+                    setPlaces([]);
                     setError(message);
+                    onErrorChange?.(message);
+                    onResults?.([]);
                 }
             } finally {
                 setLoading(false);
+                onLoadingChange?.(false);
             }
         },
-        [typesParam, onResults],
+        [typesParam, onErrorChange, onLoadingChange, onResults],
     );
 
     /* ---------- init map ---------- */
@@ -249,7 +262,7 @@ export default function NearbyMap({
                 initialCenterRef.current,
                 initialRadiusRef.current,
             );
-            updatePlacesLayer(m, []);
+            updatePlacesLayer(m, placesRef.current);
         });
 
         // click on a place on the map
@@ -334,6 +347,7 @@ export default function NearbyMap({
     useEffect(() => {
         const m = mapRef.current;
         if (!m) return;
+        placesRef.current = places;
         updatePlacesLayer(m, places);
     }, [places]);
 

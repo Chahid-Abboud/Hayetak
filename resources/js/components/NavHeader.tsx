@@ -2,37 +2,93 @@
 import NotificationBell from '@/components/NotificationBell';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 export default function NavHeader() {
     const [open, setOpen] = useState(false);
     const doLogout = () => router.post('/logout');
     const { auth } = usePage<SharedData>().props;
     const role = auth.user?.role ?? 'client';
+    const primaryItems =
+        role === 'admin'
+            ? [{ href: '/dashboard', label: 'Admin Dashboard' }]
+            : [
+                  { href: '/dashboard', label: 'Dashboard' },
+                  { href: '/nearby', label: 'Nearby Map' },
+              ];
+    const navGroups: Array<{
+        label: string;
+        items: { href: string; label: string }[];
+    }> = [
+        {
+            label: 'Health',
+            items: [
+                { href: '/track-meals', label: 'Meal Tracker' },
+                { href: '/planner', label: 'Planner' },
+            ],
+        },
+        {
+            label: 'Training',
+            items: [
+                { href: '/workouts', label: 'Workouts' },
+                { href: '/appointments', label: 'Appointments' },
+            ],
+        },
+        {
+            label: 'Connect',
+            items: [{ href: '/messages', label: 'Messages' }],
+        },
+        {
+            label: 'Account',
+            items: [{ href: '/profile', label: 'Profile' }],
+        },
+    ];
 
-    const navItems = useMemo(() => {
-        const nutrition = [{ href: '/track-meals', label: 'Meal Tracker' }];
-        const fitness = [
-            { href: '/workouts', label: 'Workouts' },
-            { href: '/appointments', label: 'Appointments' },
-        ];
-        const nearby = [{ href: '/places', label: 'Nearby Places' }];
-        const messages = [{ href: '/messages', label: 'Messages' }];
-        const accounts = [
-            { href: '/dashboard', label: 'Dashboard' },
-            { href: '/profile', label: 'Profile' },
-        ];
+    if (role === 'trainer') {
+        navGroups.splice(2, 0, {
+            label: 'Clients',
+            items: [{ href: '/trainer/clients', label: 'My Clients' }],
+        });
+    }
 
-        if (role === 'admin') {
-            accounts.push(
-                { href: '/admin/users', label: 'Admin Users' },
-                { href: '/admin/logs', label: 'Admin Logs' },
-                { href: '/admin/notifications', label: 'Send Alerts' },
-            );
-        }
+    if (role === 'nutritionist') {
+        navGroups.splice(2, 0, {
+            label: 'Clients',
+            items: [{ href: '/dietitian/clients', label: 'My Clients' }],
+        });
+    }
 
-        return { nutrition, fitness, nearby, messages, accounts };
-    }, [role]);
+    if (role === 'admin') {
+        navGroups.length = 0;
+        navGroups.push(
+            {
+                label: 'Users',
+                items: [
+                    { href: '/admin/users', label: 'All Users' },
+                    { href: '/admin/professionals', label: 'Professionals' },
+                    {
+                        href: '/admin/professional-verifications',
+                        label: 'Verifications',
+                    },
+                ],
+            },
+            {
+                label: 'Content',
+                items: [
+                    { href: '/admin/meals', label: 'Meals' },
+                    { href: '/admin/progress', label: 'Progress' },
+                    { href: '/admin/places', label: 'Places' },
+                ],
+            },
+            {
+                label: 'System',
+                items: [
+                    { href: '/admin/logs', label: 'Admin Logs' },
+                    { href: '/admin/notifications', label: 'Alerts' },
+                ],
+            },
+        );
+    }
 
     const isActive = (href: string) => {
         if (typeof window === 'undefined') return false;
@@ -61,31 +117,28 @@ export default function NavHeader() {
 
                     {/* Desktop nav */}
                     <nav className="hidden items-center gap-2 md:flex">
-                        <Submenu
-                            label="Nutrition"
-                            items={navItems.nutrition}
-                            isActive={isActive}
-                        />
-                        <Submenu
-                            label="Fitness"
-                            items={navItems.fitness}
-                            isActive={isActive}
-                        />
-                        <Submenu
-                            label="Nearby"
-                            items={navItems.nearby}
-                            isActive={isActive}
-                        />
-                        <Submenu
-                            label="Messages"
-                            items={navItems.messages}
-                            isActive={isActive}
-                        />
-                        <Submenu
-                            label="Accounts"
-                            items={navItems.accounts}
-                            isActive={isActive}
-                        />
+                        {primaryItems.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={
+                                    'rounded-full px-3 py-1.5 text-sm font-medium transition ' +
+                                    (isActive(item.href)
+                                        ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
+                                        : 'text-[color:var(--sidebar-foreground)]/85 hover:bg-[color:var(--sidebar-foreground)]/8 hover:text-[color:var(--sidebar-foreground)]')
+                                }
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                        {navGroups.map((group) => (
+                            <Submenu
+                                key={group.label}
+                                label={group.label}
+                                items={group.items}
+                                isActive={isActive}
+                            />
+                        ))}
 
                         <NotificationBell />
                         <button
@@ -130,74 +183,42 @@ export default function NavHeader() {
             {open && (
                 <div className="to-[color-mix(in oklab, var(--sidebar) 70%, black 30%)] border-t border-[color:var(--sidebar-border)] bg-gradient-to-b from-[var(--sidebar)] md:hidden">
                     <nav className="mx-auto grid max-w-6xl gap-2 px-4 py-3">
-                        <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                            Nutrition
-                        </div>
-                        {navItems.nutrition.map((item) => (
+                        {primaryItems.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className="rounded-lg px-3 py-2 text-[color:var(--sidebar-foreground)]/90 transition hover:bg-[color:var(--sidebar-foreground)]/10"
+                                className={
+                                    'rounded-lg px-3 py-2 transition ' +
+                                    (isActive(item.href)
+                                        ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
+                                        : 'text-[color:var(--sidebar-foreground)]/90 hover:bg-[color:var(--sidebar-foreground)]/10')
+                                }
                                 onClick={() => setOpen(false)}
                             >
                                 {item.label}
                             </Link>
                         ))}
-
-                        <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                            Fitness
-                        </div>
-                        {navItems.fitness.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="rounded-lg px-3 py-2 text-[color:var(--sidebar-foreground)]/90 transition hover:bg-[color:var(--sidebar-foreground)]/10"
-                                onClick={() => setOpen(false)}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-
-                        <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                            Nearby
-                        </div>
-                        {navItems.nearby.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="rounded-lg px-3 py-2 text-[color:var(--sidebar-foreground)]/90 transition hover:bg-[color:var(--sidebar-foreground)]/10"
-                                onClick={() => setOpen(false)}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-
-                        <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                            Messages
-                        </div>
-                        {navItems.messages.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="rounded-lg px-3 py-2 text-[color:var(--sidebar-foreground)]/90 transition hover:bg-[color:var(--sidebar-foreground)]/10"
-                                onClick={() => setOpen(false)}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-
-                        <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                            Accounts
-                        </div>
-                        {navItems.accounts.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className="rounded-lg px-3 py-2 text-[color:var(--sidebar-foreground)]/90 transition hover:bg-[color:var(--sidebar-foreground)]/10"
-                                onClick={() => setOpen(false)}
-                            >
-                                {item.label}
-                            </Link>
+                        {navGroups.map((group) => (
+                            <div key={group.label} className="grid gap-2">
+                                <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
+                                    {group.label}
+                                </div>
+                                {group.items.map((item) => (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={
+                                            'rounded-lg px-3 py-2 transition ' +
+                                            (isActive(item.href)
+                                                ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
+                                                : 'text-[color:var(--sidebar-foreground)]/90 hover:bg-[color:var(--sidebar-foreground)]/10')
+                                        }
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </div>
                         ))}
                         <button
                             onClick={doLogout}

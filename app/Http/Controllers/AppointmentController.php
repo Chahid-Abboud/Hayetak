@@ -11,6 +11,7 @@ use App\Services\AdminActionLogger;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class AppointmentController extends Controller
 {
@@ -19,7 +20,7 @@ class AppointmentController extends Controller
         private readonly AdminActionLogger $logger,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
         $query = Appointment::query()->with(['client', 'professional'])->latest('scheduled_at');
@@ -30,7 +31,7 @@ class AppointmentController extends Controller
             });
         }
 
-        return response()->json(AppointmentResource::collection($query->paginate((int) $request->query('per_page', 20))));
+        return AppointmentResource::collection($query->paginate((int) $request->query('per_page', 20)));
     }
 
     public function store(StoreAppointmentRequest $request): JsonResponse

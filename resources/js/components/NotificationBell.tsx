@@ -65,7 +65,7 @@ export default function NotificationBell() {
                     </div>
                     <div className="max-h-96 space-y-2 overflow-auto">
                         {items.length === 0 && (
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-muted-foreground">
                                 No notifications
                             </div>
                         )}
@@ -74,7 +74,7 @@ export default function NotificationBell() {
                                 <div className="text-sm font-medium">
                                     {item.title}
                                 </div>
-                                <div className="mt-1 text-xs text-slate-600">
+                                <div className="mt-1 text-xs text-muted-foreground">
                                     {item.body}
                                 </div>
                                 <div className="mt-2 flex gap-2">
@@ -84,7 +84,7 @@ export default function NotificationBell() {
                                             onClick={() =>
                                                 void markRead(item.id)
                                             }
-                                            className="text-xs text-blue-700 underline"
+                                            className="text-xs text-primary underline"
                                         >
                                             Mark read
                                         </button>
@@ -92,7 +92,7 @@ export default function NotificationBell() {
                                     <button
                                         type="button"
                                         onClick={() => void dismiss(item.id)}
-                                        className="text-xs text-slate-600 underline"
+                                        className="text-xs text-muted-foreground underline"
                                     >
                                         Dismiss
                                     </button>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -84,4 +85,49 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect(route('profile.edit'));
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('height and weight measurements can be saved from the profile page', function () {
+    $user = User::factory()->create([
+        'height_cm' => 178,
+        'weight_kg' => 80,
+    ]);
+
+    $date = '2026-03-14';
+
+    $this->actingAs($user)
+        ->from(route('profile.edit'))
+        ->post(route('profile.measurements'), [
+            'date' => $date,
+            'type' => 'weight',
+            'value' => 78.4,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    $this->actingAs($user)
+        ->from(route('profile.edit'))
+        ->post(route('profile.measurements'), [
+            'date' => $date,
+            'type' => 'height',
+            'value' => 181,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    expect(DB::table('measurements')
+        ->where('user_id', $user->id)
+        ->where('measured_at', $date)
+        ->first())
+        ->not->toBeNull();
+
+    $row = DB::table('measurements')
+        ->where('user_id', $user->id)
+        ->where('measured_at', $date)
+        ->first();
+
+    expect((float) $row->weight_kg)->toBe(78.4)
+        ->and((int) $row->height_cm)->toBe(181)
+        ->and((int) $user->fresh()->height_cm)->toBe(181)
+        ->and((float) $user->fresh()->weight_kg)->toBe(78.4);
 });
