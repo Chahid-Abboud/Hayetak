@@ -71,25 +71,27 @@ export default function AdminUserShow() {
                 <RoleGuard roles={['admin']}>
                     <h1 className="mb-4 text-2xl font-semibold">User Detail</h1>
                     {!detail && (
-                        <div className="text-sm text-slate-500">Loading...</div>
+                        <div className="text-sm text-muted-foreground">
+                            Loading...
+                        </div>
                     )}
                     {detail && (
                         <div className="grid gap-4 md:grid-cols-2">
-                            <div className="rounded-lg border p-4">
+                            <div className="rounded-2xl border bg-card p-4 shadow-sm">
                                 <div className="mb-2 text-sm font-medium">
                                     Account
                                 </div>
                                 <div className="text-sm">
                                     {detail.user.name}
                                 </div>
-                                <div className="text-xs text-slate-600">
+                                <div className="text-xs text-muted-foreground">
                                     {detail.user.email}
                                 </div>
                                 <div className="mt-3 grid gap-2">
                                     <label className="text-sm">
                                         Role
                                         <select
-                                            className="mt-1 w-full rounded border px-2 py-1"
+                                            className="mt-1 w-full rounded-xl border bg-background px-3 py-2"
                                             value={role}
                                             onChange={(e) =>
                                                 setRole(
@@ -114,7 +116,7 @@ export default function AdminUserShow() {
                                     <label className="text-sm">
                                         Status
                                         <input
-                                            className="mt-1 w-full rounded border px-2 py-1"
+                                            className="mt-1 w-full rounded-xl border bg-background px-3 py-2"
                                             value={status}
                                             onChange={(e) =>
                                                 setStatus(e.target.value)
@@ -133,13 +135,13 @@ export default function AdminUserShow() {
                                     </label>
                                     <div className="flex gap-3">
                                         <button
-                                            className="rounded bg-blue-700 px-3 py-1 text-sm text-white"
+                                            className="rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)]"
                                             onClick={() => void saveUser()}
                                         >
                                             Save
                                         </button>
                                         <button
-                                            className="rounded bg-red-700 px-3 py-1 text-sm text-white"
+                                            className="rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground"
                                             onClick={() => void deleteUser()}
                                         >
                                             Delete
@@ -148,11 +150,11 @@ export default function AdminUserShow() {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <section className="rounded-lg border p-4">
+                                <section className="rounded-2xl border bg-card p-4 shadow-sm">
                                     <h2 className="mb-2 text-sm font-medium">
                                         Meal Entries
                                     </h2>
-                                    <div className="max-h-48 overflow-auto text-xs text-slate-700">
+                                    <div className="max-h-48 overflow-auto text-xs text-foreground">
                                         {JSON.stringify(
                                             detail.meal_entries,
                                             null,
@@ -160,11 +162,11 @@ export default function AdminUserShow() {
                                         )}
                                     </div>
                                 </section>
-                                <section className="rounded-lg border p-4">
+                                <section className="rounded-2xl border bg-card p-4 shadow-sm">
                                     <h2 className="mb-2 text-sm font-medium">
                                         Workout Logs
                                     </h2>
-                                    <div className="max-h-48 overflow-auto text-xs text-slate-700">
+                                    <div className="max-h-48 overflow-auto text-xs text-foreground">
                                         {JSON.stringify(
                                             detail.workout_logs,
                                             null,

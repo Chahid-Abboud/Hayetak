@@ -49,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
         // Auth
         'email', 'password',
         'role', 'verified', 'status',
+        'professional_bio', 'specialties', 'city', 'contact_display', 'profile_lat', 'profile_lng', 'availability_text',
 
         // 2FA (Fortify)
         'two_factor_secret', 'two_factor_recovery_codes',
@@ -81,6 +82,9 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'workout_days_per_week' => 'integer',
             'tried_diet_before' => 'boolean',
             'verified' => 'boolean',
+            'specialties' => 'array',
+            'profile_lat' => 'decimal:6',
+            'profile_lng' => 'decimal:6',
             // 'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -199,6 +203,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function clientAssignments(): HasMany
     {
         return $this->hasMany(ProfessionalClientAssignment::class, 'client_id');
+    }
+
+    public function professionalVerifications(): HasMany
+    {
+        return $this->hasMany(ProfessionalVerification::class, 'user_id');
+    }
+
+    public function latestProfessionalVerification(): HasOne
+    {
+        return $this->hasOne(ProfessionalVerification::class, 'user_id')->latestOfMany();
     }
 
     public function appointmentsAsClient(): HasMany

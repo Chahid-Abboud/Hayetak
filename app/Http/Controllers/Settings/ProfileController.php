@@ -215,7 +215,7 @@ class ProfileController extends Controller
             $u->save();
 
             return back()->with('status', 'height-saved-user-only')
-                ->with('error', 'Height history is not enabled in measurements table (no height_cm column). Height updated on profile only.');
+                ->with('success', 'Height saved. Height history will appear once the measurements table upgrade is applied.');
         }
 
         return back()->with('error', 'Unknown measurement type.');

@@ -39,6 +39,10 @@ export interface User {
     role?: 'admin' | 'nutritionist' | 'trainer' | 'client';
     verified?: boolean;
     status?: string | null;
+    city?: string | null;
+    professional_bio?: string | null;
+    specialties?: string[];
+    availability_text?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;

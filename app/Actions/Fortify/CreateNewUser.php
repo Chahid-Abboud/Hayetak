@@ -41,6 +41,7 @@ class CreateNewUser implements CreatesNewUsers
 
             'email' => null,
             'password' => null,
+            'account_type' => User::ROLE_CLIENT,
         ], $input);
 
         Validator::make($data, [
@@ -73,6 +74,7 @@ class CreateNewUser implements CreatesNewUsers
 
             'email' => ['required', 'string', 'email:rfc,dns', 'max:120', Rule::unique(User::class, 'email')],
             'password' => ['required', Password::defaults()],
+            'account_type' => ['required', Rule::in([User::ROLE_CLIENT, User::ROLE_TRAINER, User::ROLE_NUTRITIONIST])],
         ])->validate();
 
         // Satisfy NOT NULL users.name by computing it from first/last (fallback to email local-part)
@@ -110,6 +112,9 @@ class CreateNewUser implements CreatesNewUsers
 
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'role' => $data['account_type'],
+            'verified' => $data['account_type'] === User::ROLE_CLIENT,
+            'status' => $data['account_type'] === User::ROLE_CLIENT ? 'active' : 'pending_verification',
         ]);
     }
 }

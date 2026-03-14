@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureTwoFactorEnabled;
+use App\Http\Middleware\EnsureVerifiedProfessional;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests; // ⬅️ add this
 use App\Http\Middleware\RequireRole;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ⬇️ add an alias you can use on route groups
         $middleware->alias([
             '2fa.enforced' => EnsureTwoFactorEnabled::class,
+            'professional.verified' => EnsureVerifiedProfessional::class,
             'role' => RequireRole::class,
         ]);
     })
