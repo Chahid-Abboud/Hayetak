@@ -1,7 +1,7 @@
 import NavHeader from '@/components/NavHeader';
 import RoleGuard from '@/components/RoleGuard';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Measurement = {
     id: number;
@@ -18,14 +18,14 @@ export default function AdminProgressPage() {
     const [userId, setUserId] = useState('');
     const [rows, setRows] = useState<Measurement[]>([]);
 
-    async function load() {
+    const load = useCallback(async () => {
         const qs = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
         const res = await fetch(`/api/admin/progress${qs}`);
         const json = await res.json();
         setRows(Array.isArray(json?.data) ? json.data : []);
-    }
+    }, [userId]);
 
-    useEffect(() => { void load(); }, [userId]);
+    useEffect(() => { void load(); }, [load]);
 
     async function edit(row: Measurement) {
         const weight = prompt('Weight kg', String(row.weight_kg ?? '')) ?? String(row.weight_kg ?? '');

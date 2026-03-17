@@ -1,7 +1,7 @@
 import NavHeader from '@/components/NavHeader';
 import RoleGuard from '@/components/RoleGuard';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Pro = {
     id: number;
@@ -23,15 +23,15 @@ export default function AdminProfessionalsPage() {
     const [rows, setRows] = useState<Pro[]>([]);
     const [selected, setSelected] = useState<Pro | null>(null);
 
-    async function load() {
+    const load = useCallback(async () => {
         const res = await fetch(`/api/admin/professionals?role=${role}`);
         const json = await res.json();
         setRows(Array.isArray(json?.data) ? json.data : []);
-    }
+    }, [role]);
 
     useEffect(() => {
         void load();
-    }, [role]);
+    }, [load]);
 
     async function save() {
         if (!selected) return;

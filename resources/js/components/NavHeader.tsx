@@ -14,6 +14,7 @@ export default function NavHeader() {
             ? [{ href: '/dashboard', label: 'Admin Dashboard' }]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
+                  { href: '/coach', label: 'AI Coach' },
                   { href: '/nearby', label: 'Nearby Map' },
               ];
     const navGroups: Array<{

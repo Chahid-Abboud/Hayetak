@@ -1,7 +1,7 @@
 import NavHeader from '@/components/NavHeader';
 import RoleGuard from '@/components/RoleGuard';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Verification = {
     id: number;
@@ -20,15 +20,15 @@ export default function AdminProfessionalVerifications() {
     const [rows, setRows] = useState<Verification[]>([]);
     const [status, setStatus] = useState('pending');
 
-    async function load() {
+    const load = useCallback(async () => {
         const res = await fetch(`/api/admin/professional-verifications?status=${encodeURIComponent(status)}`);
         const json = await res.json();
         setRows(Array.isArray(json?.data) ? json.data : []);
-    }
+    }, [status]);
 
     useEffect(() => {
         void load();
-    }, [status]);
+    }, [load]);
 
     async function review(id: number, reviewStatus: 'approved' | 'rejected' | 'needs_info') {
         const notes = window.prompt('Optional notes', '') ?? '';

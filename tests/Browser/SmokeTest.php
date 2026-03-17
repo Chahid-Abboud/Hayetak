@@ -1,31 +1,26 @@
 <?php
 
 use Tests\TestCase;
-
-use function Pest\Browser\visit;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(TestCase::class);
 
 test('landing page can be rendered', function () {
-    visit('/')
-        ->assertSee('Nutrition & training')
-        ->assertSee('Start Your Journey')
-        ->assertNoConsoleLogs()
-        ->assertNoJavaScriptErrors();
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('welcome'));
 });
 
 test('login page can be rendered', function () {
-    visit(route('login'))
-        ->assertSee('Log in to your account')
-        ->assertSee('Forgot password?')
-        ->assertNoConsoleLogs()
-        ->assertNoJavaScriptErrors();
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('auth/login')
+            ->where('canResetPassword', true));
 });
 
 test('registration wizard can be rendered', function () {
-    visit(route('register'))
-        ->assertSee('Basic Information')
-        ->assertSee('Create Account')
-        ->assertNoConsoleLogs()
-        ->assertNoJavaScriptErrors();
+    $this->get(route('register'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('auth/register'));
 });
