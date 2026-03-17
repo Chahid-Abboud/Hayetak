@@ -1,7 +1,7 @@
 import NavHeader from '@/components/NavHeader';
 import RoleGuard from '@/components/RoleGuard';
 import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Food = { id: number; name: string; category?: string | null; calories?: number | null; protein_g?: number | null; carbs_g?: number | null; fat_g?: number | null };
 type MealEntry = { id: number; user_id: number; food_id: number; meal_type: string; servings: string; eaten_at: string; food?: { id: number; name: string } };
@@ -11,20 +11,20 @@ export default function AdminMealsPage() {
     const [entries, setEntries] = useState<MealEntry[]>([]);
     const [foodQ, setFoodQ] = useState('');
 
-    async function loadFoods() {
+    const loadFoods = useCallback(async () => {
         const res = await fetch(`/api/admin/foods?q=${encodeURIComponent(foodQ)}`);
         const json = await res.json();
         setFoods(Array.isArray(json?.data) ? json.data : []);
-    }
+    }, [foodQ]);
 
-    async function loadEntries() {
+    const loadEntries = useCallback(async () => {
         const res = await fetch('/api/admin/meal-entries');
         const json = await res.json();
         setEntries(Array.isArray(json?.data) ? json.data : []);
-    }
+    }, []);
 
-    useEffect(() => { void loadFoods(); }, [foodQ]);
-    useEffect(() => { void loadEntries(); }, []);
+    useEffect(() => { void loadFoods(); }, [loadFoods]);
+    useEffect(() => { void loadEntries(); }, [loadEntries]);
 
     async function editFood(f: Food) {
         const name = prompt('Food name', f.name) ?? f.name;

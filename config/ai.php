@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'chat' => [
+        'provider' => env('AI_CHAT_PROVIDER', 'stub'),
+        'http' => [
+            'endpoint' => env('AI_CHAT_ENDPOINT'),
+            'token' => env('AI_CHAT_TOKEN'),
+            'timeout' => (int) env('AI_CHAT_HTTP_TIMEOUT', 30),
+        ],
+    ],
+
     'models' => [
         'planner' => env('OPENAI_MODEL_PLANNER', 'gpt-4.1-mini'),
         'coach' => env('OPENAI_MODEL_COACH', 'gpt-4.1-mini'),
