@@ -3,11 +3,17 @@ import '../css/app.css';
 import axios from 'axios';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 
 window.MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+(
+    mapboxgl as typeof mapboxgl & {
+        setTelemetryEnabled?: (enabled: boolean) => void;
+    }
+).setTelemetryEnabled?.(false);
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

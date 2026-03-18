@@ -199,6 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
             Route::patch('/admin/users/{user}/verification', [AdminUserController::class, 'toggleVerification']);
             Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
+            Route::get('/admin/notifications', [AdminNotificationController::class, 'index']);
             Route::post('/admin/notifications', [AdminNotificationController::class, 'store']);
             Route::get('/admin/action-logs', [AdminActionLogController::class, 'index']);
             Route::get('/admin/professional-verifications', [AdminProfessionalVerificationController::class, 'index']);

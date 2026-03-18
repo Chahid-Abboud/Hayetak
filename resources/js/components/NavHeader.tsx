@@ -143,6 +143,7 @@ export default function NavHeader() {
 
                         <NotificationBell />
                         <button
+                            type="button"
                             onClick={doLogout}
                             className="rounded-full bg-[color:var(--sidebar-foreground)]/12 px-3 py-1.5 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-[color:var(--sidebar-foreground)]/22"
                         >
@@ -152,6 +153,7 @@ export default function NavHeader() {
 
                     {/* Mobile menu button */}
                     <button
+                        type="button"
                         className="inline-flex items-center justify-center rounded-lg bg-[color:var(--sidebar-foreground)]/10 p-2 md:hidden"
                         onClick={() => setOpen((v) => !v)}
                     >
@@ -221,7 +223,9 @@ export default function NavHeader() {
                                 ))}
                             </div>
                         ))}
+                        <NotificationBell fullWidth />
                         <button
+                            type="button"
                             onClick={doLogout}
                             className="w-full rounded-lg bg-[color:var(--destructive)]/15 px-3 py-2 text-left text-[color:var(--destructive-foreground)]/95 transition hover:bg-[color:var(--destructive)]/25"
                         >

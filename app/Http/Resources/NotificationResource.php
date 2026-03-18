@@ -17,6 +17,11 @@ class NotificationResource extends JsonResource
             'dismissed_at' => $this->dismissed_at,
             'created_at' => $this->created_at,
             'created_by' => $this->created_by,
+            'creator' => $this->whenLoaded('creator', fn () => [
+                'id' => $this->creator?->id,
+                'name' => $this->creator?->display_name,
+                'email' => $this->creator?->email,
+            ]),
         ];
     }
 }

@@ -8,8 +8,8 @@
  * Loaded from routes/web.php and protected by the `auth` middleware.
  *
  * Notes:
- * - Two-factor route is named `two-factor.show` so redirects like
- *   `return redirect()->route('two-factor.show')` work after register/login.
+ * - Two-factor remains available from settings/profile and keeps the
+ *   `two-factor.show` route name for compatibility with generated route helpers.
  */
 
 use App\Http\Controllers\Settings\PasswordController;
