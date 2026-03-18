@@ -70,6 +70,7 @@ class ChatOrchestrator
                     $question,
                     $contextBundle['context'],
                     [
+                        'user_id' => $user->id,
                         'intent' => $classification['intent'],
                         'feature' => $classification['feature'],
                         'screen_context' => $runtimeContext['screen_context'] ?? 'coach',
@@ -83,11 +84,19 @@ class ChatOrchestrator
                 $model = (string) ($result['model'] ?? 'unknown-chat-model');
                 $usage = $result['usage'] ?? $usage;
                 $providerRequestId = $result['provider_request_id'] ?? null;
+                $chatMetadata = array_filter([
+                    'chat_path' => $result['chat_path'] ?? null,
+                    'context_score' => $result['context_score'] ?? null,
+                    'matches' => $result['matches'] ?? null,
+                ], fn ($value) => $value !== null && $value !== []);
             } catch (\Throwable $e) {
                 $answer = 'The AI coach is not fully connected yet, so I could not reach the model right now. You can still ask again later, or use Dashboard, Meal Tracker, Workouts, Nearby, Messages, and Settings directly.';
                 $warnings[] = 'Model request failed, so a built-in fallback message was returned.';
                 $model = 'chat-fallback';
+                $chatMetadata = [];
             }
+        } else {
+            $chatMetadata = [];
         }
 
         $assistantMessage = AiMessage::query()->create([
@@ -103,6 +112,7 @@ class ChatOrchestrator
                 'provider' => $provider,
                 'model' => $model,
                 'screen_context' => $runtimeContext['screen_context'] ?? 'coach',
+                'chat' => $chatMetadata,
             ],
         ]);
 

@@ -13,6 +13,8 @@ class UserNotificationController extends Controller
     {
         $notifications = Notification::query()
             ->where('target_user_id', $request->user()->id)
+            ->whereNull('dismissed_at')
+            ->with('creator:id,first_name,last_name,name,email')
             ->latest('created_at')
             ->paginate((int) $request->query('per_page', 20));
 

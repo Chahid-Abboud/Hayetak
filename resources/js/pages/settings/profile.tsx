@@ -1434,96 +1434,131 @@ export default function ProfilePage() {
                         title="Security"
                         description="Change your account password without leaving this page."
                     >
-                        <form
-                            className="grid gap-4 sm:grid-cols-2"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                savePassword();
-                            }}
-                        >
-                            <div className="sm:col-span-2">
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="current-password"
-                                >
-                                    Current password
-                                </label>
-                                <input
-                                    id="current-password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={currentPassword}
-                                    onChange={(e) =>
-                                        setCurrentPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.current_password ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.current_password}
-                                    </p>
-                                ) : null}
+                        <div className="grid gap-4">
+                            <div className="rounded-xl border border-border bg-background/40 p-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <div className="text-sm font-semibold text-foreground">
+                                            Two-factor authentication
+                                        </div>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            Keep 2FA optional and manage it from
+                                            here whenever you want extra account
+                                            protection.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Badge>
+                                            {twoFactorEnabled
+                                                ? '2FA enabled'
+                                                : '2FA optional'}
+                                        </Badge>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                router.visit(
+                                                    '/settings/two-factor',
+                                                )
+                                            }
+                                        >
+                                            Manage 2FA
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div>
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="new-password"
-                                >
-                                    New password
-                                </label>
-                                <input
-                                    id="new-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={newPassword}
-                                    onChange={(e) =>
-                                        setNewPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.password ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.password}
-                                    </p>
-                                ) : null}
-                            </div>
+                            <form
+                                className="grid gap-4 sm:grid-cols-2"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    savePassword();
+                                }}
+                            >
+                                <div className="sm:col-span-2">
+                                    <label
+                                        className="text-sm font-medium text-foreground"
+                                        htmlFor="current-password"
+                                    >
+                                        Current password
+                                    </label>
+                                    <input
+                                        id="current-password"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                        value={currentPassword}
+                                        onChange={(e) =>
+                                            setCurrentPassword(e.target.value)
+                                        }
+                                    />
+                                    {passwordErrors.current_password ? (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {passwordErrors.current_password}
+                                        </p>
+                                    ) : null}
+                                </div>
 
-                            <div>
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="confirm-password"
-                                >
-                                    Confirm new password
-                                </label>
-                                <input
-                                    id="confirm-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={confirmPassword}
-                                    onChange={(e) =>
-                                        setConfirmPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.password_confirmation ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.password_confirmation}
-                                    </p>
-                                ) : null}
-                            </div>
+                                <div>
+                                    <label
+                                        className="text-sm font-medium text-foreground"
+                                        htmlFor="new-password"
+                                    >
+                                        New password
+                                    </label>
+                                    <input
+                                        id="new-password"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                        value={newPassword}
+                                        onChange={(e) =>
+                                            setNewPassword(e.target.value)
+                                        }
+                                    />
+                                    {passwordErrors.password ? (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {passwordErrors.password}
+                                        </p>
+                                    ) : null}
+                                </div>
 
-                            <div className="flex items-center gap-3 sm:col-span-2">
-                                <Button type="submit" variant="primary">
-                                    Update password
-                                </Button>
-                                {passwordStatus ? (
-                                    <span className="text-sm text-emerald-600">
-                                        {passwordStatus}
-                                    </span>
-                                ) : null}
-                            </div>
-                        </form>
+                                <div>
+                                    <label
+                                        className="text-sm font-medium text-foreground"
+                                        htmlFor="confirm-password"
+                                    >
+                                        Confirm new password
+                                    </label>
+                                    <input
+                                        id="confirm-password"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                        value={confirmPassword}
+                                        onChange={(e) =>
+                                            setConfirmPassword(e.target.value)
+                                        }
+                                    />
+                                    {passwordErrors.password_confirmation ? (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {passwordErrors.password_confirmation}
+                                        </p>
+                                    ) : null}
+                                </div>
+
+                                <div className="flex items-center gap-3 sm:col-span-2">
+                                    <Button type="submit" variant="primary">
+                                        Update password
+                                    </Button>
+                                    {passwordStatus ? (
+                                        <span className="text-sm text-emerald-600">
+                                            {passwordStatus}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </form>
+                        </div>
                     </SectionCard>
 
                     {/* Progress (Charts) */}

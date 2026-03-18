@@ -1,4 +1,12 @@
 // resources/js/pages/Places.tsx
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
@@ -12,8 +20,19 @@ type Professional = {
     area?: string | null;
     authority?: string | null;
     city?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    distance_m?: number | null;
     specialties?: string[] | null;
     canInteract?: boolean;
+};
+
+type AppointmentDialogState = {
+    professionalId: number;
+    professionalName: string;
+    professionalRole: 'nutritionist' | 'trainer' | string;
+    scheduledAt: string;
+    notes: string;
 };
 
 function SimpleSlider({
@@ -97,6 +116,11 @@ export default function Places() {
     const [workingProfessionalId, setWorkingProfessionalId] = useState<
         number | null
     >(null);
+    const [appointmentDialog, setAppointmentDialog] =
+        useState<AppointmentDialogState | null>(null);
+    const [appointmentDialogError, setAppointmentDialogError] = useState<
+        string | null
+    >(null);
 
     // locate once
     useEffect(() => {
@@ -158,6 +182,10 @@ export default function Places() {
                     params.set('area', professionalArea.trim());
                 }
                 if (professionalRole !== 'all') params.set('role', professionalRole);
+                if (center) {
+                    params.set('lat', String(center.lat));
+                    params.set('lng', String(center.lon));
+                }
                 const res = await fetch(
                     `/api/dietitians${params.toString() ? `?${params.toString()}` : ''}`,
                     { headers: { Accept: 'application/json' } },
@@ -166,14 +194,15 @@ export default function Places() {
                     throw new Error('Could not load professionals.');
                 }
                 const json = await res.json();
-                setProfessionals(Array.isArray(json?.data) ? json.data : []);
+                const list = Array.isArray(json?.data) ? json.data : [];
+                setProfessionals(sortProfessionals(list, center));
             } catch {
                 setProfessionals([]);
             } finally {
                 setLoadingProfessionals(false);
             }
         })();
-    }, [professionalArea, professionalRole]);
+    }, [center, professionalArea, professionalRole]);
 
     async function openConversation(userId: number) {
         const token =
@@ -218,20 +247,36 @@ export default function Places() {
         }
     }
 
-    async function requestAppointment(
-        userId: number,
-        role: 'nutritionist' | 'trainer' | string,
-    ) {
-        const when = prompt('Appointment date/time (YYYY-MM-DD HH:mm:ss)');
-        if (!when) return;
+    function openAppointmentDialog(professional: Professional) {
+        setAppointmentDialogError(null);
+        setError(null);
+        setAppointmentDialog({
+            professionalId: professional.id,
+            professionalName: professional.name,
+            professionalRole: professional.role,
+            scheduledAt: createDefaultAppointmentDateTime(),
+            notes: '',
+        });
+    }
+
+    async function submitAppointmentRequest() {
+        if (!appointmentDialog) return;
+
+        if (!appointmentDialog.scheduledAt) {
+            setAppointmentDialogError('Select a date and time for the appointment.');
+            return;
+        }
+
         const token =
             (
                 document.querySelector(
                     'meta[name="csrf-token"]',
                 ) as HTMLMetaElement | null
             )?.content ?? '';
+
         try {
-            setWorkingProfessionalId(userId);
+            setAppointmentDialogError(null);
+            setWorkingProfessionalId(appointmentDialog.professionalId);
             const response = await fetch('/api/appointments', {
                 method: 'POST',
                 headers: {
@@ -241,9 +286,12 @@ export default function Places() {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify({
-                    professional_id: userId,
-                    professional_role: role,
-                    scheduled_at: when,
+                    professional_id: appointmentDialog.professionalId,
+                    professional_role: appointmentDialog.professionalRole,
+                    scheduled_at: toAppointmentTimestamp(
+                        appointmentDialog.scheduledAt,
+                    ),
+                    notes: appointmentDialog.notes.trim() || null,
                 }),
             });
             const json = await response.json().catch(() => null);
@@ -254,13 +302,15 @@ export default function Places() {
                         : 'Could not request the appointment.',
                 );
             }
+            setAppointmentDialog(null);
             window.location.href = '/appointments';
         } catch (err) {
-            setError(
+            const message =
                 err instanceof Error
                     ? err.message
-                    : 'Could not request the appointment.',
-            );
+                    : 'Could not request the appointment.';
+            setAppointmentDialogError(message);
+            setError(message);
         } finally {
             setWorkingProfessionalId(null);
         }
@@ -581,6 +631,14 @@ export default function Places() {
                                                     professional.city ??
                                                     'No area info'}
                                             </div>
+                                            {typeof professional.distance_m ===
+                                                'number' && (
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {(professional.distance_m /
+                                                        1000).toFixed(2)}{' '}
+                                                    km away
+                                                </div>
+                                            )}
                                             {professional.authority && (
                                                 <div className="text-xs text-muted-foreground">
                                                     Authority:{' '}
@@ -632,9 +690,8 @@ export default function Places() {
                                                     }
                                                     onClick={() =>
                                                         professional.canInteract
-                                                            ? void requestAppointment(
-                                                                  professional.id,
-                                                                  professional.role,
+                                                            ? openAppointmentDialog(
+                                                                  professional,
                                                               )
                                                             : undefined
                                                     }
@@ -657,6 +714,137 @@ export default function Places() {
                     </div>
                 </div>
             </main>
+
+            <Dialog
+                open={appointmentDialog !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setAppointmentDialog(null);
+                        setAppointmentDialogError(null);
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Request Appointment</DialogTitle>
+                        <DialogDescription>
+                            Choose a date and time for your appointment request.
+                            The professional will see your requested slot in
+                            their appointments inbox.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {appointmentDialog ? (
+                        <form
+                            className="space-y-4"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                void submitAppointmentRequest();
+                            }}
+                        >
+                            <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                                <div className="font-medium">
+                                    {appointmentDialog.professionalName}
+                                </div>
+                                <div className="text-xs text-muted-foreground capitalize">
+                                    {appointmentDialog.professionalRole ===
+                                    'nutritionist'
+                                        ? 'Dietitian'
+                                        : 'Trainer'}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label
+                                    className="block text-sm font-medium"
+                                    htmlFor="appointment-date-time"
+                                >
+                                    Appointment date and time
+                                </label>
+                                <input
+                                    id="appointment-date-time"
+                                    type="datetime-local"
+                                    step={60}
+                                    min={formatDateTimeLocal(new Date())}
+                                    value={appointmentDialog.scheduledAt}
+                                    onChange={(event) => {
+                                        setAppointmentDialog((current) =>
+                                            current
+                                                ? {
+                                                      ...current,
+                                                      scheduledAt:
+                                                          event.target.value,
+                                                  }
+                                                : null,
+                                        );
+                                        setAppointmentDialogError(null);
+                                    }}
+                                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label
+                                    className="block text-sm font-medium"
+                                    htmlFor="appointment-notes"
+                                >
+                                    Notes
+                                </label>
+                                <textarea
+                                    id="appointment-notes"
+                                    value={appointmentDialog.notes}
+                                    onChange={(event) =>
+                                        setAppointmentDialog((current) =>
+                                            current
+                                                ? {
+                                                      ...current,
+                                                      notes: event.target.value,
+                                                  }
+                                                : null,
+                                        )
+                                    }
+                                    className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                    maxLength={2000}
+                                    placeholder="Optional context, preferred meeting format, or goals for this session."
+                                />
+                            </div>
+
+                            {appointmentDialogError && (
+                                <div className="text-sm text-red-600">
+                                    {appointmentDialogError}
+                                </div>
+                            )}
+
+                            <DialogFooter>
+                                <button
+                                    type="button"
+                                    className="rounded-md border px-4 py-2 text-sm"
+                                    onClick={() => {
+                                        setAppointmentDialog(null);
+                                        setAppointmentDialogError(null);
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                                    disabled={
+                                        workingProfessionalId ===
+                                        appointmentDialog.professionalId
+                                    }
+                                >
+                                    {workingProfessionalId ===
+                                    appointmentDialog.professionalId
+                                        ? 'Requesting...'
+                                        : 'Request appointment'}
+                                </button>
+                            </DialogFooter>
+                        </form>
+                    ) : null}
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
@@ -674,4 +862,107 @@ function toSafeHttpUrl(value?: string | null): string | null {
         return null;
     }
     return null;
+}
+
+function sortProfessionals(
+    professionals: Professional[],
+    center: { lat: number; lon: number } | null,
+): Professional[] {
+    if (
+        !center &&
+        professionals.every(
+            (professional) => typeof professional.distance_m !== 'number',
+        )
+    ) {
+        return professionals;
+    }
+
+    return [...professionals].sort((a, b) => {
+        const aDistance = resolveProfessionalDistance(a, center);
+        const bDistance = resolveProfessionalDistance(b, center);
+
+        if (aDistance === null && bDistance === null) {
+            return a.name.localeCompare(b.name);
+        }
+        if (aDistance === null) return 1;
+        if (bDistance === null) return -1;
+        if (aDistance !== bDistance) return aDistance - bDistance;
+
+        return a.name.localeCompare(b.name);
+    });
+}
+
+function resolveProfessionalDistance(
+    professional: Professional,
+    center: { lat: number; lon: number } | null,
+): number | null {
+    if (typeof professional.distance_m === 'number') {
+        return professional.distance_m;
+    }
+
+    if (
+        !center ||
+        typeof professional.lat !== 'number' ||
+        typeof professional.lng !== 'number'
+    ) {
+        return null;
+    }
+
+    return haversineDistanceMeters(
+        center.lat,
+        center.lon,
+        professional.lat,
+        professional.lng,
+    );
+}
+
+function createDefaultAppointmentDateTime(): string {
+    const date = new Date();
+    date.setMinutes(date.getMinutes() + 30, 0, 0);
+
+    return formatDateTimeLocal(date);
+}
+
+function formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const hours = `${date.getHours()}`.padStart(2, '0');
+    const minutes = `${date.getMinutes()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function toAppointmentTimestamp(value: string): string {
+    const [datePart, timePart = '00:00'] = value.split('T');
+    const normalizedTime =
+        timePart.length === 5
+            ? `${timePart}:00`
+            : timePart.length === 8
+              ? timePart
+              : `${timePart.slice(0, 5)}:00`;
+
+    return `${datePart} ${normalizedTime}`;
+}
+
+function haversineDistanceMeters(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+): number {
+    const earthRadiusMeters = 6371000;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const lat1Rad = (lat1 * Math.PI) / 180;
+    const lat2Rad = (lat2 * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1Rad) *
+            Math.cos(lat2Rad) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadiusMeters * c;
 }

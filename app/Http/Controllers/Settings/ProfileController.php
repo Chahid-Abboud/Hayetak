@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Measurement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -184,10 +185,17 @@ class ProfileController extends Controller
             }
 
             // Upsert per (user_id, measured_at) — matches your unique index
-            DB::table('measurements')->updateOrInsert(
-                ['user_id' => $u->id, $dateColumn => $data['date']],
-                ['weight_kg' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
-            );
+            if ($dateColumn === 'measured_at') {
+                Measurement::query()->updateOrCreate(
+                    ['user_id' => $u->id, $dateColumn => $data['date']],
+                    ['weight_kg' => $data['value']]
+                );
+            } else {
+                DB::table('measurements')->updateOrInsert(
+                    ['user_id' => $u->id, $dateColumn => $data['date']],
+                    ['weight_kg' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
+                );
+            }
 
             // Optional: keep latest on users table
             $u->weight_kg = $data['value'];
@@ -200,10 +208,17 @@ class ProfileController extends Controller
         if ($data['type'] === 'height') {
             // If you later add measurements.height_cm, this will work automatically:
             if (Schema::hasColumn('measurements', 'height_cm')) {
-                DB::table('measurements')->updateOrInsert(
-                    ['user_id' => $u->id, $dateColumn => $data['date']],
-                    ['height_cm' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
-                );
+                if ($dateColumn === 'measured_at') {
+                    Measurement::query()->updateOrCreate(
+                        ['user_id' => $u->id, $dateColumn => $data['date']],
+                        ['height_cm' => $data['value']]
+                    );
+                } else {
+                    DB::table('measurements')->updateOrInsert(
+                        ['user_id' => $u->id, $dateColumn => $data['date']],
+                        ['height_cm' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
+                    );
+                }
                 $u->height_cm = (int) $data['value'];
                 $u->save();
 

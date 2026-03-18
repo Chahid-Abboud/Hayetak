@@ -45,10 +45,6 @@ class AuthenticatedSessionController extends Controller
                 ->with('status', 'verification-link-sent');
         }
 
-        if (Features::enabled(Features::twoFactorAuthentication())) {
-            return to_route('two-factor.show')->with('must_enable_2fa', true);
-        }
-
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
