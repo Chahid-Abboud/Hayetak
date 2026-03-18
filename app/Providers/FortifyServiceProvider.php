@@ -24,6 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
         // Optional explicit registration (nice for clarity)
         Fortify::createUsersUsing(CreateNewUser::class);
 
+        Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 
         RateLimiter::for('two-factor', function (Request $request) {
