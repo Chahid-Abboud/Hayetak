@@ -30,10 +30,12 @@ class ChatSafetyGuard
         return ['answer' => null, 'warnings' => []];
     }
 
-    public function review(string $answer, array $context): array
+    public function review(string $answer, array $context, array $options = []): array
     {
         $warnings = [];
         $clean = trim($answer);
+        $question = mb_strtolower(trim((string) ($options['question'] ?? '')));
+        $classification = is_array($options['classification'] ?? null) ? $options['classification'] : [];
 
         if ($clean === '') {
             $clean = 'I could not generate a useful reply yet. Please try again, or ask a shorter question about meals, workouts, plans, progress, nearby help, or settings.';
@@ -41,9 +43,20 @@ class ChatSafetyGuard
         }
 
         $allergies = array_map('mb_strtolower', $context['restrictions']['allergies'] ?? []);
+        $isRestrictionLookup = $this->isRestrictionLookupQuestion($question);
+        $looksLikeFoodSuggestion = $this->looksLikeFoodSuggestion($question, $clean, $classification);
+
         foreach ($allergies as $allergy) {
-            if ($allergy !== '' && str_contains(mb_strtolower($clean), $allergy)) {
-                $clean = 'I cannot safely recommend that because it conflicts with your saved allergy settings. Choose a different food in Meal Tracker or ask me for an alternative that avoids it.';
+            if (
+                $allergy !== '' &&
+                ! $isRestrictionLookup &&
+                $looksLikeFoodSuggestion &&
+                $this->answerContainsUnsafeFoodRecommendation($clean, $allergy)
+            ) {
+                $clean = sprintf(
+                    'I removed a food suggestion because it included your saved allergy: %s. Ask me for an alternative and I will keep it clear of that ingredient.',
+                    $allergy,
+                );
                 $warnings[] = 'Removed a food suggestion that matched the allergy list.';
                 break;
             }
@@ -77,5 +90,107 @@ class ChatSafetyGuard
         }
 
         return false;
+    }
+
+    private function isRestrictionLookupQuestion(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'what are my allergies',
+            'what are the allergies',
+            'what allergies do i have',
+            'my allergies',
+            'allergy list',
+            'what are my restrictions',
+            'what are my dietary restrictions',
+            'what diet type do i have',
+            'what injuries do i have',
+            'what medical conditions do i have',
+        ]);
+    }
+
+    private function looksLikeFoodSuggestion(string $question, string $answer, array $classification): bool
+    {
+        $feature = mb_strtolower((string) ($classification['feature'] ?? ''));
+
+        if ($feature === 'nutrition' && $this->containsAny($question, [
+            'suggest',
+            'recommend',
+            'recipe',
+            'meal',
+            'snack',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'dessert',
+            'what should i eat',
+            'choose',
+        ])) {
+            return true;
+        }
+
+        return $this->containsAny(mb_strtolower($answer), [
+            'try ',
+            'eat ',
+            'have ',
+            'choose ',
+            'use ',
+            'mix ',
+            'layer ',
+            'top with ',
+            'serve it with ',
+            'snack',
+            'meal',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'dessert',
+            'recipe',
+        ]);
+    }
+
+    private function answerContainsUnsafeFoodRecommendation(string $answer, string $allergy): bool
+    {
+        $normalized = mb_strtolower($answer);
+
+        foreach ($this->extractRecommendationSegments($normalized) as $segment) {
+            if (
+                str_contains($segment, $allergy) &&
+                $this->containsAny($segment, [
+                    'try ',
+                    'eat ',
+                    'have ',
+                    'choose ',
+                    'use ',
+                    'mix ',
+                    'layer ',
+                    'top with ',
+                    'serve it with ',
+                    'recipe',
+                    'dessert',
+                    'snack',
+                    'meal',
+                    'breakfast',
+                    'lunch',
+                    'dinner',
+                    'dip',
+                    'parfait',
+                    'panna cotta',
+                ])
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractRecommendationSegments(string $answer): array
+    {
+        $segments = preg_split('/[\r\n]+|(?<=[\.\!\?])\s+/', $answer) ?: [];
+
+        return array_values(array_filter(array_map(
+            static fn ($segment) => trim($segment),
+            $segments,
+        )));
     }
 }

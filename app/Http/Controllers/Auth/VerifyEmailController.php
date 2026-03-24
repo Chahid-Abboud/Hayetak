@@ -19,6 +19,11 @@ class VerifyEmailController extends Controller
 
         $request->fulfill();
 
-        return redirect()->route('dashboard');
+        return redirect()
+            ->route('dashboard')
+            ->with(
+                'showOptionalTwoFactorPrompt',
+                ! $request->user()->hasEnabledTwoFactorAuthentication(),
+            );
     }
 }

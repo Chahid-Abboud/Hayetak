@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,8 +28,19 @@ type AiMessage = {
         feature?: string;
         model?: string;
         provider?: string;
+        chat?: {
+            chat_path?: string;
+            mode_label?: string;
+            reason?: string;
+        } | null;
     } | null;
     created_at?: string | null;
+};
+
+type PendingBubble = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
 };
 
 function getCsrfToken() {
@@ -44,6 +59,8 @@ function isAbortError(error: unknown) {
 
 export default function AiChatPage() {
     const { auth } = usePage<SharedData>().props;
+    const role = auth.user.role ?? 'client';
+    const isAdmin = role === 'admin';
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<
         number | null
@@ -55,6 +72,7 @@ export default function AiChatPage() {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [warnings, setWarnings] = useState<string[]>([]);
+    const [pendingBubbles, setPendingBubbles] = useState<PendingBubble[]>([]);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesRequestRef = useRef<AbortController | null>(null);
 
@@ -182,6 +200,10 @@ export default function AiChatPage() {
         };
     }, []);
 
+    useEffect(() => {
+        setPendingBubbles([]);
+    }, [activeConversationId]);
+
     const activeConversation = useMemo(
         () =>
             conversations.find(
@@ -194,6 +216,14 @@ export default function AiChatPage() {
         const message = (seedText ?? text).trim();
         if (!message || sending) return;
 
+        const pendingUserId = `pending-user-${Date.now()}`;
+        const pendingAssistantId = `pending-assistant-${Date.now() + 1}`;
+
+        setPendingBubbles([
+            { id: pendingUserId, role: 'user', content: message },
+            { id: pendingAssistantId, role: 'assistant', content: '' },
+        ]);
+        setText('');
         setSending(true);
         setError(null);
         setWarnings([]);
@@ -235,7 +265,7 @@ export default function AiChatPage() {
                 : [];
 
             setWarnings(nextWarnings);
-            setText('');
+            setPendingBubbles([]);
 
             if (conversation) {
                 setConversations((prev) => {
@@ -262,6 +292,8 @@ export default function AiChatPage() {
                 return next;
             });
         } catch (err) {
+            setPendingBubbles([]);
+            setText(message);
             setError(
                 err instanceof Error
                     ? err.message
@@ -275,57 +307,68 @@ export default function AiChatPage() {
     function startNewChat() {
         setActiveConversationId(null);
         setMessages([]);
+        setPendingBubbles([]);
         setWarnings([]);
         setText('');
         setError(null);
     }
 
-    const promptSuggestions = [
-        'What stands out from my meals today?',
-        'How should I adjust dinner if my protein is low?',
-        'Can I train today based on my recent workouts?',
-        'Why is my plan not showing on the dashboard?',
-    ];
+    const promptSuggestions = isAdmin
+        ? [
+              'What should I check if a plan is not showing on the dashboard?',
+              'How can I explain protein targets using saved profile data?',
+              'What recovery advice fits my recent workouts?',
+              'What app settings should I review if data looks stale?',
+          ]
+        : [
+              'What stands out from my meals today?',
+              'How should I adjust dinner if my protein is low?',
+              'Can I train today based on my recent workouts?',
+              'Why is my plan not showing on the dashboard?',
+          ];
+
+    const coachDescription = isAdmin
+        ? 'Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users’ private data.'
+        : 'Ask about meals, workouts, recovery, progress, plans, nearby help, messages, appointments, or settings using your saved app data when relevant.';
+    const coachDescriptionText = isAdmin
+        ? 'Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users private data.'
+        : coachDescription;
+    const visibleMessages = useMemo(
+        () => [...messages, ...pendingBubbles],
+        [messages, pendingBubbles],
+    );
 
     return (
         <>
             <Head title="AI Coach" />
-            <NavHeader />
-            <main className="mx-auto max-w-6xl px-4 py-6">
-                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-2xl font-semibold">AI Coach</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Ask about meals, workouts, progress, plans, nearby
-                            help, messages, appointments, or settings using your
-                            in-app data.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
-                            Signed in as {auth.user.first_name ?? auth.user.name}
+            <ProductPageShell>
+                <ProductHero
+                    eyebrow="AI coach"
+                    title="AI Coach"
+                    description={coachDescriptionText}
+                    actions={
+                        <div className="flex items-center gap-2">
+                            <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
+                                Signed in as{' '}
+                                {auth.user.first_name ?? auth.user.name}
+                            </div>
+                            <button
+                                type="button"
+                                className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                onClick={startNewChat}
+                            >
+                                New chat
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                            onClick={startNewChat}
-                        >
-                            New chat
-                        </button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {error ? (
-                    <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {error}
-                    </div>
+                    <ProductBanner tone="danger">{error}</ProductBanner>
                 ) : null}
 
                 {warnings.length > 0 ? (
-                    <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        {warnings.join(' ')}
-                    </div>
+                    <ProductBanner>{warnings.join(' ')}</ProductBanner>
                 ) : null}
 
                 <div className="grid min-h-[72vh] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -403,9 +446,9 @@ export default function AiChatPage() {
                                 {activeConversation?.title ?? 'New AI chat'}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                                The current build uses the in-app chat scaffold.
-                                When your FLAN-T5 endpoint is ready, this page
-                                can switch to it through config.
+                                {isAdmin
+                                    ? 'Admin view: the coach can help with your own wellness context and Hayetak workflow questions while keeping all other users private.'
+                                    : 'The coach keeps the current thread in mind, uses saved app data when it clearly matches, and falls back to general in-domain guidance when it does not.'}
                             </div>
                         </div>
 
@@ -414,16 +457,16 @@ export default function AiChatPage() {
                                 <div className="text-sm text-muted-foreground">
                                     Loading messages...
                                 </div>
-                            ) : messages.length === 0 ? (
+                            ) : visibleMessages.length === 0 ? (
                                 <div className="space-y-5">
                                     <div className="rounded-3xl border bg-background p-5">
                                         <div className="text-base font-semibold">
                                             Start with something practical
                                         </div>
                                         <div className="mt-2 text-sm text-muted-foreground">
-                                            The coach can already use your saved
-                                            profile, meals, workouts, plans, and
-                                            recent progress context.
+                                            {isAdmin
+                                                ? 'Use the coach for your own profile, meals, workouts, plans, progress, and for product guidance during admin workflows.'
+                                                : 'The coach can already use your saved profile, meals, workouts, plans, recent progress, and the current chat thread.'}
                                         </div>
                                     </div>
 
@@ -432,7 +475,9 @@ export default function AiChatPage() {
                                             <button
                                                 key={prompt}
                                                 type="button"
-                                                onClick={() => void send(prompt)}
+                                                onClick={() =>
+                                                    void send(prompt)
+                                                }
                                                 className="rounded-2xl border bg-background p-4 text-left text-sm transition hover:border-[color:var(--primary)]/40 hover:bg-accent/40"
                                             >
                                                 {prompt}
@@ -442,13 +487,27 @@ export default function AiChatPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {messages.map((message) => {
+                                    {visibleMessages.map((message) => {
                                         const mine = message.role === 'user';
-                                        const messageWarnings = Array.isArray(
-                                            message.metadata?.warnings,
-                                        )
-                                            ? message.metadata?.warnings
-                                            : [];
+                                        const isPending = String(
+                                            message.id,
+                                        ).startsWith('pending-');
+                                        const messageWarnings =
+                                            'metadata' in message &&
+                                            Array.isArray(
+                                                message.metadata?.warnings,
+                                            )
+                                                ? message.metadata?.warnings
+                                                : [];
+                                        const modeLabel =
+                                            'metadata' in message
+                                                ? message.metadata?.chat
+                                                      ?.mode_label ?? null
+                                                : null;
+                                        const createdAt =
+                                            'created_at' in message
+                                                ? message.created_at
+                                                : null;
 
                                         return (
                                             <div
@@ -465,17 +524,43 @@ export default function AiChatPage() {
                                                         'max-w-[88%] rounded-3xl px-4 py-3 text-sm shadow-sm sm:max-w-[72%] ' +
                                                         (mine
                                                             ? 'bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
-                                                            : 'border bg-background text-foreground')
+                                                            : 'border bg-background text-foreground') +
+                                                        (isPending
+                                                            ? ' opacity-90'
+                                                            : '')
                                                     }
                                                 >
                                                     <div className="mb-1 text-[11px] opacity-70">
-                                                        {mine
-                                                            ? 'You'
-                                                            : 'AI Coach'}
+                                                        <div className="flex items-center gap-2">
+                                                            <span>
+                                                                {mine
+                                                                    ? 'You'
+                                                                    : 'AI Coach'}
+                                                            </span>
+                                                            {!mine &&
+                                                            modeLabel ? (
+                                                                <span className="rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-[0.12em] uppercase opacity-80">
+                                                                    {modeLabel}
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
-                                                    <div className="whitespace-pre-wrap break-words">
-                                                        {message.content}
-                                                    </div>
+                                                    {isPending &&
+                                                    !mine &&
+                                                    message.content === '' ? (
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <span className="inline-flex gap-1">
+                                                                <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--primary)]/70" />
+                                                                <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--primary)]/55 [animation-delay:120ms]" />
+                                                                <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--primary)]/40 [animation-delay:240ms]" />
+                                                            </span>
+                                                            <span>Thinking through your thread...</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="break-words whitespace-pre-wrap">
+                                                            {message.content}
+                                                        </div>
+                                                    )}
 
                                                     {!mine &&
                                                     messageWarnings.length >
@@ -488,32 +573,50 @@ export default function AiChatPage() {
                                                     ) : null}
 
                                                     {!mine &&
+                                                    isAdmin &&
+                                                    'metadata' in message &&
                                                     Array.isArray(
-                                                        message.metadata?.used_context_keys,
+                                                        message.metadata
+                                                            ?.used_context_keys,
                                                     ) &&
                                                     message.metadata
                                                         ?.used_context_keys
                                                         ?.length ? (
-                                                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] opacity-70">
-                                                            {message.metadata.used_context_keys
-                                                                .slice(0, 4)
-                                                                .map((key) => (
-                                                                    <span
-                                                                        key={
-                                                                            key
-                                                                        }
-                                                                        className="rounded-full border px-2 py-1"
-                                                                    >
-                                                                        {key}
-                                                                    </span>
-                                                                ))}
-                                                        </div>
+                                                        <details className="mt-3 rounded-2xl border border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+                                                            <summary className="cursor-pointer list-none font-medium">
+                                                                Context debug
+                                                            </summary>
+                                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                                {message.metadata.used_context_keys
+                                                                    .slice(0, 6)
+                                                                    .map(
+                                                                        (
+                                                                            key,
+                                                                        ) => (
+                                                                            <span
+                                                                                key={
+                                                                                    key
+                                                                                }
+                                                                                className="rounded-full border px-2 py-1"
+                                                                            >
+                                                                                {
+                                                                                    key
+                                                                                }
+                                                                            </span>
+                                                                        ),
+                                                                    )}
+                                                            </div>
+                                                        </details>
                                                     ) : null}
 
                                                     <div className="mt-2 text-[11px] opacity-70">
-                                                        {message.created_at
+                                                        {isPending
+                                                            ? mine
+                                                                ? 'Sending...'
+                                                                : 'Reply on the way'
+                                                            : createdAt
                                                             ? new Date(
-                                                                  message.created_at,
+                                                                  createdAt,
                                                               ).toLocaleString()
                                                             : ''}
                                                     </div>
@@ -527,11 +630,18 @@ export default function AiChatPage() {
                         </div>
 
                         <div className="border-t px-4 py-4">
+                            <div className="mb-3 flex flex-wrap gap-2">
+                                <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
+                                    Thread-aware follow-ups stay in context
+                                </span>
+                                <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
+                                    Saved profile data is only used when relevant
+                                </span>
+                            </div>
                             <div className="flex items-end gap-3">
                                 <textarea
-                                    className="min-h-[52px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm outline-none transition focus:border-[color:var(--primary)]"
+                                    className="min-h-[52px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm transition outline-none focus:border-[color:var(--primary)]"
                                     value={text}
-                                    disabled={sending}
                                     onChange={(event) =>
                                         setText(event.target.value)
                                     }
@@ -544,7 +654,11 @@ export default function AiChatPage() {
                                             void send();
                                         }
                                     }}
-                                    placeholder="Ask about meals, workouts, plans, progress, nearby help, messages, or settings"
+                                    placeholder={
+                                        isAdmin
+                                            ? 'Ask about your own wellness context or an admin workflow issue'
+                                            : 'Ask a follow-up about this thread, your meals, workouts, plans, or progress'
+                                    }
                                 />
                                 <button
                                     type="button"
@@ -552,17 +666,18 @@ export default function AiChatPage() {
                                     onClick={() => void send()}
                                     disabled={sending || !text.trim()}
                                 >
-                                    {sending ? 'Thinking...' : 'Send'}
+                                    {sending ? 'Working...' : 'Send'}
                                 </button>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Press Enter to send and Shift+Enter for a new
-                                line.
+                                Press Enter to send, Shift+Enter for a new line,
+                                and keep follow-ups in the same thread for the
+                                best context.
                             </p>
                         </div>
                     </section>
                 </div>
-            </main>
+            </ProductPageShell>
         </>
     );
 }

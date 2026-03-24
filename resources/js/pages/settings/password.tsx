@@ -1,40 +1,27 @@
 import PasswordController from '@/actions/App/Http/Controllers/Settings/PasswordController';
 import InputError from '@/components/input-error';
-import AppLayout from '@/layouts/app-layout';
+import { ProductSection } from '@/components/product/page';
 import SettingsLayout from '@/layouts/settings/layout';
-import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
 
-import HeadingSmall from '@/components/heading-small';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { edit } from '@/routes/password';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Password settings',
-        href: edit().url,
-    },
-];
-
 export default function Password() {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="Password settings" />
 
             <SettingsLayout>
-                <div className="space-y-6">
-                    <HeadingSmall
-                        title="Update password"
-                        description="Ensure your account is using a long, random password to stay secure"
-                    />
-
+                <ProductSection
+                    title="Update password"
+                    description="Use a long, unique password so your Hayetak account stays secure."
+                >
                     <Form
                         {...PasswordController.update.form()}
                         options={{
@@ -139,8 +126,8 @@ export default function Password() {
                             </>
                         )}
                     </Form>
-                </div>
+                </ProductSection>
             </SettingsLayout>
-        </AppLayout>
+        </>
     );
 }

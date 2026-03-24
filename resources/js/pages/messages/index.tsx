@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -165,16 +169,14 @@ export default function MessagesPage() {
                     conversation.id === conversationId
                         ? { ...conversation, unread_count: 0 }
                         : conversation,
-                    ),
+                ),
             );
         } catch (err) {
             if (isAbortError(err)) return;
 
             setMessages([]);
             setMessageError(
-                err instanceof Error
-                    ? err.message
-                    : 'Unable to load messages.',
+                err instanceof Error ? err.message : 'Unable to load messages.',
             );
         } finally {
             if (messagesRequestRef.current === controller) {
@@ -250,7 +252,9 @@ export default function MessagesPage() {
             const nextMessage = json?.message as Message | undefined;
 
             setText('');
-            setMessages((prev) => (nextMessage ? [...prev, nextMessage] : prev));
+            setMessages((prev) =>
+                nextMessage ? [...prev, nextMessage] : prev,
+            );
             setConversations((prev) =>
                 prev
                     .map((conversation) =>
@@ -301,36 +305,31 @@ export default function MessagesPage() {
     return (
         <>
             <Head title="Messages" />
-            <NavHeader />
-            <main className="mx-auto max-w-6xl px-4 py-6">
-                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-2xl font-semibold">Messages</h1>
-                        <p className="text-sm text-muted-foreground">
-                            View conversations, read history, and reply in one
-                            thread.
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                        onClick={async () => {
-                            const selectedConversationId =
-                                await loadConversations();
-                            if (selectedConversationId) {
-                                await loadMessages(selectedConversationId);
-                            }
-                        }}
-                        disabled={loadingConversations}
-                    >
-                        {loadingConversations ? 'Refreshing...' : 'Refresh'}
-                    </button>
-                </div>
+            <ProductPageShell>
+                <ProductHero
+                    eyebrow="Messages"
+                    title="Messages"
+                    description="View conversations, read history, and reply in one thread."
+                    actions={
+                        <button
+                            type="button"
+                            className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                            onClick={async () => {
+                                const selectedConversationId =
+                                    await loadConversations();
+                                if (selectedConversationId) {
+                                    await loadMessages(selectedConversationId);
+                                }
+                            }}
+                            disabled={loadingConversations}
+                        >
+                            {loadingConversations ? 'Refreshing...' : 'Refresh'}
+                        </button>
+                    }
+                />
 
                 {error ? (
-                    <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {error}
-                    </div>
+                    <ProductBanner tone="danger">{error}</ProductBanner>
                 ) : null}
 
                 <div className="grid min-h-[70vh] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -394,7 +393,8 @@ export default function MessagesPage() {
                                                                 `Conversation #${conversation.id}`}
                                                         </div>
                                                         <div className="mt-1 truncate text-xs text-muted-foreground">
-                                                            {conversation.last_message
+                                                            {conversation
+                                                                .last_message
                                                                 ?.body ??
                                                                 'No messages yet'}
                                                         </div>
@@ -417,7 +417,9 @@ export default function MessagesPage() {
                                                         )}
                                                     </span>
                                                     <span>
-                                                        {conversation.last_message?.created_at
+                                                        {conversation
+                                                            .last_message
+                                                            ?.created_at
                                                             ? new Date(
                                                                   conversation.last_message.created_at,
                                                               ).toLocaleString()
@@ -457,7 +459,8 @@ export default function MessagesPage() {
                                         </div>
                                     ) : messages.length === 0 ? (
                                         <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-                                            No messages in this conversation yet.
+                                            No messages in this conversation
+                                            yet.
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
@@ -495,7 +498,7 @@ export default function MessagesPage() {
                                                                           ?.name ??
                                                                       'Contact')}
                                                             </div>
-                                                            <div className="whitespace-pre-wrap break-words">
+                                                            <div className="break-words whitespace-pre-wrap">
                                                                 {message.body}
                                                             </div>
                                                             <div className="mt-2 text-[11px] opacity-70">
@@ -519,7 +522,7 @@ export default function MessagesPage() {
                                 <div className="border-t px-4 py-4">
                                     <div className="flex items-end gap-3">
                                         <textarea
-                                            className="min-h-[48px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm outline-none transition focus:border-[color:var(--primary)]"
+                                            className="min-h-[48px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm transition outline-none focus:border-[color:var(--primary)]"
                                             value={text}
                                             disabled={!canCompose || sending}
                                             onChange={(e) =>
@@ -569,7 +572,7 @@ export default function MessagesPage() {
                         )}
                     </section>
                 </div>
-            </main>
+            </ProductPageShell>
         </>
     );
 }

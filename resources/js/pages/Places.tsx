@@ -1,5 +1,10 @@
 // resources/js/pages/Places.tsx
 import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -7,10 +12,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { jsonRequestInit } from '@/lib/http';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import NavHeader from '../components/NavHeader';
 import NearbyMap, { type Place } from '../components/NearbyMap';
 
 type Professional = {
@@ -181,7 +186,8 @@ export default function Places() {
                 if (professionalArea.trim()) {
                     params.set('area', professionalArea.trim());
                 }
-                if (professionalRole !== 'all') params.set('role', professionalRole);
+                if (professionalRole !== 'all')
+                    params.set('role', professionalRole);
                 if (center) {
                     params.set('lat', String(center.lat));
                     params.set('lng', String(center.lon));
@@ -205,24 +211,15 @@ export default function Places() {
     }, [center, professionalArea, professionalRole]);
 
     async function openConversation(userId: number) {
-        const token =
-            (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement | null
-            )?.content ?? '';
-
         try {
             setWorkingProfessionalId(userId);
+            const init = jsonRequestInit('POST', { participant_id: userId });
             const response = await fetch('/api/messages/conversations', {
-                method: 'POST',
+                ...init,
                 headers: {
-                    'Content-Type': 'application/json',
+                    ...init.headers,
                     Accept: 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ participant_id: userId }),
             });
             const json = await response.json().catch(() => null);
             if (!response.ok) {
@@ -263,36 +260,29 @@ export default function Places() {
         if (!appointmentDialog) return;
 
         if (!appointmentDialog.scheduledAt) {
-            setAppointmentDialogError('Select a date and time for the appointment.');
+            setAppointmentDialogError(
+                'Select a date and time for the appointment.',
+            );
             return;
         }
-
-        const token =
-            (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement | null
-            )?.content ?? '';
 
         try {
             setAppointmentDialogError(null);
             setWorkingProfessionalId(appointmentDialog.professionalId);
+            const init = jsonRequestInit('POST', {
+                professional_id: appointmentDialog.professionalId,
+                professional_role: appointmentDialog.professionalRole,
+                scheduled_at: toAppointmentTimestamp(
+                    appointmentDialog.scheduledAt,
+                ),
+                notes: appointmentDialog.notes.trim() || null,
+            });
             const response = await fetch('/api/appointments', {
-                method: 'POST',
+                ...init,
                 headers: {
-                    'Content-Type': 'application/json',
+                    ...init.headers,
                     Accept: 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({
-                    professional_id: appointmentDialog.professionalId,
-                    professional_role: appointmentDialog.professionalRole,
-                    scheduled_at: toAppointmentTimestamp(
-                        appointmentDialog.scheduledAt,
-                    ),
-                    notes: appointmentDialog.notes.trim() || null,
-                }),
             });
             const json = await response.json().catch(() => null);
             if (!response.ok) {
@@ -319,27 +309,23 @@ export default function Places() {
     return (
         <>
             <Head title="Nearby - Hayetak" />
-            <NavHeader />
+            <ProductPageShell width="wide">
+                <ProductHero
+                    eyebrow="Nearby support"
+                    title="Nearby"
+                    description="Explore gyms, discover nearby nutrition support, and connect with approved professionals from the same polished workspace."
+                    meta={
+                        <span>
+                            {loading
+                                ? 'Loading nearby results'
+                                : `${results.length} ${results.length === 1 ? 'result' : 'results'} in view`}
+                        </span>
+                    }
+                />
 
-            <main className="mx-auto max-w-6xl px-4 py-6">
-                <div className="mb-5 flex items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-2xl font-semibold">Nearby</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Explore gyms and connect with approved dietitians
-                            and trainers nearby.
-                        </p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        {loading ? (
-                            'Loading...'
-                        ) : error ? (
-                            <span className="text-red-600">{error}</span>
-                        ) : (
-                            `${results.length} results`
-                        )}
-                    </div>
-                </div>
+                {error ? (
+                    <ProductBanner tone="danger">{error}</ProductBanner>
+                ) : null}
 
                 <div className="mb-4 flex flex-wrap items-end gap-4 md:flex-nowrap">
                     <div className="min-w-[260px] flex-1">
@@ -576,9 +562,7 @@ export default function Places() {
                                         placeholder="Filter by area"
                                         value={professionalArea}
                                         onChange={(e) =>
-                                            setProfessionalArea(
-                                                e.target.value,
-                                            )
+                                            setProfessionalArea(e.target.value)
                                         }
                                     />
                                     <select
@@ -634,8 +618,10 @@ export default function Places() {
                                             {typeof professional.distance_m ===
                                                 'number' && (
                                                 <div className="mt-1 text-xs text-muted-foreground">
-                                                    {(professional.distance_m /
-                                                        1000).toFixed(2)}{' '}
+                                                    {(
+                                                        professional.distance_m /
+                                                        1000
+                                                    ).toFixed(2)}{' '}
                                                     km away
                                                 </div>
                                             )}
@@ -703,17 +689,17 @@ export default function Places() {
                                     ))}
                                     {!loadingProfessionals &&
                                         professionals.length === 0 && (
-                                        <li className="text-xs text-muted-foreground">
-                                            No professionals found for this
-                                            filter.
-                                        </li>
-                                    )}
+                                            <li className="text-xs text-muted-foreground">
+                                                No professionals found for this
+                                                filter.
+                                            </li>
+                                        )}
                                 </ul>
                             </div>
                         )}
                     </div>
                 </div>
-            </main>
+            </ProductPageShell>
 
             <Dialog
                 open={appointmentDialog !== null}

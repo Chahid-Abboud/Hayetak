@@ -44,6 +44,27 @@ class UserContextSnapshotBuilder
             ->latest('measured_at')
             ->first();
 
+        $latestWeightMeasurement = Measurement::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('weight_kg')
+            ->latest('measured_at')
+            ->first();
+
+        $latestHeightMeasurement = Measurement::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('height_cm')
+            ->latest('measured_at')
+            ->first();
+
+        $currentWeightKg = $latestWeightMeasurement?->weight_kg ?? $user->weight_kg;
+        $currentHeightCm = $latestHeightMeasurement?->height_cm ?? $user->height_cm;
+        $weightSource = $latestWeightMeasurement
+            ? 'latest measurement on '.$this->displayValue(optional($latestWeightMeasurement->measured_at)->toDateString())
+            : 'user profile';
+        $heightSource = $latestHeightMeasurement
+            ? 'latest measurement on '.$this->displayValue(optional($latestHeightMeasurement->measured_at)->toDateString())
+            : 'user profile';
+
         $recentWorkouts = WorkoutLog::query()
             ->where('user_id', $user->id)
             ->with('day')
@@ -90,8 +111,10 @@ class UserContextSnapshotBuilder
                     'Use this document for questions about calories, protein, macros, meal suggestions, workout targets, and safety.',
                     'Age: '.$this->displayValue($user->age),
                     'Sex: '.$this->displayValue($user->gender),
-                    'Height cm: '.$this->displayValue($user->height_cm),
-                    'Current weight kg: '.$this->displayValue($user->weight_kg),
+                    'Current height cm: '.$this->displayValue($currentHeightCm),
+                    'Current height source: '.$heightSource,
+                    'Current weight kg: '.$this->displayValue($currentWeightKg),
+                    'Current weight source: '.$weightSource,
                     'Goal: '.$this->displayValue($user->fitness_goal ?: $user->dietary_goal),
                     'Activity level: '.$this->displayValue($user->activity_level),
                     'Workout days per week: '.$this->displayValue($user->workout_days_per_week),
@@ -109,10 +132,29 @@ class UserContextSnapshotBuilder
                 'text' => $this->joinLines([
                     'Latest measurement snapshot for progress and recalculation questions.',
                     'Most recent measurement date: '.$this->displayValue(optional($latestMeasurement?->measured_at)->toDateString()),
-                    'Latest measured weight kg: '.$this->displayValue($latestMeasurement?->weight_kg ?? $user->weight_kg),
-                    'Latest measured height cm: '.$this->displayValue($latestMeasurement?->height_cm ?? $user->height_cm),
+                    'Resolved current weight kg: '.$this->displayValue($currentWeightKg),
+                    'Resolved current weight source: '.$weightSource,
+                    'Latest weight measurement date: '.$this->displayValue(optional($latestWeightMeasurement?->measured_at)->toDateString()),
+                    'Resolved current height cm: '.$this->displayValue($currentHeightCm),
+                    'Resolved current height source: '.$heightSource,
+                    'Latest height measurement date: '.$this->displayValue(optional($latestHeightMeasurement?->measured_at)->toDateString()),
                     'Body fat percent: '.$this->displayValue($latestMeasurement?->body_fat_pct),
                     'Measurement notes: '.$this->displayValue($latestMeasurement?->notes),
+                ]),
+            ],
+            [
+                'doc_key' => 'calculation_facts',
+                'doc_type' => 'calculation_facts',
+                'text' => $this->joinLines([
+                    'Use this document for questions like: what weight do you have saved for me, recalculate my daily protein intake based on my weight, how much protein should I eat, and what calorie or macro target fits my body metrics.',
+                    'Resolved current weight kg: '.$this->displayValue($currentWeightKg),
+                    'Weight source: '.$weightSource,
+                    'Latest weight measurement date: '.$this->displayValue(optional($latestWeightMeasurement?->measured_at)->toDateString()),
+                    'Resolved current height cm: '.$this->displayValue($currentHeightCm),
+                    'Height source: '.$heightSource,
+                    'Goal: '.$this->displayValue($user->fitness_goal ?: $user->dietary_goal),
+                    'Activity level: '.$this->displayValue($user->activity_level),
+                    'Diet type: '.$this->displayValue($user->diet_name),
                 ]),
             ],
             [
@@ -180,6 +222,32 @@ class UserContextSnapshotBuilder
 
             return $document;
         }, $documents);
+    }
+
+    public function buildResolvedMetrics(User $user): array
+    {
+        $latestWeightMeasurement = Measurement::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('weight_kg')
+            ->latest('measured_at')
+            ->first();
+
+        $latestHeightMeasurement = Measurement::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('height_cm')
+            ->latest('measured_at')
+            ->first();
+
+        return [
+            'current_weight_kg' => $latestWeightMeasurement?->weight_kg ?? $user->weight_kg,
+            'current_weight_source' => $latestWeightMeasurement
+                ? 'latest measurement on '.$this->displayValue(optional($latestWeightMeasurement->measured_at)->toDateString())
+                : 'user profile',
+            'current_height_cm' => $latestHeightMeasurement?->height_cm ?? $user->height_cm,
+            'current_height_source' => $latestHeightMeasurement
+                ? 'latest measurement on '.$this->displayValue(optional($latestHeightMeasurement->measured_at)->toDateString())
+                : 'user profile',
+        ];
     }
 
     private function macroSummaryForDay(int $userId, string $date): array

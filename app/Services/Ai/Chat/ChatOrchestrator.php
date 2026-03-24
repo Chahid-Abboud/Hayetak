@@ -15,6 +15,7 @@ class ChatOrchestrator
         private readonly ChatIntentClassifier $classifier,
         private readonly ChatContextBuilder $contextBuilder,
         private readonly ChatSafetyGuard $safetyGuard,
+        private readonly CoachDeterministicResponder $deterministicResponder,
         private readonly ChatModelManager $modelManager,
         private readonly AiUsageLogger $usageLogger,
     ) {}
@@ -52,6 +53,7 @@ class ChatOrchestrator
 
         $preflight = $this->safetyGuard->preflight($question);
         $contextBundle = $this->contextBuilder->build($user, $runtimeContext, $conversation, $classification);
+        $override = $this->deterministicResponder->respond($user, $question, $contextBundle['context'], $classification);
 
         $provider = (string) config('ai.chat.provider', 'stub');
         $model = 'safety-short-circuit';
@@ -65,6 +67,16 @@ class ChatOrchestrator
         $providerRequestId = null;
 
         if ($answer === '') {
+            if ($override !== null) {
+                $answer = (string) ($override['answer'] ?? '');
+                $warnings = array_values(array_unique(array_merge($warnings, $override['warnings'] ?? [])));
+                $model = (string) ($override['model'] ?? 'coach-policy');
+                $chatMetadata = array_filter([
+                    'chat_path' => $override['chat_path'] ?? null,
+                    'mode_label' => $override['mode_label'] ?? null,
+                    'reason' => $override['reason'] ?? null,
+                ], fn ($value) => $value !== null && $value !== []);
+            } else {
             try {
                 $result = $this->modelManager->client()->respond(
                     $question,
@@ -78,7 +90,14 @@ class ChatOrchestrator
                     ],
                 );
 
-                $reviewed = $this->safetyGuard->review((string) ($result['answer'] ?? ''), $contextBundle['context']);
+                $reviewed = $this->safetyGuard->review(
+                    (string) ($result['answer'] ?? ''),
+                    $contextBundle['context'],
+                    [
+                        'question' => $question,
+                        'classification' => $classification,
+                    ],
+                );
                 $answer = $reviewed['answer'];
                 $warnings = array_values(array_unique(array_merge($warnings, $reviewed['warnings'] ?? [])));
                 $model = (string) ($result['model'] ?? 'unknown-chat-model');
@@ -88,12 +107,16 @@ class ChatOrchestrator
                     'chat_path' => $result['chat_path'] ?? null,
                     'context_score' => $result['context_score'] ?? null,
                     'matches' => $result['matches'] ?? null,
+                    'mode_label' => $result['chat_path'] === 'personalized'
+                        ? 'Personalized'
+                        : (($result['chat_path'] ?? null) === 'general' ? 'General guidance' : null),
                 ], fn ($value) => $value !== null && $value !== []);
             } catch (\Throwable $e) {
                 $answer = 'The AI coach is not fully connected yet, so I could not reach the model right now. You can still ask again later, or use Dashboard, Meal Tracker, Workouts, Nearby, Messages, and Settings directly.';
                 $warnings[] = 'Model request failed, so a built-in fallback message was returned.';
                 $model = 'chat-fallback';
                 $chatMetadata = [];
+            }
             }
         } else {
             $chatMetadata = [];

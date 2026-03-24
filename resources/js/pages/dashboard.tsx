@@ -2,7 +2,9 @@
 import { AdminShell as AdminPageShell } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
 import NavHeader from '@/components/NavHeader';
+import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
 import WaterCard from '@/components/WaterCard';
+import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -17,6 +19,7 @@ type AuthUser = {
     role?: string | null;
     verified?: boolean;
     status?: string | null;
+    two_factor_enabled?: boolean;
 } | null;
 
 type UserProfile = {
@@ -163,7 +166,7 @@ type HomeProps = {
 
     nutritionPlan?: NutritionPlanLite | null;
     workoutPlan?: WorkoutPlanLite | null;
-};
+} & Pick<SharedData, 'flash' | 'security'>;
 
 type AdminListItem = {
     id: number;
@@ -280,6 +283,8 @@ function CardSection({
 export default function Home() {
     const {
         auth,
+        flash,
+        security,
         isGuest: isGuestProp,
         userProfile,
         water,
@@ -299,6 +304,22 @@ export default function Home() {
         auth?.user?.name ||
         (isGuest ? 'guest' : 'there');
     const userRole = auth?.user?.role ?? 'client';
+    const [showOptionalTwoFactorPrompt, setShowOptionalTwoFactorPrompt] =
+        useState(
+            Boolean(
+                flash?.showOptionalTwoFactorPrompt &&
+                    !auth?.user?.two_factor_enabled,
+            ),
+        );
+
+    useEffect(() => {
+        if (
+            flash?.showOptionalTwoFactorPrompt &&
+            !auth?.user?.two_factor_enabled
+        ) {
+            setShowOptionalTwoFactorPrompt(true);
+        }
+    }, [auth?.user?.two_factor_enabled, flash?.showOptionalTwoFactorPrompt]);
 
     // --- BMI input coercion from DB/user profile ---
     const profileSafe = useMemo(() => {
@@ -381,6 +402,13 @@ export default function Home() {
         return (
             <>
                 <Head title="Admin Dashboard" />
+                <OptionalTwoFactorPrompt
+                    open={showOptionalTwoFactorPrompt}
+                    onDismiss={() => setShowOptionalTwoFactorPrompt(false)}
+                    requiresConfirmation={
+                        security?.requiresTwoFactorConfirmation ?? false
+                    }
+                />
                 <AdminDashboard />
             </>
         );
@@ -389,6 +417,13 @@ export default function Home() {
     return (
         <>
             <Head title="Home" />
+            <OptionalTwoFactorPrompt
+                open={showOptionalTwoFactorPrompt}
+                onDismiss={() => setShowOptionalTwoFactorPrompt(false)}
+                requiresConfirmation={
+                    security?.requiresTwoFactorConfirmation ?? false
+                }
+            />
 
             {/* Skip link for keyboard users */}
             <a
@@ -800,6 +835,12 @@ function AdminDashboard() {
                         }
                     >
                         Review Verifications
+                    </ActionButton>
+                    <ActionButton
+                        variant="soft"
+                        onClick={() => router.visit('/coach')}
+                    >
+                        Open AI Coach
                     </ActionButton>
                 </>
             }

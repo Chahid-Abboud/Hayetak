@@ -27,6 +27,15 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    flash?: {
+        status?: string;
+        success?: string;
+        error?: string;
+        showOptionalTwoFactorPrompt?: boolean;
+    };
+    security?: {
+        requiresTwoFactorConfirmation?: boolean;
+    };
     [key: string]: unknown;
 }
 
