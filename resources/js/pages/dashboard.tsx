@@ -3,6 +3,12 @@ import { AdminShell as AdminPageShell } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
 import NavHeader from '@/components/NavHeader';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
+import {
+    BarListCard,
+    InlineRangeToolbar,
+    MetricRing,
+    TrendCard,
+} from '@/components/product/analytics';
 import WaterCard from '@/components/WaterCard';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -382,6 +388,43 @@ export default function Home() {
         snack: { calories: 0, protein: 0, carbs: 0, fat: 0 },
         drink: { calories: 0, protein: 0, carbs: 0, fat: 0 },
     };
+    const mealOrder = [
+        'breakfast',
+        'lunch',
+        'dinner',
+        'snack',
+        'drink',
+    ] as const;
+    const mealDistribution = mealOrder.map((mealType) => ({
+        label: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+        value: Math.round(perMeal[mealType].calories),
+        formattedValue: `${Math.round(perMeal[mealType].calories)} kcal`,
+        tone:
+            mealType === 'dinner' || mealType === 'lunch'
+                ? ('accent' as const)
+                : ('default' as const),
+    }));
+    const calorieCadencePoints = mealOrder.reduce<number[]>(
+        (points, mealType) => {
+            const last = points[points.length - 1] ?? 0;
+            points.push(last + Math.round(perMeal[mealType].calories));
+            return points;
+        },
+        [],
+    );
+    const macroSegments = [
+        {
+            label: 'Protein',
+            value: Math.round(macros.protein),
+            color: 'var(--primary)',
+        },
+        {
+            label: 'Carbs',
+            value: Math.round(macros.carbs),
+            color: 'var(--secondary)',
+        },
+        { label: 'Fat', value: Math.round(macros.fat), color: 'var(--accent)' },
+    ];
 
     const round = (n: number) => Math.round(n);
 
@@ -510,6 +553,32 @@ export default function Home() {
                         ))}
                     </div>
                 </CardSection>
+
+                <section
+                    aria-label="Daily insights"
+                    className="grid gap-4 lg:grid-cols-3"
+                >
+                    <TrendCard
+                        title="Calorie cadence"
+                        value={`${round(macros.calories)} kcal`}
+                        helper="See how intake builds across your meals today."
+                        points={calorieCadencePoints}
+                    />
+                    <MetricRing
+                        title="Macro balance"
+                        description="Protein, carbs, and fat for the current day."
+                        totalLabel="Total grams"
+                        totalValue={macroSegments
+                            .reduce((sum, segment) => sum + segment.value, 0)
+                            .toString()}
+                        segments={macroSegments}
+                    />
+                    <BarListCard
+                        title="Meal distribution"
+                        description="Where today’s calories are concentrated."
+                        items={mealDistribution}
+                    />
+                </section>
 
                 {/* Generated Plans */}
                 <CardSection
@@ -1267,6 +1336,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
 function ProgressMini() {
     const [series, setSeries] = useState<ProgressPoint[]>([]);
+    const [weeks, setWeeks] = useState(8);
     const abortRef = useRef<AbortController | null>(null);
 
     const muscles = useMemo(
@@ -1287,7 +1357,7 @@ function ProgressMini() {
         const ac = new AbortController();
         abortRef.current = ac;
 
-        fetch('/workouts/progress?weeks=8', { signal: ac.signal })
+        fetch(`/workouts/progress?weeks=${weeks}`, { signal: ac.signal })
             .then((r) => r.json())
             .then((d) => setSeries(Array.isArray(d.series) ? d.series : []))
             .catch(() => {
@@ -1296,58 +1366,70 @@ function ProgressMini() {
             });
 
         return () => ac.abort();
-    }, []);
+    }, [weeks]);
 
     if (!series.length) {
         return (
-            <p className="text-sm text-muted-foreground">
-                Log a few workouts to unlock progress.
-            </p>
+            <div className="space-y-4">
+                <InlineRangeToolbar value={weeks} onChange={setWeeks} />
+                <p className="text-sm text-muted-foreground">
+                    Log a few workouts to unlock progress.
+                </p>
+            </div>
         );
     }
 
     const last4 = series.slice(-4);
 
     return (
-        <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-                <caption className="sr-only">
-                    Weekly progress table showing average top-set weight by
-                    muscle group.
-                </caption>
-                <thead>
-                    <tr className="text-left text-muted-foreground">
-                        <th scope="col" className="py-1 pr-4">
-                            Week
-                        </th>
-                        {muscles.map((m) => (
-                            <th
-                                key={m}
-                                scope="col"
-                                className="py-1 pr-4 capitalize"
-                            >
-                                {m}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {last4.map((row, i) => (
-                        <tr key={i} className="border-t">
-                            <th scope="row" className="py-1 pr-4 font-medium">
-                                {String(row.week)}
+        <div className="space-y-4">
+            <InlineRangeToolbar value={weeks} onChange={setWeeks} />
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                    <caption className="sr-only">
+                        Weekly progress table showing average top-set weight by
+                        muscle group.
+                    </caption>
+                    <thead>
+                        <tr className="text-left text-muted-foreground">
+                            <th scope="col" className="py-1 pr-4">
+                                Week
                             </th>
                             {muscles.map((m) => (
-                                <td key={m} className="py-1 pr-4 tabular-nums">
-                                    {typeof row[m] === 'number'
-                                        ? `${row[m]} kg`
-                                        : '—'}
-                                </td>
+                                <th
+                                    key={m}
+                                    scope="col"
+                                    className="py-1 pr-4 capitalize"
+                                >
+                                    {m}
+                                </th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {last4.map((row, i) => (
+                            <tr key={i} className="border-t">
+                                <th
+                                    scope="row"
+                                    className="py-1 pr-4 font-medium"
+                                >
+                                    {String(row.week)}
+                                </th>
+                                {muscles.map((m) => (
+                                    <td
+                                        key={m}
+                                        className="py-1 pr-4 tabular-nums"
+                                    >
+                                        {typeof row[m] === 'number'
+                                            ? `${row[m]} kg`
+                                            : '—'}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
