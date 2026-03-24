@@ -17,7 +17,7 @@ import {
     Users,
     XCircle,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type UserOption = {
     id: number;
@@ -52,7 +52,7 @@ export default function AdminNotificationsIndex() {
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    async function loadUsers() {
+    const loadUsers = useCallback(async () => {
         setLoadingUsers(true);
 
         try {
@@ -67,9 +67,9 @@ export default function AdminNotificationsIndex() {
         } finally {
             setLoadingUsers(false);
         }
-    }
+    }, [userSearch]);
 
-    async function loadAlerts() {
+    const loadAlerts = useCallback(async () => {
         setLoadingAlerts(true);
 
         try {
@@ -96,15 +96,15 @@ export default function AdminNotificationsIndex() {
         } finally {
             setLoadingAlerts(false);
         }
-    }
+    }, [statusFilter]);
 
     useEffect(() => {
         void loadUsers();
-    }, [userSearch]);
+    }, [loadUsers]);
 
     useEffect(() => {
         void loadAlerts();
-    }, [statusFilter]);
+    }, [loadAlerts]);
 
     const alertStats = useMemo(() => {
         return alerts.reduce(

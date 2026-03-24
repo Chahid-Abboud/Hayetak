@@ -23,7 +23,7 @@ import {
     Trash2,
     UserRound,
 } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 type Props = { userId: number };
 
@@ -247,7 +247,7 @@ export default function AdminUserShow() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    async function load() {
+    const load = useCallback(async () => {
         setLoading(true);
         setError(null);
 
@@ -270,11 +270,11 @@ export default function AdminUserShow() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [userId]);
 
     useEffect(() => {
         void load();
-    }, [userId]);
+    }, [load]);
 
     async function saveUser() {
         setSaving(true);

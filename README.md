@@ -1,5 +1,12 @@
 # Laravel + React Starter Kit
 
+## Project Guide
+
+For this repo's Hayetak-specific startup, AI coach, and branch workflow instructions, read:
+
+- [START_HERE_READ_ONLY.md](./START_HERE_READ_ONLY.md)
+- [QUICK_COMMANDS.md](./QUICK_COMMANDS.md)
+
 ## Introduction
 
 Our React starter kit provides a robust, modern starting point for building Laravel applications with a React frontend using [Inertia](https://inertiajs.com).
