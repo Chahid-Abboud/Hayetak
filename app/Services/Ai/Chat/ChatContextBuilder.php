@@ -17,6 +17,7 @@ class ChatContextBuilder
 {
     public function __construct(
         private readonly CoachContextBuilder $coachContextBuilder,
+        private readonly UserProfileFactResolver $profileFactResolver,
     ) {}
 
     public function build(
@@ -30,6 +31,7 @@ class ChatContextBuilder
 
         $base = $this->coachContextBuilder->build($user, $runtimeContext, $conversation);
         $profile = $base['context']['profile'] ?? [];
+        $resolvedProfile = $this->profileFactResolver->resolve($user);
         $today = Carbon::today();
         $from = $today->copy()->subDays(6)->startOfDay();
         $to = $today->copy()->endOfDay();
@@ -58,7 +60,7 @@ class ChatContextBuilder
             ->whereDate('for_day', $today->toDateString())
             ->value('ml') ?? 0);
 
-        $targetWater = $this->waterTargetForUser($user);
+        $targetWater = $this->waterTargetForUser($user, $resolvedProfile['current_weight_kg'] ?? null);
 
         $todayWorkouts = WorkoutLog::query()
             ->where('user_id', $user->id)
@@ -97,21 +99,22 @@ class ChatContextBuilder
 
         $context = [
             'user_profile' => [
-                'age' => $profile['age'] ?: null,
-                'sex' => $profile['gender'] ?: null,
-                'height_cm' => $profile['height_cm'] ?: null,
-                'weight_kg' => $profile['weight_kg'] ?: null,
-                'goal' => $profile['fitness_goal'] ?: ($profile['dietary_goal'] ?: null),
-                'activity_level' => $profile['activity'] ?: null,
-                'workout_location' => $profile['workout_location'] ?: null,
-                'workout_days_per_week' => $profile['workout_days_per_week'] ?: null,
-                'available_equipment' => $this->normalizeList($profile['available_equipment'] ?? []),
+                'age' => $resolvedProfile['age'] ?? ($profile['age'] ?: null),
+                'sex' => $resolvedProfile['sex'] ?? ($profile['gender'] ?: null),
+                'height_cm' => $resolvedProfile['current_height_cm'] ?? ($profile['height_cm'] ?: null),
+                'weight_kg' => $resolvedProfile['current_weight_kg'] ?? ($profile['weight_kg'] ?: null),
+                'goal' => $resolvedProfile['goal'] ?? ($profile['fitness_goal'] ?: ($profile['dietary_goal'] ?: null)),
+                'activity_level' => $resolvedProfile['activity_level'] ?? ($profile['activity'] ?: null),
+                'workout_location' => $resolvedProfile['workout_location'] ?? ($profile['workout_location'] ?: null),
+                'workout_days_per_week' => $resolvedProfile['workout_days_per_week'] ?? ($profile['workout_days_per_week'] ?: null),
+                'available_equipment' => $this->normalizeList($resolvedProfile['available_equipment'] ?? ($profile['available_equipment'] ?? [])),
             ],
+            'resolved_profile' => $resolvedProfile,
             'restrictions' => [
-                'diet_type' => $profile['diet_type'] ?: null,
-                'allergies' => $this->normalizeList($profile['allergies'] ?? []),
-                'medical_conditions' => $medicalHistory !== '' ? [$medicalHistory] : [],
-                'injuries' => $injuries,
+                'diet_type' => $resolvedProfile['diet_type'] ?? ($profile['diet_type'] ?: null),
+                'allergies' => $this->normalizeList($resolvedProfile['allergies'] ?? ($profile['allergies'] ?? [])),
+                'medical_conditions' => $this->normalizeList($resolvedProfile['medical_conditions'] ?? ($medicalHistory !== '' ? [$medicalHistory] : [])),
+                'injuries' => $this->normalizeList($resolvedProfile['injuries'] ?? $injuries),
             ],
             'today_summary' => [
                 'date' => $today->toDateString(),
@@ -176,6 +179,13 @@ class ChatContextBuilder
                 'recent_turns' => data_get($base, 'context.memory.recent_turns', []),
                 'summary' => data_get($base, 'context.memory.summary'),
             ],
+            'role_context' => [
+                'role' => $user->role,
+                'can_access_other_users' => false,
+                'note' => $user->role === User::ROLE_ADMIN
+                    ? 'The requester is an admin. Keep answers useful for their own wellness and Hayetak workflow questions, but never reveal or infer other users\' private data.'
+                    : 'Use the requester\'s own profile and app context only.',
+            ],
             'runtime' => [
                 'available_ingredients' => $this->normalizeList($runtimeContext['available_ingredients'] ?? []),
             ],
@@ -188,8 +198,12 @@ class ChatContextBuilder
         ];
     }
 
-    private function waterTargetForUser(User $user): int
+    private function waterTargetForUser(User $user, ?float $resolvedWeightKg = null): int
     {
+        if (is_numeric($resolvedWeightKg)) {
+            return (int) round(((float) $resolvedWeightKg) * 30);
+        }
+
         if (is_numeric($user->weight_kg)) {
             return (int) round(((float) $user->weight_kg) * 30);
         }

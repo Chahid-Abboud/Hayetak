@@ -1,7 +1,19 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductEmptyState,
+    ProductHero,
+    ProductPageShell,
+    ProductSection,
+    ProductStatCard,
+    ProductStatGrid,
+} from '@/components/product/page';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { jsonRequestInit } from '@/lib/http';
 import { type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { CheckCircle2, RefreshCcw, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Appointment = {
     id: number;
@@ -18,34 +30,28 @@ export default function AppointmentsPage() {
     const [items, setItems] = useState<Appointment[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
-
-    function getCsrfToken() {
-        return (
-            (
-                document.querySelector(
-                    'meta[name="csrf-token"]',
-                ) as HTMLMetaElement | null
-            )?.content ?? ''
-        );
-    }
+    const [updatingId, setUpdatingId] = useState<number | null>(null);
 
     async function load() {
         setLoading(true);
         setError(null);
+
         try {
             const res = await fetch('/api/appointments', {
                 headers: { Accept: 'application/json' },
             });
+
             if (!res.ok) {
                 throw new Error('Could not load appointments.');
             }
+
             const json = await res.json();
             setItems(Array.isArray(json?.data) ? json.data : []);
-        } catch (err) {
+        } catch (loadError) {
             setItems([]);
             setError(
-                err instanceof Error
-                    ? err.message
+                loadError instanceof Error
+                    ? loadError.message
                     : 'Could not load appointments.',
             );
         } finally {
@@ -58,116 +64,231 @@ export default function AppointmentsPage() {
     }, []);
 
     async function updateStatus(id: number, status: string) {
+        setUpdatingId(id);
         setError(null);
-        const response = await fetch(`/api/appointments/${id}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify({ status }),
-        });
-        if (!response.ok) {
-            const json = await response.json().catch(() => null);
+
+        try {
+            const response = await fetch(
+                `/api/appointments/${id}/status`,
+                jsonRequestInit('PATCH', { status }),
+            );
+
+            if (!response.ok) {
+                const json = await response.json().catch(() => null);
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not update the appointment.',
+                );
+            }
+
+            await load();
+        } catch (updateError) {
             setError(
-                typeof json?.message === 'string'
-                    ? json.message
+                updateError instanceof Error
+                    ? updateError.message
                     : 'Could not update the appointment.',
             );
-            return;
+        } finally {
+            setUpdatingId(null);
         }
-        await load();
     }
+
+    const summary = useMemo(
+        () => ({
+            upcoming: items.filter((item) => item.status === 'pending').length,
+            accepted: items.filter((item) => item.status === 'accepted').length,
+            completed: items.filter((item) => item.status === 'completed')
+                .length,
+        }),
+        [items],
+    );
 
     return (
         <>
             <Head title="Appointments" />
-            <NavHeader />
-            <main className="mx-auto max-w-6xl px-4 py-6">
-                <h1 className="mb-4 text-2xl font-semibold">Appointments</h1>
-                {error && (
-                    <div className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
-                        {error}
-                    </div>
-                )}
-                <div className="space-y-3">
-                    {loading && (
-                        <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-                            Loading appointments...
-                        </div>
-                    )}
-                    {items.map((a) => (
-                        <div
-                            key={a.id}
-                            className="rounded-xl border bg-card p-4 text-sm shadow-sm"
+
+            <ProductPageShell>
+                <ProductHero
+                    eyebrow="Appointments"
+                    title="Appointments"
+                    description="Review requests, confirm sessions, and keep client-professional scheduling on the same polished footing as the rest of the product."
+                    actions={
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void load()}
+                            disabled={loading}
                         >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="font-medium capitalize">
-                                    {a.professional_role === 'nutritionist'
-                                        ? 'Dietitian'
-                                        : a.professional_role}{' '}
-                                    appointment
-                                </div>
-                                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
-                                    {a.status}
-                                </span>
-                            </div>
-                            <div className="mt-1 text-sm text-muted-foreground">
-                                {new Date(a.scheduled_at).toLocaleString()}
-                            </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                Client: {a.client?.name ?? '-'} | Professional:{' '}
-                                {a.professional?.name ?? '-'}
-                            </div>
-                            {a.notes ? (
-                                <div className="mt-2 text-xs text-muted-foreground">
-                                    {a.notes}
-                                </div>
-                            ) : null}
-                            {(auth.user.role === 'admin' ||
-                                auth.user.id === a.professional?.id) && (
-                                <div className="mt-2 flex gap-2">
-                                    <button
-                                        className="text-xs text-primary underline"
-                                        onClick={() =>
-                                            void updateStatus(a.id, 'accepted')
-                                        }
+                            <RefreshCcw className="h-4 w-4" />
+                            {loading ? 'Refreshing...' : 'Refresh'}
+                        </Button>
+                    }
+                />
+
+                <ProductStatGrid className="xl:grid-cols-3">
+                    <ProductStatCard
+                        label="Pending"
+                        value={loading ? '...' : String(summary.upcoming)}
+                        tone="accent"
+                        helper="Requests waiting for a decision."
+                    />
+                    <ProductStatCard
+                        label="Accepted"
+                        value={loading ? '...' : String(summary.accepted)}
+                        helper="Upcoming confirmed sessions."
+                    />
+                    <ProductStatCard
+                        label="Completed"
+                        value={loading ? '...' : String(summary.completed)}
+                        helper="Sessions already finished."
+                    />
+                </ProductStatGrid>
+
+                <ProductSection
+                    title="Appointment timeline"
+                    description="Each card shows the role, participants, notes, and the actions available for your current user role."
+                >
+                    <div className="space-y-4">
+                        {error ? (
+                            <ProductBanner tone="danger">{error}</ProductBanner>
+                        ) : null}
+
+                        {loading ? (
+                            <ProductEmptyState
+                                title="Loading appointments"
+                                description="Fetching the latest scheduling activity."
+                            />
+                        ) : items.length === 0 ? (
+                            <ProductEmptyState
+                                title="No appointments yet"
+                                description="You can request one from the nearby professionals page whenever you are ready."
+                                action={
+                                    <Button asChild>
+                                        <Link href="/nearby">
+                                            Browse professionals
+                                        </Link>
+                                    </Button>
+                                }
+                            />
+                        ) : (
+                            items.map((appointment) => {
+                                const canUpdate =
+                                    auth.user.role === 'admin' ||
+                                    auth.user.id ===
+                                        appointment.professional?.id;
+
+                                return (
+                                    <article
+                                        key={appointment.id}
+                                        className="rounded-[24px] border border-border/70 bg-background/80 p-5"
                                     >
-                                        Accept
-                                    </button>
-                                    <button
-                                        className="text-xs text-muted-foreground underline"
-                                        onClick={() =>
-                                            void updateStatus(a.id, 'declined')
-                                        }
-                                    >
-                                        Decline
-                                    </button>
-                                    <button
-                                        className="text-xs text-primary underline"
-                                        onClick={() =>
-                                            void updateStatus(a.id, 'completed')
-                                        }
-                                    >
-                                        Complete
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                    {!loading && items.length === 0 && (
-                        <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-                            No appointments yet. You can request one from the{' '}
-                            <a href="/nearby" className="underline">
-                                Nearby
-                            </a>{' '}
-                            page.
-                        </div>
-                    )}
-                </div>
-            </main>
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="space-y-3">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <h3 className="text-lg font-semibold text-foreground">
+                                                        {appointment.professional_role ===
+                                                        'nutritionist'
+                                                            ? 'Dietitian'
+                                                            : appointment.professional_role}{' '}
+                                                        appointment
+                                                    </h3>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="rounded-full px-2.5 py-1 capitalize"
+                                                    >
+                                                        {appointment.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {new Date(
+                                                        appointment.scheduled_at,
+                                                    ).toLocaleString()}
+                                                </div>
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                                    <span>
+                                                        Client:{' '}
+                                                        {appointment.client
+                                                            ?.name || '-'}
+                                                    </span>
+                                                    <span>
+                                                        Professional:{' '}
+                                                        {appointment
+                                                            .professional
+                                                            ?.name || '-'}
+                                                    </span>
+                                                </div>
+                                                {appointment.notes ? (
+                                                    <p className="text-sm leading-6 text-muted-foreground">
+                                                        {appointment.notes}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            {canUpdate ? (
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            void updateStatus(
+                                                                appointment.id,
+                                                                'accepted',
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            updatingId ===
+                                                            appointment.id
+                                                        }
+                                                    >
+                                                        <CheckCircle2 className="h-4 w-4" />
+                                                        Accept
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                            void updateStatus(
+                                                                appointment.id,
+                                                                'completed',
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            updatingId ===
+                                                            appointment.id
+                                                        }
+                                                    >
+                                                        Mark complete
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            void updateStatus(
+                                                                appointment.id,
+                                                                'declined',
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            updatingId ===
+                                                            appointment.id
+                                                        }
+                                                    >
+                                                        <XCircle className="h-4 w-4" />
+                                                        Decline
+                                                    </Button>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    </article>
+                                );
+                            })
+                        )}
+                    </div>
+                </ProductSection>
+            </ProductPageShell>
         </>
     );
 }

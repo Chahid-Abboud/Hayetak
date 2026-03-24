@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -83,9 +87,9 @@ const DEFAULT_TARGETS: Totals = {
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
 
 const CARD =
-    'rounded-2xl border p-4 transition-colors duration-300 bg-white text-[#1C2C64] border-[#1C2C64]/20 dark:bg-[#0B1020] dark:text-white dark:border-white/15';
+    'rounded-[24px] border border-border/70 bg-card/95 p-4 text-card-foreground shadow-sm transition-colors duration-300';
 const CARD_SM =
-    'rounded-xl border p-3 transition-colors duration-300 bg-white text-[#1C2C64] border-[#1C2C64]/20 dark:bg-[#0B1020] dark:text-white dark:border-white/15';
+    'rounded-2xl border border-border/70 bg-card/95 p-3 text-card-foreground shadow-sm transition-colors duration-300';
 
 function todayYMD() {
     return new Date().toISOString().slice(0, 10);
@@ -384,48 +388,98 @@ export default function TrackMealsPage() {
     const clearSearch = () => {
         setQ('');
     };
+    const renderLegacyHeader = date === '__legacy__';
+    const renderLegacyStatus = statusMessage === '__legacy__';
 
     return (
         <>
             <Head title={title} />
-            <NavHeader />
+            <ProductPageShell width="wide">
+                <ProductHero
+                    eyebrow="Nutrition"
+                    title={title}
+                    description="Review daily totals, add meals safely, and keep your log aligned with your profile and nutrition goals."
+                    meta={
+                        <span>
+                            {entries.length}{' '}
+                            {entries.length === 1 ? 'entry' : 'entries'} logged
+                            for {date}
+                        </span>
+                    }
+                    actions={
+                        <div className="flex flex-wrap items-center gap-2">
+                            <label className="sr-only" htmlFor="meal-date">
+                                Pick a date
+                            </label>
+                            <input
+                                id="meal-date"
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
 
-            <main className="mx-auto max-w-5xl px-4 py-6">
-                {/* Header + SINGLE calendar entry point */}
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-semibold text-[#1C2C64] dark:text-white">
-                        {title}
-                    </h1>
+                            <button
+                                type="button"
+                                onClick={() => setDate(todayYMD())}
+                                className="inline-flex h-10 items-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted focus:ring-2 focus:ring-ring focus:outline-none"
+                            >
+                                Today
+                            </button>
+                        </div>
+                    }
+                />
 
-                    <div className="flex items-center gap-2">
-                        {/* ✅ Primary: date picker */}
-                        <label className="sr-only" htmlFor="meal-date">
-                            Pick a date
-                        </label>
-                        <input
-                            id="meal-date"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-1.5 text-sm text-[#1C2C64] outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
-                        />
+                {dayLoading ? (
+                    <ProductBanner>
+                        Refreshing your daily totals and entries.
+                    </ProductBanner>
+                ) : null}
 
-                        {/* Secondary: Today (only one extra) */}
-                        <button
-                            type="button"
-                            onClick={() => setDate(todayYMD())}
-                            className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm text-[#1C2C64] hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:text-white dark:hover:bg-white/10 dark:focus:ring-white/25"
-                        >
-                            Today
-                        </button>
+                {statusMessage ? (
+                    <ProductBanner role="status" aria-live="polite">
+                        {statusMessage}
+                    </ProductBanner>
+                ) : null}
+                {renderLegacyHeader ? (
+                    <>
+                        {/* Header + SINGLE calendar entry point */}
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <h1 className="text-2xl font-semibold text-[#1C2C64] dark:text-white">
+                                {title}
+                            </h1>
 
-                        {dayLoading ? (
-                            <span className="text-xs opacity-70">
-                                Updating…
-                            </span>
-                        ) : null}
-                    </div>
-                </div>
+                            <div className="flex items-center gap-2">
+                                {/* ✅ Primary: date picker */}
+                                <label className="sr-only" htmlFor="meal-date">
+                                    Pick a date
+                                </label>
+                                <input
+                                    id="meal-date"
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-1.5 text-sm text-[#1C2C64] outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                />
+
+                                {/* Secondary: Today (only one extra) */}
+                                <button
+                                    type="button"
+                                    onClick={() => setDate(todayYMD())}
+                                    className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm text-[#1C2C64] hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:text-white dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                >
+                                    Today
+                                </button>
+
+                                {dayLoading ? (
+                                    <span className="text-xs opacity-70">
+                                        Updating…
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
+                    </>
+                ) : null}
 
                 {/* Daily totals */}
                 <section aria-labelledby="totals" className={CARD}>
@@ -475,7 +529,7 @@ export default function TrackMealsPage() {
                         </div>
                     )}
 
-                    {statusMessage && (
+                    {renderLegacyStatus && statusMessage && (
                         <div
                             role="status"
                             aria-live="polite"
@@ -775,7 +829,7 @@ export default function TrackMealsPage() {
                         </ul>
                     </div>
                 </section>
-            </main>
+            </ProductPageShell>
 
             {/* Add Dialog (fixed theming + mobile inputs) */}
             {openAdd && selected && (

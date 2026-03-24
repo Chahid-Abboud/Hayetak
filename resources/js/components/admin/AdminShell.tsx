@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 
 const ADMIN_NAV_ITEMS = [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/coach', label: 'AI Coach' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/professionals', label: 'Professionals' },
     { href: '/admin/professional-verifications', label: 'Verifications' },

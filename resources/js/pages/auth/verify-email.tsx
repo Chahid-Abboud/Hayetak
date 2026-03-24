@@ -1,5 +1,6 @@
 // Components
 import EmailVerificationNotificationController from '@/actions/App/Http/Controllers/Auth/EmailVerificationNotificationController';
+import { ProductBanner } from '@/components/product/page';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 
@@ -15,12 +16,17 @@ export default function VerifyEmail({ status }: { status?: string }) {
         >
             <Head title="Email verification" />
 
-            {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
-                </div>
-            )}
+            {status === 'verification-link-sent' ? (
+                <ProductBanner tone="success">
+                    A fresh verification link has been sent to your email
+                    address.
+                </ProductBanner>
+            ) : null}
+
+            <ProductBanner>
+                After you verify your email, you can choose whether to enable
+                two-factor authentication for extra security.
+            </ProductBanner>
 
             <Form
                 {...EmailVerificationNotificationController.store.form()}

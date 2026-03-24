@@ -1504,7 +1504,7 @@ function RegisterWizard(props: Props) {
                         {(data.account_type === 'trainer' ||
                             data.account_type === 'nutritionist') && (
                             <>
-                                <div className="md:col-span-2 rounded-md border bg-muted/30 p-3 text-sm">
+                                <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-2">
                                     Professional accounts require license
                                     verification before activation.
                                 </div>
@@ -1543,9 +1543,7 @@ function RegisterWizard(props: Props) {
                                     <input
                                         id="verification_license_number"
                                         className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
-                                        value={
-                                            data.verification_license_number
-                                        }
+                                        value={data.verification_license_number}
                                         onChange={(e) =>
                                             setData(
                                                 'verification_license_number',
@@ -1686,13 +1684,13 @@ export default function Register(props: Props) {
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,rgba(14,165,164,0.16),transparent_65%)] dark:bg-[radial-gradient(circle_at_top,rgba(45,212,191,0.18),transparent_65%)]" />
                     <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
-                    <div className="absolute left-0 top-24 h-56 w-56 rounded-full bg-secondary/10 blur-3xl" />
+                    <div className="absolute top-24 left-0 h-56 w-56 rounded-full bg-secondary/10 blur-3xl" />
                 </div>
 
                 <div className="relative mx-auto flex min-h-[100svh] w-full max-w-5xl flex-col px-4 py-6 sm:px-6 md:py-10">
                     <div className="mb-6 flex items-center justify-between gap-4">
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                            <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
                                 Hayetak
                             </p>
                             <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -59,6 +60,13 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
 
+            'security' => [
+                'requiresTwoFactorConfirmation' => Features::optionEnabled(
+                    Features::twoFactorAuthentication(),
+                    'confirm',
+                ),
+            ],
+
             // Common UI state
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
 
@@ -67,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'showOptionalTwoFactorPrompt' => (bool) $request->session()->pull('showOptionalTwoFactorPrompt', false),
             ],
         ]);
     }

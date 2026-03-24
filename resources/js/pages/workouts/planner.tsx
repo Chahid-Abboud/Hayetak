@@ -1,5 +1,9 @@
 // resources/js/pages/workouts/planner.tsx
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import type { Errors as InertiaErrors } from '@inertiajs/core';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -315,13 +319,11 @@ export default function PlannerPage() {
                             cs.has(c),
                         )),
             );
-            return pool
-                .slice(0, count)
-                .map((e) => ({
-                    exercise_id: e.id,
-                    target_sets: 3,
-                    target_reps: 10,
-                }));
+            return pool.slice(0, count).map((e) => ({
+                exercise_id: e.id,
+                target_sets: 3,
+                target_reps: 10,
+            }));
         },
         [exercises, conditionFilters],
     );
@@ -499,9 +501,7 @@ export default function PlannerPage() {
     return (
         <>
             <Head title="Workout Planner" />
-            <NavHeader />
-
-            <main className="mx-auto max-w-7xl space-y-6 p-4 text-gray-900 md:p-6 dark:text-gray-100">
+            <ProductPageShell width="wide" className="space-y-8">
                 <WorkoutTabs active="plan" />
 
                 <HeaderBar
@@ -514,14 +514,14 @@ export default function PlannerPage() {
                 />
 
                 {Object.keys(errors).length > 0 && (
-                    <div
-                        className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800/50 dark:bg-red-900/30 dark:text-red-200"
+                    <ProductBanner
+                        tone="danger"
                         role="alert"
                         aria-live="assertive"
                     >
                         There were validation errors while saving. Check your
                         sets/reps and try again.
-                    </div>
+                    </ProductBanner>
                 )}
 
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -584,7 +584,7 @@ export default function PlannerPage() {
                         isAdded={(exId) => isInDay(days, activeAddDay, exId)}
                     />
                 </div>
-            </main>
+            </ProductPageShell>
         </>
     );
 }
@@ -605,66 +605,124 @@ function HeaderBar({
     flash: string | null;
     flashRef: React.RefObject<HTMLSpanElement | null>;
 }) {
+    const renderLegacyHeader = flash === '__legacy__';
+
     return (
-        <header className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-900/80">
-            <div className="space-y-1">
-                <h1 className="text-2xl font-bold md:text-3xl">
-                    Workout Planner
-                </h1>
-                <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                    Choose a split, tweak each day, and save your weekly
-                    routine.
-                </p>
-            </div>
+        <>
+            <ProductHero
+                eyebrow="Workouts"
+                title="Workout Planner"
+                description="Choose a split, refine each day, and save a routine that feels consistent with the rest of your training workspace."
+                meta={<span>{daysPerWeek} training days per week</span>}
+                actions={
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label
+                            className="flex items-center gap-2 text-sm"
+                            htmlFor="days-per-week"
+                        >
+                            <span className="text-muted-foreground">
+                                Days / week
+                            </span>
+                            <input
+                                id="days-per-week"
+                                type="number"
+                                min={1}
+                                max={7}
+                                value={daysPerWeek}
+                                onChange={(e) =>
+                                    setDaysPerWeek(
+                                        Math.min(
+                                            7,
+                                            Math.max(1, Number(e.target.value)),
+                                        ),
+                                    )
+                                }
+                                className="h-10 w-20 rounded-xl border border-border bg-background px-3 text-center text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </label>
 
-            <div className="flex flex-wrap items-center gap-3">
-                <label
-                    className="flex items-center gap-2 text-sm"
-                    htmlFor="days-per-week"
-                >
-                    <span className="text-gray-600 dark:text-gray-300">
-                        Days / week
-                    </span>
-                    <input
-                        id="days-per-week"
-                        type="number"
-                        min={1}
-                        max={7}
-                        value={daysPerWeek}
-                        onChange={(e) =>
-                            setDaysPerWeek(
-                                Math.min(
-                                    7,
-                                    Math.max(1, Number(e.target.value)),
-                                ),
-                            )
-                        }
-                        className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-center text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100"
-                    />
-                </label>
+                        <button
+                            type="button"
+                            onClick={save}
+                            className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
+                            disabled={saving}
+                        >
+                            {saving ? 'Saving...' : 'Save plan'}
+                        </button>
+                    </div>
+                }
+            />
 
-                <button
-                    type="button"
-                    onClick={save}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                    disabled={saving}
-                >
-                    {saving ? 'Saving…' : 'Save plan'}
-                </button>
-
-                {flash && (
-                    <span
-                        ref={flashRef}
-                        tabIndex={-1}
-                        className="ml-1 text-xs text-green-700 outline-none dark:text-green-300"
-                        role="status"
-                        aria-live="polite"
-                    >
+            {flash ? (
+                <ProductBanner role="status" aria-live="polite">
+                    <span ref={flashRef} tabIndex={-1} className="outline-none">
                         {flash}
                     </span>
-                )}
-            </div>
-        </header>
+                </ProductBanner>
+            ) : null}
+
+            {renderLegacyHeader ? (
+                <header className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-900/80">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-bold md:text-3xl">
+                            Workout Planner
+                        </h1>
+                        <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
+                            Choose a split, tweak each day, and save your weekly
+                            routine.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <label
+                            className="flex items-center gap-2 text-sm"
+                            htmlFor="days-per-week"
+                        >
+                            <span className="text-gray-600 dark:text-gray-300">
+                                Days / week
+                            </span>
+                            <input
+                                id="days-per-week"
+                                type="number"
+                                min={1}
+                                max={7}
+                                value={daysPerWeek}
+                                onChange={(e) =>
+                                    setDaysPerWeek(
+                                        Math.min(
+                                            7,
+                                            Math.max(1, Number(e.target.value)),
+                                        ),
+                                    )
+                                }
+                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-center text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100"
+                            />
+                        </label>
+
+                        <button
+                            type="button"
+                            onClick={save}
+                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                            disabled={saving}
+                        >
+                            {saving ? 'Saving…' : 'Save plan'}
+                        </button>
+
+                        {flash && (
+                            <span
+                                ref={flashRef}
+                                tabIndex={-1}
+                                className="ml-1 text-xs text-green-700 outline-none dark:text-green-300"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                {flash}
+                            </span>
+                        )}
+                    </div>
+                </header>
+            ) : null}
+        </>
     );
 }
 
