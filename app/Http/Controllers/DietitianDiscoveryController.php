@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 class DietitianDiscoveryController extends Controller
@@ -18,6 +19,8 @@ class DietitianDiscoveryController extends Controller
         $area = trim((string) $request->query('area', ''));
         $role = trim((string) $request->query('role', ''));
         $viewer = $request->user();
+        $viewerLat = is_numeric($request->query('lat')) ? (float) $request->query('lat') : null;
+        $viewerLng = is_numeric($request->query('lng')) ? (float) $request->query('lng') : null;
         $roles = [User::ROLE_NUTRITIONIST, User::ROLE_TRAINER];
 
         $query = User::query()
@@ -47,8 +50,7 @@ class DietitianDiscoveryController extends Controller
             $query->whereRaw('LOWER(COALESCE(pv.country_state, \'\')) LIKE ?', ["%{$needle}%"]);
         }
 
-        $rows = $query->paginate((int) $request->query('per_page', 20))
-            ->through(fn ($u) => [
+        $rows = $query->get()->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: $u->name,
                 'email' => $u->email,
@@ -63,9 +65,89 @@ class DietitianDiscoveryController extends Controller
                 'lng' => $u->profile_lng,
                 'area' => $u->area,
                 'authority' => $u->authority,
+                'distance_m' => $this->distanceForViewer($viewerLat, $viewerLng, $u->profile_lat, $u->profile_lng),
                 'canInteract' => $viewer ? $this->access->canInteract($viewer, $u) : false,
             ]);
 
-        return response()->json($rows);
+        if ($viewerLat !== null && $viewerLng !== null) {
+            $rows = $rows
+                ->sort(function (array $a, array $b): int {
+                    $aDistance = $a['distance_m'];
+                    $bDistance = $b['distance_m'];
+
+                    if ($aDistance === null && $bDistance === null) {
+                        return strcasecmp((string) $a['name'], (string) $b['name']);
+                    }
+
+                    if ($aDistance === null) {
+                        return 1;
+                    }
+
+                    if ($bDistance === null) {
+                        return -1;
+                    }
+
+                    if ($aDistance !== $bDistance) {
+                        return $aDistance <=> $bDistance;
+                    }
+
+                    return strcasecmp((string) $a['name'], (string) $b['name']);
+                })
+                ->values();
+        }
+
+        $perPage = max(1, (int) $request->query('per_page', 20));
+        $page = max(1, (int) $request->query('page', 1));
+        $paginated = new LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ],
+        );
+
+        return response()->json($paginated);
+    }
+
+    private function distanceForViewer(
+        ?float $viewerLat,
+        ?float $viewerLng,
+        mixed $professionalLat,
+        mixed $professionalLng,
+    ): ?float {
+        if (
+            $viewerLat === null ||
+            $viewerLng === null ||
+            ! is_numeric($professionalLat) ||
+            ! is_numeric($professionalLng)
+        ) {
+            return null;
+        }
+
+        return round(
+            $this->distanceMeters(
+                $viewerLat,
+                $viewerLng,
+                (float) $professionalLat,
+                (float) $professionalLng,
+            ),
+            1,
+        );
+    }
+
+    private function distanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earth = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earth * $c;
     }
 }

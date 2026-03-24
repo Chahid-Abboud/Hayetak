@@ -19,7 +19,7 @@ class Measurement extends Model
     ];
 
     protected $casts = [
-        'measured_at' => 'datetime',
+        'measured_at' => 'date',
         'weight_kg' => 'decimal:2',
         'height_cm' => 'integer',
         'body_fat_pct' => 'decimal:2',

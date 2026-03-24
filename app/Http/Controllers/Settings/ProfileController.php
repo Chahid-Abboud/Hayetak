@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Measurement;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -177,6 +179,10 @@ class ProfileController extends Controller
             return back()->with('error', 'Measurements schema is missing user_id/date fields.');
         }
 
+        $normalizedDate = $dateColumn === 'measured_at'
+            ? Carbon::parse($data['date'])->toDateString()
+            : Carbon::parse($data['date'])->toDateString();
+
         // Weight path (supported by your dump)
         if ($data['type'] === 'weight') {
             if (! Schema::hasColumn('measurements', 'weight_kg')) {
@@ -185,7 +191,7 @@ class ProfileController extends Controller
 
             // Upsert per (user_id, measured_at) — matches your unique index
             DB::table('measurements')->updateOrInsert(
-                ['user_id' => $u->id, $dateColumn => $data['date']],
+                ['user_id' => $u->id, $dateColumn => $normalizedDate],
                 ['weight_kg' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
             );
 
@@ -201,7 +207,7 @@ class ProfileController extends Controller
             // If you later add measurements.height_cm, this will work automatically:
             if (Schema::hasColumn('measurements', 'height_cm')) {
                 DB::table('measurements')->updateOrInsert(
-                    ['user_id' => $u->id, $dateColumn => $data['date']],
+                    ['user_id' => $u->id, $dateColumn => $normalizedDate],
                     ['height_cm' => $data['value'], 'updated_at' => now(), 'created_at' => now()]
                 );
                 $u->height_cm = (int) $data['value'];

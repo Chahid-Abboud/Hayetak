@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -265,11 +269,11 @@ export default function ProfessionalClientsPage() {
     const mealNoteIsOpen = mealNoteDialog !== null;
     const mealNoteSubstituteQuery = mealNoteDialog?.substituteQuery ?? '';
     const mealNoteSelectedMealType = mealNoteDialog
-        ? findSelectedMealChoice(
+        ? (findSelectedMealChoice(
               mealNoteDialog.weeklyDays,
               mealNoteDialog.selectedDate,
               mealNoteDialog.selectedEntryId,
-          ).choice?.mealType ?? null
+          ).choice?.mealType ?? null)
         : null;
 
     async function openConversation(clientId: number) {
@@ -367,7 +371,10 @@ export default function ProfessionalClientsPage() {
                 );
             })
             .catch((error) => {
-                if (error instanceof DOMException && error.name === 'AbortError') {
+                if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                ) {
                     return;
                 }
 
@@ -502,7 +509,9 @@ export default function ProfessionalClientsPage() {
         setBanner(null);
 
         try {
-            const conversationId = await ensureConversation(mealNoteDialog.client.id);
+            const conversationId = await ensureConversation(
+                mealNoteDialog.client.id,
+            );
             const body = [
                 'Meal note from your dietitian',
                 '',
@@ -551,36 +560,25 @@ export default function ProfessionalClientsPage() {
     return (
         <>
             <Head title={pageTitle} />
-            <NavHeader />
-
-            <main className="mx-auto max-w-6xl px-4 py-6">
-                <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-semibold">{pageTitle}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Private client view for your assigned{' '}
-                            {roleMode === 'nutritionist'
-                                ? 'nutrition'
-                                : 'training'}{' '}
-                            clients.
-                        </p>
-                    </div>
-                    <div className="rounded-full border bg-card px-4 py-2 text-sm text-muted-foreground">
-                        {clients.length} client{clients.length === 1 ? '' : 's'}
-                    </div>
-                </header>
+            <ProductPageShell>
+                <ProductHero
+                    eyebrow="Client workspace"
+                    title={pageTitle}
+                    description={`Private client view for your assigned ${roleMode === 'nutritionist' ? 'nutrition' : 'training'} clients.`}
+                    actions={
+                        <div className="rounded-full border bg-card px-4 py-2 text-sm text-muted-foreground">
+                            {clients.length} client
+                            {clients.length === 1 ? '' : 's'}
+                        </div>
+                    }
+                />
 
                 {banner ? (
-                    <div
-                        className={
-                            'mb-4 rounded-2xl border px-4 py-3 text-sm ' +
-                            (banner.kind === 'success'
-                                ? 'border-[color:var(--primary)]/30 bg-[color:var(--primary)]/10 text-foreground'
-                                : 'border-destructive/30 bg-destructive/10 text-foreground')
-                        }
+                    <ProductBanner
+                        tone={banner.kind === 'success' ? 'success' : 'danger'}
                     >
                         {banner.text}
-                    </div>
+                    </ProductBanner>
                 ) : null}
 
                 {clients.length === 0 ? (
@@ -601,16 +599,21 @@ export default function ProfessionalClientsPage() {
                                                 {entry.client.name}
                                             </h2>
                                             <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                                                {formatRoleLabel(roleMode)} client
+                                                {formatRoleLabel(roleMode)}{' '}
+                                                client
                                             </span>
                                         </div>
                                         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                                             <span>{entry.client.email}</span>
                                             {entry.client.age ? (
-                                                <span>Age {entry.client.age}</span>
+                                                <span>
+                                                    Age {entry.client.age}
+                                                </span>
                                             ) : null}
                                             {entry.client.username ? (
-                                                <span>@{entry.client.username}</span>
+                                                <span>
+                                                    @{entry.client.username}
+                                                </span>
                                             ) : null}
                                         </div>
                                         {entry.notes ? (
@@ -625,17 +628,27 @@ export default function ProfessionalClientsPage() {
                                             type="button"
                                             className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
                                             onClick={() =>
-                                                void openConversation(entry.client.id)
+                                                void openConversation(
+                                                    entry.client.id,
+                                                )
                                             }
-                                            disabled={busyClientId === entry.client.id}
+                                            disabled={
+                                                busyClientId === entry.client.id
+                                            }
                                         >
                                             Message
                                         </button>
                                         <button
                                             type="button"
                                             className="rounded-full bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95"
-                                            onClick={() => openAppointmentDialog(entry.client)}
-                                            disabled={busyClientId === entry.client.id}
+                                            onClick={() =>
+                                                openAppointmentDialog(
+                                                    entry.client,
+                                                )
+                                            }
+                                            disabled={
+                                                busyClientId === entry.client.id
+                                            }
                                         >
                                             Appointment
                                         </button>
@@ -643,8 +656,13 @@ export default function ProfessionalClientsPage() {
                                             <button
                                                 type="button"
                                                 className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                                onClick={() => openMealNoteDialog(entry)}
-                                                disabled={busyClientId === entry.client.id}
+                                                onClick={() =>
+                                                    openMealNoteDialog(entry)
+                                                }
+                                                disabled={
+                                                    busyClientId ===
+                                                    entry.client.id
+                                                }
                                             >
                                                 Meal Note
                                             </button>
@@ -660,11 +678,13 @@ export default function ProfessionalClientsPage() {
                                             </h3>
                                             <div className="text-xs text-muted-foreground">
                                                 Latest:{' '}
-                                                {entry.progress.latest_weight_kg !== null
+                                                {entry.progress
+                                                    .latest_weight_kg !== null
                                                     ? `${entry.progress.latest_weight_kg} kg`
                                                     : 'n/a'}
                                                 {' / '}
-                                                {entry.progress.latest_height_cm !== null
+                                                {entry.progress
+                                                    .latest_height_cm !== null
                                                     ? `${entry.progress.latest_height_cm} cm`
                                                     : 'n/a'}
                                             </div>
@@ -672,16 +692,23 @@ export default function ProfessionalClientsPage() {
 
                                         {entry.progress.points.length === 0 ? (
                                             <p className="text-sm text-muted-foreground">
-                                                No measurement history logged yet.
+                                                No measurement history logged
+                                                yet.
                                             </p>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <table className="min-w-full text-sm">
                                                     <thead className="text-left text-muted-foreground">
                                                         <tr>
-                                                            <th className="py-2 pr-4">Date</th>
-                                                            <th className="py-2 pr-4">Weight</th>
-                                                            <th className="py-2">Height</th>
+                                                            <th className="py-2 pr-4">
+                                                                Date
+                                                            </th>
+                                                            <th className="py-2 pr-4">
+                                                                Weight
+                                                            </th>
+                                                            <th className="py-2">
+                                                                Height
+                                                            </th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -689,19 +716,25 @@ export default function ProfessionalClientsPage() {
                                                             .slice(-6)
                                                             .map((point) => (
                                                                 <tr
-                                                                    key={point.date}
+                                                                    key={
+                                                                        point.date
+                                                                    }
                                                                     className="border-t"
                                                                 >
                                                                     <td className="py-2 pr-4">
-                                                                        {point.date}
+                                                                        {
+                                                                            point.date
+                                                                        }
                                                                     </td>
                                                                     <td className="py-2 pr-4">
-                                                                        {point.weight_kg !== null
+                                                                        {point.weight_kg !==
+                                                                        null
                                                                             ? `${point.weight_kg} kg`
                                                                             : '-'}
                                                                     </td>
                                                                     <td className="py-2">
-                                                                        {point.height_cm !== null
+                                                                        {point.height_cm !==
+                                                                        null
                                                                             ? `${point.height_cm} cm`
                                                                             : '-'}
                                                                     </td>
@@ -722,15 +755,25 @@ export default function ProfessionalClientsPage() {
                                                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                                                     <span className="rounded-full bg-muted px-2.5 py-1">
                                                         Sessions:{' '}
-                                                        {entry.training?.summary.logged_sessions}
+                                                        {
+                                                            entry.training
+                                                                ?.summary
+                                                                .logged_sessions
+                                                        }
                                                     </span>
                                                     <span className="rounded-full bg-muted px-2.5 py-1">
-                                                        Sets: {entry.training?.summary.total_sets}
+                                                        Sets:{' '}
+                                                        {
+                                                            entry.training
+                                                                ?.summary
+                                                                .total_sets
+                                                        }
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            {entry.training?.recent_workouts.length ? (
+                                            {entry.training?.recent_workouts
+                                                .length ? (
                                                 <div className="space-y-3">
                                                     {entry.training.recent_workouts.map(
                                                         (workout) => (
@@ -749,12 +792,17 @@ export default function ProfessionalClientsPage() {
                                                                             ? `${workout.duration_min} min`
                                                                             : 'No duration'}
                                                                         {' - '}
-                                                                        {workout.sets_count} sets
+                                                                        {
+                                                                            workout.sets_count
+                                                                        }{' '}
+                                                                        sets
                                                                     </div>
                                                                 </div>
                                                                 {workout.notes ? (
                                                                     <p className="mt-2 text-sm text-muted-foreground">
-                                                                        {workout.notes}
+                                                                        {
+                                                                            workout.notes
+                                                                        }
                                                                     </p>
                                                                 ) : null}
                                                             </div>
@@ -763,7 +811,8 @@ export default function ProfessionalClientsPage() {
                                                 </div>
                                             ) : (
                                                 <p className="text-sm text-muted-foreground">
-                                                    No workout logs yet for this client.
+                                                    No workout logs yet for this
+                                                    client.
                                                 </p>
                                             )}
                                         </div>
@@ -779,60 +828,78 @@ export default function ProfessionalClientsPage() {
                                             </div>
 
                                             <div className="space-y-3">
-                                                {entry.nutrition?.weekly_days.map((day) => (
-                                                    <div
-                                                        key={day.date}
-                                                        className="rounded-2xl border p-3"
-                                                    >
-                                                        <div className="mb-2 flex items-center justify-between gap-3">
-                                                            <div className="font-medium">
-                                                                {day.label}
+                                                {entry.nutrition?.weekly_days.map(
+                                                    (day) => (
+                                                        <div
+                                                            key={day.date}
+                                                            className="rounded-2xl border p-3"
+                                                        >
+                                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                                                <div className="font-medium">
+                                                                    {day.label}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {day.date}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {day.date}
-                                                            </div>
-                                                        </div>
 
-                                                        {day.meals.length ? (
-                                                            <div className="space-y-2">
-                                                                {day.meals.map((meal) => (
-                                                                    <div
-                                                                        key={meal.meal_type}
-                                                                        className="rounded-xl bg-muted/40 p-3"
-                                                                    >
-                                                                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                                                            {formatMealType(
-                                                                                meal.meal_type,
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="mt-2 space-y-1 text-sm">
-                                                                            {meal.items.map((item) => (
-                                                                                <div
-                                                                                    key={item.id}
-                                                                                    className="flex items-center justify-between gap-3"
-                                                                                >
-                                                                                    <span className="min-w-0 truncate">
-                                                                                        {item.food_name}
-                                                                                    </span>
-                                                                                    <span className="text-xs text-muted-foreground">
-                                                                                        {item.servings !==
-                                                                                        null
-                                                                                            ? `${item.servings} serving(s)`
-                                                                                            : ''}
-                                                                                    </span>
+                                                            {day.meals
+                                                                .length ? (
+                                                                <div className="space-y-2">
+                                                                    {day.meals.map(
+                                                                        (
+                                                                            meal,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    meal.meal_type
+                                                                                }
+                                                                                className="rounded-xl bg-muted/40 p-3"
+                                                                            >
+                                                                                <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                                    {formatMealType(
+                                                                                        meal.meal_type,
+                                                                                    )}
                                                                                 </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                No meals logged.
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                                                                <div className="mt-2 space-y-1 text-sm">
+                                                                                    {meal.items.map(
+                                                                                        (
+                                                                                            item,
+                                                                                        ) => (
+                                                                                            <div
+                                                                                                key={
+                                                                                                    item.id
+                                                                                                }
+                                                                                                className="flex items-center justify-between gap-3"
+                                                                                            >
+                                                                                                <span className="min-w-0 truncate">
+                                                                                                    {
+                                                                                                        item.food_name
+                                                                                                    }
+                                                                                                </span>
+                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                    {item.servings !==
+                                                                                                    null
+                                                                                                        ? `${item.servings} serving(s)`
+                                                                                                        : ''}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        ),
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    No meals
+                                                                    logged.
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    ),
+                                                )}
                                             </div>
                                         </div>
                                     )}
@@ -841,7 +908,7 @@ export default function ProfessionalClientsPage() {
                         ))}
                     </div>
                 )}
-            </main>
+            </ProductPageShell>
 
             {appointmentDialog ? (
                 <div
@@ -946,7 +1013,8 @@ export default function ProfessionalClientsPage() {
                                             current
                                                 ? {
                                                       ...current,
-                                                      location: event.target.value,
+                                                      location:
+                                                          event.target.value,
                                                   }
                                                 : null,
                                         )
@@ -994,7 +1062,9 @@ export default function ProfessionalClientsPage() {
 
                     <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-[#1C2C64]/20 bg-white p-4 text-[#1C2C64] shadow-xl dark:border-white/15 dark:bg-[#0B1020] dark:text-white">
                         <div className="mb-3 flex items-center justify-between gap-2">
-                            <div className="text-sm font-medium">Send meal note</div>
+                            <div className="text-sm font-medium">
+                                Send meal note
+                            </div>
 
                             <button
                                 type="button"
@@ -1010,14 +1080,15 @@ export default function ProfessionalClientsPage() {
                                 {mealNoteDialog.client.name}
                             </div>
                             <div className="text-xs opacity-75">
-                                Pick a logged meal, write the note, and optionally
-                                suggest a substitute.
+                                Pick a logged meal, write the note, and
+                                optionally suggest a substitute.
                             </div>
                         </div>
 
                         {!hasAnyLoggedMeals(mealNoteDialog.weeklyDays) ? (
                             <div className="rounded-lg border border-[#1C2C64]/15 p-4 text-sm opacity-80 dark:border-white/10">
-                                This client has no logged meals in the last 7 days.
+                                This client has no logged meals in the last 7
+                                days.
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -1035,7 +1106,8 @@ export default function ProfessionalClientsPage() {
                                             const nextDate = event.target.value;
                                             const nextDay =
                                                 mealNoteDialog.weeklyDays.find(
-                                                    (day) => day.date === nextDate,
+                                                    (day) =>
+                                                        day.date === nextDate,
                                                 ) ?? null;
                                             const nextChoices =
                                                 getMealChoicesForDay(nextDay);
@@ -1044,9 +1116,11 @@ export default function ProfessionalClientsPage() {
                                                 current
                                                     ? {
                                                           ...current,
-                                                          selectedDate: nextDate,
+                                                          selectedDate:
+                                                              nextDate,
                                                           selectedEntryId:
-                                                              nextChoices[0]?.entryId ??
+                                                              nextChoices[0]
+                                                                  ?.entryId ??
                                                               null,
                                                           substituteQuery: '',
                                                           substitute: null,
@@ -1056,60 +1130,78 @@ export default function ProfessionalClientsPage() {
                                         }}
                                         className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
                                     >
-                                        {mealNoteDialog.weeklyDays.map((day) => (
-                                            <option key={day.date} value={day.date}>
-                                                {day.label} ({day.date})
-                                            </option>
-                                        ))}
+                                        {mealNoteDialog.weeklyDays.map(
+                                            (day) => (
+                                                <option
+                                                    key={day.date}
+                                                    value={day.date}
+                                                >
+                                                    {day.label} ({day.date})
+                                                </option>
+                                            ),
+                                        )}
                                     </select>
                                 </div>
 
                                 <div>
-                                    <div className="mb-2 text-sm">Logged meal</div>
+                                    <div className="mb-2 text-sm">
+                                        Logged meal
+                                    </div>
 
                                     {mealNoteSelection?.choices.length ? (
                                         <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-[#1C2C64]/15 p-2 dark:border-white/10">
-                                            {mealNoteSelection.choices.map((choice) => (
-                                                <button
-                                                    key={choice.entryId}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setMealNoteDialog((current) =>
-                                                            current
-                                                                ? {
-                                                                      ...current,
-                                                                      selectedEntryId:
-                                                                          choice.entryId,
-                                                                      substituteQuery:
-                                                                          '',
-                                                                      substitute:
-                                                                          null,
-                                                                  }
-                                                                : null,
-                                                        )
-                                                    }
-                                                    className={`w-full rounded-lg border px-3 py-3 text-left transition focus:ring-2 focus:outline-none ${
-                                                        mealNoteDialog.selectedEntryId ===
-                                                        choice.entryId
-                                                            ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
-                                                            : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="font-medium">
-                                                            {choice.foodName}
+                                            {mealNoteSelection.choices.map(
+                                                (choice) => (
+                                                    <button
+                                                        key={choice.entryId}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setMealNoteDialog(
+                                                                (current) =>
+                                                                    current
+                                                                        ? {
+                                                                              ...current,
+                                                                              selectedEntryId:
+                                                                                  choice.entryId,
+                                                                              substituteQuery:
+                                                                                  '',
+                                                                              substitute:
+                                                                                  null,
+                                                                          }
+                                                                        : null,
+                                                            )
+                                                        }
+                                                        className={`w-full rounded-lg border px-3 py-3 text-left transition focus:ring-2 focus:outline-none ${
+                                                            mealNoteDialog.selectedEntryId ===
+                                                            choice.entryId
+                                                                ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
+                                                                : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <div className="font-medium">
+                                                                {
+                                                                    choice.foodName
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs opacity-75">
+                                                                {formatMealType(
+                                                                    choice.mealType,
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="text-xs opacity-75">
-                                                            {formatMealType(choice.mealType)}
-                                                        </div>
-                                                    </div>
-                                                    {choice.servings !== null ? (
-                                                        <div className="mt-1 text-xs opacity-75">
-                                                            {choice.servings} serving(s)
-                                                        </div>
-                                                    ) : null}
-                                                </button>
-                                            ))}
+                                                        {choice.servings !==
+                                                        null ? (
+                                                            <div className="mt-1 text-xs opacity-75">
+                                                                {
+                                                                    choice.servings
+                                                                }{' '}
+                                                                serving(s)
+                                                            </div>
+                                                        ) : null}
+                                                    </button>
+                                                ),
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="rounded-lg border border-dashed border-[#1C2C64]/20 p-3 text-sm opacity-80 dark:border-white/15">
@@ -1133,7 +1225,9 @@ export default function ProfessionalClientsPage() {
                                                 current
                                                     ? {
                                                           ...current,
-                                                          message: event.target.value,
+                                                          message:
+                                                              event.target
+                                                                  .value,
                                                       }
                                                     : null,
                                             )
@@ -1165,7 +1259,8 @@ export default function ProfessionalClientsPage() {
                                                     ? {
                                                           ...current,
                                                           substituteQuery:
-                                                              event.target.value,
+                                                              event.target
+                                                                  .value,
                                                       }
                                                     : null,
                                             )
@@ -1177,18 +1272,21 @@ export default function ProfessionalClientsPage() {
                                     {mealNoteDialog.substitute ? (
                                         <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#1C2C64]/15 bg-[#1C2C64]/5 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/10">
                                             <div>
-                                                Selected: {mealNoteDialog.substitute.name}
+                                                Selected:{' '}
+                                                {mealNoteDialog.substitute.name}
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    setMealNoteDialog((current) =>
-                                                        current
-                                                            ? {
-                                                                  ...current,
-                                                                  substitute: null,
-                                                              }
-                                                            : null,
+                                                    setMealNoteDialog(
+                                                        (current) =>
+                                                            current
+                                                                ? {
+                                                                      ...current,
+                                                                      substitute:
+                                                                          null,
+                                                                  }
+                                                                : null,
                                                     )
                                                 }
                                                 className="rounded-lg border border-[#1C2C64]/20 px-2 py-1 text-xs hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
@@ -1212,7 +1310,8 @@ export default function ProfessionalClientsPage() {
                                                 .filter(
                                                     (item) =>
                                                         item.name !==
-                                                        mealNoteSelection.choice?.foodName,
+                                                        mealNoteSelection.choice
+                                                            ?.foodName,
                                                 )
                                                 .slice(0, 8)
                                                 .map((item) => (
@@ -1220,19 +1319,21 @@ export default function ProfessionalClientsPage() {
                                                         key={item.id}
                                                         type="button"
                                                         onClick={() =>
-                                                            setMealNoteDialog((current) =>
-                                                                current
-                                                                    ? {
-                                                                          ...current,
-                                                                          substitute:
-                                                                              item,
-                                                                      }
-                                                                    : null,
+                                                            setMealNoteDialog(
+                                                                (current) =>
+                                                                    current
+                                                                        ? {
+                                                                              ...current,
+                                                                              substitute:
+                                                                                  item,
+                                                                          }
+                                                                        : null,
                                                             )
                                                         }
                                                         className={`w-full rounded-lg border px-3 py-2 text-left transition focus:ring-2 focus:outline-none ${
-                                                            mealNoteDialog.substitute?.id ===
-                                                            item.id
+                                                            mealNoteDialog
+                                                                .substitute
+                                                                ?.id === item.id
                                                                 ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
                                                                 : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
                                                         }`}
@@ -1241,7 +1342,8 @@ export default function ProfessionalClientsPage() {
                                                             {item.name}
                                                         </div>
                                                         <div className="text-xs opacity-75">
-                                                            Base: {item.serving_size}
+                                                            Base:{' '}
+                                                            {item.serving_size}
                                                             {item.serving_unit}
                                                         </div>
                                                     </button>
@@ -1250,10 +1352,12 @@ export default function ProfessionalClientsPage() {
                                             {mealNoteDialog.substituteResults.filter(
                                                 (item) =>
                                                     item.name !==
-                                                    mealNoteSelection.choice?.foodName,
+                                                    mealNoteSelection.choice
+                                                        ?.foodName,
                                             ).length === 0 ? (
                                                 <div className="text-sm opacity-80">
-                                                    No substitute options found for this meal type.
+                                                    No substitute options found
+                                                    for this meal type.
                                                 </div>
                                             ) : null}
                                         </div>
@@ -1276,7 +1380,9 @@ export default function ProfessionalClientsPage() {
                                 onClick={() => void submitMealNote()}
                                 disabled={
                                     busyClientId === mealNoteDialog.client.id ||
-                                    !hasAnyLoggedMeals(mealNoteDialog.weeklyDays)
+                                    !hasAnyLoggedMeals(
+                                        mealNoteDialog.weeklyDays,
+                                    )
                                 }
                                 className="rounded-lg bg-[#1C2C64] px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-[#1C2C64]/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#0B1020] dark:focus:ring-white/30"
                             >

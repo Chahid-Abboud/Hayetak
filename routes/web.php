@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminProfessionalController;
 use App\Http\Controllers\Admin\AdminProfessionalVerificationController;
 use App\Http\Controllers\Admin\AdminProgressController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Ai\ChatController;
 use App\Http\Controllers\Ai\PlanGenerationController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\RegisterWizardController;
@@ -83,6 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/meal-tracker', [MealEntryController::class, 'index'])->name('meal.tracker');
 
     Route::get('/planner', fn () => Inertia::render('workouts/planner'))->name('planner');
+    Route::get('/coach', fn () => Inertia::render('ai/chat'))->name('coach');
 
     Route::get('/places', fn () => Inertia::render('Places'))->name('places');
     Route::get('/nearby', fn () => Inertia::render('Places'))->name('nearby');
@@ -187,6 +189,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/trainer-progress-notes', [TrainerProgressNoteController::class, 'store'])->middleware(['role:admin,trainer', 'professional.verified']);
 
         Route::get('/dietitians', [DietitianDiscoveryController::class, 'index']);
+        Route::get('/ai/conversations', [ChatController::class, 'index']);
+        Route::get('/ai/conversations/{conversation}/messages', [ChatController::class, 'messages']);
+        Route::post('/ai/chat', [ChatController::class, 'store']);
 
         Route::middleware('role:admin')->group(function () {
             Route::get('/admin/users', [AdminUserController::class, 'index']);
@@ -194,6 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
             Route::patch('/admin/users/{user}/verification', [AdminUserController::class, 'toggleVerification']);
             Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
+            Route::get('/admin/notifications', [AdminNotificationController::class, 'index']);
             Route::post('/admin/notifications', [AdminNotificationController::class, 'store']);
             Route::get('/admin/action-logs', [AdminActionLogController::class, 'index']);
             Route::get('/admin/professional-verifications', [AdminProfessionalVerificationController::class, 'index']);

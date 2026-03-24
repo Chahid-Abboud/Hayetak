@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -292,60 +296,92 @@ export default function LogPage() {
         startedLocally &&
         ((pickedDayId !== 'none' && !!dayForForm?.exercises?.length) ||
             (pickedDayId === 'none' && freestyleExercises.length > 0));
+    const renderLegacyHeader = status === '__legacy__';
 
     return (
         <>
             <Head title="Workout Log" />
-            <NavHeader />
-
-            <main className="mx-auto max-w-7xl space-y-8 p-4 md:p-6">
+            <ProductPageShell width="wide" className="space-y-8">
                 <WorkoutTabs active="log" />
 
-                {status && (
-                    <div
-                        role="status"
-                        aria-live="polite"
-                        className="rounded-lg border px-4 py-2 text-sm"
-                        style={{
-                            backgroundColor: 'var(--muted)',
-                            color: 'var(--muted-foreground)',
-                        }}
-                    >
-                        {status}
-                    </div>
-                )}
-
-                {/* Header card */}
-                <section className="flex flex-col gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-                            Workout Log
-                        </h1>
-                        <p className="text-xs text-muted-foreground md:text-sm">
-                            Start today’s session, log sets from your plan or
-                            freestyle, and review your recent workouts.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col items-start gap-2 sm:items-end">
-                        <div className="text-xs text-muted-foreground">
+                <ProductHero
+                    eyebrow="Workouts"
+                    title="Workout Log"
+                    description="Start today's session, log sets from your plan or freestyle, and review recent training without leaving the same shared flow."
+                    meta={
+                        <span>
                             Today:{' '}
                             <span className="font-medium">
                                 {fmtDate(today)}
                             </span>
-                        </div>
+                        </span>
+                    }
+                    actions={
                         <button
                             onClick={openStartDialog}
-                            className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
-                            style={{
-                                backgroundColor: 'var(--secondary)',
-                                color: 'var(--secondary-foreground)',
-                            }}
+                            className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
                         >
-                            Start Today’s Workout
+                            Start Today's Workout
                         </button>
-                    </div>
-                </section>
+                    }
+                />
+
+                {status ? (
+                    <ProductBanner role="status" aria-live="polite">
+                        {status}
+                    </ProductBanner>
+                ) : null}
+
+                {renderLegacyHeader ? (
+                    <>
+                        {status && (
+                            <div
+                                role="status"
+                                aria-live="polite"
+                                className="rounded-lg border px-4 py-2 text-sm"
+                                style={{
+                                    backgroundColor: 'var(--muted)',
+                                    color: 'var(--muted-foreground)',
+                                }}
+                            >
+                                {status}
+                            </div>
+                        )}
+
+                        {/* Header card */}
+                        <section className="flex flex-col gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                            <div className="space-y-1">
+                                <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+                                    Workout Log
+                                </h1>
+                                <p className="text-xs text-muted-foreground md:text-sm">
+                                    Start today’s session, log sets from your
+                                    plan or freestyle, and review your recent
+                                    workouts.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-start gap-2 sm:items-end">
+                                <div className="text-xs text-muted-foreground">
+                                    Today:{' '}
+                                    <span className="font-medium">
+                                        {fmtDate(today)}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={openStartDialog}
+                                    className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+                                    style={{
+                                        backgroundColor: 'var(--secondary)',
+                                        color: 'var(--secondary-foreground)',
+                                    }}
+                                >
+                                    Start Today’s Workout
+                                </button>
+                            </div>
+                        </section>
+                    </>
+                ) : null}
 
                 {/* Start picker */}
                 {isPickerOpen && (
@@ -1141,7 +1177,7 @@ export default function LogPage() {
                         </aside>
                     </div>
                 </section>
-            </main>
+            </ProductPageShell>
         </>
     );
 }

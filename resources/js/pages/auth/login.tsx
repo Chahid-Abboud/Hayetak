@@ -1,5 +1,6 @@
 import AuthenticatedSessionController from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import InputError from '@/components/input-error';
+import { ProductBanner } from '@/components/product/page';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +24,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             description="Enter your email and password below to log in"
         >
             <Head title="Log in" />
+
+            {status ? (
+                <ProductBanner tone="success">{status}</ProductBanner>
+            ) : null}
 
             <Form
                 {...AuthenticatedSessionController.store.form()}
@@ -104,12 +109,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
         </AuthLayout>
     );
 }

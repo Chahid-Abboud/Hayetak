@@ -1,4 +1,8 @@
-import NavHeader from '@/components/NavHeader';
+import {
+    ProductBanner,
+    ProductHero,
+    ProductPageShell,
+} from '@/components/product/page';
 import { Head, router, usePage } from '@inertiajs/react';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -843,7 +847,6 @@ export default function ProfilePage() {
     return (
         <>
             <Head title="Profile — Hayetak" />
-            <NavHeader />
 
             {/* Skip link for keyboard users */}
             <a
@@ -853,337 +856,128 @@ export default function ProfilePage() {
                 Skip to profile content
             </a>
 
-            <main
-                id="main"
-                className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-12"
-            >
-                {/* Sidebar */}
-                <aside className="md:col-span-3">
-                    <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground md:sticky md:top-20">
-                        <div className="mb-3 text-xs tracking-wide text-muted-foreground uppercase">
-                            Profile sections
+            <ProductPageShell width="wide">
+                <ProductHero
+                    eyebrow="Account settings"
+                    title="Profile"
+                    description="Review and update your info, goals, security, and progress without leaving the same consistent workspace."
+                />
+
+                <div
+                    id="main"
+                    className="grid grid-cols-1 gap-6 md:grid-cols-12"
+                >
+                    {/* Sidebar */}
+                    <aside className="md:col-span-3">
+                        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground md:sticky md:top-20">
+                            <div className="mb-3 text-xs tracking-wide text-muted-foreground uppercase">
+                                Profile sections
+                            </div>
+                            <nav
+                                aria-label="Profile page navigation"
+                                className="space-y-1"
+                            >
+                                <a
+                                    href="#overview"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Overview
+                                </a>
+                                <a
+                                    href="#details"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Profile details
+                                </a>
+                                <a
+                                    href="#preferences"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Preferences
+                                </a>
+                                <a
+                                    href="#security"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Security
+                                </a>
+                                <a
+                                    href="#progress"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Progress
+                                </a>
+                                <a
+                                    href="#logs"
+                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    Logs & history
+                                </a>
+                            </nav>
                         </div>
-                        <nav
-                            aria-label="Profile page navigation"
-                            className="space-y-1"
+                    </aside>
+
+                    {/* Content */}
+                    <div className="space-y-6 md:col-span-9">
+                        {/* Flash message */}
+                        {flashMsg ? (
+                            <ProductBanner
+                                tone={flash.error ? 'danger' : 'default'}
+                            >
+                                {flashMsg}
+                            </ProductBanner>
+                        ) : null}
+
+                        {/* Overview */}
+                        <SectionCard
+                            id="overview"
+                            title={`Welcome, ${displayName || 'there'}`}
+                            description="Review and update your info, preferences, and progress."
                         >
-                            <a
-                                href="#overview"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Overview
-                            </a>
-                            <a
-                                href="#details"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Profile details
-                            </a>
-                            <a
-                                href="#preferences"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Preferences
-                            </a>
-                            <a
-                                href="#security"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Security
-                            </a>
-                            <a
-                                href="#progress"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Progress
-                            </a>
-                            <a
-                                href="#logs"
-                                className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                Logs & history
-                            </a>
-                        </nav>
-                    </div>
-                </aside>
-
-                {/* Content */}
-                <div className="space-y-6 md:col-span-9">
-                    {/* Flash message */}
-                    {flashMsg ? (
-                        <div
-                            role="status"
-                            aria-live="polite"
-                            className={cx(
-                                'rounded-xl border border-border p-4 text-sm',
-                                flash.error
-                                    ? 'bg-destructive/10 text-foreground'
-                                    : 'bg-muted/30 text-foreground',
-                            )}
-                        >
-                            {flashMsg}
-                        </div>
-                    ) : null}
-
-                    {/* Overview */}
-                    <SectionCard
-                        id="overview"
-                        title={`Welcome, ${displayName || 'there'}`}
-                        description="Review and update your info, preferences, and progress."
-                    >
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            <FieldRow label="Email" value={email} />
-                            <FieldRow
-                                label="Two-factor auth"
-                                value={
-                                    twoFactorEnabled ? 'Enabled' : 'Not enabled'
-                                }
-                            />
-                            <FieldRow
-                                label="Username"
-                                value={
-                                    shownUsername ? `@${shownUsername}` : '—'
-                                }
-                            />
-                            <FieldRow
-                                label="Age"
-                                value={formatMaybeNumber(userProfile.age)}
-                            />
-                            <FieldRow
-                                label="Current weight"
-                                value={
-                                    latestWeight != null
-                                        ? `${latestWeight} kg`
-                                        : formatMaybeNumber(
-                                              userProfile.weight_kg,
-                                              ' kg',
-                                          )
-                                }
-                            />
-                            <FieldRow
-                                label="Current height"
-                                value={
-                                    latestHeight != null
-                                        ? `${latestHeight} cm`
-                                        : formatMaybeNumber(
-                                              userProfile.height_cm,
-                                              ' cm',
-                                          )
-                                }
-                            />
-                            <FieldRow
-                                label="Dietary goal"
-                                value={prefs?.dietary_goal || '—'}
-                            />
-                            <FieldRow label="Diet type" value={dietTypeLabel} />
-                            <FieldRow
-                                label="Fitness goals"
-                                value={
-                                    prefs?.fitness_goals?.length ? (
-                                        <span className="flex flex-wrap gap-1">
-                                            {prefs.fitness_goals
-                                                .slice(0, 4)
-                                                .map((g, i) => (
-                                                    <Badge key={`${g}-${i}`}>
-                                                        {g}
-                                                    </Badge>
-                                                ))}
-                                            {prefs.fitness_goals.length > 4 ? (
-                                                <Badge>
-                                                    +
-                                                    {prefs.fitness_goals
-                                                        .length - 4}{' '}
-                                                    more
-                                                </Badge>
-                                            ) : null}
-                                        </span>
-                                    ) : (
-                                        '—'
-                                    )
-                                }
-                            />
-                        </div>
-                    </SectionCard>
-
-                    {/* Profile details */}
-                    <SectionCard
-                        id="details"
-                        title="Profile details"
-                        description="Keep your identity details accurate. Height/weight logs are managed in the Logs section."
-                        actions={
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setEditingProfile((v) => !v)}
-                            >
-                                {editingProfile ? 'Cancel' : 'Edit'}
-                            </Button>
-                        }
-                    >
-                        {!editingProfile ? (
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <FieldRow label="Email" value={email} />
                                 <FieldRow
-                                    label="Name"
+                                    label="Two-factor auth"
                                     value={
-                                        `${userProfile.first_name ?? ''} ${userProfile.last_name ?? ''}`.trim() ||
-                                        '—'
+                                        twoFactorEnabled
+                                            ? 'Enabled'
+                                            : 'Not enabled'
                                     }
                                 />
                                 <FieldRow
                                     label="Username"
-                                    value={shownUsername || '—'}
-                                />
-                                <FieldRow
-                                    label="Gender"
-                                    value={userProfile.gender || '—'}
+                                    value={
+                                        shownUsername
+                                            ? `@${shownUsername}`
+                                            : '—'
+                                    }
                                 />
                                 <FieldRow
                                     label="Age"
                                     value={formatMaybeNumber(userProfile.age)}
                                 />
                                 <FieldRow
-                                    label="Height (profile)"
-                                    value={formatMaybeNumber(
-                                        userProfile.height_cm,
-                                        ' cm',
-                                    )}
+                                    label="Current weight"
+                                    value={
+                                        latestWeight != null
+                                            ? `${latestWeight} kg`
+                                            : formatMaybeNumber(
+                                                  userProfile.weight_kg,
+                                                  ' kg',
+                                              )
+                                    }
                                 />
                                 <FieldRow
-                                    label="Weight (profile)"
-                                    value={formatMaybeNumber(
-                                        userProfile.weight_kg,
-                                        ' kg',
-                                    )}
+                                    label="Current height"
+                                    value={
+                                        latestHeight != null
+                                            ? `${latestHeight} cm`
+                                            : formatMaybeNumber(
+                                                  userProfile.height_cm,
+                                                  ' cm',
+                                              )
+                                    }
                                 />
-                            </div>
-                        ) : (
-                            <form
-                                className="grid gap-4 sm:grid-cols-2"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    saveProfile();
-                                }}
-                            >
-                                <div>
-                                    <label
-                                        htmlFor={ids.profileFirst}
-                                        className="text-sm font-medium text-foreground"
-                                    >
-                                        First name
-                                    </label>
-                                    <input
-                                        ref={profileFirstFieldRef}
-                                        id={ids.profileFirst}
-                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={firstName}
-                                        onChange={(e) =>
-                                            setFirstName(e.target.value)
-                                        }
-                                        autoComplete="given-name"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor={ids.profileLast}
-                                        className="text-sm font-medium text-foreground"
-                                    >
-                                        Last name
-                                    </label>
-                                    <input
-                                        id={ids.profileLast}
-                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={lastName}
-                                        onChange={(e) =>
-                                            setLastName(e.target.value)
-                                        }
-                                        autoComplete="family-name"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor={ids.profileUser}
-                                        className="text-sm font-medium text-foreground"
-                                    >
-                                        Username
-                                    </label>
-                                    <input
-                                        id={ids.profileUser}
-                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={username}
-                                        onChange={(e) =>
-                                            setUsername(e.target.value)
-                                        }
-                                        autoComplete="username"
-                                    />
-                                </div>
-
-                                <LabeledSelect
-                                    id={ids.profileGender}
-                                    label="Gender"
-                                    value={gender}
-                                    onChange={setGender}
-                                >
-                                    <option value="">—</option>
-                                    {GENDER_OPTIONS.map((g) => (
-                                        <option key={g} value={g}>
-                                            {g}
-                                        </option>
-                                    ))}
-                                </LabeledSelect>
-
-                                <div>
-                                    <label
-                                        htmlFor={ids.profileAge}
-                                        className="text-sm font-medium text-foreground"
-                                    >
-                                        Age
-                                    </label>
-                                    <input
-                                        id={ids.profileAge}
-                                        type="number"
-                                        min={0}
-                                        className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={age}
-                                        onChange={(e) => setAge(e.target.value)}
-                                        inputMode="numeric"
-                                    />
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-                                    <Button type="submit" variant="primary">
-                                        Save profile
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setEditingProfile(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-                    </SectionCard>
-
-                    {/* Preferences */}
-                    <SectionCard
-                        id="preferences"
-                        title="Preferences"
-                        description="These help personalize your plans (diet types, goals, allergies)."
-                        actions={
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setEditingPrefs((v) => !v)}
-                            >
-                                {editingPrefs ? 'Cancel' : 'Edit'}
-                            </Button>
-                        }
-                    >
-                        {!editingPrefs ? (
-                            <div className="grid gap-4 sm:grid-cols-2">
                                 <FieldRow
                                     label="Dietary goal"
                                     value={prefs?.dietary_goal || '—'}
@@ -1192,494 +986,773 @@ export default function ProfilePage() {
                                     label="Diet type"
                                     value={dietTypeLabel}
                                 />
-
-                                <div className="rounded-xl border border-border bg-background/40 p-4">
-                                    <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                        Fitness goals
-                                    </div>
-                                    <div className="mt-2 flex flex-wrap gap-1">
-                                        {prefs?.fitness_goals?.length ? (
-                                            prefs.fitness_goals.map((fg, i) => (
-                                                <Badge key={`${fg}-${i}`}>
-                                                    {fg}
-                                                </Badge>
-                                            ))
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground">
-                                                —
+                                <FieldRow
+                                    label="Fitness goals"
+                                    value={
+                                        prefs?.fitness_goals?.length ? (
+                                            <span className="flex flex-wrap gap-1">
+                                                {prefs.fitness_goals
+                                                    .slice(0, 4)
+                                                    .map((g, i) => (
+                                                        <Badge
+                                                            key={`${g}-${i}`}
+                                                        >
+                                                            {g}
+                                                        </Badge>
+                                                    ))}
+                                                {prefs.fitness_goals.length >
+                                                4 ? (
+                                                    <Badge>
+                                                        +
+                                                        {prefs.fitness_goals
+                                                            .length - 4}{' '}
+                                                        more
+                                                    </Badge>
+                                                ) : null}
                                             </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="rounded-xl border border-border bg-background/40 p-4">
-                                    <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                        Allergies
-                                    </div>
-                                    <div className="mt-2 flex flex-wrap gap-1">
-                                        {prefs?.allergies?.length ? (
-                                            prefs.allergies.map((al, i) => (
-                                                <Badge key={`${al}-${i}`}>
-                                                    {al}
-                                                </Badge>
-                                            ))
                                         ) : (
-                                            <span className="text-sm text-muted-foreground">
-                                                —
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                                            '—'
+                                        )
+                                    }
+                                />
                             </div>
-                        ) : (
-                            <form
-                                className="grid gap-4 sm:grid-cols-2"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    savePrefs();
-                                }}
-                            >
-                                <div className="sm:col-span-2">
-                                    <LabeledInput
-                                        id={ids.prefsDietGoal}
-                                        label="Dietary goal"
-                                        value={dietaryGoal}
-                                        onChange={setDietaryGoal}
-                                        placeholder="e.g., fat loss, maintenance, performance"
-                                        description="Short phrase is enough. This helps guide plan targets."
+                        </SectionCard>
+
+                        {/* Profile details */}
+                        <SectionCard
+                            id="details"
+                            title="Profile details"
+                            description="Keep your identity details accurate. Height/weight logs are managed in the Logs section."
+                            actions={
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setEditingProfile((v) => !v)}
+                                >
+                                    {editingProfile ? 'Cancel' : 'Edit'}
+                                </Button>
+                            }
+                        >
+                            {!editingProfile ? (
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <FieldRow
+                                        label="Name"
+                                        value={
+                                            `${userProfile.first_name ?? ''} ${userProfile.last_name ?? ''}`.trim() ||
+                                            '—'
+                                        }
+                                    />
+                                    <FieldRow
+                                        label="Username"
+                                        value={shownUsername || '—'}
+                                    />
+                                    <FieldRow
+                                        label="Gender"
+                                        value={userProfile.gender || '—'}
+                                    />
+                                    <FieldRow
+                                        label="Age"
+                                        value={formatMaybeNumber(
+                                            userProfile.age,
+                                        )}
+                                    />
+                                    <FieldRow
+                                        label="Height (profile)"
+                                        value={formatMaybeNumber(
+                                            userProfile.height_cm,
+                                            ' cm',
+                                        )}
+                                    />
+                                    <FieldRow
+                                        label="Weight (profile)"
+                                        value={formatMaybeNumber(
+                                            userProfile.weight_kg,
+                                            ' kg',
+                                        )}
                                     />
                                 </div>
-
-                                <div>
-                                    <label
-                                        htmlFor={ids.prefsDietType}
-                                        className="text-sm font-medium text-foreground"
-                                    >
-                                        Diet type
-                                    </label>
-                                    <select
-                                        id={ids.prefsDietType}
-                                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                        value={dietType}
-                                        onChange={(e) =>
-                                            setDietType(e.target.value)
-                                        }
-                                    >
-                                        <option value="">—</option>
-                                        {DIET_TYPES.map((d) => (
-                                            <option
-                                                key={d.value}
-                                                value={d.value}
-                                            >
-                                                {d.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {dietType === 'other' ? (
+                            ) : (
+                                <form
+                                    className="grid gap-4 sm:grid-cols-2"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        saveProfile();
+                                    }}
+                                >
                                     <div>
                                         <label
-                                            htmlFor={ids.prefsDietOther}
+                                            htmlFor={ids.profileFirst}
                                             className="text-sm font-medium text-foreground"
                                         >
-                                            Diet type (other)
+                                            First name
                                         </label>
                                         <input
-                                            ref={prefsFirstFieldRef}
-                                            id={ids.prefsDietOther}
+                                            ref={profileFirstFieldRef}
+                                            id={ids.profileFirst}
                                             className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={dietOther}
+                                            value={firstName}
                                             onChange={(e) =>
-                                                setDietOther(e.target.value)
+                                                setFirstName(e.target.value)
                                             }
-                                            placeholder="Type your diet name"
+                                            autoComplete="given-name"
                                         />
                                     </div>
-                                ) : (
-                                    <div className="sr-only">
-                                        <input ref={prefsFirstFieldRef} />
-                                    </div>
-                                )}
 
-                                <div className="sm:col-span-2">
-                                    <div className="text-sm font-medium text-foreground">
-                                        Fitness goals
-                                    </div>
-                                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                        {FITNESS_GOAL_OPTIONS.map((g) => {
-                                            const checked =
-                                                fitnessGoals.includes(g);
-                                            return (
-                                                <label
-                                                    key={g}
-                                                    className={cx(
-                                                        'flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring hover:bg-muted',
-                                                        checked &&
-                                                            'bg-muted/40',
-                                                    )}
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={checked}
-                                                        onChange={(e) =>
-                                                            setFitnessGoals(
-                                                                (prev) =>
-                                                                    e.target
-                                                                        .checked
-                                                                        ? [
-                                                                              ...prev,
-                                                                              g,
-                                                                          ]
-                                                                        : prev.filter(
-                                                                              (
-                                                                                  x,
-                                                                              ) =>
-                                                                                  x !==
-                                                                                  g,
-                                                                          ),
-                                                            )
-                                                        }
-                                                    />
-                                                    <span>{g}</span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="sm:col-span-2">
-                                    <div className="text-sm font-medium text-foreground">
-                                        Allergies
-                                    </div>
-
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {allergies.length ? (
-                                            allergies.map((a) => (
-                                                <span
-                                                    key={a}
-                                                    className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                >
-                                                    {a}
-                                                    <button
-                                                        type="button"
-                                                        className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                        onClick={() =>
-                                                            removeAllergy(a)
-                                                        }
-                                                        aria-label={`Remove allergy ${a}`}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground">
-                                                No allergies added.
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    <div>
                                         <label
-                                            className="sr-only"
-                                            htmlFor={ids.allergyInput}
+                                            htmlFor={ids.profileLast}
+                                            className="text-sm font-medium text-foreground"
                                         >
-                                            Add an allergy
+                                            Last name
                                         </label>
                                         <input
-                                            id={ids.allergyInput}
-                                            className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            placeholder="Add an allergy (e.g., peanuts)"
-                                            value={newAllergy}
+                                            id={ids.profileLast}
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={lastName}
                                             onChange={(e) =>
-                                                setNewAllergy(e.target.value)
+                                                setLastName(e.target.value)
                                             }
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    addAllergy();
-                                                }
-                                            }}
+                                            autoComplete="family-name"
                                         />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor={ids.profileUser}
+                                            className="text-sm font-medium text-foreground"
+                                        >
+                                            Username
+                                        </label>
+                                        <input
+                                            id={ids.profileUser}
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={username}
+                                            onChange={(e) =>
+                                                setUsername(e.target.value)
+                                            }
+                                            autoComplete="username"
+                                        />
+                                    </div>
+
+                                    <LabeledSelect
+                                        id={ids.profileGender}
+                                        label="Gender"
+                                        value={gender}
+                                        onChange={setGender}
+                                    >
+                                        <option value="">—</option>
+                                        {GENDER_OPTIONS.map((g) => (
+                                            <option key={g} value={g}>
+                                                {g}
+                                            </option>
+                                        ))}
+                                    </LabeledSelect>
+
+                                    <div>
+                                        <label
+                                            htmlFor={ids.profileAge}
+                                            className="text-sm font-medium text-foreground"
+                                        >
+                                            Age
+                                        </label>
+                                        <input
+                                            id={ids.profileAge}
+                                            type="number"
+                                            min={0}
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={age}
+                                            onChange={(e) =>
+                                                setAge(e.target.value)
+                                            }
+                                            inputMode="numeric"
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+                                        <Button type="submit" variant="primary">
+                                            Save profile
+                                        </Button>
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            onClick={addAllergy}
-                                        >
-                                            Add
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-                                    <Button type="submit" variant="primary">
-                                        Save preferences
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setEditingPrefs(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-                    </SectionCard>
-
-                    {/* Security */}
-                    <SectionCard
-                        id="security"
-                        title="Security"
-                        description="Change your account password without leaving this page."
-                    >
-                        <form
-                            className="grid gap-4 sm:grid-cols-2"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                savePassword();
-                            }}
-                        >
-                            <div className="sm:col-span-2">
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="current-password"
-                                >
-                                    Current password
-                                </label>
-                                <input
-                                    id="current-password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={currentPassword}
-                                    onChange={(e) =>
-                                        setCurrentPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.current_password ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.current_password}
-                                    </p>
-                                ) : null}
-                            </div>
-
-                            <div>
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="new-password"
-                                >
-                                    New password
-                                </label>
-                                <input
-                                    id="new-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={newPassword}
-                                    onChange={(e) =>
-                                        setNewPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.password ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.password}
-                                    </p>
-                                ) : null}
-                            </div>
-
-                            <div>
-                                <label
-                                    className="text-sm font-medium text-foreground"
-                                    htmlFor="confirm-password"
-                                >
-                                    Confirm new password
-                                </label>
-                                <input
-                                    id="confirm-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                    value={confirmPassword}
-                                    onChange={(e) =>
-                                        setConfirmPassword(e.target.value)
-                                    }
-                                />
-                                {passwordErrors.password_confirmation ? (
-                                    <p className="mt-1 text-xs text-destructive">
-                                        {passwordErrors.password_confirmation}
-                                    </p>
-                                ) : null}
-                            </div>
-
-                            <div className="flex items-center gap-3 sm:col-span-2">
-                                <Button type="submit" variant="primary">
-                                    Update password
-                                </Button>
-                                {passwordStatus ? (
-                                    <span className="text-sm text-emerald-600">
-                                        {passwordStatus}
-                                    </span>
-                                ) : null}
-                            </div>
-                        </form>
-                    </SectionCard>
-
-                    {/* Progress (Charts) */}
-                    <SectionCard
-                        id="progress"
-                        title="Progress"
-                        description="Visualize your trends from logged measurements and workout data."
-                    >
-                        <div className="grid gap-4">
-                            <MeasurementProgress
-                                weightPoints={weightPoints}
-                                heightPoints={heightPoints}
-                            />
-
-                            <div className="rounded-xl border border-border bg-background/40 p-4">
-                                <div className="text-sm font-semibold text-foreground">
-                                    Exercise progress (max weight & reps)
-                                </div>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    This section will show progress per exercise
-                                    (e.g., Bench Press) as line charts once the
-                                    backend provides normalized exercise
-                                    progress data.
-                                </p>
-                                <div className="mt-3 text-sm text-muted-foreground">
-                                    <span className="font-medium text-foreground">
-                                        Status:
-                                    </span>{' '}
-                                    waiting for backend data.
-                                </div>
-                            </div>
-                        </div>
-                    </SectionCard>
-
-                    {/* Logs & history */}
-                    <SectionCard
-                        id="logs"
-                        title="Logs & history"
-                        description="Add measurements, then review recent entries. Charts update automatically."
-                    >
-                        <div className="grid gap-4">
-                            <div className="rounded-xl border border-border bg-muted/20 p-4">
-                                <div className="text-sm font-semibold text-foreground">
-                                    Add a measurement
-                                </div>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Log weight (kg) regularly. Height (cm) is
-                                    optional.
-                                </p>
-
-                                <form
-                                    className="mt-4 grid gap-3 sm:grid-cols-[12rem,12rem,1fr,auto]"
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        addMeasurement();
-                                    }}
-                                >
-                                    <LabeledDate
-                                        id={ids.mDate}
-                                        label="Date"
-                                        value={mDate}
-                                        onChange={setMDate}
-                                    />
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.mType}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Type
-                                        </label>
-                                        <select
-                                            id={ids.mType}
-                                            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={mType}
-                                            onChange={(e) =>
-                                                setMType(
-                                                    e.target.value as
-                                                        | 'weight'
-                                                        | 'height',
-                                                )
+                                            onClick={() =>
+                                                setEditingProfile(false)
                                             }
                                         >
-                                            <option value="weight">
-                                                Weight (kg)
-                                            </option>
-                                            <option value="height">
-                                                Height (cm)
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.mValue}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Value
-                                        </label>
-                                        <input
-                                            id={ids.mValue}
-                                            type="number"
-                                            inputMode="decimal"
-                                            min={0}
-                                            step="0.1"
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            placeholder={
-                                                mType === 'weight'
-                                                    ? 'e.g., 72'
-                                                    : 'e.g., 175'
-                                            }
-                                            value={mValue}
-                                            onChange={(e) =>
-                                                setMValue(e.target.value)
-                                            }
-                                        />
-                                    </div>
-
-                                    <div className="flex items-end">
-                                        <Button
-                                            type="submit"
-                                            variant="primary"
-                                            className="w-full"
-                                        >
-                                            Add
+                                            Cancel
                                         </Button>
                                     </div>
                                 </form>
+                            )}
+                        </SectionCard>
 
-                                {(!mDate || !mValue || Number(mValue) <= 0) && (
-                                    <p className="mt-3 text-xs text-muted-foreground">
-                                        Tip: choose a date and enter a value
-                                        greater than 0.
+                        {/* Preferences */}
+                        <SectionCard
+                            id="preferences"
+                            title="Preferences"
+                            description="These help personalize your plans (diet types, goals, allergies)."
+                            actions={
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setEditingPrefs((v) => !v)}
+                                >
+                                    {editingPrefs ? 'Cancel' : 'Edit'}
+                                </Button>
+                            }
+                        >
+                            {!editingPrefs ? (
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <FieldRow
+                                        label="Dietary goal"
+                                        value={prefs?.dietary_goal || '—'}
+                                    />
+                                    <FieldRow
+                                        label="Diet type"
+                                        value={dietTypeLabel}
+                                    />
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Fitness goals
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.fitness_goals?.length ? (
+                                                prefs.fitness_goals.map(
+                                                    (fg, i) => (
+                                                        <Badge
+                                                            key={`${fg}-${i}`}
+                                                        >
+                                                            {fg}
+                                                        </Badge>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Allergies
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.allergies?.length ? (
+                                                prefs.allergies.map((al, i) => (
+                                                    <Badge key={`${al}-${i}`}>
+                                                        {al}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <form
+                                    className="grid gap-4 sm:grid-cols-2"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        savePrefs();
+                                    }}
+                                >
+                                    <div className="sm:col-span-2">
+                                        <LabeledInput
+                                            id={ids.prefsDietGoal}
+                                            label="Dietary goal"
+                                            value={dietaryGoal}
+                                            onChange={setDietaryGoal}
+                                            placeholder="e.g., fat loss, maintenance, performance"
+                                            description="Short phrase is enough. This helps guide plan targets."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor={ids.prefsDietType}
+                                            className="text-sm font-medium text-foreground"
+                                        >
+                                            Diet type
+                                        </label>
+                                        <select
+                                            id={ids.prefsDietType}
+                                            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={dietType}
+                                            onChange={(e) =>
+                                                setDietType(e.target.value)
+                                            }
+                                        >
+                                            <option value="">—</option>
+                                            {DIET_TYPES.map((d) => (
+                                                <option
+                                                    key={d.value}
+                                                    value={d.value}
+                                                >
+                                                    {d.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {dietType === 'other' ? (
+                                        <div>
+                                            <label
+                                                htmlFor={ids.prefsDietOther}
+                                                className="text-sm font-medium text-foreground"
+                                            >
+                                                Diet type (other)
+                                            </label>
+                                            <input
+                                                ref={prefsFirstFieldRef}
+                                                id={ids.prefsDietOther}
+                                                className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                value={dietOther}
+                                                onChange={(e) =>
+                                                    setDietOther(e.target.value)
+                                                }
+                                                placeholder="Type your diet name"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="sr-only">
+                                            <input ref={prefsFirstFieldRef} />
+                                        </div>
+                                    )}
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Fitness goals
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            {FITNESS_GOAL_OPTIONS.map((g) => {
+                                                const checked =
+                                                    fitnessGoals.includes(g);
+                                                return (
+                                                    <label
+                                                        key={g}
+                                                        className={cx(
+                                                            'flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring hover:bg-muted',
+                                                            checked &&
+                                                                'bg-muted/40',
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={(e) =>
+                                                                setFitnessGoals(
+                                                                    (prev) =>
+                                                                        e.target
+                                                                            .checked
+                                                                            ? [
+                                                                                  ...prev,
+                                                                                  g,
+                                                                              ]
+                                                                            : prev.filter(
+                                                                                  (
+                                                                                      x,
+                                                                                  ) =>
+                                                                                      x !==
+                                                                                      g,
+                                                                              ),
+                                                                )
+                                                            }
+                                                        />
+                                                        <span>{g}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Allergies
+                                        </div>
+
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {allergies.length ? (
+                                                allergies.map((a) => (
+                                                    <span
+                                                        key={a}
+                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
+                                                    >
+                                                        {a}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                            onClick={() =>
+                                                                removeAllergy(a)
+                                                            }
+                                                            aria-label={`Remove allergy ${a}`}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    No allergies added.
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <label
+                                                className="sr-only"
+                                                htmlFor={ids.allergyInput}
+                                            >
+                                                Add an allergy
+                                            </label>
+                                            <input
+                                                id={ids.allergyInput}
+                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                placeholder="Add an allergy (e.g., peanuts)"
+                                                value={newAllergy}
+                                                onChange={(e) =>
+                                                    setNewAllergy(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addAllergy();
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={addAllergy}
+                                            >
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+                                        <Button type="submit" variant="primary">
+                                            Save preferences
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setEditingPrefs(false)
+                                            }
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+                        </SectionCard>
+
+                        {/* Security */}
+                        <SectionCard
+                            id="security"
+                            title="Security"
+                            description="Change your account password without leaving this page."
+                        >
+                            <div className="grid gap-4">
+                                <div className="rounded-xl border border-border bg-background/40 p-4">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <div className="text-sm font-semibold text-foreground">
+                                                Two-factor authentication
+                                            </div>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                Keep 2FA optional and manage it
+                                                from here whenever you want
+                                                extra account protection.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Badge>
+                                                {twoFactorEnabled
+                                                    ? '2FA enabled'
+                                                    : '2FA optional'}
+                                            </Badge>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    router.visit(
+                                                        '/settings/two-factor',
+                                                    )
+                                                }
+                                            >
+                                                Manage 2FA
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form
+                                    className="grid gap-4 sm:grid-cols-2"
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        savePassword();
+                                    }}
+                                >
+                                    <div className="sm:col-span-2">
+                                        <label
+                                            className="text-sm font-medium text-foreground"
+                                            htmlFor="current-password"
+                                        >
+                                            Current password
+                                        </label>
+                                        <input
+                                            id="current-password"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={currentPassword}
+                                            onChange={(e) =>
+                                                setCurrentPassword(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        {passwordErrors.current_password ? (
+                                            <p className="mt-1 text-xs text-destructive">
+                                                {
+                                                    passwordErrors.current_password
+                                                }
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            className="text-sm font-medium text-foreground"
+                                            htmlFor="new-password"
+                                        >
+                                            New password
+                                        </label>
+                                        <input
+                                            id="new-password"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={newPassword}
+                                            onChange={(e) =>
+                                                setNewPassword(e.target.value)
+                                            }
+                                        />
+                                        {passwordErrors.password ? (
+                                            <p className="mt-1 text-xs text-destructive">
+                                                {passwordErrors.password}
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            className="text-sm font-medium text-foreground"
+                                            htmlFor="confirm-password"
+                                        >
+                                            Confirm new password
+                                        </label>
+                                        <input
+                                            id="confirm-password"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={confirmPassword}
+                                            onChange={(e) =>
+                                                setConfirmPassword(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                        {passwordErrors.password_confirmation ? (
+                                            <p className="mt-1 text-xs text-destructive">
+                                                {
+                                                    passwordErrors.password_confirmation
+                                                }
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 sm:col-span-2">
+                                        <Button type="submit" variant="primary">
+                                            Update password
+                                        </Button>
+                                        {passwordStatus ? (
+                                            <span className="text-sm text-emerald-600">
+                                                {passwordStatus}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                </form>
+                            </div>
+                        </SectionCard>
+
+                        {/* Progress (Charts) */}
+                        <SectionCard
+                            id="progress"
+                            title="Progress"
+                            description="Visualize your trends from logged measurements and workout data."
+                        >
+                            <div className="grid gap-4">
+                                <MeasurementProgress
+                                    weightPoints={weightPoints}
+                                    heightPoints={heightPoints}
+                                />
+
+                                <div className="rounded-xl border border-border bg-background/40 p-4">
+                                    <div className="text-sm font-semibold text-foreground">
+                                        Exercise progress (max weight & reps)
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        This section will show progress per
+                                        exercise (e.g., Bench Press) as line
+                                        charts once the backend provides
+                                        normalized exercise progress data.
                                     </p>
-                                )}
+                                    <div className="mt-3 text-sm text-muted-foreground">
+                                        <span className="font-medium text-foreground">
+                                            Status:
+                                        </span>{' '}
+                                        waiting for backend data.
+                                    </div>
+                                </div>
                             </div>
+                        </SectionCard>
 
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <RecentListCard
-                                    title="Recent Weight (kg)"
-                                    data={weightHistory}
-                                />
-                                <RecentListCard
-                                    title="Recent Height (cm)"
-                                    data={heightHistory}
-                                />
+                        {/* Logs & history */}
+                        <SectionCard
+                            id="logs"
+                            title="Logs & history"
+                            description="Add measurements, then review recent entries. Charts update automatically."
+                        >
+                            <div className="grid gap-4">
+                                <div className="rounded-xl border border-border bg-muted/20 p-4">
+                                    <div className="text-sm font-semibold text-foreground">
+                                        Add a measurement
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Log weight (kg) regularly. Height (cm)
+                                        is optional.
+                                    </p>
+
+                                    <form
+                                        className="mt-4 grid gap-3 sm:grid-cols-[12rem,12rem,1fr,auto]"
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            addMeasurement();
+                                        }}
+                                    >
+                                        <LabeledDate
+                                            id={ids.mDate}
+                                            label="Date"
+                                            value={mDate}
+                                            onChange={setMDate}
+                                        />
+
+                                        <div>
+                                            <label
+                                                htmlFor={ids.mType}
+                                                className="text-sm font-medium text-foreground"
+                                            >
+                                                Type
+                                            </label>
+                                            <select
+                                                id={ids.mType}
+                                                className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                value={mType}
+                                                onChange={(e) =>
+                                                    setMType(
+                                                        e.target.value as
+                                                            | 'weight'
+                                                            | 'height',
+                                                    )
+                                                }
+                                            >
+                                                <option value="weight">
+                                                    Weight (kg)
+                                                </option>
+                                                <option value="height">
+                                                    Height (cm)
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label
+                                                htmlFor={ids.mValue}
+                                                className="text-sm font-medium text-foreground"
+                                            >
+                                                Value
+                                            </label>
+                                            <input
+                                                id={ids.mValue}
+                                                type="number"
+                                                inputMode="decimal"
+                                                min={0}
+                                                step="0.1"
+                                                className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                placeholder={
+                                                    mType === 'weight'
+                                                        ? 'e.g., 72'
+                                                        : 'e.g., 175'
+                                                }
+                                                value={mValue}
+                                                onChange={(e) =>
+                                                    setMValue(e.target.value)
+                                                }
+                                            />
+                                        </div>
+
+                                        <div className="flex items-end">
+                                            <Button
+                                                type="submit"
+                                                variant="primary"
+                                                className="w-full"
+                                            >
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </form>
+
+                                    {(!mDate ||
+                                        !mValue ||
+                                        Number(mValue) <= 0) && (
+                                        <p className="mt-3 text-xs text-muted-foreground">
+                                            Tip: choose a date and enter a value
+                                            greater than 0.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <RecentListCard
+                                        title="Recent Weight (kg)"
+                                        data={weightHistory}
+                                    />
+                                    <RecentListCard
+                                        title="Recent Height (cm)"
+                                        data={heightHistory}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </SectionCard>
+                        </SectionCard>
 
-                    <footer className="px-1 py-2 text-xs text-muted-foreground">
-                        Data is loaded from your database via Laravel. (React
-                        escapes output by default.)
-                    </footer>
+                        <footer className="px-1 py-2 text-xs text-muted-foreground">
+                            Data is loaded from your database via Laravel.
+                            (React escapes output by default.)
+                        </footer>
+                    </div>
                 </div>
-            </main>
+            </ProductPageShell>
         </>
     );
 }

@@ -7,13 +7,22 @@ import { useState } from 'react';
 export default function NavHeader() {
     const [open, setOpen] = useState(false);
     const doLogout = () => router.post('/logout');
-    const { auth } = usePage<SharedData>().props;
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
     const role = auth.user?.role ?? 'client';
+    const pathname =
+        typeof window === 'undefined'
+            ? (page.url?.split('?')[0] ?? '/dashboard')
+            : window.location.pathname;
     const primaryItems =
         role === 'admin'
-            ? [{ href: '/dashboard', label: 'Admin Dashboard' }]
+            ? [
+                  { href: '/dashboard', label: 'Admin Dashboard' },
+                  { href: '/coach', label: 'AI Coach' },
+              ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
+                  { href: '/coach', label: 'AI Coach' },
                   { href: '/nearby', label: 'Nearby Map' },
               ];
     const navGroups: Array<{
@@ -40,7 +49,12 @@ export default function NavHeader() {
         },
         {
             label: 'Account',
-            items: [{ href: '/profile', label: 'Profile' }],
+            items: [
+                { href: '/settings/profile', label: 'Profile' },
+                { href: '/settings/password', label: 'Password' },
+                { href: '/settings/two-factor', label: 'Two-Factor' },
+                { href: '/settings/appearance', label: 'Appearance' },
+            ],
         },
     ];
 
@@ -91,15 +105,19 @@ export default function NavHeader() {
     }
 
     const isActive = (href: string) => {
-        if (typeof window === 'undefined') return false;
-        const path = window.location.pathname;
-
         // Mark "Workouts" active for ANY /workouts/* subpage
         if (href === '/workouts') {
-            return path.startsWith('/workouts');
+            return pathname.startsWith('/workouts');
         }
 
-        return path === href;
+        if (href === '/settings/profile') {
+            return (
+                pathname === '/profile' ||
+                pathname.startsWith('/settings/profile')
+            );
+        }
+
+        return pathname === href || pathname.startsWith(`${href}/`);
     };
 
     return (
@@ -142,6 +160,7 @@ export default function NavHeader() {
 
                         <NotificationBell />
                         <button
+                            type="button"
                             onClick={doLogout}
                             className="rounded-full bg-[color:var(--sidebar-foreground)]/12 px-3 py-1.5 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-[color:var(--sidebar-foreground)]/22"
                         >
@@ -151,6 +170,7 @@ export default function NavHeader() {
 
                     {/* Mobile menu button */}
                     <button
+                        type="button"
                         className="inline-flex items-center justify-center rounded-lg bg-[color:var(--sidebar-foreground)]/10 p-2 md:hidden"
                         onClick={() => setOpen((v) => !v)}
                     >
@@ -220,7 +240,9 @@ export default function NavHeader() {
                                 ))}
                             </div>
                         ))}
+                        <NotificationBell fullWidth />
                         <button
+                            type="button"
                             onClick={doLogout}
                             className="w-full rounded-lg bg-[color:var(--destructive)]/15 px-3 py-2 text-left text-[color:var(--destructive-foreground)]/95 transition hover:bg-[color:var(--destructive)]/25"
                         >
