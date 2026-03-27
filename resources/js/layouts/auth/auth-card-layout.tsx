@@ -20,20 +20,30 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-            <div className="flex w-full max-w-md flex-col gap-6">
+        <div className="relative isolate flex min-h-svh flex-col items-center justify-center overflow-hidden bg-background px-6 py-10 md:px-10">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(14,165,164,0.18),transparent_62%)]" />
+                <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-secondary/10 blur-3xl" />
+                <div className="absolute top-24 right-0 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+            </div>
+
+            <div className="relative flex w-full max-w-md flex-col gap-6">
                 <Link
                     href={home()}
-                    className="flex items-center gap-2 self-center font-medium"
+                    className="inline-flex items-center gap-3 self-center rounded-full border border-border/70 bg-card/72 px-4 py-2 font-medium shadow-sm backdrop-blur"
                 >
-                    <div className="flex h-9 w-9 items-center justify-center">
-                        <AppLogoIcon className="size-9 fill-current text-black dark:text-white" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <AppLogoIcon className="size-6 fill-current" />
                     </div>
+                    <span>Hayetak</span>
                 </Link>
 
                 <div className="flex flex-col gap-6">
-                    <Card className="rounded-xl">
+                    <Card className="rounded-[30px] border-border/70 bg-card/92 shadow-[0_35px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur">
                         <CardHeader className="px-10 pt-8 pb-0 text-center">
+                            <p className="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
+                                Secure access
+                            </p>
                             <CardTitle className="text-xl">{title}</CardTitle>
                             <CardDescription>{description}</CardDescription>
                         </CardHeader>

@@ -111,6 +111,12 @@ class ChatSafetyGuard
     private function looksLikeFoodSuggestion(string $question, string $answer, array $classification): bool
     {
         $feature = mb_strtolower((string) ($classification['feature'] ?? ''));
+        $normalizedQuestion = mb_strtolower($question);
+        $normalizedAnswer = mb_strtolower($answer);
+
+        if ($this->isReflectiveNutritionAnalysis($normalizedQuestion, $normalizedAnswer)) {
+            return false;
+        }
 
         if ($feature === 'nutrition' && $this->containsAny($question, [
             'suggest',
@@ -128,7 +134,7 @@ class ChatSafetyGuard
             return true;
         }
 
-        return $this->containsAny(mb_strtolower($answer), [
+        return $this->containsAny($normalizedAnswer, [
             'try ',
             'eat ',
             'have ',
@@ -146,6 +152,16 @@ class ChatSafetyGuard
             'dessert',
             'recipe',
         ]);
+    }
+
+    private function isReflectiveNutritionAnalysis(string $question, string $answer): bool
+    {
+        if (! $this->containsAny($question, ['what stands out', 'summary', 'summarize', 'analyze', 'analysis', 'review'])) {
+            return false;
+        }
+
+        return $this->containsAny($question, ['today', 'meals today', 'logged today', 'ate today'])
+            && $this->containsAny($answer, ['logged', 'kcal', 'protein', 'carbs', 'fat']);
     }
 
     private function answerContainsUnsafeFoodRecommendation(string $answer, string $allergy): bool

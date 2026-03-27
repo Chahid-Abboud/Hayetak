@@ -1,6 +1,4 @@
-import NavHeader from '@/components/NavHeader';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { AppProductShell } from '@/components/product/app-shell';
 import { cn } from '@/lib/utils';
 import type { HTMLAttributes, ReactNode } from 'react';
 
@@ -23,19 +21,29 @@ export function ProductPageShell({
     width?: ProductPageWidth;
     withNav?: boolean;
 }) {
-    return (
-        <>
-            {withNav ? <NavHeader /> : null}
+    const mainClassName = cn(
+        'mx-auto w-full space-y-8',
+        WIDTH_CLASS[width],
+        className,
+    );
+
+    if (!withNav) {
+        return (
             <main
                 className={cn(
-                    'mx-auto w-full space-y-6 px-4 py-6 sm:px-6 lg:px-8',
-                    WIDTH_CLASS[width],
-                    className,
+                    'px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pb-14 lg:pt-8',
+                    mainClassName,
                 )}
             >
                 {children}
             </main>
-        </>
+        );
+    }
+
+    return (
+        <AppProductShell mainClassName={mainClassName}>
+            {children}
+        </AppProductShell>
     );
 }
 
@@ -54,45 +62,51 @@ export function ProductHero({
     meta?: ReactNode;
     className?: string;
 }) {
+    const hasRail = Boolean(actions || meta);
+
     return (
-        <section
-            className={cn(
-                'relative overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-sm',
-                className,
-            )}
-        >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,164,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.78))] dark:bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.2),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(52,211,153,0.18),_transparent_28%),linear-gradient(180deg,rgba(11,16,32,0.96),rgba(11,16,32,0.88))]" />
-            <div className="relative flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-end lg:justify-between">
-                <div className="max-w-3xl space-y-3">
+        <section className={cn('haye-panel rounded-[34px]', className)}>
+            <div
+                className={cn(
+                    'grid gap-6 px-5 py-6 sm:px-7 sm:py-7 lg:gap-8 lg:px-8 lg:py-8',
+                    hasRail && 'lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]',
+                )}
+            >
+                <div className="space-y-4">
                     {typeof eyebrow === 'string' ? (
-                        <Badge
-                            variant="outline"
-                            className="rounded-full px-3 py-1 text-[11px] tracking-[0.18em] uppercase"
-                        >
-                            {eyebrow}
-                        </Badge>
+                        <span className="haye-kicker">{eyebrow}</span>
                     ) : (
                         eyebrow
                     )}
-                    <div className="space-y-2">
-                        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                    <div className="space-y-3">
+                        <h1
+                            className="max-w-4xl text-4xl tracking-tight text-foreground sm:text-5xl"
+                            style={{ fontFamily: 'var(--font-display)' }}
+                        >
                             {title}
                         </h1>
                         {description ? (
-                            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                            <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
                                 {description}
                             </p>
                         ) : null}
                     </div>
-                    {meta ? (
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            {meta}
-                        </div>
-                    ) : null}
                 </div>
-                {actions ? (
-                    <div className="flex flex-wrap items-center gap-3">
-                        {actions}
+
+                {hasRail ? (
+                    <div className="rounded-[28px] border border-border/70 bg-background/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] backdrop-blur">
+                        <div className="space-y-4">
+                            {meta ? (
+                                <div className="rounded-[22px] border border-border/60 bg-card/80 p-4 text-sm leading-6 text-foreground shadow-sm">
+                                    {meta}
+                                </div>
+                            ) : null}
+                            {actions ? (
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {actions}
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 ) : null}
             </div>
@@ -116,19 +130,14 @@ export function ProductSection({
     contentClassName?: string;
 }) {
     return (
-        <Card
-            className={cn(
-                'gap-0 rounded-[24px] border-border/70 bg-card/95 py-0 shadow-sm',
-                className,
-            )}
-        >
-            <div className="flex flex-col gap-3 border-b border-border/70 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-1">
-                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
+        <section className={cn('haye-panel rounded-[30px]', className)}>
+            <div className="flex flex-col gap-4 border-b border-border/70 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                <div className="space-y-2">
+                    <h2 className="text-xl font-semibold tracking-tight text-foreground">
                         {title}
                     </h2>
                     {description ? (
-                        <p className="text-sm leading-6 text-muted-foreground">
+                        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
                             {description}
                         </p>
                     ) : null}
@@ -139,10 +148,10 @@ export function ProductSection({
                     </div>
                 ) : null}
             </div>
-            <CardContent className={cn('px-5 py-5', contentClassName)}>
+            <div className={cn('px-5 py-5 sm:px-6', contentClassName)}>
                 {children}
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     );
 }
 
@@ -177,26 +186,22 @@ export function ProductStatCard({
     tone?: 'default' | 'accent';
 }) {
     return (
-        <Card
+        <div
             className={cn(
-                'gap-0 rounded-2xl border-border/70 bg-card/95 py-0 shadow-sm',
-                tone === 'accent' && 'border-primary/20 bg-primary/5',
+                'haye-panel rounded-[26px] px-5 py-5',
+                tone === 'accent' && 'border-secondary/20',
             )}
         >
-            <CardContent className="space-y-2 px-5 py-5">
-                <p className="text-sm font-medium text-muted-foreground">
-                    {label}
+            <p className="haye-kicker">{label}</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+                {value}
+            </p>
+            {helper ? (
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {helper}
                 </p>
-                <p className="text-3xl font-semibold tracking-tight text-foreground">
-                    {value}
-                </p>
-                {helper ? (
-                    <p className="text-xs leading-5 text-muted-foreground">
-                        {helper}
-                    </p>
-                ) : null}
-            </CardContent>
-        </Card>
+            ) : null}
+        </div>
     );
 }
 
@@ -214,14 +219,12 @@ export function ProductEmptyState({
     return (
         <div
             className={cn(
-                'rounded-[24px] border border-dashed border-border bg-muted/20 px-6 py-10 text-center',
+                'rounded-[28px] border border-dashed border-border/80 bg-background/55 px-6 py-10 text-center',
                 className,
             )}
         >
             <div className="mx-auto max-w-md space-y-2">
-                <h3 className="text-base font-semibold text-foreground">
-                    {title}
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
                 {description ? (
                     <p className="text-sm leading-6 text-muted-foreground">
                         {description}
@@ -242,20 +245,23 @@ export function ProductBanner({
     ...props
 }: {
     children: ReactNode;
-    tone?: 'default' | 'success' | 'danger';
+    tone?: 'default' | 'success' | 'danger' | 'warning' | 'info';
     className?: string;
 } & HTMLAttributes<HTMLDivElement>) {
     return (
         <div
             {...props}
             className={cn(
-                'rounded-2xl border px-4 py-3 text-sm',
+                'rounded-[24px] border px-4 py-3 text-sm shadow-sm backdrop-blur',
                 tone === 'default' &&
-                    'border-border/70 bg-muted/30 text-foreground',
+                    'border-border/70 bg-background/75 text-foreground',
                 tone === 'success' &&
-                    'border-primary/30 bg-primary/10 text-foreground',
+                    'border-success/35 bg-success/10 text-foreground',
+                tone === 'warning' &&
+                    'border-warning/35 bg-warning/10 text-foreground',
                 tone === 'danger' &&
-                    'border-destructive/30 bg-destructive/10 text-foreground',
+                    'border-destructive/35 bg-destructive/10 text-foreground',
+                tone === 'info' && 'border-info/35 bg-info/10 text-foreground',
                 className,
             )}
         >
@@ -263,3 +269,44 @@ export function ProductBanner({
         </div>
     );
 }
+
+export function ProductFilterRow({
+    children,
+    className,
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <div
+            className={cn(
+                'rounded-[22px] border border-border/70 bg-background/70 p-3',
+                className,
+            )}
+        >
+            <div className="flex flex-wrap items-end gap-3">{children}</div>
+        </div>
+    );
+}
+
+export function ProductStickyActions({
+    children,
+    className,
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <div
+            className={cn(
+                'sticky bottom-3 z-20 rounded-[22px] border border-border/70 bg-background/88 p-3 shadow-sm backdrop-blur',
+                className,
+            )}
+        >
+            <div className="flex flex-wrap items-center justify-end gap-2">
+                {children}
+            </div>
+        </div>
+    );
+}
+

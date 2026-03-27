@@ -24,6 +24,7 @@ export interface NavItem {
 
 export interface SharedData {
     name: string;
+    csrf_token?: string;
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
@@ -59,3 +60,102 @@ export interface User {
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
+
+export type AppointmentStatus =
+    | 'requested'
+    | 'accepted'
+    | 'declined'
+    | 'completed'
+    | 'cancelled';
+
+export type ConversationContextPayload = {
+    conversation_id: number;
+    peer: {
+        id: number;
+        name: string;
+        email: string;
+        role?: 'admin' | 'nutritionist' | 'trainer' | 'client' | string | null;
+        city?: string | null;
+        verified?: boolean;
+        status?: string | null;
+    } | null;
+    relationship: {
+        assigned?: boolean;
+        assignment_role?: string | null;
+        has_upcoming_appointment?: boolean;
+    } | null;
+    safety: {
+        allergies?: string[];
+        has_medical_history?: boolean;
+        medical_history?: string | null;
+        diet_name?: string | null;
+        dietary_goal?: string | null;
+        fitness_goal?: string | null;
+        badges?: string[];
+    };
+    activity: {
+        today?: {
+            meals_logged?: number;
+            meal_calories?: number;
+            workouts_logged?: number;
+            workout_minutes?: number;
+            workout_sets?: number;
+        };
+        last_7_days?: {
+            meals_logged?: number;
+            meal_calories?: number;
+            workouts_logged?: number;
+            workout_minutes?: number;
+            workout_sets?: number;
+        };
+    };
+    plan: {
+        id: number;
+        type?: string | null;
+        version?: number | null;
+        created_at?: string | null;
+    } | null;
+    appointments: {
+        next: {
+            id: number;
+            status: AppointmentStatus | string;
+            scheduled_at?: string | null;
+            professional_role?: string | null;
+        } | null;
+        upcoming_count: number;
+    };
+};
+
+export type AdminBulkUserAction = 'verify' | 'unverify' | 'set_status';
+
+export type AdminBulkUsersPayload = {
+    user_ids: number[];
+    action: AdminBulkUserAction;
+    status?: string;
+};
+
+export type AdminBulkUserResult = {
+    user_id: number;
+    updated: boolean;
+    reason?: 'missing_user' | 'no_change' | string;
+    before?: {
+        verified?: boolean;
+        status?: string | null;
+    };
+    after?: {
+        verified?: boolean;
+        status?: string | null;
+    };
+};
+
+export type AdminBulkUsersResponse = {
+    ok: boolean;
+    action: AdminBulkUserAction;
+    status?: string | null;
+    summary: {
+        requested_count: number;
+        updated_count: number;
+        skipped_count: number;
+    };
+    results: AdminBulkUserResult[];
+};

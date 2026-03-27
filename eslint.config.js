@@ -38,7 +38,14 @@ export default [
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js'],
+        ignores: [
+            'vendor',
+            'node_modules',
+            'public',
+            'bootstrap/ssr',
+            'tailwind.config.js',
+            '.tmp_figma_export',
+        ],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];

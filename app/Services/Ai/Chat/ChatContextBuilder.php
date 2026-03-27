@@ -11,6 +11,7 @@ use App\Models\WorkoutLog;
 use App\Models\WorkoutPlan;
 use App\Services\Ai\Context\CoachContextBuilder;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class ChatContextBuilder
@@ -32,14 +33,17 @@ class ChatContextBuilder
         $base = $this->coachContextBuilder->build($user, $runtimeContext, $conversation);
         $profile = $base['context']['profile'] ?? [];
         $resolvedProfile = $this->profileFactResolver->resolve($user);
+        $selectedDate = $this->resolveSelectedDate($runtimeContext, $flags);
+        $selectedDateString = $selectedDate->toDateString();
         $today = Carbon::today();
         $from = $today->copy()->subDays(6)->startOfDay();
         $to = $today->copy()->endOfDay();
+        $selectedMacros = $this->macroSummaryForDay($user->id, $selectedDateString);
 
         $todayMeals = DB::table('meal_entries as me')
             ->join('foods as f', 'f.id', '=', 'me.food_id')
             ->where('me.user_id', $user->id)
-            ->whereDate('me.eaten_at', $today->toDateString())
+            ->whereDate('me.eaten_at', $selectedDateString)
             ->orderBy('me.eaten_at')
             ->limit(12)
             ->get([
@@ -117,11 +121,11 @@ class ChatContextBuilder
                 'injuries' => $this->normalizeList($resolvedProfile['injuries'] ?? $injuries),
             ],
             'today_summary' => [
-                'date' => $today->toDateString(),
-                'calories' => data_get($base, 'context.today_macros.kcal'),
-                'protein_g' => data_get($base, 'context.today_macros.protein_g'),
-                'carbs_g' => data_get($base, 'context.today_macros.carbs_g'),
-                'fat_g' => data_get($base, 'context.today_macros.fat_g'),
+                'date' => $selectedDateString,
+                'calories' => $selectedMacros['kcal'],
+                'protein_g' => $selectedMacros['protein_g'],
+                'carbs_g' => $selectedMacros['carbs_g'],
+                'fat_g' => $selectedMacros['fat_g'],
                 'water_ml' => $todayWater,
                 'target_water_ml' => $targetWater,
                 'meals' => $todayMeals,
@@ -168,7 +172,7 @@ class ChatContextBuilder
             ],
             'ui_state' => [
                 'screen_context' => $runtimeContext['screen_context'] ?? 'coach',
-                'selected_date' => $runtimeContext['selected_date'] ?? $today->toDateString(),
+                'selected_date' => $selectedDateString,
             ],
             'nearby_context' => [
                 'lat' => $runtimeContext['lat'] ?? null,
@@ -266,5 +270,44 @@ class ChatContextBuilder
         return mb_strlen($clean) > $max
             ? mb_substr($clean, 0, $max).'...'
             : $clean;
+    }
+
+    private function resolveSelectedDate(array $runtimeContext, array $flags): CarbonInterface
+    {
+        if (is_string($runtimeContext['selected_date'] ?? null)) {
+            try {
+                return Carbon::createFromFormat('Y-m-d', $runtimeContext['selected_date'])->startOfDay();
+            } catch (\Throwable) {
+                // Ignore malformed runtime date and fall back to relative date hints.
+            }
+        }
+
+        $offset = $flags['requested_day_offset'] ?? null;
+        if (is_numeric($offset)) {
+            return Carbon::today()->addDays((int) $offset)->startOfDay();
+        }
+
+        return Carbon::today();
+    }
+
+    private function macroSummaryForDay(int $userId, string $date): array
+    {
+        $row = DB::table('meal_entries as me')
+            ->join('foods as f', 'f.id', '=', 'me.food_id')
+            ->selectRaw('COALESCE(SUM(f.calories * me.servings),0) as kcal')
+            ->selectRaw('COALESCE(SUM(f.protein_g * me.servings),0) as protein_g')
+            ->selectRaw('COALESCE(SUM(f.carbs_g * me.servings),0) as carbs_g')
+            ->selectRaw('COALESCE(SUM(f.fat_g * me.servings),0) as fat_g')
+            ->where('me.user_id', $userId)
+            ->whereDate('me.eaten_at', $date)
+            ->first();
+
+        return [
+            'date' => $date,
+            'kcal' => (int) round((float) ($row->kcal ?? 0)),
+            'protein_g' => (int) round((float) ($row->protein_g ?? 0)),
+            'carbs_g' => (int) round((float) ($row->carbs_g ?? 0)),
+            'fat_g' => (int) round((float) ($row->fat_g ?? 0)),
+        ];
     }
 }

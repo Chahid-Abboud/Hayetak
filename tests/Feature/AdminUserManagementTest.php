@@ -182,3 +182,58 @@ test('admin alerts are only delivered to selected users and dismissed alerts dis
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.target_user_id', $secondRecipient->id);
 });
+
+test('admin bulk update endpoint verifies users and returns per-user summary', function () {
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $first = User::factory()->create(['verified' => false]);
+    $second = User::factory()->create(['verified' => false]);
+
+    $this->actingAs($admin)
+        ->postJson('/api/admin/users/bulk-update', [
+            'user_ids' => [$first->id, $second->id],
+            'action' => 'verify',
+        ])
+        ->assertOk()
+        ->assertJsonPath('summary.requested_count', 2)
+        ->assertJsonPath('summary.updated_count', 2)
+        ->assertJsonPath('summary.skipped_count', 0);
+
+    expect($first->fresh()->verified)->toBeTrue()
+        ->and($second->fresh()->verified)->toBeTrue();
+
+    $this->assertDatabaseHas('admin_action_logs', [
+        'action' => 'admin.users.bulk_update',
+    ]);
+});
+
+test('admin bulk update validates set_status payload and handles no-change rows', function () {
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $target = User::factory()->create([
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson('/api/admin/users/bulk-update', [
+            'user_ids' => [$target->id],
+            'action' => 'set_status',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['status']);
+
+    $this->actingAs($admin)
+        ->postJson('/api/admin/users/bulk-update', [
+            'user_ids' => [$target->id],
+            'action' => 'set_status',
+            'status' => 'pending',
+        ])
+        ->assertOk()
+        ->assertJsonPath('summary.updated_count', 0)
+        ->assertJsonPath('summary.skipped_count', 1)
+        ->assertJsonPath('results.0.reason', 'no_change');
+});

@@ -2,19 +2,16 @@
 @import 'tailwindcss';
 @plugin 'tailwindcss-animate';
 
-/* Make sure Tailwind scans your views + React pages */
 @source '../views';
 @source '../js/**/*.{ts,tsx,js,jsx}';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
-/* allow `.dark` class to flip tokens */
 @custom-variant dark (&:is(.dark *));
 
-/* Map Tailwind tokens to CSS variables (don’t change class names elsewhere) */
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Inter', 'Instrument Sans', 'Avenir Next', ui-sans-serif, system-ui,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
     --radius-lg: var(--radius);
@@ -49,13 +46,19 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
-    /* header / nav tokens used in your hero “glow” */
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -66,140 +69,343 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* ----------------- LIGHT MODE (root) ----------------- */
 :root {
-    /* subtle minty white */
-    --background: #f5faf7;
-    --foreground: #0f172a; /* slate-900 */
+    /* ZIP-first palette tokens */
+    --color-primary-50: #f5f3ff;
+    --color-primary-100: #ede9fe;
+    --color-primary-200: #ddd6fe;
+    --color-primary-300: #c4b5fd;
+    --color-primary-400: #a78bfa;
+    --color-primary-500: #8b5cf6;
+    --color-primary-600: #7c3aed;
+    --color-primary-700: #6d28d9;
+    --color-primary-800: #5b21b6;
+    --color-primary-900: #4c1d95;
 
-    --card: #ffffff;
-    --card-foreground: #0f172a;
+    --color-neutral-0: #ffffff;
+    --color-neutral-50: #fafaf9;
+    --color-neutral-100: #f5f5f4;
+    --color-neutral-200: #e7e5e4;
+    --color-neutral-300: #d6d3d1;
+    --color-neutral-400: #a8a29e;
+    --color-neutral-500: #78716c;
+    --color-neutral-600: #57534e;
+    --color-neutral-700: #44403c;
+    --color-neutral-800: #292524;
+    --color-neutral-900: #1c1917;
+    --color-neutral-950: #0c0a09;
 
-    --popover: #ffffff;
-    --popover-foreground: #0f172a;
+    --color-success-50: #f0fdf4;
+    --color-success-500: #22c55e;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
 
-    /* brand */
-    --primary: #0f8b8d;
-    --primary-foreground: #eefcfb;
+    --color-warning-50: #fffbeb;
+    --color-warning-500: #f59e0b;
+    --color-warning-600: #d97706;
+    --color-warning-700: #b45309;
 
-    --secondary: #4ca57b;
-    --secondary-foreground: #f2fcf6;
+    --color-danger-50: #fef2f2;
+    --color-danger-500: #ef4444;
+    --color-danger-600: #dc2626;
+    --color-danger-700: #b91c1c;
 
-    /* helpers */
-    --muted: #eef4f1;
-    --muted-foreground: #52645e;
+    --color-info-50: #eff6ff;
+    --color-info-500: #3b82f6;
+    --color-info-600: #2563eb;
+    --color-info-700: #1d4ed8;
 
-    --accent: #f3bf74;
-    --accent-foreground: #2f2617;
+    --background: var(--color-neutral-50);
+    --foreground: var(--color-neutral-900);
 
-    --destructive: #ef4444; /* red-500 */
-    --destructive-foreground: #fef2f2; /* rose-50 */
+    --card: color-mix(in oklab, var(--color-neutral-0) 95%, transparent);
+    --card-foreground: var(--color-neutral-900);
 
-    --border: #d9e5df;
-    --input: #d9e5df;
-    --ring: #0f8b8d;
+    --popover: var(--color-neutral-0);
+    --popover-foreground: var(--color-neutral-900);
 
-    /* charts */
-    --chart-1: #4ca57b;
-    --chart-2: #0f8b8d;
-    --chart-3: #7c93d8;
-    --chart-4: #f3bf74;
-    --chart-5: #de8d59;
+    --primary: var(--color-primary-600);
+    --primary-foreground: var(--color-neutral-0);
 
-    --radius: 0.625rem;
+    --secondary: var(--color-neutral-100);
+    --secondary-foreground: var(--color-neutral-900);
 
-    /* header / nav */
-    --sidebar: #10252b;
-    --sidebar-foreground: #e7f0ee;
-    --sidebar-primary: #18b7b2;
-    --sidebar-primary-foreground: #052326;
-    --sidebar-accent: #5fb58a;
-    --sidebar-accent-foreground: #f1fbf5;
-    --sidebar-border: #17343d;
-    --sidebar-ring: #18b7b2;
+    --muted: var(--color-neutral-100);
+    --muted-foreground: var(--color-neutral-600);
+
+    --accent: var(--color-primary-100);
+    --accent-foreground: var(--color-primary-900);
+
+    --destructive: var(--color-danger-600);
+    --destructive-foreground: var(--color-neutral-0);
+
+    --success: var(--color-success-600);
+    --success-foreground: var(--color-neutral-0);
+    --warning: var(--color-warning-500);
+    --warning-foreground: var(--color-neutral-0);
+    --info: var(--color-info-600);
+    --info-foreground: var(--color-neutral-0);
+
+    --border: var(--color-neutral-200);
+    --input: var(--color-neutral-200);
+    --ring: var(--color-primary-500);
+
+    --chart-1: var(--color-primary-500);
+    --chart-2: var(--color-info-500);
+    --chart-3: var(--color-success-500);
+    --chart-4: var(--color-warning-500);
+    --chart-5: var(--color-danger-500);
+
+    --radius: 0.5rem;
+
+    --sidebar: var(--color-neutral-0);
+    --sidebar-foreground: var(--color-neutral-900);
+    --sidebar-primary: var(--color-primary-600);
+    --sidebar-primary-foreground: var(--color-neutral-0);
+    --sidebar-accent: var(--color-neutral-100);
+    --sidebar-accent-foreground: var(--color-neutral-900);
+    --sidebar-border: var(--color-neutral-200);
+    --sidebar-ring: var(--color-primary-500);
+
+    --font-display: 'Inter', 'Sora', 'Avenir Next', system-ui, sans-serif;
 }
 
-/* ----------------- DARK MODE (.dark) ----------------- */
 .dark {
-    --background: #08171b;
-    --foreground: #e8f3f1;
+    --background: var(--color-neutral-950);
+    --foreground: var(--color-neutral-50);
 
-    --card: #0e2025;
-    --card-foreground: #e8f3f1;
+    --card: color-mix(in oklab, var(--color-neutral-900) 92%, transparent);
+    --card-foreground: var(--color-neutral-50);
 
-    --popover: #0e2025;
-    --popover-foreground: #e8f3f1;
+    --popover: var(--color-neutral-900);
+    --popover-foreground: var(--color-neutral-50);
 
-    /* brighter brand on dark */
-    --primary: #38d3c5;
-    --primary-foreground: #062827;
+    --primary: var(--color-primary-500);
+    --primary-foreground: var(--color-neutral-0);
 
-    --secondary: #7dca9f;
-    --secondary-foreground: #092114;
+    --secondary: var(--color-neutral-800);
+    --secondary-foreground: var(--color-neutral-50);
 
-    --muted: #162a31;
-    --muted-foreground: #b5cbd1;
+    --muted: var(--color-neutral-800);
+    --muted-foreground: var(--color-neutral-400);
 
-    --accent: #f3c06b;
-    --accent-foreground: #1f231b;
+    --accent: var(--color-neutral-800);
+    --accent-foreground: var(--color-neutral-50);
 
-    --destructive: #f87171; /* red-400 */
-    --destructive-foreground: #1a0b0b;
+    --destructive: var(--color-danger-500);
+    --destructive-foreground: var(--color-neutral-0);
 
-    --border: #24404a;
-    --input: #24404a;
-    --ring: #38d3c5;
+    --success: var(--color-success-500);
+    --success-foreground: var(--color-neutral-0);
+    --warning: var(--color-warning-500);
+    --warning-foreground: var(--color-neutral-0);
+    --info: var(--color-info-500);
+    --info-foreground: var(--color-neutral-0);
 
-    --chart-1: #7dca9f;
-    --chart-2: #38d3c5;
-    --chart-3: #9db6f0;
-    --chart-4: #f3c06b;
-    --chart-5: #f19a63;
+    --border: var(--color-neutral-800);
+    --input: var(--color-neutral-800);
+    --ring: var(--color-primary-500);
 
-    --sidebar: #09151a;
-    --sidebar-foreground: #dfebe8;
-    --sidebar-primary: #38d3c5;
-    --sidebar-primary-foreground: #042122;
-    --sidebar-accent: #7dca9f;
-    --sidebar-accent-foreground: #082013;
-    --sidebar-border: #17323a;
-    --sidebar-ring: #38d3c5;
+    --chart-1: var(--color-primary-500);
+    --chart-2: var(--color-info-500);
+    --chart-3: var(--color-success-500);
+    --chart-4: var(--color-warning-500);
+    --chart-5: var(--color-danger-500);
+
+    --sidebar: var(--color-neutral-900);
+    --sidebar-foreground: var(--color-neutral-50);
+    --sidebar-primary: var(--color-primary-500);
+    --sidebar-primary-foreground: var(--color-neutral-0);
+    --sidebar-accent: var(--color-neutral-800);
+    --sidebar-accent-foreground: var(--color-neutral-50);
+    --sidebar-border: var(--color-neutral-800);
+    --sidebar-ring: var(--color-primary-500);
 }
 
-/* Base layer keeps structure intact */
 @layer base {
     * {
         @apply border-border;
     }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
     html,
     body,
     #app {
         min-height: 100%;
     }
+
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground antialiased;
         min-height: 100vh;
+        background-image:
+            radial-gradient(
+                circle at 0% 0%,
+                color-mix(in oklab, var(--primary) 16%, transparent),
+                transparent 28%
+            ),
+            radial-gradient(
+                circle at 100% 10%,
+                color-mix(in oklab, var(--accent) 18%, transparent),
+                transparent 22%
+            ),
+            linear-gradient(
+                135deg,
+                color-mix(in oklab, var(--background) 88%, white) 0%,
+                var(--background) 42%,
+                color-mix(in oklab, var(--muted) 50%, var(--background)) 100%
+            ),
+            linear-gradient(
+                color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
+                transparent 1px
+            );
+        background-size: auto, auto, auto, 30px 30px, 30px 30px;
+        background-attachment: fixed;
     }
+
+    html[data-page='workouts'] body {
+        background-image:
+            radial-gradient(
+                circle at 14% 0%,
+                color-mix(in oklab, var(--secondary) 24%, transparent),
+                transparent 24%
+            ),
+            radial-gradient(
+                circle at 82% 6%,
+                color-mix(in oklab, var(--primary) 14%, transparent),
+                transparent 20%
+            ),
+            linear-gradient(
+                180deg,
+                color-mix(in oklab, var(--background) 90%, white),
+                var(--background)
+            ),
+            linear-gradient(
+                color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
+                transparent 1px
+            );
+    }
+
     #app {
         min-height: 100vh;
     }
+
     #app > div {
         min-height: 100vh;
     }
+
     ::selection {
-        background: var(--primary);
-        color: var(--primary-foreground);
+        background: var(--secondary);
+        color: var(--secondary-foreground);
     }
+
     a {
         @apply underline-offset-4;
     }
+
     :focus-visible {
         outline: none;
-        box-shadow: 0 0 0 2px var(--ring);
+        box-shadow:
+            0 0 0 2px var(--ring),
+            0 0 0 5px color-mix(in oklab, var(--background) 72%, transparent);
     }
 }
 
 @layer components {
+    .haye-panel {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
+        background:
+            linear-gradient(
+                180deg,
+                color-mix(in oklab, var(--card) 92%, white),
+                color-mix(in oklab, var(--card) 88%, var(--background))
+            );
+        box-shadow:
+            0 24px 80px -48px rgba(15, 23, 42, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        backdrop-filter: blur(18px);
+    }
+
+    .haye-panel::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(
+                circle at top left,
+                color-mix(in oklab, var(--secondary) 16%, transparent),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at top right,
+                color-mix(in oklab, var(--accent) 14%, transparent),
+                transparent 22%
+            );
+        opacity: 0.9;
+    }
+
+    .haye-panel > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .haye-chip {
+        @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium;
+        border-color: color-mix(in oklab, var(--border) 78%, transparent);
+        background: color-mix(in oklab, var(--background) 70%, white);
+        color: var(--muted-foreground);
+    }
+
+    .haye-kicker {
+        @apply text-[11px] font-semibold uppercase;
+        letter-spacing: 0.24em;
+        color: color-mix(in oklab, var(--muted-foreground) 92%, white 8%);
+    }
+
+    .haye-input {
+        @apply h-11 w-full rounded-2xl border bg-background/80 px-4 text-sm text-foreground shadow-sm outline-none transition;
+        border-color: color-mix(in oklab, var(--border) 82%, transparent);
+    }
+
+    .haye-button-primary {
+        @apply inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        box-shadow: 0 14px 34px -24px color-mix(in oklab, var(--primary) 90%, black);
+    }
+
+    .haye-button-primary:hover {
+        transform: translateY(-1px);
+        opacity: 0.96;
+    }
+
+    .haye-button-secondary {
+        @apply inline-flex items-center justify-center rounded-full border px-4 py-2.5 text-sm font-semibold transition;
+        border-color: color-mix(in oklab, var(--border) 82%, transparent);
+        background: color-mix(in oklab, var(--background) 74%, white);
+        color: var(--foreground);
+    }
+
+    .haye-button-secondary:hover {
+        transform: translateY(-1px);
+        background: color-mix(in oklab, var(--secondary) 10%, var(--background));
+    }
+
     .places-range {
         -webkit-appearance: none;
         appearance: none;

@@ -93,6 +93,7 @@ class HomeController extends Controller
         // ---- New meal_entries/foods daily macros ----
         $todayMacros = null;
         $mealTotals = null;
+        $mealEntryPreviews = null;
 
         if ($user && Schema::hasTable('meal_entries') && Schema::hasTable('foods')) {
             $daily = DB::table('meal_entries as me')
@@ -149,6 +150,30 @@ class HomeController extends Controller
                     'fat' => (float) $row->fat,
                 ];
             }
+
+            $mealEntryPreviews = DB::table('meal_entries as me')
+                ->join('foods as f', 'f.id', '=', 'me.food_id')
+                ->select([
+                    'me.id',
+                    'me.meal_type',
+                    'me.servings',
+                    'f.name as label',
+                    'f.serving_unit as unit',
+                ])
+                ->where('me.user_id', $user->id)
+                ->whereDate('me.eaten_at', $today)
+                ->orderBy('me.eaten_at')
+                ->orderBy('me.id')
+                ->get()
+                ->map(fn ($entry) => [
+                    'id' => (int) $entry->id,
+                    'category' => (string) $entry->meal_type,
+                    'label' => (string) $entry->label,
+                    'quantity' => isset($entry->servings) ? (float) $entry->servings : null,
+                    'unit' => $entry->unit ? (string) $entry->unit : null,
+                ])
+                ->values()
+                ->all();
         }
 
         // ✅ NEW: Load active generated plans for showing on the dashboard
@@ -195,6 +220,7 @@ class HomeController extends Controller
             'latestLog' => $latestLog,
             'todayMacros' => $todayMacros,
             'mealTotals' => $mealTotals,
+            'mealEntryPreviews' => $mealEntryPreviews,
 
             // ✅ NEW PROPS (safe arrays for TSX)
             'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,

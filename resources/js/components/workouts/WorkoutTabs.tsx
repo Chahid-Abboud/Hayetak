@@ -1,4 +1,3 @@
-// resources/js/components/workouts/WorkoutTabs.tsx
 import { Link } from '@inertiajs/react';
 
 type WorkoutTabsProps = {
@@ -7,21 +6,21 @@ type WorkoutTabsProps = {
 
 export default function WorkoutTabs({ active }: WorkoutTabsProps) {
     const base =
-        'flex-1 rounded-lg px-3 py-2 text-sm font-medium text-center transition';
+        'inline-flex min-w-[8rem] items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold no-underline transition';
 
     return (
-        <div className="mb-4 flex justify-center">
-            <div className="inline-flex rounded-2xl bg-[color:var(--card)]/70 p-1 shadow-sm backdrop-blur">
+        <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/85 p-2 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.7)] backdrop-blur">
                 <Link
                     href="/workouts/plan"
                     className={
                         base +
                         (active === 'plan'
-                            ? ' bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
-                            : ' text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]/60')
+                            ? ' bg-primary text-primary-foreground shadow-sm'
+                            : ' text-muted-foreground hover:bg-background hover:text-foreground')
                     }
                 >
-                    Plan
+                    Plan Builder
                 </Link>
 
                 <Link
@@ -29,11 +28,11 @@ export default function WorkoutTabs({ active }: WorkoutTabsProps) {
                     className={
                         base +
                         (active === 'log'
-                            ? ' bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
-                            : ' text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]/60')
+                            ? ' bg-secondary text-secondary-foreground shadow-sm'
+                            : ' text-muted-foreground hover:bg-background hover:text-foreground')
                     }
                 >
-                    Log
+                    Live Log
                 </Link>
             </div>
         </div>
