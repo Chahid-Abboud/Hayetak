@@ -22,6 +22,7 @@ class MealEntryController extends Controller
             : now()->format('Y-m-d');
 
         $userId = Auth::id();
+        $user = $request->user();
 
         [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date);
 
@@ -36,6 +37,8 @@ class MealEntryController extends Controller
             'entries' => $entries,
             'targets' => $targets,
             'recommendations' => $recommendations,
+            'userAllergies' => $this->mealTrackerService->userAllergies($userId),
+            'dietName' => $user?->diet_name,
         ]);
     }
 

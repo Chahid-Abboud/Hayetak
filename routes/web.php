@@ -167,6 +167,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/messages/conversations', [ConversationController::class, 'index']);
         Route::post('/messages/conversations', [ConversationController::class, 'store']);
         Route::get('/messages/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+        Route::get('/messages/conversations/{conversation}/context', [ConversationController::class, 'context']);
         Route::post('/messages/conversations/{conversation}/messages', [MessageController::class, 'store']);
 
         Route::get('/appointments', [AppointmentController::class, 'index']);
@@ -198,6 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/admin/users/{user}', [AdminUserController::class, 'show']);
             Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
             Route::patch('/admin/users/{user}/verification', [AdminUserController::class, 'toggleVerification']);
+            Route::post('/admin/users/bulk-update', [AdminUserController::class, 'bulkUpdate']);
             Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
             Route::get('/admin/notifications', [AdminNotificationController::class, 'index']);
             Route::post('/admin/notifications', [AdminNotificationController::class, 'store']);

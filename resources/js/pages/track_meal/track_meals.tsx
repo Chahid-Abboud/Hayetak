@@ -1,10 +1,18 @@
 import {
     ProductBanner,
+    ProductEmptyState,
     ProductHero,
     ProductPageShell,
+    ProductSection,
 } from '@/components/product/page';
 import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
+import {
+    ArrowRight,
+    Heart,
+    ShieldCheck,
+    Sparkles,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
@@ -40,6 +48,9 @@ type PageProps = {
     mealTotals?: Partial<MealTotals> | null;
     entries?: EntryItem[] | null;
     targets?: Targets | null;
+    remaining?: Partial<Totals> | null;
+    recommendations?: SearchFood[] | null;
+    dietName?: string | null;
 
     // ✅ add this from controller when you can:
     // return Inertia::render(..., ['userAllergies' => auth()->user()->allergies ?? []]);
@@ -52,6 +63,8 @@ type DayResponse = {
     mealTotals: MealTotals;
     entries: EntryItem[];
     targets?: Targets | null;
+    remaining?: Partial<Totals> | null;
+    recommendations?: SearchFood[] | null;
     userAllergies?: string[] | null;
 };
 
@@ -75,6 +88,7 @@ type SearchFood = {
     category?: string | null;
     meal_types?: string[] | string | null;
     allergens?: string[] | string | null;
+    is_favorite?: boolean;
 };
 
 const ZERO: Totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -87,9 +101,9 @@ const DEFAULT_TARGETS: Totals = {
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
 
 const CARD =
-    'rounded-[24px] border border-border/70 bg-card/95 p-4 text-card-foreground shadow-sm transition-colors duration-300';
+    'haye-panel rounded-[28px] p-4 text-card-foreground transition-colors duration-300';
 const CARD_SM =
-    'rounded-2xl border border-border/70 bg-card/95 p-3 text-card-foreground shadow-sm transition-colors duration-300';
+    'rounded-[22px] border border-border/70 bg-background/72 p-3 text-card-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] transition-colors duration-300';
 
 function todayYMD() {
     return new Date().toISOString().slice(0, 10);
@@ -141,8 +155,48 @@ function foodHasUserAllergen(food: SearchFood, userAllergies: string[]) {
     return ua.some((a) => set.has(a));
 }
 
+function getPlanAlignment(dailyTotals: Totals, targets: Targets) {
+    const proteinTarget = Math.max(1, targets.protein ?? 0);
+    const fatTarget = Math.max(1, targets.fat ?? 0);
+    const caloriesTarget = Math.max(1, targets.calories ?? 0);
+    const proteinRatio = dailyTotals.protein / proteinTarget;
+    const fatRatio = dailyTotals.fat / fatTarget;
+    const calorieRatio = dailyTotals.calories / caloriesTarget;
+
+    if (proteinRatio < 0.7) {
+        return {
+            label: 'Protein low',
+            copy: 'Use the next meal to close the protein gap before the day drifts off target.',
+        };
+    }
+
+    if (fatRatio > 1.1) {
+        return {
+            label: 'Fat high',
+            copy: 'The next meal should stay lighter and more protein-forward to balance the day.',
+        };
+    }
+
+    if (calorieRatio > 1.08) {
+        return {
+            label: 'Calories high',
+            copy: 'Keep the next choice simple and lighter so the day stays recoverable.',
+        };
+    }
+
+    return {
+        label: 'On target',
+        copy: 'Today is broadly on track, so you can use the next meal to keep momentum steady.',
+    };
+}
+
 export default function TrackMealsPage() {
     const raw = usePage<PageProps>().props;
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-page', 'nutrition');
+        return () => document.documentElement.removeAttribute('data-page');
+    }, []);
 
     // ✅ ensure axios has CSRF for POST/DELETE (if you don't set it globally)
     useEffect(() => {
@@ -172,16 +226,21 @@ export default function TrackMealsPage() {
         mealTotals: safeMealTotals(raw.mealTotals),
         entries: Array.isArray(raw.entries) ? raw.entries : [],
         targets: raw.targets ?? null,
+        remaining: raw.remaining ?? null,
+        recommendations: Array.isArray(raw.recommendations)
+            ? raw.recommendations
+            : [],
         userAllergies: raw.userAllergies ?? [],
     }));
 
     const [dayLoading, setDayLoading] = useState(false);
+    const [favoriteFoods, setFavoriteFoods] = useState<SearchFood[]>([]);
 
-    const fetchDay = async (d: string) => {
+    const fetchDay = async (d: string, selectedMealType: MealType) => {
         setDayLoading(true);
         try {
             const res = await axios.get<DayResponse>('/api/meal-tracker/day', {
-                params: { date: d },
+                params: { date: d, meal_type: selectedMealType },
             });
 
             setDay({
@@ -192,6 +251,10 @@ export default function TrackMealsPage() {
                     ? res.data.entries
                     : [],
                 targets: res.data?.targets ?? null,
+                remaining: res.data?.remaining ?? null,
+                recommendations: Array.isArray(res.data?.recommendations)
+                    ? res.data.recommendations
+                    : [],
                 userAllergies:
                     res.data?.userAllergies ?? raw.userAllergies ?? [],
             });
@@ -202,6 +265,8 @@ export default function TrackMealsPage() {
                 dailyTotals: ZERO,
                 mealTotals: safeMealTotals(null),
                 entries: [],
+                remaining: null,
+                recommendations: [],
             }));
         } finally {
             setDayLoading(false);
@@ -209,9 +274,9 @@ export default function TrackMealsPage() {
     };
 
     useEffect(() => {
-        fetchDay(date);
+        void fetchDay(date, mealType);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [date]);
+    }, [date, mealType]);
 
     // ---------------- Filters (stable & combined) ----------------
     const [q, setQ] = useState('');
@@ -263,6 +328,27 @@ export default function TrackMealsPage() {
             if (debounceRef.current) window.clearTimeout(debounceRef.current);
         };
     }, [q, page, filterMealType]);
+
+    useEffect(() => {
+        let active = true;
+
+        void axios
+            .get<SearchFood[]>('/api/foods/favorites')
+            .then((response) => {
+                if (!active) return;
+                setFavoriteFoods(
+                    Array.isArray(response.data) ? response.data : [],
+                );
+            })
+            .catch(() => {
+                if (!active) return;
+                setFavoriteFoods([]);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const userAllergies = useMemo(
         () =>
@@ -353,7 +439,7 @@ export default function TrackMealsPage() {
             });
             closeAddDialog();
             setStatusMessage('Meal added to your daily tracking successfully.');
-            await fetchDay(date);
+            await fetchDay(date, mealType);
             setTimeout(() => setStatusMessage(null), 4000);
         } catch {
             setStatusMessage('Could not add meal. Please try again.');
@@ -364,16 +450,55 @@ export default function TrackMealsPage() {
     const removeEntry = async (id: number) => {
         if (!confirm('Remove entry?')) return;
         await axios.delete(`/meal-entries/${id}`);
-        await fetchDay(date);
+        await fetchDay(date, mealType);
     };
 
     const dailyTotals = day.dailyTotals ?? ZERO;
     const mealTotals = day.mealTotals ?? safeMealTotals(null);
     const entries = Array.isArray(day.entries) ? day.entries : [];
     const targets = day.targets ?? DEFAULT_TARGETS;
+    const remaining = day.remaining ?? null;
     const hasUserTargets = !!day.targets;
+    const recentFoods = Array.from(
+        new Map(entries.map((entry) => [entry.food.id, entry.food])).values(),
+    ).slice(0, 5);
+    const recommendations = Array.isArray(day.recommendations)
+        ? day.recommendations
+        : Array.isArray(raw.recommendations)
+          ? raw.recommendations
+          : [];
+    const mealTimeline = MEALS.map((meal) => ({
+        meal,
+        totals: mealTotals[meal],
+        entries: entries.filter((entry) => entry.meal_type === meal),
+    }));
 
     const macro = (n: number) => Math.round(n);
+    const mealTypeLabel =
+        mealType.charAt(0).toUpperCase() + mealType.slice(1);
+    const alignment = getPlanAlignment(dailyTotals, targets);
+    const selectedMealTotals = mealTotals[mealType];
+    const safeRecommendations = recommendations.filter(
+        (food) => !foodHasUserAllergen(food, userAllergies),
+    );
+    const visibleFavorites = favoriteFoods
+        .filter((food) => !foodHasUserAllergen(food, userAllergies))
+        .slice(0, 6);
+    const calorieProgress = Math.min(
+        100,
+        Math.round((dailyTotals.calories / Math.max(1, targets.calories ?? 1)) * 100),
+    );
+    const proteinProgress = Math.min(
+        100,
+        Math.round((dailyTotals.protein / Math.max(1, targets.protein ?? 1)) * 100),
+    );
+    const coachPrompt =
+        alignment.label === 'Protein low'
+            ? `I'm still low on protein for ${mealType}. Suggest a quick option that fits my saved restrictions.`
+            : alignment.label === 'Fat high'
+              ? `My fat intake is already high today. What lighter ${mealType} option keeps me on plan?`
+              : `Give me one safe ${mealType} idea based on what I already logged today.`;
+    const dietName = raw.dietName?.trim() ?? '';
 
     const onPickMealType = (mt: MealType) => {
         // ✅ selecting meal type should instantly filter the list AND set add target
@@ -398,13 +523,19 @@ export default function TrackMealsPage() {
                 <ProductHero
                     eyebrow="Nutrition"
                     title={title}
-                    description="Review daily totals, add meals safely, and keep your log aligned with your profile and nutrition goals."
+                    description="Log meals quickly, keep restriction-aware guidance visible, and use planner alignment to see what matters next instead of scanning a wall of numbers."
                     meta={
-                        <span>
-                            {entries.length}{' '}
-                            {entries.length === 1 ? 'entry' : 'entries'} logged
-                            for {date}
-                        </span>
+                        <div className="space-y-2 text-sm">
+                            <div>
+                                {entries.length}{' '}
+                                {entries.length === 1 ? 'entry' : 'entries'} logged
+                                for {date}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                <span className="haye-chip">Meal focus: {mealTypeLabel}</span>
+                                <span className="haye-chip">{alignment.label}</span>
+                            </div>
+                        </div>
                     }
                     actions={
                         <div className="flex flex-wrap items-center gap-2">
@@ -441,6 +572,145 @@ export default function TrackMealsPage() {
                         {statusMessage}
                     </ProductBanner>
                 ) : null}
+
+                <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                    <div className={CARD}>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="haye-chip">
+                                Logging to {mealTypeLabel}
+                            </span>
+                            <span className="haye-chip">
+                                {entries.length} {entries.length === 1 ? 'entry' : 'entries'} today
+                            </span>
+                            <span className="haye-chip">
+                                {macro(mealTotals[mealType].calories)} kcal in this meal
+                            </span>
+                            {dietName ? (
+                                <span className="haye-chip">Diet: {dietName}</span>
+                            ) : null}
+                            {userAllergies.slice(0, 3).map((allergy) => (
+                                <span
+                                    key={allergy}
+                                    className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"
+                                >
+                                    <ShieldCheck className="size-3.5" />
+                                    Avoid {allergy}
+                                </span>
+                            ))}
+                            {userAllergies.length === 0 ? (
+                                <span className="haye-chip">
+                                    No allergy filters saved
+                                </span>
+                            ) : null}
+                        </div>
+                        <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                            {alignment.copy} The diary keeps today&apos;s
+                            progress, safety context, and the fastest safe next
+                            action within the same view.
+                        </p>
+                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                            <div className="rounded-[22px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Calories left</p>
+                                <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                                    {macro(remaining?.calories ?? Math.max(0, (targets.calories ?? 0) - dailyTotals.calories))}
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {calorieProgress}% of today&apos;s target is already logged.
+                                </p>
+                            </div>
+                            <div className="rounded-[22px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Protein gap</p>
+                                <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                                    {macro(remaining?.protein ?? Math.max(0, (targets.protein ?? 0) - dailyTotals.protein))} g
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {proteinProgress}% of the protein target is covered.
+                                </p>
+                            </div>
+                            <div className="rounded-[22px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Plan alignment</p>
+                                <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                                    {alignment.label}
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {mealTypeLabel} is the active decision point right now.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={CARD}>
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="haye-kicker">Shortcuts</p>
+                                <h2 className="mt-2 text-xl font-semibold tracking-tight">
+                                    Recent and favorite foods
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Reuse familiar foods instead of searching
+                                    from scratch every time.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {recentFoods.map((food) => (
+                                <button
+                                    key={food.id}
+                                    type="button"
+                                    onClick={() =>
+                                        openAddDialog({
+                                            id: food.id,
+                                            name: food.name,
+                                            serving_unit: food.serving_unit,
+                                            serving_size: food.serving_size,
+                                            calories: food.calories,
+                                            protein: food.protein,
+                                            carbs: food.carbs,
+                                            fat: food.fat,
+                                            category: food.category ?? null,
+                                            allergens: food.allergens ?? null,
+                                        })
+                                    }
+                                    className="rounded-full border border-border/70 bg-background/80 px-3 py-2 text-sm text-foreground transition hover:border-secondary/30 hover:bg-card"
+                                >
+                                    {food.name}
+                                </button>
+                            ))}
+                            {recentFoods.length === 0 ? (
+                                <span className="text-sm text-muted-foreground">
+                                    Your recent foods will appear here after you log a few meals.
+                                </span>
+                            ) : null}
+                        </div>
+                        {visibleFavorites.length > 0 ? (
+                            <div className="mt-4 border-t border-border/70 pt-4">
+                                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Favorites
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {visibleFavorites.map((food) => (
+                                        <button
+                                            key={`favorite-${food.id}`}
+                                            type="button"
+                                            onClick={() => openAddDialog(food)}
+                                            className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-2 text-sm text-foreground transition hover:border-secondary/30 hover:bg-background"
+                                        >
+                                            <Heart className="size-3.5 text-secondary" />
+                                            {food.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </section>
                 {renderLegacyHeader ? (
                     <>
                         {/* Header + SINGLE calendar entry point */}
@@ -563,19 +833,18 @@ export default function TrackMealsPage() {
                                     role="tab"
                                     aria-selected={selectedTab}
                                     onClick={() => onPickMealType(mt)}
-                                    className={`rounded-xl border p-3 text-left transition focus:ring-2 focus:outline-none ${
+                                    className={`rounded-[24px] border p-3 text-left transition focus:ring-2 focus:outline-none ${
                                         selectedTab
-                                            ? 'border-[#1C2C64]/40 ring-[#1C2C64]/25 dark:border-white/40 dark:ring-white/25'
-                                            : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 dark:border-white/15 dark:hover:bg-white/10'
+                                            ? 'border-secondary/35 bg-secondary/10 ring-ring'
+                                            : 'border-border/70 bg-background/70 hover:bg-card'
                                     }`}
                                 >
-                                    <div className="text-sm font-medium capitalize">
+                                    <div className="text-sm font-medium capitalize text-foreground">
                                         {mt}
                                     </div>
-                                    <div className="mt-1 text-[11px] opacity-80">
-                                        {macro(mealTotals[mt].calories)} kcal ·
-                                        P {macro(mealTotals[mt].protein)} · C{' '}
-                                        {macro(mealTotals[mt].carbs)} · F{' '}
+                                    <div className="mt-1 text-[11px] text-muted-foreground">
+                                        {macro(mealTotals[mt].calories)} kcal / P {macro(mealTotals[mt].protein)} / C{' '}
+                                        {macro(mealTotals[mt].carbs)} / F{' '}
                                         {macro(mealTotals[mt].fat)}
                                     </div>
                                 </button>
@@ -586,7 +855,7 @@ export default function TrackMealsPage() {
 
                 {/* Search + filtering */}
                 <section className={`mt-6 ${CARD} p-0`}>
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1C2C64]/10 px-3 py-2 dark:border-white/10">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 px-3 py-3">
                         <div className="text-sm font-medium">
                             Add to{' '}
                             <span className="capitalize">{mealType}</span>{' '}
@@ -606,7 +875,7 @@ export default function TrackMealsPage() {
                                 <button
                                     type="button"
                                     onClick={clearFoodCategoryFilter}
-                                    className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm text-[#1C2C64] hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:text-white dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                    className="rounded-full border border-border/70 px-3 py-1.5 text-sm text-foreground transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                                 >
                                     All foods
                                 </button>
@@ -615,7 +884,7 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={clearSearch}
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm text-[#1C2C64] hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:text-white dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-full border border-border/70 px-3 py-1.5 text-sm text-foreground transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                             >
                                 Clear search
                             </button>
@@ -631,8 +900,8 @@ export default function TrackMealsPage() {
                             id="search-input"
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder={`e.g. "manakish", "labneh"`}
-                            className="w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 text-[#1C2C64] outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                            placeholder='e.g. "manakish", "labneh"'
+                            className="haye-input"
                         />
 
                         {/* Exclude allergens */}
@@ -644,24 +913,24 @@ export default function TrackMealsPage() {
                                     onChange={(e) =>
                                         setExcludeAllergens(e.target.checked)
                                     }
-                                    className="mt-0.5 h-4 w-4 rounded border-[#1C2C64]/30 text-[#1C2C64] focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/20 dark:text-white dark:focus:ring-white/25"
+                                    className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-ring"
                                 />
                                 <span>Exclude my allergens</span>
                             </label>
 
                             {excludeAllergens && userAllergies.length === 0 && (
                                 <div className="text-xs opacity-70">
-                                    No allergens set in your profile — this
-                                    filter won’t hide anything.
+                                    No allergens are saved in your profile, so
+                                    this filter will not hide anything.
                                 </div>
                             )}
                         </div>
 
                         {loading ? (
-                            <div className="text-sm opacity-80">Searching…</div>
+                            <div className="text-sm opacity-80">Searching...</div>
                         ) : null}
 
-                        <ul className="divide-y divide-[#1C2C64]/10 dark:divide-white/10">
+                        <ul className="divide-y divide-border/70">
                             {visibleResults.map((f) => {
                                 const base = `${f.serving_size}${f.serving_unit}`;
                                 const kcal = Math.round(
@@ -693,7 +962,7 @@ export default function TrackMealsPage() {
                                                     {f.name}
                                                 </div>
                                                 {f.category ? (
-                                                    <span className="rounded-full border border-[#1C2C64]/20 px-2 py-0.5 text-[11px] opacity-80 dark:border-white/20">
+                                                    <span className="rounded-full border border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground">
                                                         {f.category}
                                                     </span>
                                                 ) : null}
@@ -705,15 +974,14 @@ export default function TrackMealsPage() {
                                             </div>
 
                                             <div className="text-xs opacity-80">
-                                                per {base} · {kcal} kcal · P {p}{' '}
-                                                · C {c} · F {fat}
+                                                per {base} · {kcal} kcal · P {p} · C {c} · F {fat}
                                             </div>
                                         </div>
 
                                         <button
                                             type="button"
                                             onClick={() => openAddDialog(f)}
-                                            className="shrink-0 rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm text-[#1C2C64] hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:text-white dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                            className="shrink-0 rounded-full border border-border/70 px-3 py-1.5 text-sm text-foreground transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                                         >
                                             Add
                                         </button>
@@ -727,8 +995,8 @@ export default function TrackMealsPage() {
                                     {excludeAllergens &&
                                     userAllergies.length > 0 ? (
                                         <span className="mt-1 block text-xs opacity-70">
-                                            Try turning off “Exclude my
-                                            allergens”, or clearing the category
+                                            Try turning off "Exclude my
+                                            allergens", or clearing the category
                                             filter.
                                         </span>
                                     ) : null}
@@ -743,9 +1011,9 @@ export default function TrackMealsPage() {
                                 onClick={() =>
                                     setPage((p) => Math.max(1, p - 1))
                                 }
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none disabled:opacity-40 dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-full border border-border/70 px-3 py-1.5 text-sm transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none disabled:opacity-40"
                             >
-                                ← Prev
+                                Previous
                             </button>
 
                             <div className="text-sm opacity-80">
@@ -755,11 +1023,188 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={() => setPage((p) => p + 1)}
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-1.5 text-sm hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-full border border-border/70 px-3 py-1.5 text-sm transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                             >
-                                Next →
+                                Next
                             </button>
                         </div>
+                    </div>
+                </section>
+
+                <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+                    <ProductSection
+                        title="Safe swaps"
+                        description="Suggestions stay filtered around your saved allergies and today&apos;s remaining macros."
+                        contentClassName="space-y-3"
+                    >
+                        {safeRecommendations.length > 0 ? (
+                            safeRecommendations.slice(0, 4).map((food) => (
+                                <button
+                                    key={`swap-${food.id}`}
+                                    type="button"
+                                    onClick={() => openAddDialog(food)}
+                                    className="flex w-full items-start justify-between gap-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-left transition hover:border-secondary/35 hover:bg-card"
+                                >
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles className="size-4 text-secondary" />
+                                            <p className="text-sm font-semibold text-foreground">
+                                                {food.name}
+                                            </p>
+                                        </div>
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            {Math.round(food.calories ?? 0)} kcal, P{' '}
+                                            {Math.round(food.protein_g ?? food.protein ?? 0)}, C{' '}
+                                            {Math.round(food.carbs_g ?? food.carbs ?? 0)}, F{' '}
+                                            {Math.round(food.fat_g ?? food.fat ?? 0)}
+                                        </p>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary">
+                                        Add
+                                        <ArrowRight className="size-3.5" />
+                                    </span>
+                                </button>
+                            ))
+                        ) : (
+                            <ProductEmptyState
+                                title="No safe swap suggestions yet"
+                                description="Recommendations appear here when the planner context and remaining macros are available."
+                            />
+                        )}
+                    </ProductSection>
+
+                    <ProductSection
+                        title="Coach prompt"
+                        description="The next useful follow-up is prepared for you so the coach stays attached to the logging flow."
+                        contentClassName="space-y-4"
+                    >
+                        <div className="rounded-[24px] border border-accent/25 bg-accent/10 p-4 text-sm leading-7 text-foreground">
+                            {coachPrompt}
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-[22px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Selected meal</p>
+                                <p className="mt-3 text-base font-semibold text-foreground">
+                                    {mealTypeLabel}
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {macro(selectedMealTotals.calories)} kcal are already
+                                    logged in this block.
+                                </p>
+                            </div>
+                            <div className="rounded-[22px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Today&apos;s note</p>
+                                <p className="mt-3 text-base font-semibold text-foreground">
+                                    {alignment.label}
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {alignment.copy}
+                                </p>
+                            </div>
+                        </div>
+                    </ProductSection>
+                </section>
+
+                <section className={`mt-6 ${CARD} p-0`}>
+                    <div className="border-b border-border/70 p-3 font-medium">
+                        Meal timeline
+                    </div>
+                    <div className="grid gap-4 p-3 md:grid-cols-2 xl:grid-cols-3">
+                        {mealTimeline.map(({ meal, totals, entries: mealEntries }) => (
+                            <div
+                                key={meal}
+                                className="rounded-[22px] border border-border/70 bg-background/70 p-4"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-sm font-semibold capitalize text-foreground">
+                                            {meal}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {macro(totals.calories)} kcal · P{' '}
+                                            {macro(totals.protein)} · C{' '}
+                                            {macro(totals.carbs)} · F{' '}
+                                            {macro(totals.fat)}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => onPickMealType(meal)}
+                                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 space-y-2">
+                                    {mealEntries.length > 0 ? (
+                                        mealEntries.map((entry) => {
+                                            const approxGrams = Math.round(
+                                                (Number(entry.servings ?? 0) || 0) *
+                                                    (entry.food?.serving_size ?? 0),
+                                            );
+                                            const portionsRaw = Number(entry.servings ?? 0);
+                                            const portions = Number.isInteger(
+                                                portionsRaw,
+                                            )
+                                                ? portionsRaw
+                                                : Math.round(portionsRaw * 10) / 10;
+
+                                            return (
+                                                <div
+                                                    key={entry.id}
+                                                    className="rounded-2xl bg-card px-3 py-3 shadow-sm"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="truncate font-medium text-foreground">
+                                                                {entry.food.name}
+                                                            </div>
+                                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                                {portions} portion
+                                                                {portions === 1 ? '' : 's'} (~
+                                                                {approxGrams}
+                                                                {entry.food.serving_unit})
+                                                            </div>
+                                                            <div className="mt-2 text-xs text-muted-foreground">
+                                                                {Math.round(
+                                                                    entry.food.calories,
+                                                                )}{' '}
+                                                                kcal · P{' '}
+                                                                {Math.round(
+                                                                    entry.food.protein,
+                                                                )}{' '}
+                                                                · C{' '}
+                                                                {Math.round(
+                                                                    entry.food.carbs,
+                                                                )}{' '}
+                                                                · F{' '}
+                                                                {Math.round(
+                                                                    entry.food.fat,
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeEntry(entry.id)
+                                                            }
+                                                            className="shrink-0 rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10 focus:ring-2 focus:ring-red-500/30 focus:outline-none"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="rounded-2xl border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                                            Nothing logged yet for this meal.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </section>
 
@@ -769,14 +1214,14 @@ export default function TrackMealsPage() {
                     className={`mt-6 ${CARD} p-0`}
                 >
                     <div
-                        className="border-b border-[#1C2C64]/10 p-3 font-medium dark:border-white/10"
+                        className="border-b border-border/70 p-3 font-medium"
                         id="entries"
                     >
                         Your entries for {date}
                     </div>
 
                     <div className="p-3">
-                        <ul className="divide-y divide-[#1C2C64]/10 dark:divide-white/10">
+                        <ul className="divide-y divide-border/70">
                             {entries.map((e) => {
                                 const approxGrams = Math.round(
                                     (Number(e.servings ?? 0) || 0) *
@@ -843,7 +1288,7 @@ export default function TrackMealsPage() {
                         onClick={closeAddDialog}
                     />
 
-                    <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#1C2C64]/20 bg-white p-4 text-[#1C2C64] shadow-xl dark:border-white/15 dark:bg-[#0B1020] dark:text-white">
+                    <div className="haye-panel relative z-10 w-full max-w-md rounded-[30px] p-5 text-foreground">
                         <div className="mb-3 flex items-center justify-between gap-2">
                             <div className="text-sm font-medium">
                                 Add to{' '}
@@ -853,7 +1298,7 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={closeAddDialog}
-                                className="rounded-lg border border-[#1C2C64]/20 px-2 py-1 text-xs hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                             >
                                 Close
                             </button>
@@ -871,10 +1316,10 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={() => setAddMode('portion')}
-                                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none ${
+                                className={`rounded-full border px-3 py-2 text-sm focus:ring-2 focus:outline-none ${
                                     addMode === 'portion'
-                                        ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
-                                        : 'border-[#1C2C64]/20 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25'
+                                        ? 'border-secondary/35 bg-secondary/10 focus:ring-ring'
+                                        : 'border-border/70 hover:bg-background focus:ring-ring'
                                 }`}
                             >
                                 Servings
@@ -883,10 +1328,10 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={() => setAddMode('grams')}
-                                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none ${
+                                className={`rounded-full border px-3 py-2 text-sm focus:ring-2 focus:outline-none ${
                                     addMode === 'grams'
-                                        ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
-                                        : 'border-[#1C2C64]/20 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25'
+                                        ? 'border-secondary/35 bg-secondary/10 focus:ring-ring'
+                                        : 'border-border/70 hover:bg-background focus:ring-ring'
                                 }`}
                             >
                                 Grams / mL
@@ -913,7 +1358,7 @@ export default function TrackMealsPage() {
                                     onChange={(e) =>
                                         setPortionCount(Number(e.target.value))
                                     }
-                                    className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                    className="haye-input mt-1"
                                 />
                             </div>
                         ) : (
@@ -938,12 +1383,12 @@ export default function TrackMealsPage() {
                                                 : Number(e.target.value),
                                         )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                    className="haye-input mt-1"
                                 />
                             </div>
                         )}
 
-                        <div className="mb-4 rounded-lg border border-[#1C2C64]/15 p-3 dark:border-white/10">
+                        <div className="mb-4 rounded-[24px] border border-border/70 bg-background/72 p-4">
                             <div className="mb-1 text-xs opacity-75">
                                 Preview
                             </div>
@@ -952,8 +1397,8 @@ export default function TrackMealsPage() {
                                 return (
                                     <div className="text-sm">
                                         ~{pr.grams}
-                                        {selected.serving_unit} · {pr.calories}{' '}
-                                        kcal · P {pr.protein} · C {pr.carbs} · F{' '}
+                                        {selected.serving_unit} / {pr.calories}{' '}
+                                        kcal / P {pr.protein} / C {pr.carbs} / F{' '}
                                         {pr.fat}
                                     </div>
                                 );
@@ -964,7 +1409,7 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={closeAddDialog}
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-2 text-sm hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-full border border-border/70 px-4 py-2 text-sm transition hover:bg-background focus:ring-2 focus:ring-ring focus:outline-none"
                             >
                                 Cancel
                             </button>
@@ -972,7 +1417,7 @@ export default function TrackMealsPage() {
                             <button
                                 type="button"
                                 onClick={confirmAdd}
-                                className="rounded-lg bg-[#1C2C64] px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-[#1C2C64]/40 focus:outline-none dark:bg-white dark:text-[#0B1020] dark:focus:ring-white/30"
+                                className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-95 focus:ring-2 focus:ring-ring focus:outline-none"
                             >
                                 Add to {mealType}
                             </button>
@@ -1043,7 +1488,7 @@ function StatCard({
 
                         <div className="h-2 w-full rounded bg-black/10 dark:bg-white/10">
                             <div
-                                className="h-2 rounded bg-[#1C2C64] dark:bg-white"
+                                className="h-2 rounded bg-primary"
                                 style={{
                                     width: `${basePct}%`,
                                     transition: 'width 250ms ease',

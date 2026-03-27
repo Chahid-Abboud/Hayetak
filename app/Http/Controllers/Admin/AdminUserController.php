@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AdminBulkUpdateUsersRequest;
 use App\Http\Requests\AdminUpdateUserRequest;
 use App\Models\AiConversation;
 use App\Models\AiPlan;
@@ -190,6 +191,112 @@ class AdminUserController extends Controller
         });
 
         return response()->json(['ok' => true]);
+    }
+
+    public function bulkUpdate(AdminBulkUpdateUsersRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $userIds = collect($validated['user_ids'])->unique()->values();
+        $action = $validated['action'];
+        $status = $validated['status'] ?? null;
+        $actorId = $request->user()->id;
+
+        $users = User::query()
+            ->whereIn('id', $userIds->all())
+            ->get()
+            ->keyBy('id');
+
+        $results = collect();
+        $updatedCount = 0;
+
+        DB::transaction(function () use (
+            $actorId,
+            $action,
+            $status,
+            $userIds,
+            $users,
+            &$results,
+            &$updatedCount,
+        ): void {
+            foreach ($userIds as $userId) {
+                /** @var User|null $user */
+                $user = $users->get($userId);
+
+                if (! $user) {
+                    $results->push([
+                        'user_id' => $userId,
+                        'updated' => false,
+                        'reason' => 'missing_user',
+                    ]);
+                    continue;
+                }
+
+                $before = [
+                    'verified' => (bool) $user->verified,
+                    'status' => $user->status,
+                ];
+
+                if ($action === 'verify') {
+                    $user->verified = true;
+                } elseif ($action === 'unverify') {
+                    $user->verified = false;
+                } else {
+                    $user->status = $status;
+                }
+
+                $after = [
+                    'verified' => (bool) $user->verified,
+                    'status' => $user->status,
+                ];
+
+                if ($before === $after) {
+                    $results->push([
+                        'user_id' => $user->id,
+                        'updated' => false,
+                        'reason' => 'no_change',
+                        'before' => $before,
+                        'after' => $after,
+                    ]);
+                    continue;
+                }
+
+                $user->save();
+                $updatedCount++;
+
+                $this->logger->log($actorId, 'admin.user.bulk_update_item', $user, [
+                    'action' => $action,
+                    'before' => $before,
+                    'after' => $after,
+                ]);
+
+                $results->push([
+                    'user_id' => $user->id,
+                    'updated' => true,
+                    'before' => $before,
+                    'after' => $after,
+                ]);
+            }
+
+            $this->logger->log($actorId, 'admin.users.bulk_update', null, [
+                'action' => $action,
+                'status' => $status,
+                'user_ids' => $userIds->all(),
+                'updated_count' => $updatedCount,
+                'skipped_count' => $results->where('updated', false)->count(),
+            ]);
+        });
+
+        return response()->json([
+            'ok' => true,
+            'action' => $action,
+            'status' => $status,
+            'summary' => [
+                'requested_count' => $userIds->count(),
+                'updated_count' => $updatedCount,
+                'skipped_count' => $results->where('updated', false)->count(),
+            ],
+            'results' => $results->values(),
+        ]);
     }
 
     private function detailPayload(User $user): array

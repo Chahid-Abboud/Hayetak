@@ -9,6 +9,7 @@ use App\Models\Appointment;
 use App\Models\User;
 use App\Services\AdminActionLogger;
 use App\Services\ProfessionalAccessService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,15 +24,59 @@ class AppointmentController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
-        $query = Appointment::query()->with(['client', 'professional'])->latest('scheduled_at');
+        $status = trim((string) $request->query('status', ''));
+        $statusesFromArray = collect($request->query('statuses', []))
+            ->filter(fn ($item) => is_string($item) && trim($item) !== '')
+            ->map(fn ($item) => trim($item))
+            ->values();
+        $statusesFromCsv = collect(explode(',', (string) $request->query('statuses_csv', '')))
+            ->map(fn ($item) => trim($item))
+            ->filter()
+            ->values();
+        $allowedStatuses = ['requested', 'accepted', 'declined', 'completed', 'cancelled'];
+        $statuses = $statusesFromArray
+            ->merge($statusesFromCsv)
+            ->merge($status !== '' ? [$status] : [])
+            ->unique()
+            ->filter(fn ($item) => in_array($item, $allowedStatuses, true))
+            ->values();
 
-        if (! $user->isAdmin()) {
-            $query->where(function ($q) use ($user) {
-                $q->where('client_id', $user->id)->orWhere('professional_id', $user->id);
-            });
+        $summaryQuery = Appointment::query();
+        $this->applyVisibilityScope($summaryQuery, $user);
+
+        $statusSummary = [];
+        foreach ($allowedStatuses as $summaryStatus) {
+            $statusSummary[$summaryStatus] = (clone $summaryQuery)
+                ->where('status', $summaryStatus)
+                ->count();
         }
 
-        return AppointmentResource::collection($query->paginate((int) $request->query('per_page', 20)));
+        $query = Appointment::query()
+            ->with(['client', 'professional'])
+            ->latest('scheduled_at');
+        $this->applyVisibilityScope($query, $user);
+
+        if ($statuses->isNotEmpty()) {
+            $query->whereIn('status', $statuses->all());
+        }
+
+        $paginator = $query->paginate((int) $request->query('per_page', 20));
+
+        return AppointmentResource::collection($paginator)->additional([
+            'summary' => [
+                'by_status' => $statusSummary,
+                'upcoming' => (clone $summaryQuery)
+                    ->where('scheduled_at', '>=', now())
+                    ->whereIn('status', ['requested', 'accepted'])
+                    ->count(),
+                'past' => (clone $summaryQuery)
+                    ->where('scheduled_at', '<', now())
+                    ->count(),
+            ],
+            'filters' => [
+                'status' => $statuses->all(),
+            ],
+        ]);
     }
 
     public function store(StoreAppointmentRequest $request): JsonResponse
@@ -83,5 +128,17 @@ class AppointmentController extends Controller
             'ok' => true,
             'appointment' => new AppointmentResource($appointment->load(['client', 'professional'])),
         ]);
+    }
+
+    private function applyVisibilityScope(Builder $query, User $user): void
+    {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        $query->where(function ($scope) use ($user) {
+            $scope->where('client_id', $user->id)
+                ->orWhere('professional_id', $user->id);
+        });
     }
 }

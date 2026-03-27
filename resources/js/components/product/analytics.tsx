@@ -14,12 +14,14 @@ export function MetricRing({
     totalLabel,
     totalValue,
     segments,
+    className,
 }: {
     title: ReactNode;
     description?: ReactNode;
     totalLabel: ReactNode;
     totalValue: ReactNode;
     segments: MetricRingSegment[];
+    className?: string;
 }) {
     const total = Math.max(
         segments.reduce((sum, segment) => sum + segment.value, 0),
@@ -30,7 +32,12 @@ export function MetricRing({
     let offset = 0;
 
     return (
-        <Card className="gap-0 rounded-[24px] border-border/70 bg-card/95 py-0 shadow-sm">
+        <Card
+            className={cn(
+                'gap-0 rounded-[24px] border-border/70 bg-card/95 py-0 shadow-sm',
+                className,
+            )}
+        >
             <CardContent className="space-y-5 px-5 py-5">
                 <div className="space-y-1">
                     <div className="text-base font-semibold text-foreground">
@@ -43,7 +50,7 @@ export function MetricRing({
                     ) : null}
                 </div>
 
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div className="grid gap-5 lg:grid-cols-[minmax(152px,176px)_minmax(0,1fr)] lg:items-center">
                     <div className="relative flex h-36 w-36 items-center justify-center">
                         <svg
                             viewBox="0 0 120 120"
@@ -90,7 +97,7 @@ export function MetricRing({
                         </div>
                     </div>
 
-                    <div className="grid flex-1 gap-3">
+                    <div className="grid gap-3">
                         {segments.map((segment) => {
                             const percentage = Math.round(
                                 (segment.value / total) * 100,
@@ -132,6 +139,7 @@ export function BarListCard({
     title,
     description,
     items,
+    className,
 }: {
     title: ReactNode;
     description?: ReactNode;
@@ -141,11 +149,17 @@ export function BarListCard({
         formattedValue?: string;
         tone?: 'default' | 'accent';
     }>;
+    className?: string;
 }) {
     const maxValue = Math.max(...items.map((item) => item.value), 1);
 
     return (
-        <Card className="gap-0 rounded-[24px] border-border/70 bg-card/95 py-0 shadow-sm">
+        <Card
+            className={cn(
+                'gap-0 rounded-[24px] border-border/70 bg-card/95 py-0 shadow-sm',
+                className,
+            )}
+        >
             <CardContent className="space-y-5 px-5 py-5">
                 <div className="space-y-1">
                     <div className="text-base font-semibold text-foreground">

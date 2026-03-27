@@ -291,6 +291,17 @@ export default function LogPage() {
                   .map((id) => exercisesById.get(id))
                   .filter((x): x is Exercise => !!x)
             : [];
+    const loggedSetCount = Array.isArray(latestLog?.sets) ? latestLog.sets.length : 0;
+    const activeExerciseCount =
+        pickedDayId === 'none'
+            ? freestyleExercises.length
+            : (dayForForm?.exercises?.length ?? 0);
+    const activeModeLabel =
+        pickedDayId === 'none'
+            ? 'Freestyle'
+            : dayForForm
+              ? `Day ${dayForForm.day_index}`
+              : 'Planned';
 
     const showLoggingArea =
         startedLocally &&
@@ -385,7 +396,7 @@ export default function LogPage() {
 
                 {/* Start picker */}
                 {isPickerOpen && (
-                    <section className="rounded-2xl border bg-card p-4 shadow-sm">
+                    <section className="haye-panel rounded-[28px] p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center">
                             <div className="font-medium">
                                 Choose plan day for {fmtDate(today)}:
@@ -437,8 +448,73 @@ export default function LogPage() {
                     </section>
                 )}
 
+                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="haye-panel rounded-[28px] p-4">
+                        <div className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Session state
+                        </div>
+                        <div className="mt-3 text-2xl font-semibold text-foreground">
+                            {startedLocally ? 'Live' : 'Not started'}
+                        </div>
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            Start a plan day or choose freestyle to begin logging.
+                        </div>
+                    </div>
+                    <div className="haye-panel rounded-[28px] p-4">
+                        <div className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Mode
+                        </div>
+                        <div className="mt-3 text-2xl font-semibold text-foreground">
+                            {activeModeLabel}
+                        </div>
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            {pickedDayId === 'none'
+                                ? 'Use the library to build today from scratch.'
+                                : 'Log directly against the plan day shown here.'}
+                        </div>
+                    </div>
+                    <div className="haye-panel rounded-[28px] p-4">
+                        <div className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Exercises ready
+                        </div>
+                        <div className="mt-3 text-2xl font-semibold text-foreground">
+                            {activeExerciseCount}
+                        </div>
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            Visible exercises in the current session.
+                        </div>
+                    </div>
+                    <div className="haye-panel rounded-[28px] p-4">
+                        <div className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Sets logged
+                        </div>
+                        <div className="mt-3 text-2xl font-semibold text-foreground">
+                            {loggedSetCount}
+                        </div>
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            Every saved set updates the session history below.
+                        </div>
+                    </div>
+                    <div className="rounded-[24px] border border-primary/20 bg-primary/10 p-4 shadow-sm">
+                        <div className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                            Finish
+                        </div>
+                        <div className="mt-3 text-sm leading-6 text-foreground">
+                            Save once you have at least one set logged.
+                        </div>
+                        <button
+                            type="button"
+                            disabled={saving}
+                            onClick={saveWorkout}
+                            className="mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
+                        >
+                            {saving ? 'Saving...' : 'Save workout'}
+                        </button>
+                    </div>
+                </section>
+
                 {/* Today row */}
-                <section className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
+                <section className="haye-panel rounded-[32px] space-y-4 p-6">
                     <div className="flex items-center justify-between gap-2">
                         <h2 className="text-lg font-semibold">Today</h2>
                         <div className="text-sm text-muted-foreground">
@@ -474,7 +550,7 @@ export default function LogPage() {
                                                 return (
                                                     <div
                                                         key={ex.id}
-                                                        className="rounded-xl border bg-card p-4"
+                                                        className="haye-panel rounded-[28px] p-4"
                                                     >
                                                         <div className="flex items-start justify-between">
                                                             <div>
@@ -519,6 +595,24 @@ export default function LogPage() {
                                                                     remove
                                                                 </button>
                                                             </div>
+                                                        </div>
+
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                                                                {ex.equipment ?? 'Bodyweight'}
+                                                            </span>
+                                                            <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground capitalize">
+                                                                {ex.primary_muscle}
+                                                            </span>
+                                                            {last ? (
+                                                                <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+                                                                    Last set: {last.weight_kg ?? 'BW'} kg x {last.reps}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                                                                    First set for today
+                                                                </span>
+                                                            )}
                                                         </div>
 
                                                         {/* Inputs */}
@@ -741,7 +835,7 @@ export default function LogPage() {
                                             return (
                                                 <div
                                                     key={ex.id}
-                                                    className="rounded-xl border bg-card p-4"
+                                                    className="haye-panel rounded-[28px] p-4"
                                                 >
                                                     <div className="flex items-start justify-between">
                                                         <div>
@@ -769,6 +863,24 @@ export default function LogPage() {
                                                                 demo
                                                             </a>
                                                         ) : null}
+                                                    </div>
+
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                                                            {ex.equipment ?? 'Bodyweight'}
+                                                        </span>
+                                                        <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground capitalize">
+                                                            {ex.primary_muscle}
+                                                        </span>
+                                                        {last ? (
+                                                            <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+                                                                Last set: {last.weight_kg ?? 'BW'} kg x {last.reps}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                                                                First set for today
+                                                            </span>
+                                                        )}
                                                     </div>
 
                                                     <div className="mt-3 grid grid-cols-[6rem,6rem,auto] items-end gap-2">
@@ -916,7 +1028,7 @@ export default function LogPage() {
                         {/* Right side: freestyle library (when applicable) + tiny hint when using plan */}
                         <aside className="space-y-3">
                             {startedLocally && pickedDayId !== 'none' && (
-                                <div className="rounded-xl border bg-background/60 p-3 text-xs text-muted-foreground">
+                                <div className="rounded-[22px] border border-border/70 bg-background/60 p-3 text-xs text-muted-foreground">
                                     Logging from{' '}
                                     <span className="font-medium">
                                         Day {dayForForm?.day_index}
@@ -932,7 +1044,7 @@ export default function LogPage() {
 
                             {/* Library shown only for freestyle mode */}
                             {startedLocally && pickedDayId === 'none' && (
-                                <div className="rounded-2xl border bg-card shadow-sm">
+                                <div className="haye-panel rounded-[28px]">
                                     <div className="sticky top-[60px] z-10 border-b bg-card p-3">
                                         <div className="flex flex-col gap-3">
                                             <div className="flex items-center gap-2">
@@ -1168,7 +1280,7 @@ export default function LogPage() {
                             )}
 
                             {!startedLocally && (
-                                <div className="rounded-xl border bg-background/60 p-3 text-xs text-muted-foreground">
+                                <div className="rounded-[22px] border border-border/70 bg-background/60 p-3 text-xs text-muted-foreground">
                                     You’ll see the freestyle exercise library
                                     here after you start a workout with “No
                                     plan”.
@@ -1181,3 +1293,4 @@ export default function LogPage() {
         </>
     );
 }
+

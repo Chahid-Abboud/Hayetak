@@ -3,6 +3,7 @@
 namespace App\Services\Ai\Chat;
 
 use App\Models\User;
+use Carbon\Carbon;
 
 class CoachDeterministicResponder
 {
@@ -70,6 +71,10 @@ class CoachDeterministicResponder
 
         if (($classification['deterministic_action'] ?? null) === 'protein_target') {
             return $this->proteinTargetAnswer($context);
+        }
+
+        if (($classification['deterministic_action'] ?? null) === 'meal_summary') {
+            return $this->mealSummaryAnswer($context);
         }
 
         return null;
@@ -142,6 +147,123 @@ class CoachDeterministicResponder
             'mode_label' => 'Personalized',
             'reason' => 'protein_target_calculator',
             'model' => 'coach-calculator',
+        ];
+    }
+
+    private function mealSummaryAnswer(array $context): array
+    {
+        $today = is_array($context['today_summary'] ?? null) ? $context['today_summary'] : [];
+        $targets = is_array($context['plans']['nutrition_targets'] ?? null) ? $context['plans']['nutrition_targets'] : [];
+        $meals = is_array($today['meals'] ?? null) ? $today['meals'] : [];
+        $summaryDate = trim((string) ($today['date'] ?? ''));
+        $summaryLabel = $this->summaryDateLabel($summaryDate);
+        $mealTypes = array_values(array_unique(array_filter(array_map(
+            static fn ($meal) => is_array($meal) ? trim((string) ($meal['meal_type'] ?? '')) : '',
+            $meals,
+        ))));
+
+        $lines = [];
+        $calories = is_numeric($today['calories'] ?? null) ? (int) $today['calories'] : null;
+        $protein = is_numeric($today['protein_g'] ?? null) ? (int) $today['protein_g'] : null;
+        $carbs = is_numeric($today['carbs_g'] ?? null) ? (int) $today['carbs_g'] : null;
+        $fat = is_numeric($today['fat_g'] ?? null) ? (int) $today['fat_g'] : null;
+
+        if (
+            $meals === [] &&
+            (($calories ?? 0) <= 0) &&
+            (($protein ?? 0) <= 0) &&
+            (($carbs ?? 0) <= 0) &&
+            (($fat ?? 0) <= 0)
+        ) {
+            return [
+                'answer' => sprintf(
+                    'I do not see any logged meals for %s yet. Add at least one entry for that date and I can summarize calories, protein, carbs, and fat clearly.',
+                    $summaryLabel,
+                ),
+                'warnings' => ['No meal totals were available for the requested date summary.'],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'missing_today_meals',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        $lines[] = sprintf(
+            '%s you have logged%s%s%s%s.',
+            $summaryLabel,
+            $calories !== null ? " {$calories} kcal" : '',
+            $protein !== null ? ", {$protein} g protein" : '',
+            $carbs !== null ? ", {$carbs} g carbs" : '',
+            $fat !== null ? ", and {$fat} g fat" : ''
+        );
+
+        if ($mealTypes !== []) {
+            $lines[] = 'You have entries for '.implode(', ', $mealTypes).'.';
+        }
+
+        $insights = [];
+        $proteinTarget = is_numeric($targets['protein_g'] ?? null) ? (int) $targets['protein_g'] : null;
+        $calorieTarget = is_numeric($targets['calories'] ?? null) ? (int) $targets['calories'] : null;
+
+        if ($protein !== null && $proteinTarget !== null) {
+            $proteinGap = $proteinTarget - $protein;
+            if ($proteinGap > 20) {
+                $insights[] = sprintf(
+                    'The biggest gap is protein: you are about %d g under your current target.',
+                    $proteinGap,
+                );
+            } elseif ($proteinGap > 0) {
+                $insights[] = sprintf(
+                    'Protein is close but still about %d g under your current target.',
+                    $proteinGap,
+                );
+            } else {
+                $insights[] = 'Protein is in a solid place relative to your current target.';
+            }
+        } elseif ($protein !== null) {
+            $insights[] = 'Protein is visible in your logs, but I do not have an active protein target to compare it against.';
+        }
+
+        if ($calories !== null && $calorieTarget !== null) {
+            $calorieGap = $calorieTarget - $calories;
+            if ($calorieGap > 300) {
+                $insights[] = sprintf(
+                    'Calories are still fairly low for the day, roughly %d kcal below target.',
+                    $calorieGap,
+                );
+            } elseif ($calorieGap < -300) {
+                $insights[] = sprintf(
+                    'Calories are already running about %d kcal above target.',
+                    abs($calorieGap),
+                );
+            } else {
+                $insights[] = 'Calories are fairly close to your current target.';
+            }
+        }
+
+        if ($meals !== []) {
+            $largestMealType = $this->largestLoggedMealType($meals);
+            if ($largestMealType !== null) {
+                $insights[] = sprintf(
+                    'Most of your logged intake is sitting in %s so far.',
+                    $largestMealType,
+                );
+            }
+        }
+
+        if ($insights === []) {
+            $insights[] = 'Your meal log is present, but I need either more food entries or active targets to make a stronger comparison.';
+        }
+
+        $lines[] = implode(' ', array_slice($insights, 0, 3));
+
+        return [
+            'answer' => implode("\n\n", $lines),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'meal_summary',
+            'model' => 'coach-meal-summary',
         ];
     }
 
@@ -657,5 +779,57 @@ class CoachDeterministicResponder
         }
 
         return false;
+    }
+
+    private function largestLoggedMealType(array $meals): ?string
+    {
+        $totals = [];
+
+        foreach ($meals as $meal) {
+            if (! is_array($meal)) {
+                continue;
+            }
+
+            $type = trim((string) ($meal['meal_type'] ?? ''));
+            $servings = is_numeric($meal['servings'] ?? null) ? (float) $meal['servings'] : 0.0;
+
+            if ($type === '') {
+                continue;
+            }
+
+            $totals[$type] = ($totals[$type] ?? 0.0) + max(0.0, $servings);
+        }
+
+        if ($totals === []) {
+            return null;
+        }
+
+        arsort($totals);
+
+        return array_key_first($totals);
+    }
+
+    private function summaryDateLabel(string $date): string
+    {
+        if ($date === '') {
+            return 'For the selected date';
+        }
+
+        try {
+            $day = Carbon::createFromFormat('Y-m-d', $date)->startOfDay();
+            $today = Carbon::today();
+
+            if ($day->equalTo($today)) {
+                return 'Today ('.$date.')';
+            }
+
+            if ($day->equalTo($today->copy()->subDay())) {
+                return 'Yesterday ('.$date.')';
+            }
+        } catch (\Throwable) {
+            // Fall through to absolute date output.
+        }
+
+        return 'For '.$date;
     }
 }

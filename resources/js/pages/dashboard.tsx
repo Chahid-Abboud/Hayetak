@@ -1,7 +1,6 @@
 // resources/js/pages/dashboard.tsx
 import { AdminShell as AdminPageShell } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
-import NavHeader from '@/components/NavHeader';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
 import {
     BarListCard,
@@ -9,6 +8,7 @@ import {
     MetricRing,
     TrendCard,
 } from '@/components/product/analytics';
+import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -54,6 +54,7 @@ type DayLog = {
     items: TodayLogItem[];
 } | null;
 
+type MealType = TodayLogItem['category'];
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type PerMealTotals = Record<
     'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink',
@@ -160,6 +161,7 @@ type HomeProps = {
 
     todayLog?: DayLog;
     latestLog?: DayLog;
+    mealEntryPreviews?: TodayLogItem[] | null;
 
     todayMacros?: {
         date: string;
@@ -216,7 +218,7 @@ function ActionButton({
     type?: 'button' | 'submit';
 }) {
     const base =
-        'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90 active:opacity-100';
+        'inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 active:translate-y-0';
     const styles: React.CSSProperties =
         variant === 'primary'
             ? {
@@ -230,9 +232,9 @@ function ActionButton({
                 }
               : {
                     background:
-                        'color-mix(in oklab, var(--primary) 12%, white)',
-                    color: 'color-mix(in oklab, var(--primary-foreground) 60%, var(--foreground))',
-                    border: '1px solid var(--border)',
+                        'color-mix(in oklab, var(--background) 78%, white)',
+                    color: 'var(--foreground)',
+                    border: '1px solid color-mix(in oklab, var(--border) 82%, transparent)',
                 };
 
     return (
@@ -264,24 +266,27 @@ function CardSection({
         ariaLabelledby ?? title.toLowerCase().replace(/\s+/g, '-');
     return (
         <section
-            className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm"
+            className="haye-panel rounded-[30px] p-6 text-card-foreground"
             aria-labelledby={headingId}
         >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
-                    <h2 id={headingId} className="text-xl font-semibold">
+                    <p className="haye-kicker">Section</p>
+                    <h2 id={headingId} className="mt-2 text-2xl font-semibold tracking-tight">
                         {title}
                     </h2>
                     {description ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                             {description}
                         </p>
                     ) : null}
                 </div>
-                {actions ? <div className="flex gap-3">{actions}</div> : null}
+                {actions ? (
+                    <div className="flex flex-wrap gap-3">{actions}</div>
+                ) : null}
             </div>
 
-            <div className="mt-4">{children}</div>
+            <div className="mt-5">{children}</div>
         </section>
     );
 }
@@ -295,8 +300,10 @@ export default function Home() {
         userProfile,
         water,
         todayLog,
+        latestLog,
         todayMacros,
         mealTotals,
+        mealEntryPreviews,
         nutritionPlan,
         workoutPlan,
     } = usePage<HomeProps>().props;
@@ -359,17 +366,28 @@ export default function Home() {
         return undefined;
     }, [userProfile?.height_cm, userProfile?.weight_kg]);
 
-    // --- Optional day log grouping (kept, even if not currently displayed) ---
-    const logToShow = todayLog ?? null;
-    const grouped: Record<string, TodayLogItem[]> = {
+    const todayISO = new Date().toISOString().slice(0, 10);
+
+    // --- Meal previews for the nutrition board ---
+    const mealPreviewItems =
+        Array.isArray(mealEntryPreviews) && mealEntryPreviews.length > 0
+            ? mealEntryPreviews
+            : todayLog?.items ??
+              (latestLog?.consumed_at === todayISO ? latestLog.items : []);
+
+    const grouped: Record<MealType, TodayLogItem[]> = {
         breakfast: [],
         lunch: [],
         dinner: [],
         snack: [],
         drink: [],
     };
-    if (logToShow?.items?.length) {
-        for (const it of logToShow.items) grouped[it.category].push(it);
+    if (mealPreviewItems.length > 0) {
+        for (const it of mealPreviewItems) {
+            if (it.category in grouped) {
+                grouped[it.category as MealType].push(it);
+            }
+        }
     }
 
     // --- Macro summaries from backend (fallback to zeros) ---
@@ -428,8 +446,6 @@ export default function Home() {
 
     const round = (n: number) => Math.round(n);
 
-    const todayISO = new Date().toISOString().slice(0, 10);
-
     const startTodayWorkout = () => {
         router.post(
             '/workouts/log/start',
@@ -440,6 +456,40 @@ export default function Home() {
             },
         );
     };
+
+    const proteinTarget = profileSafe
+        ? Math.max(110, Math.round(profileSafe.weight_kg * 1.8))
+        : 150;
+    const proteinRemaining = Math.max(0, proteinTarget - round(macros.protein));
+    const completedMealCount = mealOrder.filter(
+        (mealType) => perMeal[mealType].calories > 0,
+    ).length;
+    const loggedItemCount = mealOrder.reduce(
+        (sum, mealType) => sum + grouped[mealType].length,
+        0,
+    );
+    const waterState = water ?? { today_ml: 0, target_ml: 2000 };
+    const waterProgress = Math.min(
+        100,
+        Math.round((waterState.today_ml / Math.max(1, waterState.target_ml)) * 100),
+    );
+    const todayWorkoutDay =
+        workoutPlan?.days?.find((d) => d.day_index === 1) ?? workoutPlan?.days?.[0];
+    const todayNutritionDay =
+        nutritionPlan?.days?.find((d) => d.date === todayISO) ??
+        nutritionPlan?.days?.find((d) => d.day_index === 1) ??
+        nutritionPlan?.days?.[0];
+    const dailyBriefLines = [
+        loggedItemCount === 0
+            ? 'Start with your first meal log so the coach has real context for today.'
+            : `You have logged ${loggedItemCount} item${loggedItemCount === 1 ? '' : 's'} across ${completedMealCount} meal block${completedMealCount === 1 ? '' : 's'}.`,
+        proteinRemaining > 0
+            ? `You are about ${proteinRemaining} g short of your protein target for the day.`
+            : 'Protein is in a good place for today.',
+        waterProgress < 75
+            ? 'Hydration is still behind target, so keep water visible between meals and training.'
+            : 'Hydration is on track so far.',
+    ];
 
     if (userRole === 'admin') {
         return (
@@ -468,39 +518,204 @@ export default function Home() {
                 }
             />
 
-            {/* Skip link for keyboard users */}
-            <a
-                href="#main-content"
-                className={`sr-only rounded-md bg-card px-3 py-2 text-sm font-semibold shadow focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 ${FOCUS_RING}`}
-            >
-                Skip to main content
-            </a>
-
-            <NavHeader />
-
-            <main
-                id="main-content"
-                className="mx-auto max-w-6xl space-y-10 px-6 py-8"
-            >
-                {/* Page heading */}
-                <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            Welcome to Hayetak,{' '}
-                            <span className="capitalize">{displayName}</span>
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {isGuest
-                                ? 'You are browsing as a guest.'
-                                : 'Here’s your personalized dashboard.'}
-                        </p>
-                    </div>
+            <ProductPageShell width="wide" className="space-y-8">
+                <header className="sr-only">
+                    <h1>Hayetak dashboard</h1>
                 </header>
 
-                {/* Macros */}
+                <section className="haye-panel rounded-[40px] px-6 py-7 lg:px-8 lg:py-8">
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+                        <div className="max-w-3xl">
+                            <p className="haye-kicker">Today's command center</p>
+                            <h2
+                                className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
+                                style={{ fontFamily: 'var(--font-display)' }}
+                            >
+                                {isGuest
+                                    ? 'Preview the new Hayetak flow.'
+                                    : `Welcome back, ${displayName}.`}
+                            </h2>
+                            <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
+                                The dashboard now leads with the decisions you
+                                need to make today: what to eat next, whether
+                                training is ready, how hydration is moving, and
+                                what the coach would say before the day gets
+                                noisy.
+                            </p>
+                            <div className="mt-6 space-y-3">
+                                {dailyBriefLines.map((line) => (
+                                    <div
+                                        key={line}
+                                        className="rounded-[24px] border border-border/70 bg-background/76 px-4 py-3 text-sm leading-6 text-foreground"
+                                    >
+                                        {line}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="rounded-[30px] border border-border/70 bg-primary p-5 text-primary-foreground shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold">
+                                            Ready right now
+                                        </p>
+                                        <p className="mt-2 text-sm leading-7 text-primary-foreground/80">
+                                            {proteinRemaining > 0
+                                                ? `Close the day with about ${proteinRemaining} g of protein and keep hydration visible before training.`
+                                                : 'Protein is in a good spot. Use the remaining energy on hydration, recovery, or your planned workout.'}
+                                        </p>
+                                    </div>
+                                    <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase">
+                                        AI brief
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <QuickActionCard
+                                    title="Log meal"
+                                    description="Open today's diary."
+                                    onClick={() => router.visit('/track-meals')}
+                                />
+                                <QuickActionCard
+                                    title="Start lift"
+                                    description="Jump into the live log."
+                                    onClick={startTodayWorkout}
+                                />
+                                <QuickActionCard
+                                    title="Ask coach"
+                                    description="Continue in context."
+                                    onClick={() => router.visit('/coach')}
+                                />
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
+                                    <div className="haye-kicker">Nutrition</div>
+                                    <div className="mt-3 text-2xl font-semibold text-foreground">
+                                        {todayNutritionDay ? 'Ready' : 'Waiting'}
+                                    </div>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        {todayNutritionDay
+                                            ? "Today's meals are mapped and ready to follow."
+                                            : 'Generate or refresh your nutrition plan.'}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
+                                    <div className="haye-kicker">Training</div>
+                                    <div className="mt-3 text-2xl font-semibold text-foreground">
+                                        {todayWorkoutDay ? 'Planned' : 'Freestyle'}
+                                    </div>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        {todayWorkoutDay
+                                            ? `${todayWorkoutDay.exercises.length} exercises queued.`
+                                            : 'No active plan day is loaded yet.'}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
+                                    <div className="haye-kicker">Hydration</div>
+                                    <div className="mt-3 text-2xl font-semibold text-foreground">
+                                        {waterProgress}%
+                                    </div>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        {waterState.today_ml} mL of {waterState.target_ml} mL
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section className="grid gap-6 xl:grid-cols-2">
+                    <CardSection
+                        title="Workout runway"
+                        description="Keep the next training block visible so starting feels easier."
+                        actions={
+                            <ActionButton
+                                variant="secondary"
+                                onClick={startTodayWorkout}
+                            >
+                                Start Workout
+                            </ActionButton>
+                        }
+                    >
+                        {todayWorkoutDay ? (
+                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-semibold text-foreground">
+                                            {todayWorkoutDay.name}
+                                        </div>
+                                        <div className="mt-1 text-xs text-muted-foreground">
+                                            Day {todayWorkoutDay.day_index}
+                                        </div>
+                                    </div>
+                                    <span className="haye-chip">
+                                        {todayWorkoutDay.exercises.length} exercises
+                                    </span>
+                                </div>
+                                <div className="mt-4 space-y-2">
+                                    {todayWorkoutDay.exercises
+                                        .slice(0, 4)
+                                        .map((exercise) => (
+                                            <div
+                                                key={exercise.id}
+                                                className="rounded-[20px] border border-border/60 bg-card px-3 py-2 text-sm shadow-sm"
+                                            >
+                                                {exercise.name}
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                No active workout plan found yet. You can still
+                                start a freestyle workout today.
+                            </p>
+                        )}
+                    </CardSection>
+
+                    <CardSection
+                        title="Coach next step"
+                        description="One clear recommendation beats a long stack of duplicate summaries."
+                    >
+                        <div className="space-y-3 text-sm leading-6 text-muted-foreground">
+                            <p>
+                                Nutrition is{' '}
+                                <span className="font-medium text-foreground">
+                                    {todayNutritionDay ? 'ready to follow' : 'not generated yet'}
+                                </span>
+                                , training is{' '}
+                                <span className="font-medium text-foreground">
+                                    {todayWorkoutDay ? 'ready to log' : 'waiting for your next plan'}
+                                </span>
+                                , and hydration is{' '}
+                                <span className="font-medium text-foreground">
+                                    {waterProgress}% of target
+                                </span>
+                                .
+                            </p>
+                            <div className="rounded-[24px] border border-secondary/20 bg-secondary/10 p-4 text-foreground">
+                                {proteinRemaining > 0
+                                    ? 'Best next move: choose a protein-forward meal before the day gets away from you.'
+                                    : 'Best next move: keep momentum high with hydration or your planned workout.'}
+                            </div>
+                            <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
+                                <p className="haye-kicker">Recovery pulse</p>
+                                <p className="mt-3 text-base font-medium text-foreground">
+                                    {waterState.today_ml} mL logged out of {waterState.target_ml} mL.
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    Keep water visible between meals and training so the rest of the day stays easier to manage.
+                                </p>
+                            </div>
+                        </div>
+                    </CardSection>
+                </section>
                 <CardSection
-                    title="Today’s Macros"
-                    description="A quick summary of your daily intake and per-meal breakdown."
+                    title="Today's nutrition board"
+                    description="Meals, macros, and pacing stay together so today reads like one system instead of scattered widgets."
                     actions={
                         <ActionButton
                             variant="primary"
@@ -509,81 +724,50 @@ export default function Home() {
                             Open Meal Tracker
                         </ActionButton>
                     }
-                    aria-labelledby="todays-macros"
                 >
-                    {/* Totals as a definition list for better semantics */}
-                    <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <Stat
-                            label="Calories"
-                            value={`${round(macros.calories)} kcal`}
-                        />
-                        <Stat
-                            label="Protein"
-                            value={`${round(macros.protein)} g`}
-                        />
-                        <Stat
-                            label="Carbs"
-                            value={`${round(macros.carbs)} g`}
-                        />
-                        <Stat label="Fat" value={`${round(macros.fat)} g`} />
-                    </dl>
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.22fr)_minmax(380px,0.78fr)]">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {mealOrder.map((mealType) => (
+                                <MealMomentCard
+                                    key={mealType}
+                                    title={mealType}
+                                    calories={perMeal[mealType].calories}
+                                    macros={perMeal[mealType]}
+                                    entries={grouped[mealType]}
+                                />
+                            ))}
+                        </div>
 
-                    {/* Per-meal */}
-                    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-                        {(
-                            [
-                                'breakfast',
-                                'lunch',
-                                'dinner',
-                                'snack',
-                                'drink',
-                            ] as const
-                        ).map((mt) => (
-                            <div key={mt} className="rounded-xl border p-3">
-                                <div className="text-sm font-medium capitalize">
-                                    {mt}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {round(perMeal[mt].calories)} kcal · P{' '}
-                                    {round(perMeal[mt].protein)} · C{' '}
-                                    {round(perMeal[mt].carbs)} · F{' '}
-                                    {round(perMeal[mt].fat)}
-                                </div>
-                            </div>
-                        ))}
+                        <div className="grid gap-4 xl:grid-cols-2">
+                            <TrendCard
+                                title="Calorie cadence"
+                                value={`${round(macros.calories)} kcal`}
+                                helper="See how intake builds across your meals today."
+                                points={calorieCadencePoints}
+                            />
+                            <MetricRing
+                                title="Macro balance"
+                                description="Protein, carbs, and fat for the current day."
+                                totalLabel="Total grams"
+                                totalValue={macroSegments
+                                    .reduce((sum, segment) => sum + segment.value, 0)
+                                    .toString()}
+                                segments={macroSegments}
+                                className="xl:col-span-2"
+                            />
+                            <BarListCard
+                                title="Meal distribution"
+                                description="Where today's calories are concentrated."
+                                items={mealDistribution}
+                                className="xl:col-span-2"
+                            />
+                        </div>
                     </div>
                 </CardSection>
-
-                <section
-                    aria-label="Daily insights"
-                    className="grid gap-4 lg:grid-cols-3"
-                >
-                    <TrendCard
-                        title="Calorie cadence"
-                        value={`${round(macros.calories)} kcal`}
-                        helper="See how intake builds across your meals today."
-                        points={calorieCadencePoints}
-                    />
-                    <MetricRing
-                        title="Macro balance"
-                        description="Protein, carbs, and fat for the current day."
-                        totalLabel="Total grams"
-                        totalValue={macroSegments
-                            .reduce((sum, segment) => sum + segment.value, 0)
-                            .toString()}
-                        segments={macroSegments}
-                    />
-                    <BarListCard
-                        title="Meal distribution"
-                        description="Where today’s calories are concentrated."
-                        items={mealDistribution}
-                    />
-                </section>
-
                 {/* Generated Plans */}
                 <CardSection
-                    title="Your Generated Plans"
-                    description="Latest plans created during onboarding. If you don’t see them yet, your queue worker may still be processing."
+                    title="Active plans"
+                    description="Generated plans should feel like part of the command center, not buried references."
                     actions={
                         <>
                             <ActionButton
@@ -604,7 +788,7 @@ export default function Home() {
                 >
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                         {/* Nutrition Plan */}
-                        <div className="rounded-xl border p-4">
+                        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
                             <div className="mb-2 flex items-center justify-between gap-2">
                                 <h3 className="text-sm font-semibold">
                                     Nutrition Plan
@@ -614,7 +798,7 @@ export default function Home() {
                                         ? 'Active'
                                         : nutritionPlan
                                           ? 'Inactive'
-                                          : '—'}
+                                          : 'Ã¢â‚¬â€'}
                                 </span>
                             </div>
 
@@ -648,7 +832,7 @@ export default function Home() {
                         </div>
 
                         {/* Workout Plan */}
-                        <div className="rounded-xl border p-4">
+                        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
                             <div className="mb-2 flex items-center justify-between gap-2">
                                 <h3 className="text-sm font-semibold">
                                     Workout Plan
@@ -658,7 +842,7 @@ export default function Home() {
                                         ? 'Active'
                                         : workoutPlan
                                           ? 'Inactive'
-                                          : '—'}
+                                          : 'Ã¢â‚¬â€'}
                                 </span>
                             </div>
 
@@ -686,15 +870,17 @@ export default function Home() {
                     aria-label="Health stats"
                     className="grid grid-cols-1 gap-6 md:grid-cols-2"
                 >
-                    <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
-                        <h2 className="text-lg font-semibold">BMI</h2>
+                    <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
+                        <p className="haye-kicker">Body metrics</p>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">BMI</h2>
                         <div className="mt-4">
                             <BmiCard isGuest={isGuest} profile={profileSafe} />
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-sm">
-                        <h2 className="text-lg font-semibold">Water Intake</h2>
+                    <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
+                        <p className="haye-kicker">Recovery</p>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">Water intake</h2>
                         <div className="mt-4">
                             <WaterCard
                                 isGuest={isGuest}
@@ -715,15 +901,15 @@ export default function Home() {
 
                 {/* Workouts */}
                 <CardSection
-                    title="Log Workouts"
-                    description="Start a session, then record sets & reps. See weekly progress by muscle group."
+                    title="Training momentum"
+                    description="Progress should feel encouraging, readable, and close to the workout flow."
                     actions={
                         <>
                             <ActionButton
                                 variant="primary"
                                 onClick={startTodayWorkout}
                             >
-                                Start Today’s Workout
+                                Start TodayÃ¢â‚¬â„¢s Workout
                             </ActionButton>
                             <ActionButton
                                 variant="secondary"
@@ -757,7 +943,7 @@ export default function Home() {
                         </div>
                     </div>
                 </CardSection>
-            </main>
+            </ProductPageShell>
         </>
     );
 }
@@ -1136,16 +1322,94 @@ function QuickLinkCard({
     );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function QuickActionCard({
+    title,
+    description,
+    onClick,
+}: {
+    title: string;
+    description: string;
+    onClick: () => void;
+}) {
     return (
-        <div className="rounded-xl border p-4">
-            <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                {label}
-            </dt>
-            <dd className="text-lg font-semibold">{value}</dd>
+        <button
+            type="button"
+            onClick={onClick}
+            className="rounded-[26px] border border-border/70 bg-background/78 p-4 text-left shadow-[0_18px_40px_-32px_rgba(15,23,42,0.72)] transition hover:-translate-y-0.5 hover:border-secondary/35 hover:bg-card"
+        >
+            <div className="haye-kicker">Quick action</div>
+            <div className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                {title}
+            </div>
+            <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                {description}
+            </div>
+        </button>
+    );
+}
+
+function MealMomentCard({
+    title,
+    calories,
+    macros,
+    entries,
+}: {
+    title: string;
+    calories: number;
+    macros: Totals;
+    entries: TodayLogItem[];
+}) {
+    return (
+        <div className="rounded-[26px] border border-border/70 bg-background/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="haye-kicker">Meal block</div>
+                    <div className="mt-2 text-base font-semibold capitalize text-foreground">
+                        {title}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                        {Math.round(calories)} kcal
+                    </div>
+                </div>
+                <div className="inline-flex max-w-full rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                    P {Math.round(macros.protein)} / C {Math.round(macros.carbs)} / F{' '}
+                    {Math.round(macros.fat)}
+                </div>
+            </div>
+            <div className="mt-4 space-y-2">
+                {entries.length > 0 ? (
+                    entries.slice(0, 3).map((entry, index) => (
+                        <div
+                            key={`${title}-${entry.label}-${index}`}
+                            className="rounded-[20px] border border-border/60 bg-card px-3 py-2 text-sm text-foreground shadow-sm"
+                        >
+                            <span className="line-clamp-1">
+                                {entry.label}
+                                {typeof entry.quantity === 'number' &&
+                                entry.quantity > 0
+                                    ? ` · ${Number.isInteger(entry.quantity) ? entry.quantity : entry.quantity.toFixed(1)}${entry.unit ? ` ${entry.unit}` : ''}`
+                                    : ''}
+                            </span>
+                        </div>
+                    ))
+                ) : calories > 0 ||
+                  macros.protein > 0 ||
+                  macros.carbs > 0 ||
+                  macros.fat > 0 ? (
+                    <div className="rounded-[20px] border border-border/60 bg-card px-3 py-3 text-sm text-muted-foreground shadow-sm">
+                        Logged in today&apos;s totals. Open Meal Tracker for
+                        full item detail.
+                    </div>
+                ) : (
+                    <div className="rounded-[20px] border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+                        Nothing logged yet.
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
+
 
 function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -1160,7 +1424,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? '—'} · Start: {plan.start_date} ·
+                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1209,7 +1473,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                                                             : it.servings !=
                                                                 null
                                                               ? `${it.servings} serving(s)`
-                                                              : '—';
+                                                              : 'Ã¢â‚¬â€';
                                                     return (
                                                         <li
                                                             key={it.id}
@@ -1249,7 +1513,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? '—'} · Start: {plan.start_date} ·
+                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1285,7 +1549,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                               ? `${rmin}`
                                               : rmax != null
                                                 ? `${rmax}`
-                                                : '—';
+                                                : 'Ã¢â‚¬â€';
 
                                     return (
                                         <li
@@ -1297,7 +1561,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     {ex.name}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground tabular-nums">
-                                                    {sets} sets · {repText} reps
+                                                    {sets} sets Ã‚Â· {repText} reps
                                                 </div>
                                             </div>
 
@@ -1306,10 +1570,10 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     ? `Primary: ${ex.primary_muscle}`
                                                     : ''}
                                                 {ex.equipment
-                                                    ? ` · Equipment: ${ex.equipment}`
+                                                    ? ` Ã‚Â· Equipment: ${ex.equipment}`
                                                     : ''}
                                                 {ex.difficulty
-                                                    ? ` · ${ex.difficulty}`
+                                                    ? ` Ã‚Â· ${ex.difficulty}`
                                                     : ''}
                                             </div>
                                         </li>
@@ -1324,7 +1588,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
                     {(day1.exercises ?? []).length > 8 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Showing first 8 exercises… open Planner to view the
+                            Showing first 8 exercisesÃ¢â‚¬Â¦ open Planner to view the
                             full day.
                         </p>
                     ) : null}
@@ -1422,7 +1686,7 @@ function ProgressMini() {
                                     >
                                         {typeof row[m] === 'number'
                                             ? `${row[m]} kg`
-                                            : '—'}
+                                            : 'Ã¢â‚¬â€'}
                                     </td>
                                 ))}
                             </tr>
@@ -1483,7 +1747,7 @@ function MotivationBox() {
     if (!motivation) {
         return (
             <p className="text-sm text-muted-foreground">
-                Keep logging to see weekly wins ✨
+                Keep logging to see weekly wins Ã¢Å“Â¨
             </p>
         );
     }

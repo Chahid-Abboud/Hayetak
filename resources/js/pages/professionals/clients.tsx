@@ -1,11 +1,14 @@
 import {
     ProductBanner,
+    ProductFilterRow,
     ProductHero,
     ProductPageShell,
 } from '@/components/product/page';
+import { Input } from '@/components/ui/input';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 type ProgressPoint = {
     date: string;
@@ -108,6 +111,8 @@ type MealNoteDialogState = {
     substituteError: string | null;
 };
 
+type ClientFilter = 'all' | 'attention' | 'stable';
+
 function getCsrfToken() {
     return (
         (
@@ -199,6 +204,49 @@ function hasAnyLoggedMeals(days: WeeklyMealDay[]) {
     return days.some((day) => getMealChoicesForDay(day).length > 0);
 }
 
+function countLoggedMeals(days: WeeklyMealDay[]) {
+    return days.reduce((total, day) => {
+        return (
+            total +
+            day.meals.reduce((mealTotal, meal) => mealTotal + meal.items.length, 0)
+        );
+    }, 0);
+}
+
+function getAttentionState(
+    client: ClientCard,
+    roleMode: 'trainer' | 'nutritionist',
+) {
+    if (roleMode === 'trainer') {
+        const sessions = client.training?.summary.logged_sessions ?? 0;
+        if (sessions <= 1) {
+            return { label: 'Needs follow-up', tone: 'attention' as const };
+        }
+        if (sessions <= 3) {
+            return { label: 'Monitor this week', tone: 'monitor' as const };
+        }
+
+        return { label: 'Stable adherence', tone: 'stable' as const };
+    }
+
+    const meals = countLoggedMeals(client.nutrition?.weekly_days ?? []);
+    if (meals < 6) {
+        return { label: 'Low meal logging', tone: 'attention' as const };
+    }
+    if (meals < 12) {
+        return { label: 'Medium adherence', tone: 'monitor' as const };
+    }
+
+    return { label: 'Stable adherence', tone: 'stable' as const };
+}
+
+function isAttentionClient(
+    client: ClientCard,
+    roleMode: 'trainer' | 'nutritionist',
+) {
+    return getAttentionState(client, roleMode).tone === 'attention';
+}
+
 async function ensureConversation(participantId: number) {
     const response = await fetch('/api/messages/conversations', {
         method: 'POST',
@@ -262,6 +310,11 @@ export default function ProfessionalClientsPage() {
         kind: 'error' | 'success';
         text: string;
     } | null>(null);
+    const [query, setQuery] = useState('');
+    const [filter, setFilter] = useState<ClientFilter>('all');
+    const [activeClientId, setActiveClientId] = useState<number | null>(
+        clients[0]?.client.id ?? null,
+    );
     const [appointmentDialog, setAppointmentDialog] =
         useState<AppointmentDialogState | null>(null);
     const [mealNoteDialog, setMealNoteDialog] =
@@ -275,6 +328,50 @@ export default function ProfessionalClientsPage() {
               mealNoteDialog.selectedEntryId,
           ).choice?.mealType ?? null)
         : null;
+
+    const filteredClients = useMemo(() => {
+        const normalized = query.trim().toLowerCase();
+
+        return clients.filter((entry) => {
+            const searchMatch =
+                normalized === '' ||
+                entry.client.name.toLowerCase().includes(normalized) ||
+                entry.client.email.toLowerCase().includes(normalized) ||
+                (entry.client.username ?? '').toLowerCase().includes(normalized);
+
+            if (!searchMatch) {
+                return false;
+            }
+
+            if (filter === 'attention') {
+                return isAttentionClient(entry, roleMode);
+            }
+
+            if (filter === 'stable') {
+                return !isAttentionClient(entry, roleMode);
+            }
+
+            return true;
+        });
+    }, [clients, filter, query, roleMode]);
+
+    useEffect(() => {
+        if (
+            activeClientId &&
+            filteredClients.some((entry) => entry.client.id === activeClientId)
+        ) {
+            return;
+        }
+
+        setActiveClientId(filteredClients[0]?.client.id ?? null);
+    }, [activeClientId, filteredClients]);
+
+    const activeEntry = useMemo(
+        () =>
+            filteredClients.find((entry) => entry.client.id === activeClientId) ??
+            null,
+        [activeClientId, filteredClients],
+    );
 
     async function openConversation(clientId: number) {
         setBusyClientId(clientId);
@@ -566,9 +663,18 @@ export default function ProfessionalClientsPage() {
                     title={pageTitle}
                     description={`Private client view for your assigned ${roleMode === 'nutritionist' ? 'nutrition' : 'training'} clients.`}
                     actions={
-                        <div className="rounded-full border bg-card px-4 py-2 text-sm text-muted-foreground">
-                            {clients.length} client
-                            {clients.length === 1 ? '' : 's'}
+                        <div className="space-y-1 rounded-2xl border bg-card px-4 py-2 text-xs text-muted-foreground">
+                            <div>
+                                {filteredClients.length} in view
+                            </div>
+                            <div>
+                                {
+                                    filteredClients.filter((entry) =>
+                                        isAttentionClient(entry, roleMode),
+                                    ).length
+                                }{' '}
+                                need follow-up
+                            </div>
                         </div>
                     }
                 />
@@ -586,12 +692,113 @@ export default function ProfessionalClientsPage() {
                         No assigned clients found yet.
                     </div>
                 ) : (
-                    <div className="space-y-5">
-                        {clients.map((entry) => (
-                            <section
-                                key={entry.assignment_id}
-                                className="rounded-3xl border bg-card p-5 shadow-sm"
-                            >
+                    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+                        <aside className="rounded-3xl border bg-card p-4 shadow-sm">
+                            <div className="space-y-4">
+                                <ProductFilterRow>
+                                    <label className="relative min-w-0 flex-1">
+                                        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            value={query}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
+                                            className="h-10 rounded-2xl pl-9"
+                                            placeholder="Search clients"
+                                        />
+                                    </label>
+                                </ProductFilterRow>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {(['all', 'attention', 'stable'] as ClientFilter[]).map(
+                                        (item) => (
+                                            <button
+                                                key={item}
+                                                type="button"
+                                                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                                                    filter === item
+                                                        ? 'border-primary/35 bg-primary/10 text-foreground'
+                                                        : 'border-border/70 bg-background text-muted-foreground hover:bg-muted/40'
+                                                }`}
+                                                onClick={() => setFilter(item)}
+                                            >
+                                                {item === 'all'
+                                                    ? 'All'
+                                                    : item === 'attention'
+                                                      ? 'Needs follow-up'
+                                                      : 'Stable'}
+                                            </button>
+                                        ),
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    {filteredClients.length === 0 ? (
+                                        <p className="rounded-2xl border border-dashed border-border/70 px-3 py-6 text-center text-sm text-muted-foreground">
+                                            No matching clients for this filter.
+                                        </p>
+                                    ) : (
+                                        filteredClients.map((entry) => {
+                                            const state = getAttentionState(
+                                                entry,
+                                                roleMode,
+                                            );
+
+                                            return (
+                                                <button
+                                                    key={`client-select-${entry.assignment_id}`}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setActiveClientId(
+                                                            entry.client.id,
+                                                        )
+                                                    }
+                                                    className={`w-full rounded-2xl border p-3 text-left transition ${
+                                                        activeClientId ===
+                                                        entry.client.id
+                                                            ? 'border-primary/35 bg-primary/10'
+                                                            : 'border-border/70 bg-background/70 hover:bg-muted/35'
+                                                    }`}
+                                                >
+                                                    <div className="truncate text-sm font-medium text-foreground">
+                                                        {entry.client.name}
+                                                    </div>
+                                                    <div className="truncate text-xs text-muted-foreground">
+                                                        {entry.client.email}
+                                                    </div>
+                                                    <div
+                                                        className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                                            state.tone ===
+                                                            'attention'
+                                                                ? 'bg-destructive/10 text-foreground'
+                                                                : state.tone ===
+                                                                    'monitor'
+                                                                  ? 'bg-warning/10 text-foreground'
+                                                                  : 'bg-success/10 text-foreground'
+                                                        }`}
+                                                    >
+                                                        {state.label}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </aside>
+
+                        <div className="space-y-5">
+                            {filteredClients.length === 0 ? (
+                                <div className="rounded-3xl border border-dashed border-border/70 bg-card p-8 text-sm text-muted-foreground">
+                                    No clients match this filter.
+                                </div>
+                            ) : (
+                                (activeEntry ? [activeEntry] : filteredClients).map(
+                                    (entry) => (
+                                        <section
+                                            key={entry.assignment_id}
+                                            className="rounded-3xl border bg-card p-5 shadow-sm"
+                                        >
                                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-3">
@@ -905,7 +1112,9 @@ export default function ProfessionalClientsPage() {
                                     )}
                                 </div>
                             </section>
-                        ))}
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </ProductPageShell>
@@ -921,7 +1130,7 @@ export default function ProfessionalClientsPage() {
                         onClick={() => setAppointmentDialog(null)}
                     />
 
-                    <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#1C2C64]/20 bg-white p-4 text-[#1C2C64] shadow-xl dark:border-white/15 dark:bg-[#0B1020] dark:text-white">
+                    <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card dark:text-white">
                         <div className="mb-3 flex items-center justify-between gap-2">
                             <div className="text-sm font-medium">
                                 Send appointment
@@ -930,7 +1139,7 @@ export default function ProfessionalClientsPage() {
                             <button
                                 type="button"
                                 onClick={() => setAppointmentDialog(null)}
-                                className="rounded-lg border border-[#1C2C64]/20 px-2 py-1 text-xs hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
                             >
                                 Close
                             </button>
@@ -967,7 +1176,7 @@ export default function ProfessionalClientsPage() {
                                                 : null,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                    className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                     placeholder="Weekly check-in"
                                 />
                             </div>
@@ -993,7 +1202,7 @@ export default function ProfessionalClientsPage() {
                                                 : null,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                    className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                 />
                             </div>
 
@@ -1019,7 +1228,7 @@ export default function ProfessionalClientsPage() {
                                                 : null,
                                         )
                                     }
-                                    className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                    className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                     placeholder="Online link or in-person location"
                                 />
                             </div>
@@ -1029,7 +1238,7 @@ export default function ProfessionalClientsPage() {
                             <button
                                 type="button"
                                 onClick={() => setAppointmentDialog(null)}
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-2 text-sm hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
                             >
                                 Cancel
                             </button>
@@ -1040,7 +1249,7 @@ export default function ProfessionalClientsPage() {
                                 disabled={
                                     busyClientId === appointmentDialog.client.id
                                 }
-                                className="rounded-lg bg-[#1C2C64] px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-[#1C2C64]/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#0B1020] dark:focus:ring-white/30"
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
                             >
                                 Send appointment
                             </button>
@@ -1060,7 +1269,7 @@ export default function ProfessionalClientsPage() {
                         onClick={() => setMealNoteDialog(null)}
                     />
 
-                    <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-[#1C2C64]/20 bg-white p-4 text-[#1C2C64] shadow-xl dark:border-white/15 dark:bg-[#0B1020] dark:text-white">
+                    <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card dark:text-white">
                         <div className="mb-3 flex items-center justify-between gap-2">
                             <div className="text-sm font-medium">
                                 Send meal note
@@ -1069,7 +1278,7 @@ export default function ProfessionalClientsPage() {
                             <button
                                 type="button"
                                 onClick={() => setMealNoteDialog(null)}
-                                className="rounded-lg border border-[#1C2C64]/20 px-2 py-1 text-xs hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
                             >
                                 Close
                             </button>
@@ -1086,7 +1295,7 @@ export default function ProfessionalClientsPage() {
                         </div>
 
                         {!hasAnyLoggedMeals(mealNoteDialog.weeklyDays) ? (
-                            <div className="rounded-lg border border-[#1C2C64]/15 p-4 text-sm opacity-80 dark:border-white/10">
+                            <div className="rounded-lg border border-border/70 p-4 text-sm opacity-80 dark:border-white/10">
                                 This client has no logged meals in the last 7
                                 days.
                             </div>
@@ -1128,7 +1337,7 @@ export default function ProfessionalClientsPage() {
                                                     : null,
                                             );
                                         }}
-                                        className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                     >
                                         {mealNoteDialog.weeklyDays.map(
                                             (day) => (
@@ -1149,7 +1358,7 @@ export default function ProfessionalClientsPage() {
                                     </div>
 
                                     {mealNoteSelection?.choices.length ? (
-                                        <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-[#1C2C64]/15 p-2 dark:border-white/10">
+                                        <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-border/70 p-2 dark:border-white/10">
                                             {mealNoteSelection.choices.map(
                                                 (choice) => (
                                                     <button
@@ -1174,8 +1383,8 @@ export default function ProfessionalClientsPage() {
                                                         className={`w-full rounded-lg border px-3 py-3 text-left transition focus:ring-2 focus:outline-none ${
                                                             mealNoteDialog.selectedEntryId ===
                                                             choice.entryId
-                                                                ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
-                                                                : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
+                                                                ? 'border-primary/60 bg-primary/5 focus:ring-ring/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
+                                                                : 'border-border/70 hover:bg-primary/5 focus:ring-ring/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
                                                         }`}
                                                     >
                                                         <div className="flex items-center justify-between gap-3">
@@ -1204,7 +1413,7 @@ export default function ProfessionalClientsPage() {
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="rounded-lg border border-dashed border-[#1C2C64]/20 p-3 text-sm opacity-80 dark:border-white/15">
+                                        <div className="rounded-lg border border-dashed border-border p-3 text-sm opacity-80 dark:border-white/15">
                                             No meals were logged for this day.
                                         </div>
                                     )}
@@ -1233,12 +1442,12 @@ export default function ProfessionalClientsPage() {
                                             )
                                         }
                                         rows={4}
-                                        className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                         placeholder="Explain the concern and what you want the client to change."
                                     />
                                 </div>
 
-                                <div className="rounded-lg border border-[#1C2C64]/15 p-3 dark:border-white/10">
+                                <div className="rounded-lg border border-border/70 p-3 dark:border-white/10">
                                     <div className="mb-2 text-sm font-medium">
                                         Optional substitute
                                     </div>
@@ -1265,12 +1474,12 @@ export default function ProfessionalClientsPage() {
                                                     : null,
                                             )
                                         }
-                                        className="mt-1 w-full rounded-lg border border-[#1C2C64]/20 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-[#1C2C64]/30 dark:border-white/15 dark:bg-[#0B1020] dark:text-white dark:focus:ring-white/25"
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white dark:focus:ring-white/25"
                                         placeholder="Search substitute options"
                                     />
 
                                     {mealNoteDialog.substitute ? (
-                                        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#1C2C64]/15 bg-[#1C2C64]/5 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/10">
+                                        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-primary/5 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/10">
                                             <div>
                                                 Selected:{' '}
                                                 {mealNoteDialog.substitute.name}
@@ -1289,7 +1498,7 @@ export default function ProfessionalClientsPage() {
                                                                 : null,
                                                     )
                                                 }
-                                                className="rounded-lg border border-[#1C2C64]/20 px-2 py-1 text-xs hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                                className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
                                             >
                                                 Clear
                                             </button>
@@ -1334,8 +1543,8 @@ export default function ProfessionalClientsPage() {
                                                             mealNoteDialog
                                                                 .substitute
                                                                 ?.id === item.id
-                                                                ? 'border-[#1C2C64]/60 bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
-                                                                : 'border-[#1C2C64]/15 hover:bg-[#1C2C64]/5 focus:ring-[#1C2C64]/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
+                                                                ? 'border-primary/60 bg-primary/5 focus:ring-ring/30 dark:border-white/40 dark:bg-white/10 dark:focus:ring-white/25'
+                                                                : 'border-border/70 hover:bg-primary/5 focus:ring-ring/30 dark:border-white/10 dark:hover:bg-white/10 dark:focus:ring-white/25'
                                                         }`}
                                                     >
                                                         <div className="font-medium">
@@ -1370,7 +1579,7 @@ export default function ProfessionalClientsPage() {
                             <button
                                 type="button"
                                 onClick={() => setMealNoteDialog(null)}
-                                className="rounded-lg border border-[#1C2C64]/20 px-3 py-2 text-sm hover:bg-[#1C2C64]/5 focus:ring-2 focus:ring-[#1C2C64]/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
                             >
                                 Cancel
                             </button>
@@ -1384,7 +1593,7 @@ export default function ProfessionalClientsPage() {
                                         mealNoteDialog.weeklyDays,
                                     )
                                 }
-                                className="rounded-lg bg-[#1C2C64] px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-[#1C2C64]/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#0B1020] dark:focus:ring-white/30"
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
                             >
                                 Send meal note
                             </button>
@@ -1395,3 +1604,5 @@ export default function ProfessionalClientsPage() {
         </>
     );
 }
+
+

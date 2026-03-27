@@ -7,8 +7,10 @@ class ChatIntentClassifier
     public function classify(string $message, array $runtimeContext = []): array
     {
         $text = mb_strtolower(trim(preg_replace('/\s+/', ' ', $message) ?? ''));
+        $requestedDayOffset = $this->detectRequestedDayOffset($text);
         $isMealRequest = $this->containsAny($text, [
             'meal',
+            'meals',
             'breakfast',
             'lunch',
             'dinner',
@@ -30,22 +32,27 @@ class ChatIntentClassifier
             'include_last_7_days' => (bool) ($runtimeContext['include_last_7_days'] ?? false),
             'include_nearby' => false,
             'prefer_hybrid_profile' => false,
+            'requested_day_offset' => $requestedDayOffset,
         ];
 
         if ($this->isLikelyOutOfDomain($text)) {
-            $scope = 'out_of_domain';
-            $intent = 'out_of_domain';
-            $feature = 'out_of_scope';
+            return [
+                'intent' => 'out_of_domain',
+                'feature' => 'out_of_scope',
+                'scope' => 'out_of_domain',
+                'deterministic_action' => null,
+                'context_flags' => $flags,
+            ];
         }
 
-        if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'macro', 'meal', 'breakfast', 'lunch', 'dinner', 'snack', 'food', 'eat', 'recipe', 'nutrition'])) {
+        if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'macro', 'meal', 'meals', 'breakfast', 'lunch', 'dinner', 'snack', 'food', 'eat', 'recipe', 'nutrition', 'plate', 'fiber', 'fibre'])) {
             $intent = 'nutrition_help';
             $feature = 'nutrition';
             $flags['include_last_7_days'] = true;
             $flags['prefer_hybrid_profile'] = true;
         }
 
-        if ($this->containsAny($text, ['workout', 'exercise', 'train', 'gym', 'cardio', 'sets', 'reps', 'legs', 'push', 'pull', 'session'])) {
+        if (! $isMealRequest && $this->containsAny($text, ['workout', 'exercise', 'train', 'gym', 'cardio', 'sets', 'reps', 'legs', 'push', 'pull', 'session'])) {
             $intent = 'workout_help';
             $feature = 'workout';
             $flags['include_last_7_days'] = true;
@@ -75,7 +82,7 @@ class ChatIntentClassifier
             $feature = 'communication';
         }
 
-        if ($this->containsAny($text, ['password', 'theme', 'appearance', 'profile', 'settings', 'two factor', '2fa', 'authenticator', 'not showing', 'dashboard', 'sync', 'loading', 'stale', 'app'])) {
+        if (! $isMealRequest && $this->containsAny($text, ['password', 'theme', 'appearance', 'profile', 'settings', 'two factor', '2fa', 'authenticator', 'not showing', 'dashboard', 'sync', 'loading', 'stale', 'app'])) {
             $intent = 'settings_help';
             $feature = 'settings';
         }
@@ -86,7 +93,7 @@ class ChatIntentClassifier
         }
 
         if (
-            $this->containsAny($text, ['allerg', 'restriction', 'diet type', 'medical condition', 'injur']) &&
+            $this->containsAny($text, ['allergy', 'allergies', 'restriction', 'restrictions', 'diet type', 'medical condition', 'medical conditions', 'injury', 'injuries']) &&
             ! $isMealRequest
         ) {
             $deterministicAction = 'restriction_summary';
@@ -97,10 +104,19 @@ class ChatIntentClassifier
 
         if (
             $this->containsAny($text, ['protein']) &&
-            $this->containsAny($text, ['target', 'intake', 'how much', 'recalculate', 'suggest', 'grams'])
+            $this->containsAny($text, ['target', 'intake', 'how much', 'recalculate', 'suggest', 'grams']) &&
+            ! $this->containsAny($text, ['people generally', 'generally'])
         ) {
             $deterministicAction = 'protein_target';
             $intent = 'protein_target_help';
+            $feature = 'nutrition';
+            $flags['include_last_7_days'] = true;
+            $flags['prefer_hybrid_profile'] = true;
+        }
+
+        if ($this->isMealSummaryQuestion($text)) {
+            $deterministicAction = 'meal_summary';
+            $intent = 'meal_summary_help';
             $feature = 'nutrition';
             $flags['include_last_7_days'] = true;
             $flags['prefer_hybrid_profile'] = true;
@@ -118,7 +134,13 @@ class ChatIntentClassifier
     private function containsAny(string $haystack, array $needles): bool
     {
         foreach ($needles as $needle) {
-            if ($needle !== '' && str_contains($haystack, $needle)) {
+            $candidate = trim((string) $needle);
+
+            if ($candidate === '') {
+                continue;
+            }
+
+            if (preg_match('/(^|[^[:alnum:]_])'.preg_quote($candidate, '/').'([^[:alnum:]_]|$)/u', $haystack) === 1) {
                 return true;
             }
         }
@@ -146,15 +168,79 @@ class ChatIntentClassifier
             'movie',
             'song',
             'lyrics',
+            'poem',
+            'resume',
+            'quantum',
+            'physics',
             'capital of',
             'translate',
+            'world history',
+            'news today',
+            'football game',
             'history of',
             'programming',
             'code this',
+            'code a website',
         ])) {
             return true;
         }
 
         return false;
+    }
+
+    private function isMealSummaryQuestion(string $text): bool
+    {
+        $hasMealSignal = $this->containsAny($text, [
+            'meal',
+            'meals',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'snack',
+            'food',
+            'ate',
+            'logged',
+        ]);
+
+        if (! $hasMealSignal) {
+            return false;
+        }
+
+        if (
+            $this->containsAny($text, ['what about']) &&
+            $this->containsAny($text, ['today', 'yesterday', 'last night'])
+        ) {
+            return true;
+        }
+
+        return $this->containsAny($text, [
+            'what stands out',
+            'stands out',
+            'summary',
+            'summarize',
+            'look like so far',
+            'how am i doing',
+            'how did i do',
+            'review',
+            'analyze',
+            'analysis',
+        ]);
+    }
+
+    private function detectRequestedDayOffset(string $text): ?int
+    {
+        if ($this->containsAny($text, ['yesterday', 'last night'])) {
+            return -1;
+        }
+
+        if ($this->containsAny($text, ['today', 'so far', 'this morning', 'this afternoon', 'tonight'])) {
+            return 0;
+        }
+
+        if ($this->containsAny($text, ['tomorrow'])) {
+            return 1;
+        }
+
+        return null;
     }
 }
