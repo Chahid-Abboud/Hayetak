@@ -12,6 +12,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { HoverPreview } from '@/components/ui/hover-preview';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { jsonRequestInit } from '@/lib/http';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -102,6 +112,7 @@ export default function Places() {
     const [results, setResults] = useState<Place[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
     const [center, setCenter] = useState<{ lat: number; lon: number } | null>(
         null,
@@ -327,7 +338,99 @@ export default function Places() {
                     <ProductBanner tone="danger">{error}</ProductBanner>
                 ) : null}
 
-                <div className="mb-4 flex flex-wrap items-end gap-4 md:flex-nowrap">
+                <div className="md:hidden">
+                    <Sheet
+                        open={filterSheetOpen}
+                        onOpenChange={setFilterSheetOpen}
+                    >
+                        <SheetTrigger asChild>
+                            <button
+                                type="button"
+                                className="inline-flex h-11 items-center rounded-2xl border border-border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted"
+                            >
+                                Refine Nearby Results
+                            </button>
+                        </SheetTrigger>
+                        <SheetContent
+                            side="bottom"
+                            className="rounded-t-[28px] border-border/70 bg-card/98"
+                        >
+                            <SheetHeader className="pb-4 text-left">
+                                <SheetTitle>Nearby Filters</SheetTitle>
+                                <SheetDescription>
+                                    Adjust the radius and result type without
+                                    leaving the map.
+                                </SheetDescription>
+                            </SheetHeader>
+
+                            <div className="space-y-4">
+                                <SimpleSlider
+                                    title="Search radius"
+                                    units="km"
+                                    value={radiusKm}
+                                    min={0.3}
+                                    max={30}
+                                    step={0.1}
+                                    onChange={(v: number) => setRadiusKm(v)}
+                                />
+
+                                <label className="flex flex-col gap-1">
+                                    <span className="text-sm font-medium">
+                                        Types
+                                    </span>
+                                    <select
+                                        value={
+                                            showGym && showNutri
+                                                ? 'both'
+                                                : showGym
+                                                  ? 'gym'
+                                                  : showNutri
+                                                    ? 'nutritionist'
+                                                    : 'none'
+                                        }
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === 'both') {
+                                                setShowGym(true);
+                                                setShowNutri(true);
+                                            } else if (val === 'gym') {
+                                                setShowGym(true);
+                                                setShowNutri(false);
+                                            } else if (val === 'nutritionist') {
+                                                setShowGym(false);
+                                                setShowNutri(true);
+                                            } else {
+                                                setShowGym(false);
+                                                setShowNutri(false);
+                                            }
+                                        }}
+                                        className="h-11 rounded-xl border border-border bg-background px-3"
+                                    >
+                                        <option value="both">
+                                            Gyms + Nutritionists
+                                        </option>
+                                        <option value="gym">Gyms only</option>
+                                        <option value="nutritionist">
+                                            Nutritionists only
+                                        </option>
+                                        <option value="none">None</option>
+                                    </select>
+                                </label>
+
+                                <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span>{counts.gym} gyms</span>
+                                        <span>
+                                            {counts.nutritionist} nutritionists
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+
+                <div className="mb-4 hidden flex-wrap items-end gap-4 md:flex md:flex-nowrap">
                     <div className="min-w-[260px] flex-1">
                         <SimpleSlider
                             title="Search radius"
@@ -439,6 +542,19 @@ export default function Places() {
                                 Results
                             </div>
                             <ul className="max-h-[480px] space-y-2 overflow-auto pr-1">
+                                {loading &&
+                                    Array.from({ length: 4 }).map(
+                                        (_, index) => (
+                                            <li
+                                                key={`place-skeleton-${index}`}
+                                                className="rounded-xl border border-border/70 bg-background/70 p-3"
+                                            >
+                                                <Skeleton className="h-4 w-32" />
+                                                <Skeleton className="mt-3 h-3 w-full" />
+                                                <Skeleton className="mt-2 h-3 w-2/3" />
+                                            </li>
+                                        ),
+                                    )}
                                 {results.length === 0 && !loading && !error && (
                                     <li className="text-sm text-muted-foreground">
                                         No places found in this radius.
@@ -483,9 +599,45 @@ export default function Places() {
                                             }
                                         >
                                             <div className="flex items-start justify-between gap-2">
-                                                <div className="font-medium">
-                                                    {p.name || '(no name)'}
-                                                </div>
+                                                <HoverPreview
+                                                    trigger={
+                                                        <div className="font-medium">
+                                                            {p.name ||
+                                                                '(no name)'}
+                                                        </div>
+                                                    }
+                                                    title={
+                                                        p.name || 'Nearby place'
+                                                    }
+                                                    description={
+                                                        p.description ||
+                                                        locationLine ||
+                                                        'Quick preview for this nearby place.'
+                                                    }
+                                                    meta={
+                                                        <>
+                                                            {distanceLabel ? (
+                                                                <span>
+                                                                    {
+                                                                        distanceLabel
+                                                                    }
+                                                                </span>
+                                                            ) : null}
+                                                            {p.rating !==
+                                                                null &&
+                                                            p.rating !==
+                                                                undefined ? (
+                                                                <span>
+                                                                    Rating{' '}
+                                                                    {p.rating}
+                                                                </span>
+                                                            ) : null}
+                                                            <span>
+                                                                {prettyCategory}
+                                                            </span>
+                                                        </>
+                                                    }
+                                                />
                                                 <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                                                     {prettyCategory}
                                                 </div>
@@ -590,9 +742,20 @@ export default function Places() {
                                 </div>
                                 <ul className="max-h-72 space-y-2 overflow-auto pr-1">
                                     {loadingProfessionals && (
-                                        <li className="text-xs text-muted-foreground">
-                                            Loading professionals...
-                                        </li>
+                                        <>
+                                            {Array.from({ length: 3 }).map(
+                                                (_, index) => (
+                                                    <li
+                                                        key={`professional-skeleton-${index}`}
+                                                        className="rounded-xl border border-border/70 bg-background/70 p-3"
+                                                    >
+                                                        <Skeleton className="h-4 w-32" />
+                                                        <Skeleton className="mt-3 h-3 w-24" />
+                                                        <Skeleton className="mt-2 h-3 w-full" />
+                                                    </li>
+                                                ),
+                                            )}
+                                        </>
                                     )}
                                     {professionals.map((professional) => (
                                         <li
@@ -600,9 +763,37 @@ export default function Places() {
                                             className="rounded-xl border p-3"
                                         >
                                             <div className="flex items-start justify-between gap-3">
-                                                <div className="font-medium">
-                                                    {professional.name}
-                                                </div>
+                                                <HoverPreview
+                                                    trigger={
+                                                        <div className="font-medium">
+                                                            {professional.name}
+                                                        </div>
+                                                    }
+                                                    title={professional.name}
+                                                    description={
+                                                        professional.specialties
+                                                            ?.length
+                                                            ? professional.specialties.join(
+                                                                  ', ',
+                                                              )
+                                                            : 'Approved professional profile.'
+                                                    }
+                                                    meta={
+                                                        <>
+                                                            <span>
+                                                                {professional.role ===
+                                                                'nutritionist'
+                                                                    ? 'Dietitian'
+                                                                    : 'Trainer'}
+                                                            </span>
+                                                            <span>
+                                                                {professional.area ??
+                                                                    professional.city ??
+                                                                    'Area unavailable'}
+                                                            </span>
+                                                        </>
+                                                    }
+                                                />
                                                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground capitalize">
                                                     {professional.role ===
                                                     'nutritionist'

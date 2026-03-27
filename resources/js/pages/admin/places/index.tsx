@@ -5,6 +5,7 @@ import {
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
 import { ProductBanner, ProductEmptyState } from '@/components/product/page';
+import NearbyMap from '@/components/NearbyMap';
 import {
     ProductTable,
     ProductTableBody,
@@ -49,6 +50,7 @@ export default function AdminPlacesPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -97,6 +99,27 @@ export default function AdminPlacesPage() {
         () => rows.filter((row) => row.lat && row.lng).length,
         [rows],
     );
+
+    const hasMapToken =
+        typeof window !== 'undefined' &&
+        Boolean(
+            window.MAPBOX_TOKEN ||
+                document
+                    .querySelector('meta[name="mapbox-token"]')
+                    ?.getAttribute('content'),
+        );
+
+    const mapCenter = useMemo(() => {
+        const candidate = selected ?? rows[0] ?? null;
+        const lat = Number(candidate?.lat);
+        const lng = Number(candidate?.lng);
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            return { lat, lon: lng };
+        }
+
+        return { lat: 33.8938, lon: 35.5018 };
+    }, [rows, selected]);
 
     async function save() {
         if (!selected) return;
@@ -215,6 +238,30 @@ export default function AdminPlacesPage() {
                                 <Plus className="h-4 w-4" />
                                 Add place
                             </Button>
+                            <div className="inline-flex rounded-full border border-border/70 bg-background p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('list')}
+                                    className={`rounded-full px-3 py-1.5 text-xs transition ${
+                                        viewMode === 'list'
+                                            ? 'bg-primary/10 text-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    List
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('map')}
+                                    className={`rounded-full px-3 py-1.5 text-xs transition ${
+                                        viewMode === 'map'
+                                            ? 'bg-primary/10 text-foreground'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    Map
+                                </button>
+                            </div>
                         </div>
                     }
                 >
@@ -254,6 +301,34 @@ export default function AdminPlacesPage() {
                                         title="Loading places"
                                         description="Fetching the current discovery catalog."
                                     />
+                                ) : viewMode === 'map' ? (
+                                    hasMapToken ? (
+                                        <div className="space-y-4">
+                                            <NearbyMap
+                                                initialCenter={mapCenter}
+                                                initialZoom={11}
+                                                radiusKm={8}
+                                                showGym
+                                                showNutritionist
+                                                focusPlaceId={
+                                                    selected?.id ?? undefined
+                                                }
+                                                onToggleGym={() => {}}
+                                                onToggleNutritionist={() => {}}
+                                                onResults={() => {}}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Map view is for spatial review.
+                                                Use list view for exact edits
+                                                and selection.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <ProductEmptyState
+                                            title="Map token required"
+                                            description="Set VITE_MAPBOX_TOKEN (or mapbox-token meta) to enable map moderation."
+                                        />
+                                    )
                                 ) : (
                                     <ProductTable>
                                         <ProductTableHead>
@@ -299,7 +374,7 @@ export default function AdminPlacesPage() {
                                                     </ProductTableCell>
                                                     <ProductTableCell className="text-sm text-muted-foreground">
                                                         {row.city || 'No city'}{' '}
-                                                        • {row.lat}, {row.lng}
+                                                        | {row.lat}, {row.lng}
                                                     </ProductTableCell>
                                                 </ProductTableRow>
                                             ))}
@@ -437,3 +512,4 @@ function Field({
         </label>
     );
 }
+

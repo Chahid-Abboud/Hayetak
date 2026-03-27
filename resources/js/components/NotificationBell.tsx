@@ -20,8 +20,10 @@ type NotificationItem = {
 
 export default function NotificationBell({
     fullWidth = false,
+    compact = false,
 }: {
     fullWidth?: boolean;
+    compact?: boolean;
 }) {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
@@ -121,6 +123,9 @@ export default function NotificationBell({
                 onClick={() => setOpen((value) => !value)}
                 className={cn(
                     'relative flex items-center justify-center gap-2 rounded-full bg-[color:var(--sidebar-foreground)]/12 px-3 py-1.5 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-[color:var(--sidebar-foreground)]/22',
+                    compact &&
+                        !fullWidth &&
+                        'h-11 w-11 gap-0 px-0 text-[color:var(--sidebar-foreground)]',
                     fullWidth &&
                         'w-full justify-between rounded-2xl px-4 py-3 text-left',
                 )}
@@ -129,10 +134,17 @@ export default function NotificationBell({
             >
                 <span className="flex items-center gap-2">
                     <Bell className="h-4 w-4" />
-                    Notifications
+                    {!compact || fullWidth ? 'Notifications' : null}
                 </span>
                 {unreadCount > 0 ? (
-                    <Badge className="rounded-full px-2 py-0.5">
+                    <Badge
+                        className={cn(
+                            'rounded-full px-2 py-0.5',
+                            compact &&
+                                !fullWidth &&
+                                'absolute -top-1 -right-1 min-w-5 justify-center px-1.5',
+                        )}
+                    >
                         {unreadCount}
                     </Badge>
                 ) : null}
@@ -221,7 +233,7 @@ export default function NotificationBell({
                                         {item.creator?.name
                                             ? `From ${item.creator.name}`
                                             : 'Sent by Hayetak'}
-                                        {' · '}
+                                        {' - '}
                                         {formatDate(item.created_at)}
                                     </div>
                                     <div className="flex flex-wrap gap-2">

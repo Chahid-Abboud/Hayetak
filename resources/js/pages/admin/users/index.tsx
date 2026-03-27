@@ -4,12 +4,27 @@ import {
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
+import {
+    ProductTable,
+    ProductTableBody,
+    ProductTableCell,
+    ProductTableEmptyRow,
+    ProductTableHead,
+    ProductTableHeaderCell,
+    ProductTableRow,
+} from '@/components/product/table';
 import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { jsonRequestInit } from '@/lib/http';
+import {
+    type AdminBulkUserAction,
+    type AdminBulkUsersPayload,
+    type AdminBulkUsersResponse,
+} from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Search, SlidersHorizontal, UserRound } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type AdminUser = {
@@ -52,6 +67,12 @@ export default function AdminUsersIndex() {
     const [verified, setVerified] = useState('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+    const [bulkAction, setBulkAction] =
+        useState<AdminBulkUserAction>('verify');
+    const [bulkStatus, setBulkStatus] = useState('active');
+    const [bulkBusy, setBulkBusy] = useState(false);
+    const [bulkFeedback, setBulkFeedback] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -62,7 +83,7 @@ export default function AdminUsersIndex() {
 
             try {
                 const params = new URLSearchParams({
-                    per_page: '12',
+                    per_page: '20',
                     page: String(currentPage),
                 });
 
@@ -94,6 +115,13 @@ export default function AdminUsersIndex() {
                 setLastPage(Number(json?.last_page ?? 1));
                 setFrom(json?.from ?? null);
                 setTo(json?.to ?? null);
+                setSelectedUserIds((current) =>
+                    current.filter((id) =>
+                        (Array.isArray(json?.data) ? json.data : []).some(
+                            (user) => user.id === id,
+                        ),
+                    ),
+                );
             } catch (loadError) {
                 if (!cancelled) {
                     setError(
@@ -126,6 +154,85 @@ export default function AdminUsersIndex() {
 
         return { verifiedCount, professionalCount };
     }, [users]);
+
+    const allVisibleSelected =
+        users.length > 0 && users.every((user) => selectedUserIds.includes(user.id));
+
+    async function runBulkAction() {
+        if (selectedUserIds.length === 0 || bulkBusy) {
+            return;
+        }
+
+        setBulkBusy(true);
+        setError(null);
+        setBulkFeedback(null);
+
+        try {
+            const payload: AdminBulkUsersPayload = {
+                user_ids: selectedUserIds,
+                action: bulkAction,
+            };
+
+            if (bulkAction === 'set_status') {
+                payload.status = bulkStatus;
+            }
+
+            const response = await fetch(
+                '/api/admin/users/bulk-update',
+                jsonRequestInit('POST', payload),
+            );
+
+            if (!response.ok) {
+                const json = await response.json().catch(() => null);
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not run bulk update.',
+                );
+            }
+
+            const json = (await response.json()) as AdminBulkUsersResponse;
+            setBulkFeedback(
+                `Updated ${json.summary.updated_count} user(s), skipped ${json.summary.skipped_count}.`,
+            );
+            setSelectedUserIds([]);
+
+            const params = new URLSearchParams({
+                per_page: '20',
+                page: String(currentPage),
+            });
+            if (search.trim()) {
+                params.set('search', search.trim());
+            }
+            if (role !== 'all') {
+                params.set('role', role);
+            }
+            if (verified !== 'all') {
+                params.set('verified', verified);
+            }
+
+            const listResponse = await fetch(
+                `/api/admin/users?${params.toString()}`,
+            );
+            if (listResponse.ok) {
+                const listJson = (await listResponse.json()) as AdminUserResponse;
+                setUsers(Array.isArray(listJson?.data) ? listJson.data : []);
+                setTotal(Number(listJson?.total ?? 0));
+                setCurrentPage(Number(listJson?.current_page ?? 1));
+                setLastPage(Number(listJson?.last_page ?? 1));
+                setFrom(listJson?.from ?? null);
+                setTo(listJson?.to ?? null);
+            }
+        } catch (bulkError) {
+            setError(
+                bulkError instanceof Error
+                    ? bulkError.message
+                    : 'Could not run bulk update.',
+            );
+        } finally {
+            setBulkBusy(false);
+        }
+    }
 
     return (
         <>
@@ -256,128 +363,236 @@ export default function AdminUsersIndex() {
                                 </div>
                             ) : null}
 
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {users.map((user) => {
-                                    const title =
-                                        [user.first_name, user.last_name]
-                                            .filter(Boolean)
-                                            .join(' ') ||
-                                        user.name ||
-                                        user.email;
+                            <div className="space-y-4">
+                                <div className="rounded-2xl border border-border/70 bg-background/70 p-3">
+                                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                        <div className="text-sm text-muted-foreground">
+                                            {selectedUserIds.length} selected
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <select
+                                                value={bulkAction}
+                                                onChange={(event) =>
+                                                    setBulkAction(
+                                                        event.target
+                                                            .value as AdminBulkUserAction,
+                                                    )
+                                                }
+                                                className="flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                            >
+                                                <option value="verify">
+                                                    Verify
+                                                </option>
+                                                <option value="unverify">
+                                                    Unverify
+                                                </option>
+                                                <option value="set_status">
+                                                    Set status
+                                                </option>
+                                            </select>
+                                            {bulkAction === 'set_status' ? (
+                                                <select
+                                                    value={bulkStatus}
+                                                    onChange={(event) =>
+                                                        setBulkStatus(
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    className="flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                                >
+                                                    <option value="active">
+                                                        active
+                                                    </option>
+                                                    <option value="pending">
+                                                        pending
+                                                    </option>
+                                                    <option value="needs_review">
+                                                        needs_review
+                                                    </option>
+                                                    <option value="needs_info">
+                                                        needs_info
+                                                    </option>
+                                                    <option value="rejected">
+                                                        rejected
+                                                    </option>
+                                                    <option value="suspended">
+                                                        suspended
+                                                    </option>
+                                                </select>
+                                            ) : null}
+                                            <Button
+                                                type="button"
+                                                onClick={() => void runBulkAction()}
+                                                disabled={
+                                                    selectedUserIds.length ===
+                                                        0 || bulkBusy
+                                                }
+                                            >
+                                                {bulkBusy
+                                                    ? 'Updating...'
+                                                    : 'Apply'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {bulkFeedback ? (
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            {bulkFeedback}
+                                        </p>
+                                    ) : null}
+                                </div>
 
-                                    return (
-                                        <article
-                                            key={user.id}
-                                            className="rounded-2xl border border-border/70 bg-background/80 p-5"
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                                <div className="space-y-3">
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                                            <UserRound className="h-5 w-5" />
-                                                        </div>
+                                <ProductTable>
+                                    <ProductTableHead>
+                                        <tr>
+                                            <ProductTableHeaderCell className="w-10">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allVisibleSelected}
+                                                    onChange={(event) =>
+                                                        setSelectedUserIds(
+                                                            event.target.checked
+                                                                ? users.map(
+                                                                      (user) =>
+                                                                          user.id,
+                                                                  )
+                                                                : [],
+                                                        )
+                                                    }
+                                                    aria-label="Select visible users"
+                                                />
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                User
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                Role
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                Status
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                Activity
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell className="w-36">
+                                                Action
+                                            </ProductTableHeaderCell>
+                                        </tr>
+                                    </ProductTableHead>
+                                    <ProductTableBody>
+                                        {users.map((user) => {
+                                            const title =
+                                                [user.first_name, user.last_name]
+                                                    .filter(Boolean)
+                                                    .join(' ') ||
+                                                user.name ||
+                                                user.email;
+
+                                            return (
+                                                <ProductTableRow key={user.id}>
+                                                    <ProductTableCell>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedUserIds.includes(
+                                                                user.id,
+                                                            )}
+                                                            onChange={(event) =>
+                                                                setSelectedUserIds(
+                                                                    (current) =>
+                                                                        event
+                                                                            .target
+                                                                            .checked
+                                                                            ? current.includes(
+                                                                                  user.id,
+                                                                              )
+                                                                                ? current
+                                                                                : [
+                                                                                      ...current,
+                                                                                      user.id,
+                                                                                  ]
+                                                                            : current.filter(
+                                                                                  (
+                                                                                      id,
+                                                                                  ) =>
+                                                                                      id !==
+                                                                                      user.id,
+                                                                              ),
+                                                                )
+                                                            }
+                                                            aria-label={`Select ${title}`}
+                                                        />
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
                                                         <div className="space-y-1">
-                                                            <h3 className="text-lg font-semibold text-foreground">
+                                                            <p className="text-sm font-semibold text-foreground">
                                                                 {title}
-                                                            </h3>
-                                                            <p className="text-sm text-muted-foreground">
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
                                                                 {user.email}
                                                             </p>
-                                                            {user.username ? (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    @
-                                                                    {
-                                                                        user.username
-                                                                    }
-                                                                </p>
-                                                            ) : null}
                                                         </div>
-                                                    </div>
-
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Badge className="rounded-full px-2.5 py-1 capitalize">
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
                                                             {user.role}
                                                         </Badge>
-                                                        <Badge
-                                                            variant={
-                                                                user.verified
-                                                                    ? 'default'
-                                                                    : 'outline'
-                                                            }
-                                                            className="rounded-full px-2.5 py-1"
-                                                        >
-                                                            {user.verified
-                                                                ? 'Verified'
-                                                                : 'Needs review'}
-                                                        </Badge>
-                                                        {user.status ? (
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="flex flex-wrap gap-1.5">
                                                             <Badge
-                                                                variant="outline"
-                                                                className="rounded-full px-2.5 py-1"
+                                                                variant={
+                                                                    user.verified
+                                                                        ? 'default'
+                                                                        : 'outline'
+                                                                }
+                                                                className="rounded-full px-2 py-0.5 text-[11px]"
                                                             >
-                                                                {user.status}
+                                                                {user.verified
+                                                                    ? 'Verified'
+                                                                    : 'Needs review'}
                                                             </Badge>
-                                                        ) : null}
-                                                        {user.city ? (
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="rounded-full px-2.5 py-1"
+                                                            {user.status ? (
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="rounded-full px-2 py-0.5 text-[11px]"
+                                                                >
+                                                                    {user.status}
+                                                                </Badge>
+                                                            ) : null}
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-xs text-muted-foreground">
+                                                        Meals:{' '}
+                                                        {user.meal_entries_count ??
+                                                            0}
+                                                        {' | '}Workouts:{' '}
+                                                        {user.workout_logs_count ??
+                                                            0}
+                                                        {' | '}AI:{' '}
+                                                        {user.ai_conversations_count ??
+                                                            0}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <Button size="sm" asChild>
+                                                            <Link
+                                                                href={`/admin/users/${user.id}`}
                                                             >
-                                                                {user.city}
-                                                            </Badge>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
-
-                                                <Button asChild>
-                                                    <Link
-                                                        href={`/admin/users/${user.id}`}
-                                                    >
-                                                        Open record
-                                                    </Link>
-                                                </Button>
-                                            </div>
-
-                                            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                                <MiniStat
-                                                    label="Meal Entries"
-                                                    value={String(
-                                                        user.meal_entries_count ??
-                                                            0,
-                                                    )}
-                                                />
-                                                <MiniStat
-                                                    label="Workout Logs"
-                                                    value={String(
-                                                        user.workout_logs_count ??
-                                                            0,
-                                                    )}
-                                                />
-                                                <MiniStat
-                                                    label="Alerts"
-                                                    value={String(
-                                                        user.notifications_received_count ??
-                                                            0,
-                                                    )}
-                                                />
-                                                <MiniStat
-                                                    label="AI Chats"
-                                                    value={String(
-                                                        user.ai_conversations_count ??
-                                                            0,
-                                                    )}
-                                                />
-                                            </div>
-                                        </article>
-                                    );
-                                })}
+                                                                Open
+                                                            </Link>
+                                                        </Button>
+                                                    </ProductTableCell>
+                                                </ProductTableRow>
+                                            );
+                                        })}
+                                        {!loading && users.length === 0 ? (
+                                            <ProductTableEmptyRow
+                                                colSpan={6}
+                                                title="No users matched"
+                                                description="Try different filters or reset search criteria."
+                                            />
+                                        ) : null}
+                                    </ProductTableBody>
+                                </ProductTable>
                             </div>
-
-                            {!loading && users.length === 0 ? (
-                                <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                                    No users matched the current filters.
-                                </div>
-                            ) : null}
 
                             <div className="mt-6 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="text-sm text-muted-foreground">
@@ -417,18 +632,5 @@ export default function AdminUsersIndex() {
                 </AdminShell>
             </RoleGuard>
         </>
-    );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-2xl border border-border/70 bg-muted/30 px-4 py-3">
-            <div className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-                {label}
-            </div>
-            <div className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                {value}
-            </div>
-        </div>
     );
 }

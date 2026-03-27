@@ -1,5 +1,19 @@
 // resources/js/pages/auth/register.tsx
+import AppLogoIcon from '@/components/app-logo-icon';
 import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    Activity,
+    Brain,
+    Check,
+    Dumbbell,
+    Eye,
+    EyeOff,
+    Mail,
+    Shield,
+    ShieldCheck,
+    Sparkles,
+    Utensils,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 /* ---------- Props & Types ---------- */
@@ -126,8 +140,62 @@ const ACTIVITY_LEVELS: ActivityLevel[] = [
 const clamp = (v: number, min: number, max: number) =>
     Math.min(Math.max(v, min), max);
 
+function getPasswordStrength(password: string): {
+    score: number;
+    label: string;
+    barClass: string;
+    textClass: string;
+} {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    const levels = [
+        {
+            label: 'Too short',
+            barClass: 'bg-red-500',
+            textClass: 'text-red-400',
+        },
+        {
+            label: 'Weak',
+            barClass: 'bg-orange-500',
+            textClass: 'text-orange-400',
+        },
+        {
+            label: 'Fair',
+            barClass: 'bg-amber-500',
+            textClass: 'text-amber-400',
+        },
+        {
+            label: 'Good',
+            barClass: 'bg-emerald-500',
+            textClass: 'text-emerald-400',
+        },
+        {
+            label: 'Strong',
+            barClass: 'bg-emerald-500',
+            textClass: 'text-emerald-400',
+        },
+        {
+            label: 'Very strong',
+            barClass: 'bg-secondary',
+            textClass: 'text-secondary',
+        },
+    ];
+
+    return { score, ...levels[Math.min(score, 5)] };
+}
+
 const FOCUS_RING =
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const INPUT_CLASS = `w-full rounded-xl border border-border/70 bg-background/82 px-4 py-2.5 text-sm text-foreground shadow-[0_18px_40px_-32px_rgba(15,23,42,0.75)] transition outline-none placeholder:text-muted-foreground/70 hover:border-secondary/45 focus:border-ring focus:ring-2 focus:ring-ring/30 ${FOCUS_RING}`;
+const TEXTAREA_CLASS = `min-h-[120px] ${INPUT_CLASS}`;
+const SELECT_CLASS = `${INPUT_CLASS} appearance-none`;
+const CHOICE_PILL_CLASS =
+    'inline-flex items-center rounded-full border border-border/70 px-4 py-2.5 text-sm font-medium transition';
 
 // Total steps in the registration wizard.
 const computeTotalSteps = (tried: 'yes' | 'no' | '') =>
@@ -189,22 +257,26 @@ function SectionCard({
     headingRef?: React.RefObject<HTMLHeadingElement | null>;
 }) {
     return (
-        <section className="space-y-4">
-            <div className="space-y-1">
+        <section className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-[0_26px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6">
+            <div className="space-y-2 border-b border-border/70 pb-4">
+                <p className="text-[11px] font-semibold tracking-[0.2em] text-secondary uppercase">
+                    Guided setup
+                </p>
                 <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="text-lg font-medium"
+                    className="text-xl font-semibold tracking-tight text-foreground"
+                    style={{ fontFamily: 'var(--font-display)' }}
                 >
                     {title}
                 </h2>
                 {description ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm leading-6 text-muted-foreground">
                         {description}
                     </p>
                 ) : null}
             </div>
-            {children}
+            <div className="space-y-4 pt-5">{children}</div>
         </section>
     );
 }
@@ -217,7 +289,7 @@ function ErrorText({
     children: React.ReactNode;
 }) {
     return (
-        <p id={id} className="mt-1 text-sm text-destructive">
+        <p id={id} className="mt-1 text-sm font-medium text-red-400">
             {children}
         </p>
     );
@@ -243,13 +315,16 @@ function Field({
     const describedBy = [hintId, errId].filter(Boolean).join(' ') || undefined;
 
     return (
-        <div className="space-y-1">
-            <label htmlFor={id} className="block text-sm font-medium">
+        <div className="space-y-2">
+            <label
+                htmlFor={id}
+                className="block text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase"
+            >
                 {label}{' '}
-                {required ? <span className="text-destructive">*</span> : null}
+                {required ? <span className="text-red-400">*</span> : null}
             </label>
             <div
-                className="rounded-md"
+                className="rounded-[20px]"
                 aria-describedby={describedBy}
                 aria-invalid={!!error}
             >
@@ -283,19 +358,21 @@ function CheckTile({
     return (
         <label
             className={[
-                'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition',
-                checked ? 'bg-muted ring-2 ring-primary' : 'hover:bg-muted',
+                'flex cursor-pointer items-center gap-3 rounded-[20px] border border-border/70 bg-background/78 px-4 py-3.5 transition',
+                checked
+                    ? 'border-secondary/60 bg-secondary/10 ring-2 ring-secondary/20'
+                    : 'hover:border-secondary/35 hover:bg-background/92',
             ].join(' ')}
         >
             <input
                 type="checkbox"
                 name={name}
                 value={value}
-                className={`h-4 w-4 shrink-0 rounded border-input accent-[#0EA5A4] ${FOCUS_RING}`}
+                className={`h-4 w-4 shrink-0 rounded border-border bg-background text-secondary ${FOCUS_RING}`}
                 checked={checked}
                 onChange={(e) => onChange(e.target.checked)}
             />
-            <span className="text-sm">{label}</span>
+            <span className="text-sm text-foreground">{label}</span>
         </label>
     );
 }
@@ -319,8 +396,10 @@ function RadioPills<T extends string>({
     const errId = error ? `${name}-error` : undefined;
 
     return (
-        <fieldset className="space-y-2" aria-describedby={errId}>
-            <legend className="text-sm font-medium">{legend}</legend>
+        <fieldset className="space-y-3" aria-describedby={errId}>
+            <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                {legend}
+            </legend>
             <div className="flex flex-wrap gap-2">
                 {options.map((opt) => {
                     const active = value === opt.value;
@@ -336,10 +415,10 @@ function RadioPills<T extends string>({
                             />
                             <span
                                 className={[
-                                    'inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium capitalize transition',
+                                    CHOICE_PILL_CLASS,
                                     active
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'hover:bg-muted',
+                                        ? 'border-secondary/60 bg-secondary/12 text-foreground'
+                                        : 'bg-background/78 text-muted-foreground hover:border-secondary/35 hover:bg-background/92',
                                     FOCUS_RING,
                                 ].join(' ')}
                             >
@@ -369,11 +448,11 @@ function Button({
     disabled?: boolean;
 }) {
     const base =
-        'inline-flex items-center justify-center rounded-md px-5 py-2 text-sm font-semibold transition';
+        'inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition';
     const styles =
         variant === 'primary'
-            ? 'bg-primary text-primary-foreground hover:opacity-90'
-            : 'border hover:bg-muted';
+            ? 'bg-primary text-primary-foreground shadow-[0_20px_42px_-24px_rgba(23,38,60,0.55)] hover:bg-primary/92'
+            : 'border border-border/70 bg-card/82 text-foreground hover:bg-background/85 hover:border-secondary/35';
     return (
         <button
             type={type}
@@ -410,6 +489,9 @@ function RegisterWizard(props: Props) {
     const [clientErrors, setClientErrors] = useState<Record<string, string>>(
         {},
     );
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] =
+        useState(false);
 
     const { data, setData, post, processing, errors, transform } =
         useForm<RegisterFormData>({
@@ -555,6 +637,7 @@ function RegisterWizard(props: Props) {
             workoutDaysNum > 7)
             ? 'Enter a number from 1 to 7.'
             : '';
+    const passwordStrength = getPasswordStrength(data.password);
 
     function validateStep(s: number) {
         const ce: Record<string, string> = {};
@@ -573,7 +656,7 @@ function RegisterWizard(props: Props) {
                     ce.username =
                         'Only letters, numbers, underscore and dot are allowed.';
                 if (data.username.length > 24)
-                    ce.username = 'Username must be ≤ 24 characters.';
+                    ce.username = 'Username must be 24 characters or fewer.';
             }
 
             const ageNum = Number(data.age);
@@ -706,33 +789,56 @@ function RegisterWizard(props: Props) {
 
     return (
         <div className="space-y-6">
-            <header className="space-y-2">
-                <h1 className="text-2xl font-semibold">
-                    Create your Hayetak account
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                    Step {step} of {totalSteps}. This takes about 2–3 minutes.
+            <header className="space-y-4 rounded-[28px] border border-border/70 bg-card/88 px-5 py-5 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)] backdrop-blur sm:px-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-[11px] font-semibold tracking-[0.2em] text-secondary uppercase">
+                            Hayetak onboarding
+                        </p>
+                        <h1
+                            className="mt-2 text-2xl font-semibold tracking-tight text-foreground"
+                            style={{ fontFamily: 'var(--font-display)' }}
+                        >
+                            Create your Hayetak account
+                        </h1>
+                    </div>
+                    <div className="rounded-full border border-border/70 bg-background/82 px-4 py-2 text-sm text-muted-foreground">
+                        Step {step} of {totalSteps}
+                    </div>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                    This takes about 2-3 minutes. We use these answers to tailor
+                    your coach, plans, and safety guardrails.
                 </p>
-
-                {/* Progress bar (decorative) */}
-                <div className="flex gap-2" aria-hidden="true">
-                    {prog.map((i) => (
-                        <div
-                            key={i}
-                            className={`h-2 flex-1 rounded ${i <= step ? 'bg-primary' : 'bg-muted'}`}
-                        />
-                    ))}
+                <div className="flex items-center justify-between gap-3" aria-hidden="true">
+                    <div className="flex flex-1 gap-1.5">
+                        {prog.map((i) => (
+                            <div
+                                key={i}
+                                className={`transition-all rounded-full ${
+                                    i < step
+                                        ? 'h-1.5 w-4 bg-accent'
+                                        : i === step
+                                          ? 'h-1.5 w-6 bg-secondary'
+                                          : 'h-1.5 w-1.5 bg-border'
+                                }`}
+                            />
+                        ))}
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                        {Math.round(((step - 1) / Math.max(totalSteps - 1, 1)) * 100)}%
+                    </span>
                 </div>
             </header>
 
             {/* Error summary for screen readers + quick scan */}
             {stepErrors.length > 0 ? (
                 <div
-                    className="rounded-md border bg-muted/30 p-3"
+                    className="rounded-[24px] border border-red-500/30 bg-red-900/20 p-4"
                     role="alert"
                     aria-live="polite"
                 >
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-semibold text-foreground">
                         Please fix the following:
                     </p>
                     <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
@@ -751,6 +857,112 @@ function RegisterWizard(props: Props) {
                     description="Tell us a bit about you. This helps the AI personalize your plans."
                 >
                     <div className="grid gap-4 md:grid-cols-2">
+                        <div className="md:col-span-2">
+                            <fieldset className="space-y-3">
+                                <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Account type
+                                </legend>
+                                <div className="space-y-3">
+                                    {[
+                                        {
+                                            value: 'client' as AccountType,
+                                            icon: Sparkles,
+                                            title: "I'm here for my health",
+                                            subtitle: 'Client',
+                                            description:
+                                                'Get a personalized AI nutrition and workout plan, track your progress, and receive adaptive coaching.',
+                                            tone:
+                                                'from-secondary to-accent',
+                                        },
+                                        {
+                                            value: 'trainer' as AccountType,
+                                            icon: Dumbbell,
+                                            title: "I'm a personal trainer",
+                                            subtitle: 'Professional',
+                                            description:
+                                                'Manage clients, create custom workout programs, and communicate securely.',
+                                            tone:
+                                                'from-blue-500 to-blue-700',
+                                        },
+                                        {
+                                            value: 'nutritionist' as AccountType,
+                                            icon: Utensils,
+                                            title: "I'm a registered nutritionist",
+                                            subtitle: 'Professional',
+                                            description:
+                                                'Build personalized nutrition plans and monitor clients with more context.',
+                                            tone:
+                                                'from-emerald-500 to-emerald-700',
+                                        },
+                                    ].map((option) => {
+                                        const active =
+                                            data.account_type === option.value;
+
+                                        return (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                onClick={() =>
+                                                    setData(
+                                                        'account_type',
+                                                        option.value,
+                                                    )
+                                                }
+                                                className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                                                    active
+                                                        ? 'border-secondary/60 bg-secondary/8 ring-2 ring-secondary/20'
+                                                        : 'border-border/70 bg-background/82 hover:border-secondary/35'
+                                                }`}
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <div
+                                                        className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br ${option.tone}`}
+                                                    >
+                                                        <option.icon className="size-5 text-white" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="mb-1 flex items-center gap-2">
+                                                            <p className="font-semibold text-foreground">
+                                                                {option.title}
+                                                            </p>
+                                                            <span className="rounded-full bg-muted/70 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                                {
+                                                                    option.subtitle
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs leading-relaxed text-muted-foreground">
+                                                            {
+                                                                option.description
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                    <div
+                                                        className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 ${
+                                                            active
+                                                                ? 'border-secondary bg-secondary'
+                                                                : 'border-border'
+                                                        }`}
+                                                    >
+                                                        {active ? (
+                                                            <Check className="size-3 text-white" />
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {showServerOrClientError('account_type') ? (
+                                    <ErrorText id="account_type-error">
+                                        {showServerOrClientError(
+                                            'account_type',
+                                        )}
+                                    </ErrorText>
+                                ) : null}
+                            </fieldset>
+                        </div>
+
                         <Field
                             id="first_name"
                             label="First name"
@@ -759,7 +971,7 @@ function RegisterWizard(props: Props) {
                         >
                             <input
                                 id="first_name"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 value={data.first_name}
                                 maxLength={40}
                                 autoComplete="given-name"
@@ -777,7 +989,7 @@ function RegisterWizard(props: Props) {
                         >
                             <input
                                 id="last_name"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 value={data.last_name}
                                 maxLength={40}
                                 autoComplete="family-name"
@@ -795,7 +1007,7 @@ function RegisterWizard(props: Props) {
                         >
                             <input
                                 id="username"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 value={data.username}
                                 maxLength={24}
                                 placeholder="e.g. cha.hid_01"
@@ -807,32 +1019,11 @@ function RegisterWizard(props: Props) {
                             />
                         </Field>
 
-                        <div className="md:col-span-2">
-                            <RadioPills<AccountType>
-                                name="account_type"
-                                value={data.account_type}
-                                onChange={(v) => setData('account_type', v)}
-                                legend="Account type"
-                                options={[
-                                    { value: 'client', label: 'Client' },
-                                    {
-                                        value: 'trainer',
-                                        label: 'Personal Trainer',
-                                    },
-                                    {
-                                        value: 'nutritionist',
-                                        label: 'Dietitian / Nutritionist',
-                                    },
-                                ]}
-                                error={showServerOrClientError('account_type')}
-                            />
-                        </div>
-
                         {/* Gender as radios for semantics */}
-                        <fieldset className="space-y-2">
-                            <legend className="text-sm font-medium">
+                        <fieldset className="space-y-3">
+                            <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                                 Gender{' '}
-                                <span className="text-destructive">*</span>
+                                <span className="text-red-400">*</span>
                             </legend>
                             <div className="flex flex-wrap gap-2">
                                 {(
@@ -860,10 +1051,10 @@ function RegisterWizard(props: Props) {
                                             />
                                             <span
                                                 className={[
-                                                    'inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition',
+                                                    CHOICE_PILL_CLASS,
                                                     active
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'hover:bg-muted',
+                                                        ? 'border-secondary/60 bg-secondary/12 text-foreground'
+                                                        : 'bg-background/78 text-muted-foreground hover:border-secondary/35 hover:bg-background/92',
                                                     FOCUS_RING,
                                                 ].join(' ')}
                                             >
@@ -891,7 +1082,7 @@ function RegisterWizard(props: Props) {
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 placeholder="e.g. 20"
                                 value={data.age}
                                 onKeyDown={(e) =>
@@ -916,7 +1107,7 @@ function RegisterWizard(props: Props) {
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 placeholder="e.g. 180"
                                 value={data.height_cm}
                                 onKeyDown={(e) =>
@@ -941,7 +1132,7 @@ function RegisterWizard(props: Props) {
                                 type="text"
                                 inputMode="decimal"
                                 pattern="[0-9.]*"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                className={INPUT_CLASS}
                                 placeholder="e.g. 72.5"
                                 value={data.weight_kg}
                                 onKeyDown={(e) =>
@@ -978,7 +1169,7 @@ function RegisterWizard(props: Props) {
                                 >
                                     <textarea
                                         id="medical_history"
-                                        className={`min-h-[90px] w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={TEXTAREA_CLASS}
                                         placeholder="Type here..."
                                         maxLength={500}
                                         value={data.medical_history}
@@ -995,7 +1186,7 @@ function RegisterWizard(props: Props) {
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <Button variant="primary" onClick={next}>
+                        <Button onClick={next}>
                             Next
                         </Button>
                     </div>
@@ -1017,18 +1208,17 @@ function RegisterWizard(props: Props) {
                         >
                             <select
                                 id="dietary_goal"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
+                                className={SELECT_CLASS}
                                 value={data.dietary_goal}
                                 onChange={(e) =>
                                     setData('dietary_goal', e.target.value)
                                 }
                             >
-                                <option className="text-black" value="">
+                                <option value="">
                                     Select
                                 </option>
                                 {dietaryGoals.map((g) => (
                                     <option
-                                        className="text-black"
                                         key={g}
                                         value={g}
                                     >
@@ -1046,18 +1236,17 @@ function RegisterWizard(props: Props) {
                         >
                             <select
                                 id="fitness_goal"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
+                                className={SELECT_CLASS}
                                 value={data.fitness_goal}
                                 onChange={(e) =>
                                     setData('fitness_goal', e.target.value)
                                 }
                             >
-                                <option className="text-black" value="">
+                                <option value="">
                                     Select
                                 </option>
                                 {fitnessGoals.map((g) => (
                                     <option
-                                        className="text-black"
                                         key={g}
                                         value={g}
                                     >
@@ -1067,12 +1256,12 @@ function RegisterWizard(props: Props) {
                             </select>
                         </Field>
 
-                        {/* Diet selection (pills) + “Other” input */}
+                        {/* Diet selection (pills) + custom diet input */}
                         <div className="space-y-2 md:col-span-2">
-                            <fieldset className="space-y-2">
-                                <legend className="text-sm font-medium">
+                            <fieldset className="space-y-3">
+                                <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                                     Diet{' '}
-                                    <span className="text-destructive">*</span>
+                                    <span className="text-red-400">*</span>
                                 </legend>
 
                                 <div className="flex flex-wrap gap-2">
@@ -1083,10 +1272,10 @@ function RegisterWizard(props: Props) {
                                                 key={d}
                                                 type="button"
                                                 className={[
-                                                    'rounded-md border px-3 py-1 text-sm font-medium transition',
+                                                    CHOICE_PILL_CLASS,
                                                     active
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'hover:bg-muted',
+                                                        ? 'border-secondary/60 bg-secondary/12 text-foreground'
+                                                        : 'bg-background/78 text-muted-foreground hover:border-secondary/35 hover:bg-background/92',
                                                     FOCUS_RING,
                                                 ].join(' ')}
                                                 onClick={() => {
@@ -1125,7 +1314,7 @@ function RegisterWizard(props: Props) {
                                     >
                                         <input
                                             id="diet_other_name"
-                                            className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                            className={INPUT_CLASS}
                                             maxLength={40}
                                             value={data.diet_other_name}
                                             onChange={(e) => {
@@ -1158,7 +1347,7 @@ function RegisterWizard(props: Props) {
                                 </label>
                                 <button
                                     type="button"
-                                    className={`text-xs text-primary hover:underline ${FOCUS_RING} rounded-md`}
+                                    className={`rounded-md text-xs text-primary hover:text-secondary hover:underline ${FOCUS_RING}`}
                                     onClick={() => setData('allergies', [])}
                                 >
                                     Clear
@@ -1195,7 +1384,7 @@ function RegisterWizard(props: Props) {
                             </div>
 
                             {showServerOrClientError('allergies') ? (
-                                <p className="mt-2 text-sm text-destructive">
+                                <p className="mt-2 text-sm text-red-400">
                                     {showServerOrClientError('allergies')}
                                 </p>
                             ) : null}
@@ -1206,7 +1395,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button variant="primary" onClick={next}>
+                        <Button onClick={next}>
                             Next
                         </Button>
                     </div>
@@ -1228,7 +1417,7 @@ function RegisterWizard(props: Props) {
                         >
                             <select
                                 id="activity_level"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 text-black ${FOCUS_RING}`}
+                                className={SELECT_CLASS}
                                 value={data.activity_level}
                                 onChange={(e) =>
                                     setData(
@@ -1237,12 +1426,11 @@ function RegisterWizard(props: Props) {
                                     )
                                 }
                             >
-                                <option className="text-black" value="">
+                                <option value="">
                                     Select
                                 </option>
                                 {ACTIVITY_LEVELS.map((lvl) => (
                                     <option
-                                        className="text-black"
                                         key={lvl}
                                         value={lvl}
                                     >
@@ -1262,7 +1450,7 @@ function RegisterWizard(props: Props) {
                             hint={
                                 workoutDaysWarning
                                     ? workoutDaysWarning
-                                    : 'We’ll tailor your plan frequency.'
+                                    : 'We will tailor your plan frequency.'
                             }
                         >
                             <input
@@ -1271,7 +1459,7 @@ function RegisterWizard(props: Props) {
                                 inputMode="numeric"
                                 pattern="[0-9]*"
                                 className={[
-                                    `w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`,
+                                    INPUT_CLASS,
                                     workoutDaysWarning
                                         ? 'border-amber-500'
                                         : '',
@@ -1315,7 +1503,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button variant="primary" onClick={next}>
+                        <Button onClick={next}>
                             Next
                         </Button>
                     </div>
@@ -1344,17 +1532,17 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button variant="primary" onClick={next}>
+                        <Button onClick={next}>
                             Next
                         </Button>
                     </div>
                 </SectionCard>
             )}
 
-            {/* Step 5: Why didn’t it work? (only if tried=yes) */}
+            {/* Step 5: Plan friction (only if tried=yes) */}
             {step === 5 && data.tried_diet_before === 'yes' && (
                 <SectionCard
-                    title="Why didn’t it work out for you?"
+                    title="Why did that plan not work out for you?"
                     description="Select all that apply."
                     headingRef={stepHeadingRef}
                 >
@@ -1396,7 +1584,7 @@ function RegisterWizard(props: Props) {
                     >
                         <input
                             id="diet_failure_other"
-                            className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                            className={INPUT_CLASS}
                             maxLength={120}
                             placeholder="Your reason"
                             value={data.diet_failure_other}
@@ -1407,7 +1595,7 @@ function RegisterWizard(props: Props) {
                     </Field>
 
                     {showServerOrClientError('diet_failure_reasons') ? (
-                        <p className="text-sm text-destructive">
+                        <p className="text-sm text-red-400">
                             {showServerOrClientError('diet_failure_reasons')}
                         </p>
                     ) : null}
@@ -1416,7 +1604,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button variant="primary" onClick={next}>
+                        <Button onClick={next}>
                             Next
                         </Button>
                     </div>
@@ -1426,12 +1614,15 @@ function RegisterWizard(props: Props) {
             {/* Final Step: Credentials */}
             {step === totalSteps && (
                 <SectionCard title="Login Details" headingRef={stepHeadingRef}>
-                    <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                        <p>
-                            After you create your account, you will go to the
-                            email verification page. You can enable two-factor
-                            authentication later from your profile settings.
-                        </p>
+                    <div className="rounded-[24px] border border-border/70 bg-background/76 p-4 text-sm leading-6 text-muted-foreground">
+                        <div className="flex items-start gap-3">
+                            <Shield className="mt-0.5 size-4 flex-none text-secondary" />
+                            <p>
+                                After registration, you&apos;ll land on email
+                                verification. Two-factor protection can be
+                                enabled later from settings.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
@@ -1441,19 +1632,22 @@ function RegisterWizard(props: Props) {
                             required
                             error={showServerOrClientError('email')}
                         >
-                            <input
-                                id="email"
-                                type="email"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
-                                value={data.email}
-                                maxLength={120}
-                                inputMode="email"
-                                autoComplete="email"
-                                placeholder="you@example.com"
-                                onChange={(e) =>
-                                    setData('email', e.target.value.trim())
-                                }
-                            />
+                            <div className="relative">
+                                <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    id="email"
+                                    type="email"
+                                    className={`${INPUT_CLASS} pl-10`}
+                                    value={data.email}
+                                    maxLength={120}
+                                    inputMode="email"
+                                    autoComplete="email"
+                                    placeholder="you@example.com"
+                                    onChange={(e) =>
+                                        setData('email', e.target.value.trim())
+                                    }
+                                />
+                            </div>
                         </Field>
 
                         <Field
@@ -1463,18 +1657,90 @@ function RegisterWizard(props: Props) {
                             error={showServerOrClientError('password')}
                             hint="Use 8+ characters. Adding numbers & symbols helps."
                         >
-                            <input
-                                id="password"
-                                type="password"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
-                                value={data.password}
-                                maxLength={72}
-                                autoComplete="new-password"
-                                onChange={(e) =>
-                                    setData('password', e.target.value)
-                                }
-                                placeholder="At least 8 characters"
-                            />
+                            <div className="relative">
+                                <Shield className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    className={`${INPUT_CLASS} pr-10 pl-10`}
+                                    value={data.password}
+                                    maxLength={72}
+                                    autoComplete="new-password"
+                                    onChange={(e) =>
+                                        setData('password', e.target.value)
+                                    }
+                                    placeholder="Create a strong password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowPassword((value) => !value)
+                                    }
+                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
+                                </button>
+                            </div>
+                            {data.password ? (
+                                <div className="mt-3 space-y-2">
+                                    <div className="flex gap-1">
+                                        {[0, 1, 2, 3, 4].map((index) => (
+                                            <div
+                                                key={index}
+                                                className={`h-1 flex-1 rounded-full ${
+                                                    index <
+                                                    passwordStrength.score
+                                                        ? passwordStrength.barClass
+                                                        : 'bg-border'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p
+                                        className={`text-xs font-medium ${passwordStrength.textClass}`}
+                                    >
+                                        {passwordStrength.label}
+                                    </p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {[
+                                            {
+                                                label: '8+ chars',
+                                                ok: data.password.length >= 8,
+                                            },
+                                            {
+                                                label: 'Uppercase',
+                                                ok: /[A-Z]/.test(data.password),
+                                            },
+                                            {
+                                                label: 'Number',
+                                                ok: /[0-9]/.test(data.password),
+                                            },
+                                            {
+                                                label: 'Symbol',
+                                                ok: /[^A-Za-z0-9]/.test(
+                                                    data.password,
+                                                ),
+                                            },
+                                        ].map((requirement) => (
+                                            <div
+                                                key={requirement.label}
+                                                className={`flex items-center gap-1 text-[10px] ${
+                                                    requirement.ok
+                                                        ? 'text-emerald-400'
+                                                        : 'text-muted-foreground'
+                                                }`}
+                                            >
+                                                <Check className="size-3" />
+                                                {requirement.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
                         </Field>
 
                         <Field
@@ -1485,26 +1751,59 @@ function RegisterWizard(props: Props) {
                                 'password_confirmation',
                             )}
                         >
-                            <input
-                                id="password_confirmation"
-                                type="password"
-                                className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
-                                value={data.password_confirmation}
-                                maxLength={72}
-                                autoComplete="new-password"
-                                onChange={(e) =>
-                                    setData(
-                                        'password_confirmation',
-                                        e.target.value,
-                                    )
-                                }
-                            />
+                            <div className="relative">
+                                <Shield className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    id="password_confirmation"
+                                    type={
+                                        showPasswordConfirmation
+                                            ? 'text'
+                                            : 'password'
+                                    }
+                                    className={`${INPUT_CLASS} pr-10 pl-10`}
+                                    value={data.password_confirmation}
+                                    maxLength={72}
+                                    autoComplete="new-password"
+                                    onChange={(e) =>
+                                        setData(
+                                            'password_confirmation',
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Repeat your password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowPasswordConfirmation(
+                                            (value) => !value,
+                                        )
+                                    }
+                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                                >
+                                    {showPasswordConfirmation ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
+                                </button>
+                            </div>
+                            {data.password_confirmation &&
+                            !showServerOrClientError(
+                                'password_confirmation',
+                            ) &&
+                            data.password === data.password_confirmation ? (
+                                <p className="mt-2 flex items-center gap-1 text-xs text-emerald-400">
+                                    <Check className="size-3" />
+                                    Passwords match
+                                </p>
+                            ) : null}
                         </Field>
 
                         {(data.account_type === 'trainer' ||
                             data.account_type === 'nutritionist') && (
                             <>
-                                <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-2">
+                                <div className="rounded-[24px] border border-secondary/20 bg-secondary/10 p-4 text-sm leading-6 text-muted-foreground md:col-span-2">
                                     Professional accounts require license
                                     verification before activation.
                                 </div>
@@ -1519,7 +1818,7 @@ function RegisterWizard(props: Props) {
                                 >
                                     <input
                                         id="verification_full_legal_name"
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         value={
                                             data.verification_full_legal_name
                                         }
@@ -1542,7 +1841,7 @@ function RegisterWizard(props: Props) {
                                 >
                                     <input
                                         id="verification_license_number"
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         value={data.verification_license_number}
                                         onChange={(e) =>
                                             setData(
@@ -1563,7 +1862,7 @@ function RegisterWizard(props: Props) {
                                 >
                                     <input
                                         id="verification_authority"
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         value={data.verification_authority}
                                         onChange={(e) =>
                                             setData(
@@ -1584,7 +1883,7 @@ function RegisterWizard(props: Props) {
                                 >
                                     <input
                                         id="verification_country_state"
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         value={data.verification_country_state}
                                         onChange={(e) =>
                                             setData(
@@ -1606,7 +1905,7 @@ function RegisterWizard(props: Props) {
                                     <input
                                         id="verification_expiry_date"
                                         type="date"
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         value={data.verification_expiry_date}
                                         onChange={(e) =>
                                             setData(
@@ -1630,7 +1929,7 @@ function RegisterWizard(props: Props) {
                                         type="file"
                                         accept=".pdf,.jpg,.jpeg,.png"
                                         multiple
-                                        className={`w-full rounded-md border bg-transparent px-3 py-2 ${FOCUS_RING}`}
+                                        className={INPUT_CLASS}
                                         onChange={(e) =>
                                             setData(
                                                 'verification_documents',
@@ -1650,7 +1949,6 @@ function RegisterWizard(props: Props) {
                             Back
                         </Button>
                         <Button
-                            variant="primary"
                             onClick={submit}
                             disabled={processing}
                         >
@@ -1672,55 +1970,98 @@ export default function Register(props: Props) {
             {/* Skip link */}
             <a
                 href="#register-main"
-                className={`sr-only rounded-md bg-card px-3 py-2 text-sm font-semibold shadow focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 ${FOCUS_RING}`}
+                className={`sr-only rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 ${FOCUS_RING}`}
             >
                 Skip to form
             </a>
 
-            <main
-                id="register-main"
-                className="relative isolate overflow-hidden bg-background"
-            >
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle_at_top,rgba(14,165,164,0.16),transparent_65%)] dark:bg-[radial-gradient(circle_at_top,rgba(45,212,191,0.18),transparent_65%)]" />
-                    <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
-                    <div className="absolute top-24 left-0 h-56 w-56 rounded-full bg-secondary/10 blur-3xl" />
-                </div>
-
-                <div className="relative mx-auto flex min-h-[100svh] w-full max-w-5xl flex-col px-4 py-6 sm:px-6 md:py-10">
-                    <div className="mb-6 flex items-center justify-between gap-4">
-                        <div>
-                            <p className="text-xs font-semibold tracking-[0.24em] text-primary uppercase">
+            <main id="register-main" className="min-h-screen bg-background text-foreground">
+                <header className="border-b border-border/70 bg-background/80 px-6 py-4 backdrop-blur">
+                    <div className="mx-auto flex max-w-6xl items-center justify-between">
+                        <Link href="/" className="flex items-center gap-2.5 no-underline">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-secondary via-accent to-primary shadow-[0_14px_32px_-20px_rgba(23,38,60,0.55)]">
+                                <AppLogoIcon className="size-3.5 fill-current text-white" />
+                            </div>
+                            <span className="font-semibold tracking-tight text-foreground">
                                 Hayetak
-                            </p>
-                            <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                                Create your account
-                            </p>
-                            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                                Build your profile once, then use it across
-                                plans, coaching, tracking, and messaging.
-                            </p>
-                        </div>
-
-                        <Link
-                            href="/login"
-                            className={`shrink-0 rounded-full border border-border/80 bg-background/70 px-4 py-2 text-sm font-medium text-foreground/90 shadow-sm backdrop-blur transition hover:bg-card ${FOCUS_RING}`}
-                        >
-                            Sign in
+                            </span>
                         </Link>
+                        <div className="flex items-center gap-3">
+                            <p className="hidden text-sm text-muted-foreground sm:block">
+                                Already have an account?
+                            </p>
+                            <Link
+                                href="/login"
+                                className="text-sm font-medium text-primary no-underline transition-colors hover:text-secondary"
+                            >
+                                Sign in
+                            </Link>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="mx-auto flex w-full max-w-3xl flex-col px-6 py-8">
+                    <div className="mb-6 space-y-4 text-center">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/82 px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-secondary uppercase">
+                            <Sparkles className="size-3.5" />
+                            Guided onboarding
+                        </div>
+                        <h1
+                            className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
+                            style={{ fontFamily: 'var(--font-display)' }}
+                        >
+                            Create an account that already understands your
+                            goals, restrictions, and role.
+                        </h1>
+                        <p className="mx-auto max-w-2xl text-sm leading-7 text-muted-foreground">
+                            Hayetak uses this setup to generate safer AI
+                            planning, better coaching context, and cleaner
+                            daily workflows for clients, trainers, and
+                            nutritionists.
+                        </p>
                     </div>
 
-                    <div className="flex-1">
-                        <div className="mx-auto w-full max-w-3xl rounded-[28px] border border-border/70 bg-card/88 shadow-xl shadow-black/5 backdrop-blur dark:shadow-black/25">
-                            <div className="border-b border-border/70 px-6 py-4 sm:px-8">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Personalized onboarding
+                    <div className="mb-6 grid gap-3 sm:grid-cols-3">
+                        {[
+                            {
+                                icon: Activity,
+                                title: 'Profile first',
+                                copy: 'Capture goals, allergies, injuries, and schedule once.',
+                            },
+                            {
+                                icon: Brain,
+                                title: 'Smarter plan',
+                                copy: 'Use real inputs to shape nutrition and workout guidance.',
+                            },
+                            {
+                                icon: ShieldCheck,
+                                title: 'Safety visible',
+                                copy: 'Keep restrictions and medical context in the loop from day one.',
+                            },
+                        ].map(({ icon: Icon, title, copy }) => (
+                            <div
+                                key={title}
+                                className="rounded-2xl border border-border/70 bg-card/84 p-4 shadow-[0_20px_45px_-36px_rgba(15,23,42,0.45)]"
+                            >
+                                <Icon className="size-4 text-secondary" />
+                                <p className="mt-3 text-sm font-semibold text-foreground">
+                                    {title}
+                                </p>
+                                <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                                    {copy}
                                 </p>
                             </div>
+                        ))}
+                    </div>
 
-                            <div className="p-6 sm:p-8 md:p-10">
-                                <RegisterWizard {...props} />
-                            </div>
+                    <div className="w-full rounded-[28px] border border-border/70 bg-card/76 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur">
+                        <div className="border-b border-border/70 px-6 py-5">
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Personalized onboarding wizard
+                            </p>
+                        </div>
+                        <div className="p-6 sm:p-8">
+                            <RegisterWizard {...props} />
                         </div>
                     </div>
                 </div>

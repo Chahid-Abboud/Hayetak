@@ -3,26 +3,24 @@ import {
     ProductHero,
     ProductPageShell,
 } from '@/components/product/page';
-import { type SharedData } from '@/types';
+import { ResizablePanels } from '@/components/ui/resizable-panels';
+import { Skeleton } from '@/components/ui/skeleton';
+import { type ConversationContextPayload, type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
+import {
+    CalendarDays,
+    RefreshCcw,
+    Search,
+    ShieldAlert,
+    UtensilsCrossed,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Conversation = {
     id: number;
     participants: Array<{ id: number; name: string }>;
-    peer?: {
-        id: number;
-        name: string;
-        role?: string | null;
-        city?: string | null;
-    } | null;
-    last_message?: {
-        id: number;
-        sender_id: number;
-        body: string;
-        created_at: string;
-        read_at?: string | null;
-    } | null;
+    peer?: { id: number; name: string; role?: string | null; city?: string | null } | null;
+    last_message?: { id: number; sender_id: number; body: string; created_at: string; read_at?: string | null } | null;
     unread_count: number;
     updated_at: string;
 };
@@ -30,14 +28,13 @@ type Conversation = {
 type Message = {
     id: number;
     sender_id: number;
-    sender?: {
-        id: number;
-        name: string;
-    } | null;
+    sender?: { id: number; name: string } | null;
     body: string;
     read_at?: string | null;
     created_at: string;
 };
+
+type ConversationFilter = 'all' | 'unread' | 'follow_up' | 'professional';
 
 function getCsrfToken() {
     return (
@@ -49,7 +46,7 @@ function getCsrfToken() {
     );
 }
 
-function formatRoleLabel(role?: string | null) {
+function roleLabel(role?: string | null) {
     if (!role) return 'User';
     return role === 'nutritionist'
         ? 'Dietitian'
@@ -60,108 +57,88 @@ function isAbortError(error: unknown) {
     return error instanceof Error && error.name === 'AbortError';
 }
 
+function isProfessional(role?: string | null) {
+    return role === 'trainer' || role === 'nutritionist';
+}
+
+function needsFollowUp(conversation: Conversation, actorId: number) {
+    if (conversation.unread_count > 0) return true;
+    if (!conversation.last_message) return false;
+    if (conversation.last_message.sender_id === actorId) return false;
+    const ageH =
+        (Date.now() - new Date(conversation.last_message.created_at).getTime()) /
+        (1000 * 60 * 60);
+    return ageH >= 24;
+}
+
 export default function MessagesPage() {
     const { auth } = usePage<SharedData>().props;
+    const actorId = auth.user.id;
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [activeConversationId, setActiveConversationId] = useState<
-        number | null
-    >(null);
+    const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [text, setText] = useState('');
+    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState<ConversationFilter>('all');
     const [loadingConversations, setLoadingConversations] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
-    const [conversationError, setConversationError] = useState<string | null>(
-        null,
-    );
+    const [loadingContext, setLoadingContext] = useState(false);
+    const [context, setContext] = useState<ConversationContextPayload | null>(null);
+    const [conversationError, setConversationError] = useState<string | null>(null);
     const [messageError, setMessageError] = useState<string | null>(null);
+    const [contextError, setContextError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const messagesRequestRef = useRef<AbortController | null>(null);
+    const messageControllerRef = useRef<AbortController | null>(null);
+    const contextControllerRef = useRef<AbortController | null>(null);
 
     const error = messageError ?? conversationError;
 
-    async function loadConversations(): Promise<number | null> {
+    const loadConversations = async () => {
         setLoadingConversations(true);
         setConversationError(null);
-
         try {
             const res = await fetch('/api/messages/conversations', {
                 headers: { Accept: 'application/json' },
             });
-
-            if (!res.ok) {
-                const json = await res.json().catch(() => null);
-                throw new Error(
-                    typeof json?.message === 'string'
-                        ? json.message
-                        : 'Failed to load conversations.',
-                );
-            }
-
+            if (!res.ok) throw new Error('Failed to load conversations.');
             const json = await res.json();
             const data = Array.isArray(json?.data) ? json.data : [];
             setConversations(data);
-
-            const requestedId = Number(
-                new URLSearchParams(window.location.search).get('conversation'),
-            );
-            const nextActiveId =
-                data.find((item: Conversation) => item.id === requestedId)
-                    ?.id ??
-                data[0]?.id ??
-                null;
-
-            let selectedConversationId = nextActiveId;
-
-            setActiveConversationId((current) => {
-                selectedConversationId =
-                    current &&
-                    data.some((item: Conversation) => item.id === current)
-                        ? current
-                        : nextActiveId;
-
-                return selectedConversationId;
+            setActiveConversationId((prev) => {
+                if (prev && data.some((item: Conversation) => item.id === prev)) {
+                    return prev;
+                }
+                const requested = Number(
+                    new URLSearchParams(window.location.search).get('conversation'),
+                );
+                return (
+                    data.find((item: Conversation) => item.id === requested)?.id ??
+                    data[0]?.id ??
+                    null
+                );
             });
-
-            return selectedConversationId;
-        } catch (err) {
+        } catch (e) {
             setConversationError(
-                err instanceof Error
-                    ? err.message
-                    : 'Unable to load conversations.',
+                e instanceof Error ? e.message : 'Unable to load conversations.',
             );
-            return null;
         } finally {
             setLoadingConversations(false);
         }
-    }
+    };
 
-    async function loadMessages(conversationId: number) {
-        messagesRequestRef.current?.abort();
+    const loadMessages = async (conversationId: number) => {
+        messageControllerRef.current?.abort();
         const controller = new AbortController();
-        messagesRequestRef.current = controller;
-
+        messageControllerRef.current = controller;
         setLoadingMessages(true);
         setMessageError(null);
-
         try {
             const res = await fetch(
                 `/api/messages/conversations/${conversationId}/messages`,
-                {
-                    headers: { Accept: 'application/json' },
-                    signal: controller.signal,
-                },
+                { headers: { Accept: 'application/json' }, signal: controller.signal },
             );
-
-            if (!res.ok) {
-                const json = await res.json().catch(() => null);
-                throw new Error(
-                    typeof json?.message === 'string'
-                        ? json.message
-                        : 'Failed to load messages.',
-                );
-            }
-
+            if (!res.ok) throw new Error('Failed to load messages.');
             const json = await res.json();
             setMessages(Array.isArray(json?.data) ? json.data : []);
             setConversations((prev) =>
@@ -171,43 +148,69 @@ export default function MessagesPage() {
                         : conversation,
                 ),
             );
-        } catch (err) {
-            if (isAbortError(err)) return;
-
+        } catch (e) {
+            if (isAbortError(e)) return;
+            setMessageError(e instanceof Error ? e.message : 'Unable to load messages.');
             setMessages([]);
-            setMessageError(
-                err instanceof Error ? err.message : 'Unable to load messages.',
-            );
         } finally {
-            if (messagesRequestRef.current === controller) {
+            if (messageControllerRef.current === controller) {
                 setLoadingMessages(false);
-                messagesRequestRef.current = null;
+                messageControllerRef.current = null;
             }
         }
-    }
+    };
+
+    const loadContext = async (conversationId: number) => {
+        contextControllerRef.current?.abort();
+        const controller = new AbortController();
+        contextControllerRef.current = controller;
+        setLoadingContext(true);
+        setContextError(null);
+        try {
+            const res = await fetch(
+                `/api/messages/conversations/${conversationId}/context`,
+                { headers: { Accept: 'application/json' }, signal: controller.signal },
+            );
+            if (!res.ok) throw new Error('Failed to load thread context.');
+            const json = await res.json();
+            setContext((json?.data as ConversationContextPayload) ?? null);
+        } catch (e) {
+            if (isAbortError(e)) return;
+            setContextError(
+                e instanceof Error ? e.message : 'Unable to load conversation context.',
+            );
+            setContext(null);
+        } finally {
+            if (contextControllerRef.current === controller) {
+                setLoadingContext(false);
+                contextControllerRef.current = null;
+            }
+        }
+    };
 
     useEffect(() => {
         void loadConversations();
     }, []);
 
     useEffect(() => {
-        if (activeConversationId) {
-            void loadMessages(activeConversationId);
-        } else {
+        if (!activeConversationId) {
             setMessages([]);
-            setMessageError(null);
+            setContext(null);
+            return;
         }
+        void loadMessages(activeConversationId);
+        void loadContext(activeConversationId);
     }, [activeConversationId]);
 
     useEffect(() => {
         return () => {
-            messagesRequestRef.current?.abort();
+            messageControllerRef.current?.abort();
+            contextControllerRef.current?.abort();
         };
     }, []);
 
     useEffect(() => {
         if (!activeConversationId) return;
-
         const url = new URL(window.location.href);
         url.searchParams.set('conversation', String(activeConversationId));
         window.history.replaceState({}, '', url.toString());
@@ -217,15 +220,13 @@ export default function MessagesPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    async function send() {
+    const send = async () => {
         if (!activeConversationId || !text.trim() || sending) return;
-
         setSending(true);
         setMessageError(null);
-
         try {
             const body = text.trim();
-            const response = await fetch(
+            const res = await fetch(
                 `/api/messages/conversations/${activeConversationId}/messages`,
                 {
                     method: 'POST',
@@ -238,69 +239,309 @@ export default function MessagesPage() {
                     body: JSON.stringify({ body }),
                 },
             );
-
-            if (!response.ok) {
-                const json = await response.json().catch(() => null);
-                throw new Error(
-                    typeof json?.message === 'string'
-                        ? json.message
-                        : 'Message could not be sent.',
-                );
-            }
-
-            const json = await response.json();
+            if (!res.ok) throw new Error('Message could not be sent.');
+            const json = await res.json();
             const nextMessage = json?.message as Message | undefined;
-
             setText('');
-            setMessages((prev) =>
-                nextMessage ? [...prev, nextMessage] : prev,
-            );
+            setMessages((prev) => (nextMessage ? [...prev, nextMessage] : prev));
             setConversations((prev) =>
-                prev
-                    .map((conversation) =>
-                        conversation.id === activeConversationId
-                            ? {
-                                  ...conversation,
-                                  last_message: {
-                                      id: nextMessage?.id ?? Date.now(),
-                                      sender_id: auth.user.id,
-                                      body,
-                                      created_at:
-                                          nextMessage?.created_at ??
-                                          new Date().toISOString(),
-                                      read_at: nextMessage?.read_at ?? null,
-                                  },
-                                  updated_at:
+                prev.map((conversation) =>
+                    conversation.id === activeConversationId
+                        ? {
+                              ...conversation,
+                              last_message: {
+                                  id: nextMessage?.id ?? Date.now(),
+                                  sender_id: actorId,
+                                  body,
+                                  created_at:
                                       nextMessage?.created_at ??
                                       new Date().toISOString(),
-                              }
-                            : conversation,
-                    )
-                    .sort(
-                        (a, b) =>
-                            new Date(b.updated_at).getTime() -
-                            new Date(a.updated_at).getTime(),
-                    ),
+                              },
+                              updated_at:
+                                  nextMessage?.created_at ??
+                                  new Date().toISOString(),
+                          }
+                        : conversation,
+                ),
             );
-        } catch (err) {
+        } catch (e) {
             setMessageError(
-                err instanceof Error
-                    ? err.message
-                    : 'Message could not be sent.',
+                e instanceof Error ? e.message : 'Message could not be sent.',
             );
         } finally {
             setSending(false);
         }
-    }
+    };
 
-    const activeConversation = useMemo(
-        () =>
-            conversations.find(
-                (conversation) => conversation.id === activeConversationId,
-            ) ?? null,
-        [activeConversationId, conversations],
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return conversations.filter((conversation) => {
+            const peerName =
+                conversation.peer?.name ??
+                conversation.participants.find((p) => p.id !== actorId)?.name ??
+                '';
+            const searchMatch =
+                q === '' ||
+                peerName.toLowerCase().includes(q) ||
+                (conversation.last_message?.body ?? '').toLowerCase().includes(q);
+            if (!searchMatch) return false;
+            if (filter === 'unread') return conversation.unread_count > 0;
+            if (filter === 'follow_up') return needsFollowUp(conversation, actorId);
+            if (filter === 'professional') return isProfessional(conversation.peer?.role);
+            return true;
+        });
+    }, [actorId, conversations, filter, search]);
+
+    const activeConversation =
+        conversations.find((item) => item.id === activeConversationId) ?? null;
+
+    const left = (
+        <aside className="h-full min-h-[70vh] overflow-hidden rounded-3xl border border-border/70 bg-card/95">
+            <div className="space-y-3 border-b border-border/70 p-4">
+                <p className="text-sm font-semibold">Care Threads</p>
+                <div className="relative">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                        className="h-10 w-full rounded-2xl border border-border/70 bg-background/80 pl-9 pr-3 text-sm"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search person or message"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                    {(['all', 'unread', 'follow_up', 'professional'] as ConversationFilter[]).map(
+                        (item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                onClick={() => setFilter(item)}
+                                className={
+                                    'rounded-full border px-2 py-1.5 transition ' +
+                                    (filter === item
+                                        ? 'border-primary/35 bg-primary/10 text-foreground'
+                                        : 'border-border/70 bg-background text-muted-foreground')
+                                }
+                            >
+                                {item === 'all'
+                                    ? 'All'
+                                    : item === 'unread'
+                                      ? 'Unread'
+                                      : item === 'follow_up'
+                                        ? 'Follow-up'
+                                        : 'Professionals'}
+                            </button>
+                        ),
+                    )}
+                </div>
+            </div>
+            <div className="max-h-[70vh] overflow-auto p-2">
+                {loadingConversations ? (
+                    <div className="space-y-2">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                            <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+                        ))}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <p className="p-2 text-sm text-muted-foreground">
+                        No matching conversations.
+                    </p>
+                ) : (
+                    <div className="space-y-2">
+                        {filtered.map((conversation) => (
+                            <button
+                                key={conversation.id}
+                                type="button"
+                                onClick={() => setActiveConversationId(conversation.id)}
+                                className={
+                                    'w-full rounded-2xl border px-3 py-3 text-left transition ' +
+                                    (conversation.id === activeConversationId
+                                        ? 'border-primary/35 bg-primary/8'
+                                        : 'border-transparent hover:border-border/70 hover:bg-muted/35')
+                                }
+                            >
+                                <p className="truncate text-sm font-medium">
+                                    {conversation.peer?.name ?? `Conversation #${conversation.id}`}
+                                </p>
+                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                    {conversation.last_message?.body ?? 'No messages yet'}
+                                </p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">
+                                    {roleLabel(conversation.peer?.role)}
+                                    {conversation.unread_count > 0
+                                        ? ` • ${conversation.unread_count} unread`
+                                        : ''}
+                                </p>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </aside>
     );
-    const canCompose = !!activeConversation && !loadingMessages;
+
+    const right = (
+        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95">
+            {!activeConversation ? (
+                <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
+                    Select a conversation to open the thread.
+                </div>
+            ) : (
+                <>
+                    <div className="border-b border-border/70 px-5 py-4">
+                        <p className="text-base font-semibold">
+                            {activeConversation.peer?.name ?? 'Conversation'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            {roleLabel(activeConversation.peer?.role)}
+                            {activeConversation.peer?.city
+                                ? ` • ${activeConversation.peer.city}`
+                                : ''}
+                        </p>
+                    </div>
+                    <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_300px]">
+                        <div className="flex min-h-0 flex-col">
+                            <div className="min-h-0 flex-1 overflow-auto bg-muted/25 px-4 py-4">
+                                {loadingMessages ? (
+                                    <div className="space-y-2">
+                                        {Array.from({ length: 4 }).map((_, index) => (
+                                            <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+                                        ))}
+                                    </div>
+                                ) : messages.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        No messages in this conversation yet.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {messages.map((message) => {
+                                            const mine = message.sender_id === actorId;
+                                            return (
+                                                <div
+                                                    key={message.id}
+                                                    className={mine ? 'flex justify-end' : 'flex justify-start'}
+                                                >
+                                                    <div
+                                                        className={
+                                                            'max-w-[80%] rounded-2xl px-4 py-3 text-sm ' +
+                                                            (mine
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'border border-border/70 bg-background')
+                                                        }
+                                                    >
+                                                        <p className="mb-1 text-[11px] opacity-70">
+                                                            {mine
+                                                                ? 'You'
+                                                                : (message.sender?.name ??
+                                                                  activeConversation.peer?.name ??
+                                                                  'Contact')}
+                                                        </p>
+                                                        <p className="whitespace-pre-wrap">
+                                                            {message.body}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="border-t border-border/70 p-4">
+                                <div className="flex items-end gap-3">
+                                    <textarea
+                                        className="min-h-[48px] flex-1 resize-none rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
+                                        value={text}
+                                        disabled={loadingMessages || sending}
+                                        onChange={(e) => setText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                void send();
+                                            }
+                                        }}
+                                        placeholder="Write a message"
+                                    />
+                                    <button
+                                        className="rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                                        onClick={() => void send()}
+                                        disabled={loadingMessages || sending || !text.trim()}
+                                    >
+                                        {sending ? 'Sending...' : 'Send'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <aside className="border-t border-border/70 bg-background/70 px-4 py-4 xl:border-t-0 xl:border-l xl:border-border/70">
+                            <p className="text-sm font-semibold">Context Snapshot</p>
+                            <div className="mt-3 space-y-3">
+                                {loadingContext ? (
+                                    <>
+                                        <Skeleton className="h-20 w-full rounded-2xl" />
+                                        <Skeleton className="h-20 w-full rounded-2xl" />
+                                    </>
+                                ) : contextError ? (
+                                    <ProductBanner tone="danger">
+                                        {contextError}
+                                    </ProductBanner>
+                                ) : context ? (
+                                    <>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                <ShieldAlert className="h-3.5 w-3.5" />
+                                                Safety
+                                            </p>
+                                            <p>
+                                                Allergies:{' '}
+                                                {context.safety.allergies?.length
+                                                    ? context.safety.allergies.join(', ')
+                                                    : 'None listed'}
+                                            </p>
+                                            <p>
+                                                Medical history:{' '}
+                                                {context.safety.has_medical_history
+                                                    ? 'Yes'
+                                                    : 'No'}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                <UtensilsCrossed className="h-3.5 w-3.5" />
+                                                Today
+                                            </p>
+                                            <p>
+                                                Meals: {context.activity.today?.meals_logged ?? 0}
+                                            </p>
+                                            <p>
+                                                Calories:{' '}
+                                                {context.activity.today?.meal_calories ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-1 font-medium">Upcoming appointments</p>
+                                            <p className="text-muted-foreground">
+                                                {context.appointments.upcoming_count} planned
+                                            </p>
+                                            <a
+                                                href="/appointments"
+                                                className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-foreground no-underline"
+                                            >
+                                                <CalendarDays className="h-3.5 w-3.5" />
+                                                Open scheduler
+                                            </a>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        No context available.
+                                    </p>
+                                )}
+                            </div>
+                        </aside>
+                    </div>
+                </>
+            )}
+        </section>
+    );
 
     return (
         <>
@@ -308,271 +549,31 @@ export default function MessagesPage() {
             <ProductPageShell>
                 <ProductHero
                     eyebrow="Messages"
-                    title="Messages"
-                    description="View conversations, read history, and reply in one thread."
+                    title="Care Threads"
+                    description="Context-aware messaging across coaching, meal/workout progress, plans, and appointments."
                     actions={
                         <button
                             type="button"
-                            className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                            onClick={async () => {
-                                const selectedConversationId =
-                                    await loadConversations();
-                                if (selectedConversationId) {
-                                    await loadMessages(selectedConversationId);
-                                }
-                            }}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-border/70 px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                            onClick={() => void loadConversations()}
                             disabled={loadingConversations}
                         >
+                            <RefreshCcw className="h-4 w-4" />
                             {loadingConversations ? 'Refreshing...' : 'Refresh'}
                         </button>
                     }
                 />
-
-                {error ? (
-                    <ProductBanner tone="danger">{error}</ProductBanner>
-                ) : null}
-
-                <div className="grid min-h-[70vh] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-                    <aside className="overflow-hidden rounded-3xl border bg-card">
-                        <div className="border-b px-4 py-3">
-                            <div className="text-sm font-semibold">
-                                Conversations
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                Your recent threads appear here.
-                            </div>
-                        </div>
-
-                        <div className="max-h-[70vh] overflow-auto p-2">
-                            {loadingConversations ? (
-                                <div className="px-3 py-6 text-sm text-muted-foreground">
-                                    Loading conversations...
-                                </div>
-                            ) : conversations.length === 0 ? (
-                                <div className="px-3 py-6 text-sm text-muted-foreground">
-                                    No conversations yet. Start one from the{' '}
-                                    <a href="/nearby" className="underline">
-                                        Nearby
-                                    </a>{' '}
-                                    page to message a professional.
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {conversations.map((conversation) => {
-                                        const peer =
-                                            conversation.peer ??
-                                            conversation.participants.find(
-                                                (participant) =>
-                                                    participant.id !==
-                                                    auth.user.id,
-                                            );
-                                        const active =
-                                            conversation.id ===
-                                            activeConversationId;
-
-                                        return (
-                                            <button
-                                                key={conversation.id}
-                                                type="button"
-                                                onClick={() =>
-                                                    setActiveConversationId(
-                                                        conversation.id,
-                                                    )
-                                                }
-                                                className={
-                                                    'block w-full rounded-2xl border px-3 py-3 text-left transition ' +
-                                                    (active
-                                                        ? 'border-[color:var(--primary)] bg-[color:var(--primary)]/6'
-                                                        : 'border-transparent hover:border-[color:var(--border)] hover:bg-accent/50')
-                                                }
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <div className="truncate text-sm font-medium">
-                                                            {peer?.name ??
-                                                                `Conversation #${conversation.id}`}
-                                                        </div>
-                                                        <div className="mt-1 truncate text-xs text-muted-foreground">
-                                                            {conversation
-                                                                .last_message
-                                                                ?.body ??
-                                                                'No messages yet'}
-                                                        </div>
-                                                    </div>
-                                                    {conversation.unread_count >
-                                                    0 ? (
-                                                        <span className="rounded-full bg-[color:var(--primary)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--primary-foreground)]">
-                                                            {
-                                                                conversation.unread_count
-                                                            }
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-
-                                                <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                                                    <span>
-                                                        {formatRoleLabel(
-                                                            conversation.peer
-                                                                ?.role,
-                                                        )}
-                                                    </span>
-                                                    <span>
-                                                        {conversation
-                                                            .last_message
-                                                            ?.created_at
-                                                            ? new Date(
-                                                                  conversation.last_message.created_at,
-                                                              ).toLocaleString()
-                                                            : ''}
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </aside>
-
-                    <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border bg-card">
-                        {activeConversation ? (
-                            <>
-                                <div className="border-b px-5 py-4">
-                                    <div className="text-base font-semibold">
-                                        {activeConversation.peer?.name ??
-                                            'Conversation'}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                        {formatRoleLabel(
-                                            activeConversation.peer?.role,
-                                        )}
-                                        {activeConversation.peer?.city
-                                            ? ` • ${activeConversation.peer.city}`
-                                            : ''}
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 overflow-auto bg-[color:var(--muted)]/30 px-4 py-4">
-                                    {loadingMessages ? (
-                                        <div className="text-sm text-muted-foreground">
-                                            Loading messages...
-                                        </div>
-                                    ) : messages.length === 0 ? (
-                                        <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-                                            No messages in this conversation
-                                            yet.
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {messages.map((message) => {
-                                                const mine =
-                                                    message.sender_id ===
-                                                    auth.user.id;
-
-                                                return (
-                                                    <div
-                                                        key={message.id}
-                                                        className={
-                                                            'flex ' +
-                                                            (mine
-                                                                ? 'justify-end'
-                                                                : 'justify-start')
-                                                        }
-                                                    >
-                                                        <div
-                                                            className={
-                                                                'max-w-[85%] rounded-3xl px-4 py-3 text-sm shadow-sm sm:max-w-[70%] ' +
-                                                                (mine
-                                                                    ? 'bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
-                                                                    : 'border bg-background text-foreground')
-                                                            }
-                                                        >
-                                                            <div className="mb-1 text-[11px] opacity-70">
-                                                                {mine
-                                                                    ? 'You'
-                                                                    : (message
-                                                                          .sender
-                                                                          ?.name ??
-                                                                      activeConversation
-                                                                          .peer
-                                                                          ?.name ??
-                                                                      'Contact')}
-                                                            </div>
-                                                            <div className="break-words whitespace-pre-wrap">
-                                                                {message.body}
-                                                            </div>
-                                                            <div className="mt-2 text-[11px] opacity-70">
-                                                                {new Date(
-                                                                    message.created_at,
-                                                                ).toLocaleString()}
-                                                                {mine &&
-                                                                message.read_at
-                                                                    ? ' • Read'
-                                                                    : ''}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                            <div ref={messagesEndRef} />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="border-t px-4 py-4">
-                                    <div className="flex items-end gap-3">
-                                        <textarea
-                                            className="min-h-[48px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm transition outline-none focus:border-[color:var(--primary)]"
-                                            value={text}
-                                            disabled={!canCompose || sending}
-                                            onChange={(e) =>
-                                                setText(e.target.value)
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (
-                                                    e.key === 'Enter' &&
-                                                    !e.shiftKey
-                                                ) {
-                                                    e.preventDefault();
-                                                    void send();
-                                                }
-                                            }}
-                                            placeholder="Write a message"
-                                        />
-                                        <button
-                                            className="rounded-2xl bg-[color:var(--primary)] px-4 py-3 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                                            onClick={() => void send()}
-                                            disabled={
-                                                !canCompose ||
-                                                sending ||
-                                                !text.trim()
-                                            }
-                                        >
-                                            {sending ? 'Sending...' : 'Send'}
-                                        </button>
-                                    </div>
-                                    <p className="mt-2 text-xs text-muted-foreground">
-                                        Press Enter to send, Shift+Enter for a
-                                        new line.
-                                    </p>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="flex h-full min-h-[50vh] items-center justify-center px-6 text-center">
-                                <div>
-                                    <div className="text-base font-semibold">
-                                        Select a conversation
-                                    </div>
-                                    <div className="mt-2 text-sm text-muted-foreground">
-                                        Choose a thread from the list to view
-                                        its history and send messages.
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </section>
-                </div>
+                {error ? <ProductBanner tone="danger">{error}</ProductBanner> : null}
+                <ResizablePanels
+                    left={left}
+                    right={right}
+                    className="gap-0"
+                    defaultLeftWidth={340}
+                    minLeftWidth={300}
+                    maxLeftWidth={460}
+                />
             </ProductPageShell>
         </>
     );
 }
+

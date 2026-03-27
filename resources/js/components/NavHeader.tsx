@@ -1,12 +1,17 @@
-// resources/js/components/NavHeader.tsx
+import CommandPalette, {
+    type CommandPaletteItem,
+} from '@/components/command-palette';
 import NotificationBell from '@/components/NotificationBell';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { LogOut, Menu, Search, Sparkles, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+type NavLinkItem = { href: string; label: string };
 
 export default function NavHeader() {
     const [open, setOpen] = useState(false);
-    const doLogout = () => router.post('/logout');
+    const [paletteOpen, setPaletteOpen] = useState(false);
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const role = auth.user?.role ?? 'client';
@@ -14,224 +19,419 @@ export default function NavHeader() {
         typeof window === 'undefined'
             ? (page.url?.split('?')[0] ?? '/dashboard')
             : window.location.pathname;
-    const primaryItems =
+    const userName =
+        auth.user?.first_name ?? auth.user?.name ?? auth.user?.email ?? 'User';
+    const accountHref = '/settings/profile';
+    const initials = userName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+
+    const primaryItems: NavLinkItem[] =
         role === 'admin'
             ? [
-                  { href: '/dashboard', label: 'Admin Dashboard' },
-                  { href: '/coach', label: 'AI Coach' },
+                  { href: '/dashboard', label: 'Overview' },
+                  { href: '/coach', label: 'Coach' },
               ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
-                  { href: '/coach', label: 'AI Coach' },
-                  { href: '/nearby', label: 'Nearby Map' },
+                  { href: '/coach', label: 'Coach' },
+                  { href: '/nearby', label: 'Nearby' },
               ];
-    const navGroups: Array<{
-        label: string;
-        items: { href: string; label: string }[];
-    }> = [
-        {
-            label: 'Health',
-            items: [
-                { href: '/track-meals', label: 'Meal Tracker' },
-                { href: '/planner', label: 'Planner' },
-            ],
-        },
-        {
-            label: 'Training',
-            items: [
-                { href: '/workouts', label: 'Workouts' },
-                { href: '/appointments', label: 'Appointments' },
-            ],
-        },
-        {
-            label: 'Connect',
-            items: [{ href: '/messages', label: 'Messages' }],
-        },
-        {
-            label: 'Account',
-            items: [
-                { href: '/settings/profile', label: 'Profile' },
-                { href: '/settings/password', label: 'Password' },
-                { href: '/settings/two-factor', label: 'Two-Factor' },
-                { href: '/settings/appearance', label: 'Appearance' },
-            ],
-        },
-    ];
 
-    if (role === 'trainer') {
-        navGroups.splice(2, 0, {
-            label: 'Clients',
-            items: [{ href: '/trainer/clients', label: 'My Clients' }],
-        });
-    }
+    const navGroups = useMemo<Array<{ label: string; items: NavLinkItem[] }>>(
+        () => {
+            const groups: Array<{ label: string; items: NavLinkItem[] }> = [
+                {
+                    label: 'Nutrition',
+                    items: [
+                        { href: '/track-meals', label: 'Meal Tracker' },
+                        { href: '/planner', label: 'Planner' },
+                    ],
+                },
+                {
+                    label: 'Training',
+                    items: [
+                        { href: '/workouts', label: 'Workouts' },
+                        { href: '/appointments', label: 'Appointments' },
+                    ],
+                },
+                {
+                    label: 'Connect',
+                    items: [{ href: '/messages', label: 'Messages' }],
+                },
+                {
+                    label: 'Account',
+                    items: [
+                        { href: '/settings/profile', label: 'Profile' },
+                        { href: '/settings/password', label: 'Password' },
+                        { href: '/settings/two-factor', label: 'Two-Factor' },
+                        { href: '/settings/appearance', label: 'Appearance' },
+                    ],
+                },
+            ];
 
-    if (role === 'nutritionist') {
-        navGroups.splice(2, 0, {
-            label: 'Clients',
-            items: [{ href: '/dietitian/clients', label: 'My Clients' }],
-        });
-    }
+            if (role === 'trainer') {
+                groups.splice(2, 0, {
+                    label: 'Clients',
+                    items: [{ href: '/trainer/clients', label: 'My Clients' }],
+                });
+            }
 
-    if (role === 'admin') {
-        navGroups.length = 0;
-        navGroups.push(
-            {
-                label: 'Users',
-                items: [
-                    { href: '/admin/users', label: 'All Users' },
-                    { href: '/admin/professionals', label: 'Professionals' },
+            if (role === 'nutritionist') {
+                groups.splice(2, 0, {
+                    label: 'Clients',
+                    items: [{ href: '/dietitian/clients', label: 'My Clients' }],
+                });
+            }
+
+            if (role === 'admin') {
+                return [
                     {
-                        href: '/admin/professional-verifications',
-                        label: 'Verifications',
+                        label: 'Users',
+                        items: [
+                            { href: '/admin/users', label: 'All Users' },
+                            {
+                                href: '/admin/professionals',
+                                label: 'Professionals',
+                            },
+                            {
+                                href: '/admin/professional-verifications',
+                                label: 'Verifications',
+                            },
+                        ],
                     },
-                ],
-            },
-            {
-                label: 'Content',
-                items: [
-                    { href: '/admin/meals', label: 'Meals' },
-                    { href: '/admin/progress', label: 'Progress' },
-                    { href: '/admin/places', label: 'Places' },
-                ],
-            },
-            {
-                label: 'System',
-                items: [
-                    { href: '/admin/logs', label: 'Admin Logs' },
-                    { href: '/admin/notifications', label: 'Alerts' },
-                ],
-            },
-        );
-    }
+                    {
+                        label: 'Content',
+                        items: [
+                            { href: '/admin/meals', label: 'Meals' },
+                            { href: '/admin/progress', label: 'Progress' },
+                            { href: '/admin/places', label: 'Places' },
+                        ],
+                    },
+                    {
+                        label: 'System',
+                        items: [
+                            { href: '/admin/logs', label: 'Admin Logs' },
+                            { href: '/admin/notifications', label: 'Alerts' },
+                        ],
+                    },
+                ];
+            }
+
+            return groups;
+        },
+        [role],
+    );
+    const secondaryItems = useMemo(
+        () =>
+            navGroups.flatMap((group) =>
+                group.items.map((item) => ({
+                    ...item,
+                    group: group.label,
+                })),
+            ),
+        [navGroups],
+    );
 
     const isActive = (href: string) => {
-        // Mark "Workouts" active for ANY /workouts/* subpage
         if (href === '/workouts') {
             return pathname.startsWith('/workouts');
         }
 
-        if (href === '/settings/profile') {
-            return (
-                pathname === '/profile' ||
-                pathname.startsWith('/settings/profile')
-            );
+        if (href === accountHref) {
+            return pathname === '/profile' || pathname.startsWith('/settings/profile');
         }
 
         return pathname === href || pathname.startsWith(`${href}/`);
     };
 
+    const handleOpenPalette = () => {
+        setOpen(false);
+        setPaletteOpen(true);
+    };
+
+    const doLogout = () => {
+        setOpen(false);
+        router.post('/logout');
+    };
+
+    useEffect(() => {
+        setOpen(false);
+    }, [page.url]);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setOpen(false);
+            }
+        };
+
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [open]);
+
+    const paletteItems: CommandPaletteItem[] = [
+        ...primaryItems.map((item) => ({
+            id: item.href,
+            title: item.label,
+            description: `Open ${item.label.toLowerCase()}.`,
+            group: 'Primary',
+            href: item.href,
+            keywords: [item.label, 'navigation', 'go to'],
+        })),
+        ...navGroups.flatMap((group) =>
+            group.items.map((item) => ({
+                id: `${group.label}-${item.href}`,
+                title: item.label,
+                description: `Open ${item.label.toLowerCase()} from ${group.label.toLowerCase()}.`,
+                group: group.label,
+                href: item.href,
+                keywords: [group.label, item.label, item.href],
+            })),
+        ),
+        {
+            id: 'quick-log-meal',
+            title: 'Log a meal',
+            description: 'Jump straight to the meal tracker.',
+            group: 'Quick Actions',
+            href: '/track-meals',
+            tone: 'accent',
+            keywords: ['food', 'calories', 'nutrition'],
+        },
+        {
+            id: 'quick-start-workout',
+            title: 'Start a workout',
+            description: "Open today's workout logging flow.",
+            group: 'Quick Actions',
+            href: '/workouts/log',
+            tone: 'accent',
+            keywords: ['training', 'gym', 'exercise'],
+        },
+        {
+            id: 'quick-coach',
+            title: 'Ask AI Coach',
+            description:
+                'Open the AI coach and continue your current guidance thread.',
+            group: 'Quick Actions',
+            href: '/coach',
+            tone: 'accent',
+            keywords: ['ai', 'coach', 'chat'],
+        },
+        {
+            id: 'quick-logout',
+            title: 'Logout',
+            description: 'Sign out of Hayetak.',
+            group: 'Account',
+            onSelect: doLogout,
+            keywords: ['sign out', 'session'],
+        },
+    ];
+
     return (
-        <header className="sticky top-0 z-30 border-b border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_86%,transparent)] text-[color:var(--sidebar-foreground)] shadow-sm backdrop-blur-xl">
-            <div className="mx-auto max-w-6xl px-4">
-                <div className="flex h-14 items-center justify-between gap-4">
-                    <Link href="/dashboard" className="flex items-center gap-2">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--sidebar-foreground)]/15 backdrop-blur-sm">
-                            <span className="h-5 w-5 rounded-md bg-gradient-to-tr from-[var(--secondary)] to-[var(--primary)]" />
-                        </span>
-                        <span className="text-xl font-bold tracking-tight">
-                            Hayetak
-                        </span>
-                    </Link>
+        <>
+            <header className="sticky top-0 z-40 px-4 pt-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl">
+                    <div className="overflow-hidden rounded-[30px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_92%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl">
+                        <div className="px-4 py-3 sm:px-5 lg:px-6">
+                            <div className="flex items-center gap-3">
+                                <Link
+                                    href="/dashboard"
+                                    className="flex min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/10"
+                                >
+                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--secondary)] via-[var(--accent)] to-[var(--sidebar-foreground)] text-[color:var(--primary)] shadow-lg">
+                                        <Sparkles className="h-5 w-5" />
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span
+                                            className="block truncate text-xl leading-none tracking-tight"
+                                            style={{ fontFamily: 'var(--font-display)' }}
+                                        >
+                                            Hayetak
+                                        </span>
+                                        <span className="mt-1 block text-[10px] font-semibold tracking-[0.24em] text-[color:var(--sidebar-foreground)]/60 uppercase">
+                                            Daily health system
+                                        </span>
+                                    </span>
+                                </Link>
 
-                    {/* Desktop nav */}
-                    <nav className="hidden items-center gap-2 md:flex">
-                        {primaryItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={
-                                    'rounded-full px-3 py-1.5 text-sm font-medium transition ' +
-                                    (isActive(item.href)
-                                        ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
-                                        : 'text-[color:var(--sidebar-foreground)]/85 hover:bg-[color:var(--sidebar-foreground)]/8 hover:text-[color:var(--sidebar-foreground)]')
-                                }
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
-                        {navGroups.map((group) => (
-                            <Submenu
-                                key={group.label}
-                                label={group.label}
-                                items={group.items}
-                                isActive={isActive}
-                            />
-                        ))}
+                                <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex xl:gap-2">
+                                    {primaryItems.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={
+                                                'rounded-full px-4 py-2 text-sm font-medium no-underline transition ' +
+                                                (isActive(item.href)
+                                                    ? 'bg-white/16 text-white shadow-sm'
+                                                    : 'text-[color:var(--sidebar-foreground)]/78 hover:bg-white/8 hover:text-white')
+                                            }
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    ))}
+                                </nav>
 
-                        <NotificationBell />
-                        <button
-                            type="button"
-                            onClick={doLogout}
-                            className="rounded-full bg-[color:var(--sidebar-foreground)]/12 px-3 py-1.5 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-[color:var(--sidebar-foreground)]/22"
-                        >
-                            Logout
-                        </button>
-                    </nav>
+                                <div className="ml-auto hidden items-center gap-2 lg:flex">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenPalette}
+                                        className="inline-flex h-11 items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 text-sm font-medium text-[color:var(--sidebar-foreground)]/88 transition hover:bg-white/12 xl:px-4"
+                                        aria-label="Open search"
+                                        aria-haspopup="dialog"
+                                    >
+                                        <Search className="h-4 w-4" />
+                                        <span className="hidden xl:inline">Search</span>
+                                        <span className="hidden rounded-full border border-white/14 px-2 py-0.5 text-[10px] tracking-[0.16em] uppercase xl:inline-flex">
+                                            Ctrl K
+                                        </span>
+                                    </button>
+                                    <NotificationBell compact />
+                                    <Link
+                                        href={accountHref}
+                                        className="flex items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/12"
+                                    >
+                                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-sm font-semibold text-white">
+                                            {initials || 'H'}
+                                        </span>
+                                        <span className="hidden xl:block">
+                                            <span className="block text-sm font-semibold">
+                                                {userName}
+                                            </span>
+                                            <span className="block text-[10px] tracking-[0.18em] text-[color:var(--sidebar-foreground)]/58 uppercase">
+                                                {role}
+                                            </span>
+                                        </span>
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        onClick={doLogout}
+                                        className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 px-3 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-white/10 xl:px-4"
+                                    >
+                                        <LogOut className="h-4 w-4 xl:mr-2" />
+                                        <span className="hidden xl:inline">Logout</span>
+                                    </button>
+                                </div>
 
-                    {/* Mobile menu button */}
-                    <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-lg bg-[color:var(--sidebar-foreground)]/10 p-2 md:hidden"
-                        onClick={() => setOpen((v) => !v)}
-                    >
-                        <svg
-                            className="h-5 w-5 text-[color:var(--sidebar-foreground)]"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            viewBox="0 0 24 24"
-                        >
-                            {open ? (
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            ) : (
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                />
-                            )}
-                        </svg>
-                    </button>
+                                <div className="ml-auto flex items-center gap-2 lg:hidden">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenPalette}
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-[color:var(--sidebar-foreground)]"
+                                        aria-label="Open search"
+                                        aria-haspopup="dialog"
+                                    >
+                                        <Search className="h-4 w-4" />
+                                    </button>
+                                    <NotificationBell compact />
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpen((value) => !value)}
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-[color:var(--sidebar-foreground)]"
+                                        aria-label="Toggle navigation"
+                                        aria-controls="mobile-hayetak-nav"
+                                        aria-expanded={open}
+                                    >
+                                        {open ? (
+                                            <X className="h-4 w-4" />
+                                        ) : (
+                                            <Menu className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 hidden border-t border-white/8 pt-3 lg:block">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <span className="shrink-0 text-[10px] font-semibold tracking-[0.22em] text-[color:var(--sidebar-foreground)]/56 uppercase">
+                                        Quick access
+                                    </span>
+                                    <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1">
+                                        {secondaryItems.map((item) => (
+                                            <Link
+                                                key={`${item.group}-${item.href}`}
+                                                href={item.href}
+                                                className={
+                                                    'shrink-0 rounded-full border px-3 py-1.5 text-sm no-underline transition ' +
+                                                    (isActive(item.href)
+                                                        ? 'border-white/14 bg-white/14 text-white'
+                                                        : 'border-transparent bg-white/5 text-[color:var(--sidebar-foreground)]/76 hover:border-white/10 hover:bg-white/10 hover:text-white')
+                                                }
+                                                title={`${item.group}: ${item.label}`}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        ))}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Mobile sheet */}
-            {open && (
-                <div className="to-[color-mix(in oklab, var(--sidebar) 70%, black 30%)] border-t border-[color:var(--sidebar-border)] bg-gradient-to-b from-[var(--sidebar)] md:hidden">
-                    <nav className="mx-auto grid max-w-6xl gap-2 px-4 py-3">
-                        {primaryItems.map((item) => (
+            {open ? (
+                <div className="px-4 pt-3 sm:px-6 lg:hidden">
+                    <div
+                        id="mobile-hayetak-nav"
+                        className="mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_24px_60px_-42px_rgba(9,15,28,0.9)] backdrop-blur-xl"
+                    >
+                        <div className="grid max-h-[calc(100svh-7.5rem)] gap-4 overflow-y-auto px-4 py-4">
                             <Link
-                                key={item.href}
-                                href={item.href}
-                                className={
-                                    'rounded-lg px-3 py-2 transition ' +
-                                    (isActive(item.href)
-                                        ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
-                                        : 'text-[color:var(--sidebar-foreground)]/90 hover:bg-[color:var(--sidebar-foreground)]/10')
-                                }
+                                href={accountHref}
+                                className="flex items-center gap-3 rounded-[24px] border border-white/10 bg-white/6 px-4 py-3 no-underline"
                                 onClick={() => setOpen(false)}
                             >
-                                {item.label}
+                                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/12 text-sm font-semibold text-white">
+                                    {initials || 'H'}
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block truncate text-sm font-semibold">
+                                        {userName}
+                                    </span>
+                                    <span className="block text-[10px] tracking-[0.18em] text-[color:var(--sidebar-foreground)]/58 uppercase">
+                                        {role}
+                                    </span>
+                                </span>
                             </Link>
-                        ))}
-                        {navGroups.map((group) => (
-                            <div key={group.label} className="grid gap-2">
-                                <div className="text-xs font-semibold tracking-wide text-[color:var(--sidebar-foreground)]/60 uppercase">
-                                    {group.label}
-                                </div>
-                                {group.items.map((item) => (
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleOpenPalette();
+                                }}
+                                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-left"
+                            >
+                                <span className="inline-flex items-center gap-2 text-sm font-medium">
+                                    <Search className="h-4 w-4" />
+                                    Search Hayetak
+                                </span>
+                                <span className="text-[10px] tracking-[0.16em] text-[color:var(--sidebar-foreground)]/62 uppercase">
+                                    Ctrl K
+                                </span>
+                            </button>
+
+                            <div className="grid gap-2">
+                                {primaryItems.map((item) => (
                                     <Link
                                         key={item.href}
                                         href={item.href}
                                         className={
-                                            'rounded-lg px-3 py-2 transition ' +
+                                            'rounded-2xl px-4 py-3 no-underline transition ' +
                                             (isActive(item.href)
-                                                ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
-                                                : 'text-[color:var(--sidebar-foreground)]/90 hover:bg-[color:var(--sidebar-foreground)]/10')
+                                                ? 'bg-white/16 text-white'
+                                                : 'bg-white/6 text-[color:var(--sidebar-foreground)]/88 hover:bg-white/10')
                                         }
                                         onClick={() => setOpen(false)}
                                     >
@@ -239,62 +439,55 @@ export default function NavHeader() {
                                     </Link>
                                 ))}
                             </div>
-                        ))}
-                        <NotificationBell fullWidth />
-                        <button
-                            type="button"
-                            onClick={doLogout}
-                            className="w-full rounded-lg bg-[color:var(--destructive)]/15 px-3 py-2 text-left text-[color:var(--destructive-foreground)]/95 transition hover:bg-[color:var(--destructive)]/25"
-                        >
-                            Logout
-                        </button>
-                    </nav>
+
+                            {navGroups.map((group) => (
+                                <div
+                                    key={group.label}
+                                    className="rounded-[24px] border border-white/10 bg-white/6 p-3"
+                                >
+                                    <div className="px-1 text-[10px] font-semibold tracking-[0.22em] text-[color:var(--sidebar-foreground)]/58 uppercase">
+                                        {group.label}
+                                    </div>
+                                    <div className="mt-2 grid gap-2">
+                                        {group.items.map((item) => (
+                                            <Link
+                                                key={item.href}
+                                                href={item.href}
+                                                className={
+                                                    'rounded-2xl px-4 py-3 no-underline transition ' +
+                                                    (isActive(item.href)
+                                                        ? 'bg-white/16 text-white'
+                                                        : 'bg-white/6 text-[color:var(--sidebar-foreground)]/88 hover:bg-white/10')
+                                                }
+                                                onClick={() => setOpen(false)}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+
+                            <NotificationBell fullWidth />
+
+                            <button
+                                type="button"
+                                onClick={doLogout}
+                                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-white/10"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            )}
-        </header>
-    );
-}
+            ) : null}
 
-function Submenu({
-    label,
-    items,
-    isActive,
-}: {
-    label: string;
-    items: { href: string; label: string }[];
-    isActive: (href: string) => boolean;
-}) {
-    const active = items.some((item) => isActive(item.href));
-
-    return (
-        <div className="group relative">
-            <button
-                type="button"
-                className={
-                    'rounded-full px-3 py-1.5 text-sm font-medium transition ' +
-                    (active
-                        ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
-                        : 'text-[color:var(--sidebar-foreground)]/85 hover:bg-[color:var(--sidebar-foreground)]/8 hover:text-[color:var(--sidebar-foreground)]')
-                }
-            >
-                {label}
-            </button>
-            <div className="invisible absolute top-full left-0 z-40 mt-2 min-w-44 rounded-xl border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,black_6%)] p-1 opacity-0 shadow-lg transition-all duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                {items.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={
-                            'block rounded-lg px-3 py-2 text-sm transition ' +
-                            (isActive(item.href)
-                                ? 'bg-[color:var(--sidebar-foreground)]/14 text-[color:var(--sidebar-foreground)]'
-                                : 'text-[color:var(--sidebar-foreground)]/90 hover:bg-[color:var(--sidebar-foreground)]/10')
-                        }
-                    >
-                        {item.label}
-                    </Link>
-                ))}
-            </div>
-        </div>
+            <CommandPalette
+                items={paletteItems}
+                open={paletteOpen}
+                onOpenChange={setPaletteOpen}
+            />
+        </>
     );
 }

@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\AdminActionLogger;
+use App\Services\Messaging\ConversationContextBuilder;
 use App\Services\Messaging\WelcomeConversationService;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class ConversationController extends Controller
         private readonly ProfessionalAccessService $access,
         private readonly AdminActionLogger $logger,
         private readonly WelcomeConversationService $welcomeConversation,
+        private readonly ConversationContextBuilder $contextBuilder,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -100,5 +102,16 @@ class ConversationController extends Controller
             ->paginate((int) $request->query('per_page', 100));
 
         return MessageResource::collection($messages);
+    }
+
+    public function context(Request $request, Conversation $conversation): JsonResponse
+    {
+        $this->authorize('view', $conversation);
+
+        $context = $this->contextBuilder->build($conversation, $request->user());
+
+        return response()->json([
+            'data' => $context,
+        ]);
     }
 }
