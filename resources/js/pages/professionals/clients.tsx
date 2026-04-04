@@ -663,17 +663,23 @@ export default function ProfessionalClientsPage() {
                     title={pageTitle}
                     description={`Private client view for your assigned ${roleMode === 'nutritionist' ? 'nutrition' : 'training'} clients.`}
                     actions={
-                        <div className="space-y-1 rounded-2xl border bg-card px-4 py-2 text-xs text-muted-foreground">
-                            <div>
-                                {filteredClients.length} in view
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-[22px] border border-border/70 bg-card/88 px-4 py-3 text-sm">
+                                <div className="haye-kicker">In view</div>
+                                <div className="mt-2 font-semibold text-foreground">
+                                    {filteredClients.length} clients
+                                </div>
                             </div>
-                            <div>
-                                {
-                                    filteredClients.filter((entry) =>
-                                        isAttentionClient(entry, roleMode),
-                                    ).length
-                                }{' '}
-                                need follow-up
+                            <div className="rounded-[22px] border border-border/70 bg-card/88 px-4 py-3 text-sm">
+                                <div className="haye-kicker">Needs follow-up</div>
+                                <div className="mt-2 font-semibold text-foreground">
+                                    {
+                                        filteredClients.filter((entry) =>
+                                            isAttentionClient(entry, roleMode),
+                                        ).length
+                                    }{' '}
+                                    flagged
+                                </div>
                             </div>
                         </div>
                     }
@@ -693,7 +699,7 @@ export default function ProfessionalClientsPage() {
                     </div>
                 ) : (
                     <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-                        <aside className="rounded-3xl border bg-card p-4 shadow-sm">
+                        <aside className="rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
                             <div className="space-y-4">
                                 <ProductFilterRow>
                                     <label className="relative min-w-0 flex-1">
@@ -753,10 +759,10 @@ export default function ProfessionalClientsPage() {
                                                             entry.client.id,
                                                         )
                                                     }
-                                                    className={`w-full rounded-2xl border p-3 text-left transition ${
+                                                    className={`w-full rounded-[22px] border p-3 text-left transition ${
                                                         activeClientId ===
                                                         entry.client.id
-                                                            ? 'border-primary/35 bg-primary/10'
+                                                            ? 'border-primary/25 bg-primary/10 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.68)]'
                                                             : 'border-border/70 bg-background/70 hover:bg-muted/35'
                                                     }`}
                                                 >
@@ -797,9 +803,9 @@ export default function ProfessionalClientsPage() {
                                     (entry) => (
                                         <section
                                             key={entry.assignment_id}
-                                            className="rounded-3xl border bg-card p-5 shadow-sm"
+                                            className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
                                         >
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-3">
                                             <h2 className="text-xl font-semibold">

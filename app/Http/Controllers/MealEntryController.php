@@ -23,20 +23,22 @@ class MealEntryController extends Controller
 
         $userId = Auth::id();
         $user = $request->user();
-
-        [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date);
+        $summary = $this->mealTrackerService->daySummary($userId, $date);
 
         $pref = UserPref::where('user_id', $userId)->first();
-        $targets = $this->mealTrackerService->targets($userId);
+        $targets = $summary['targets'] ?? $this->mealTrackerService->targets($userId);
         $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return Inertia::render('track_meal/track_meals', [
             'date' => $date,
-            'dailyTotals' => $dailyTotals,
-            'mealTotals' => $byMeal,
-            'entries' => $entries,
+            'dailyTotals' => $summary['dailyTotals'],
+            'mealTotals' => $summary['mealTotals'],
+            'entries' => $summary['entries'],
             'targets' => $targets,
+            'remaining' => $summary['remaining'],
             'recommendations' => $recommendations,
+            'planModeAvailable' => $summary['planModeAvailable'] ?? false,
+            'plannedDay' => $summary['plannedDay'] ?? null,
             'userAllergies' => $this->mealTrackerService->userAllergies($userId),
             'dietName' => $user?->diet_name,
         ]);
@@ -53,20 +55,22 @@ class MealEntryController extends Controller
             : now()->format('Y-m-d');
 
         $userId = Auth::id();
-
-        [$dailyTotals, $byMeal, $entries] = $this->summaries($userId, $date, true);
+        $summary = $this->mealTrackerService->daySummary($userId, $date);
 
         $pref = UserPref::where('user_id', $userId)->first();
-        $targets = $this->mealTrackerService->targets($userId);
+        $targets = $summary['targets'] ?? $this->mealTrackerService->targets($userId);
         $recommendations = $this->recommendationsFromPref($pref, $targets);
 
         return response()->json([
             'date' => $date,
-            'dailyTotals' => $dailyTotals,
-            'mealTotals' => $byMeal,
-            'entries' => $entries,
+            'dailyTotals' => $summary['dailyTotals'],
+            'mealTotals' => $summary['mealTotals'],
+            'entries' => $summary['entries'],
             'targets' => $targets,
+            'remaining' => $summary['remaining'],
             'recommendations' => $recommendations,
+            'planModeAvailable' => $summary['planModeAvailable'] ?? false,
+            'plannedDay' => $summary['plannedDay'] ?? null,
         ]);
     }
 
@@ -97,6 +101,10 @@ class MealEntryController extends Controller
     {
         abort_if($entry->user_id !== Auth::id(), 403);
         $entry->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Removed.']);
+        }
 
         return back()->with('success', 'Removed.');
     }

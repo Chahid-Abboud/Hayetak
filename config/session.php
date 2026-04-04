@@ -156,7 +156,19 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => (function () {
+        $domain = env('SESSION_DOMAIN');
+
+        if (! is_string($domain)) {
+            return $domain;
+        }
+
+        $domain = trim($domain);
+
+        return $domain !== '' && strtolower($domain) !== 'null'
+            ? $domain
+            : null;
+    })(),
 
     /*
     |--------------------------------------------------------------------------
@@ -199,7 +211,19 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => (function () {
+        $sameSite = env('SESSION_SAME_SITE', 'lax');
+
+        if (! is_string($sameSite)) {
+            return $sameSite;
+        }
+
+        $sameSite = trim($sameSite);
+
+        return $sameSite !== '' && strtolower($sameSite) !== 'null'
+            ? strtolower($sameSite)
+            : null;
+    })(),
 
     /*
     |--------------------------------------------------------------------------

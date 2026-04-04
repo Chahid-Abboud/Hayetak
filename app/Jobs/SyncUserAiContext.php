@@ -28,6 +28,6 @@ class SyncUserAiContext implements ShouldQueue
             return;
         }
 
-        $chatService->delete_user_data($this->userId);
+        $chatService->deleteUserData($this->userId);
     }
 }

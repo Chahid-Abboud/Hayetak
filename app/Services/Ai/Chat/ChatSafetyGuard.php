@@ -42,6 +42,12 @@ class ChatSafetyGuard
             $warnings[] = 'Empty model response replaced with fallback text.';
         }
 
+        $sanitized = $this->sanitizeInternalAiPhrasing($clean);
+        if ($sanitized !== $clean) {
+            $clean = $sanitized;
+            $warnings[] = 'Internal AI phrasing was normalized to plain English.';
+        }
+
         $allergies = array_map('mb_strtolower', $context['restrictions']['allergies'] ?? []);
         $isRestrictionLookup = $this->isRestrictionLookupQuestion($question);
         $looksLikeFoodSuggestion = $this->looksLikeFoodSuggestion($question, $clean, $classification);
@@ -97,14 +103,28 @@ class ChatSafetyGuard
         return $this->containsAny($question, [
             'what are my allergies',
             'what are the allergies',
+            'what are my allergens',
             'what allergies do i have',
+            'what allergens do i have',
             'my allergies',
+            'my allergens',
             'allergy list',
+            'allergen list',
             'what are my restrictions',
             'what are my dietary restrictions',
             'what diet type do i have',
             'what injuries do i have',
             'what medical conditions do i have',
+            'what is my injury history',
+            'what is my medical history',
+            'my injury history',
+            'my medical history',
+            'what about my allergens',
+            'what about my allergies',
+            'what about my injury history',
+            'what about my medical history',
+            'allergens and injury history',
+            'allergies and injury history',
         ]);
     }
 
@@ -169,8 +189,12 @@ class ChatSafetyGuard
         $normalized = mb_strtolower($answer);
 
         foreach ($this->extractRecommendationSegments($normalized) as $segment) {
+            if ($this->segmentIsAvoidanceContext($segment, $allergy)) {
+                continue;
+            }
+
             if (
-                str_contains($segment, $allergy) &&
+                $this->containsWholeWord($segment, $allergy) &&
                 $this->containsAny($segment, [
                     'try ',
                     'eat ',
@@ -200,6 +224,37 @@ class ChatSafetyGuard
         return false;
     }
 
+    private function containsWholeWord(string $text, string $term): bool
+    {
+        $candidate = trim($term);
+        if ($candidate === '') {
+            return false;
+        }
+
+        return preg_match('/\b'.preg_quote($candidate, '/').'\b/u', $text) === 1;
+    }
+
+    private function segmentIsAvoidanceContext(string $segment, string $allergy): bool
+    {
+        if ($allergy === '' || ! str_contains($segment, $allergy)) {
+            return false;
+        }
+
+        $escapedAllergy = preg_quote($allergy, '/');
+        $avoidancePattern = '/\b(avoid|without|exclude|free of|allergy to|allergic to|no)\b[^.!?\n]{0,60}\b'.$escapedAllergy.'\b/u';
+
+        if (preg_match($avoidancePattern, $segment) === 1) {
+            return true;
+        }
+
+        return $this->containsAny($segment, [
+            'safe for your allergy',
+            'safe alternative',
+            'avoid your saved allergy',
+            'avoid your allergies',
+        ]);
+    }
+
     private function extractRecommendationSegments(string $answer): array
     {
         $segments = preg_split('/[\r\n]+|(?<=[\.\!\?])\s+/', $answer) ?: [];
@@ -208,5 +263,43 @@ class ChatSafetyGuard
             static fn ($segment) => trim($segment),
             $segments,
         )));
+    }
+
+    private function sanitizeInternalAiPhrasing(string $answer): string
+    {
+        $clean = $answer;
+
+        $replacements = [
+            '/\bbased on your PERSONAL_CONTEXT\b/i' => 'based on your profile',
+            '/\bBased on your PERSONAL_CONTEXT\b/i' => 'Based on your profile',
+            '/\bThis information comes directly from your user profile\b/i' => 'This is based on your saved profile',
+            '/\bdirectly from your user profile\b/i' => 'based on your saved profile',
+            '/\bPERSONAL_CONTEXT\b/i' => 'your profile',
+            '/\bCORE_PROFILE_FACTS\b/i' => 'your saved profile',
+            '/\bSAFETY_RULES\b/i' => 'your saved restrictions',
+            '/\bTODAY_SUMMARY\b/i' => 'today\'s summary',
+            '/\bLAST_7_DAYS_SUMMARY\b/i' => 'your last 7 days',
+            '/\bRECENT_CONVERSATION\b/i' => 'our recent conversation',
+            '/\bRUNTIME_HINTS\b/i' => 'the details you shared',
+            '/\bACTIVE_PATH\b/i' => 'the available context',
+            '/\bRETRIEVAL_MODE\b/i' => 'the available context',
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $clean = preg_replace($pattern, $replacement, $clean) ?? $clean;
+        }
+
+        // Keep intentional line breaks (recipes, steps, lists), only normalize inline spacing.
+        $lines = preg_split('/\R/u', $clean) ?: [$clean];
+        $normalizedLines = array_map(
+            static fn (string $line) => trim((string) (preg_replace('/[ \t]+/u', ' ', $line) ?? $line)),
+            $lines,
+        );
+        $normalizedLines = array_values(array_filter(
+            $normalizedLines,
+            static fn (string $line) => $line !== '',
+        ));
+
+        return implode("\n", $normalizedLines);
     }
 }

@@ -9,7 +9,7 @@ export function ProductTable({
     className?: string;
 }) {
     return (
-        <div className="overflow-hidden rounded-[24px] border border-border/70 bg-card/95 shadow-sm">
+        <div className="overflow-hidden rounded-[26px] border border-border/70 bg-card/95 shadow-[0_24px_60px_-48px_rgba(17,24,39,0.75)]">
             <div className="overflow-x-auto">
                 <table className={cn('min-w-full text-sm', className)}>
                     {children}
@@ -21,7 +21,7 @@ export function ProductTable({
 
 export function ProductTableHead({ children }: { children: ReactNode }) {
     return (
-        <thead className="bg-muted/40 text-left text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+        <thead className="bg-muted/45 text-left text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
             {children}
         </thead>
     );
@@ -45,7 +45,7 @@ export function ProductTableRow({
             className={cn(
                 'border-t border-border/70 align-top',
                 interactive &&
-                    'cursor-pointer transition focus-within:bg-muted/30 hover:bg-muted/30',
+                    'cursor-pointer transition focus-within:bg-muted/28 hover:bg-muted/28',
                 className,
             )}
         >
@@ -62,7 +62,7 @@ export function ProductTableHeaderCell({
     className?: string;
 }) {
     return (
-        <th className={cn('px-4 py-3 font-medium', className)}>{children}</th>
+        <th className={cn('px-4 py-3.5 font-medium', className)}>{children}</th>
     );
 }
 
@@ -74,7 +74,7 @@ export function ProductTableCell({
     className?: string;
 }) {
     return (
-        <td className={cn('px-4 py-3 align-top text-foreground', className)}>
+        <td className={cn('px-4 py-3.5 align-top text-foreground', className)}>
             {children}
         </td>
     );

@@ -12,7 +12,7 @@ class AiExportTrainingData extends Command
         {--out=storage/app/ai/training/train.jsonl : Output jsonl path}
         {--limit=0 : Limit rows (0 = no limit)}
         {--type=plan_generator : AiRequest type filter}
-        {--status=succeeded : AiRequest status filter}
+        {--status=completed : AiRequest status filter}
         {--with-workout=1 : Include workout_plan in target}
     ';
 
@@ -62,23 +62,26 @@ class AiExportTrainingData extends Command
 
                 // We train ONLY the structured plan output
                 $target = [
-                    'nutrition_plan' => $outJson['nutrition_plan'] ?? null,
+                    'overview' => $outJson['overview'] ?? null,
+                    'safety' => $outJson['safety'] ?? null,
+                    'diet' => $outJson['diet'] ?? null,
+                    'adaptive_review' => $outJson['adaptive_review'] ?? null,
+                    'ml_readiness' => $outJson['ml_readiness'] ?? null,
                 ];
                 if ($withWorkout) {
-                    $target['workout_plan'] = $outJson['workout_plan'] ?? null;
+                    $target['workout'] = $outJson['workout'] ?? null;
                 }
 
-                // Skip if nutrition_plan missing
-                if (! $target['nutrition_plan']) {
+                if (! $target['diet']) {
                     continue;
                 }
 
                 // Make a stable instruction prompt (this is what the model learns)
                 $example = [
-                    'schema' => 'hayetak_plan_v1',
-                    'instruction' => 'Generate a nutrition_plan (and workout_plan if requested) strictly as JSON that matches the schema.',
+                    'schema' => 'hayetak_plan_v2',
+                    'instruction' => 'Generate a structured Hayetak plan JSON that contains overview, safety, diet, workout, adaptive_review, and ml_readiness.',
                     'input_context' => $ctx,
-                    'target_json' => $target,
+                    'target_json' => array_filter($target, fn ($value) => $value !== null),
                 ];
 
                 fwrite($fh, json_encode($example, JSON_UNESCAPED_UNICODE)."\n");

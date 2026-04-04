@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Food;
+use App\Models\MealEntry;
+use App\Models\NutritionPlanItem;
 use App\Services\MealTrackerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -89,5 +92,84 @@ class MealTrackerApiController extends Controller
         });
 
         return response()->json(['ok' => true]);
+    }
+
+    public function logPlannedItem(Request $request, NutritionPlanItem $nutritionPlanItem)
+    {
+        $user = $request->user();
+        $nutritionPlanItem->loadMissing(['meal.day.plan', 'food']);
+
+        abort_unless(
+            $nutritionPlanItem->meal?->day?->plan?->user_id === $user?->id,
+            403
+        );
+
+        $data = $request->validate([
+            'food_id' => ['required', 'integer', 'exists:foods,id'],
+            'servings' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            'eaten_at' => ['nullable', 'date'],
+        ]);
+
+        $plannedDate = $nutritionPlanItem->meal?->day?->date?->toDateString();
+        $eatenAt = isset($data['eaten_at'])
+            ? Carbon::parse($data['eaten_at'])->toDateString()
+            : ($plannedDate ?? now()->toDateString());
+
+        if ($plannedDate !== null && $eatenAt !== $plannedDate) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Planned items can only be logged on their scheduled date.',
+            ], 422);
+        }
+
+        $food = Food::query()->findOrFail((int) $data['food_id']);
+        $violations = $this->validateFoodSafety($user?->id ?? 0, $food);
+        if ($violations !== []) {
+            return response()->json([
+                'ok' => false,
+                'message' => implode(' ', $violations),
+            ], 422);
+        }
+
+        $entry = MealEntry::query()->updateOrCreate(
+            [
+                'user_id' => $user?->id,
+                'nutrition_plan_item_id' => $nutritionPlanItem->id,
+                'eaten_at' => $eatenAt,
+            ],
+            [
+                'food_id' => $food->id,
+                'meal_type' => (string) ($nutritionPlanItem->meal?->meal_type ?? 'snack'),
+                'servings' => (float) $data['servings'],
+            ]
+        );
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Planned meal logged successfully.',
+            'status' => (int) $entry->food_id === (int) $nutritionPlanItem->food_id
+                ? 'logged_exact'
+                : 'logged_substitute',
+            'entry_id' => $entry->id,
+        ]);
+    }
+
+    private function validateFoodSafety(int $userId, Food $food): array
+    {
+        $violations = [];
+        $userAllergies = array_map('mb_strtolower', $this->svc->userAllergies($userId));
+        $foodAllergens = array_map('mb_strtolower', is_array($food->allergens) ? $food->allergens : []);
+
+        if ($userAllergies !== [] && array_intersect($userAllergies, $foodAllergens) !== []) {
+            $violations[] = 'This substitute conflicts with your saved allergies.';
+        }
+
+        $dietName = $this->svc->userDietName($userId);
+        $allowedDiets = array_map('mb_strtolower', is_array($food->diets_allowed) ? $food->diets_allowed : []);
+        if ($dietName && $allowedDiets !== [] && ! in_array(mb_strtolower($dietName), $allowedDiets, true)) {
+            $violations[] = 'This substitute does not match your saved diet type.';
+        }
+
+        return $violations;
     }
 }

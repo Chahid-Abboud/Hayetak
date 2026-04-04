@@ -1,35 +1,64 @@
-// resources/js/pages/workouts/planner.tsx
-import {
+﻿import {
     ProductBanner,
+    ProductEmptyState,
     ProductHero,
     ProductPageShell,
+    ProductSection,
+    ProductStickyActions,
 } from '@/components/product/page';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import type { Errors as InertiaErrors } from '@inertiajs/core';
-import { Head, router, usePage } from '@inertiajs/react';
-import React, {
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { CalendarDays, Dumbbell, WandSparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
-// ===================== Types =====================
 type Exercise = {
     id: number;
     name: string;
     primary_muscle: string;
     equipment?: string | null;
     demo_url?: string | null;
-    // Optional: if your DB returns conditions (string[])
-    conditions?: unknown;
+};
+
+type DayExercise = {
+    id: number;
+    name: string;
+    primary_muscle: string;
+    equipment?: string | null;
+    pivot?: {
+        order_index?: number | null;
+        sets?: number | null;
+        reps_min?: number | null;
+        reps_max?: number | null;
+    };
+};
+
+type PlanDay = {
+    id: number;
+    day_index: number;
+    name?: string | null;
+    notes?: string | null;
+    meta?: Record<string, unknown> | null;
+    exercises: DayExercise[];
+};
+
+type WorkoutPlan = {
+    id: number;
+    name: string;
+    goal?: string | null;
+    start_date?: string | null;
+    duration_days?: number | null;
+    meta?: Record<string, unknown> | null;
+    ai_request?: {
+        provider?: string | null;
+        model?: string | null;
+    } | null;
+    days: PlanDay[];
 };
 
 type DayDraft = {
     day_index: number;
-    title: string;
+    name: string;
     exercises: {
         exercise_id: number;
         target_sets: number;
@@ -37,1277 +66,742 @@ type DayDraft = {
     }[];
 };
 
-type PlanDay = {
-    day_index: number;
-    title?: string | null;
-    exercises: {
-        id: number;
-        name: string;
-        primary_muscle: string;
-        pivot: { target_sets: number; target_reps: number };
-    }[];
+type PageProps = {
+    activeAiPlan?: WorkoutPlan | null;
+    manualPlan?: WorkoutPlan | null;
+    premadePlans?: WorkoutPlan[] | null;
+    recommendedAiDayId?: number | null;
+    recommendedManualDayId?: number | null;
+    today: string;
+    exercises: Exercise[];
 };
 
-type Plan = {
-    id: number;
-    name: string;
-    days_per_week: number;
-    days: PlanDay[];
-} | null;
+function sourceLabel(source?: { provider?: string | null; model?: string | null } | null) {
+    const provider = source?.provider?.trim();
+    const model = source?.model?.trim();
 
-type Props = { plan: Plan; exercises: Exercise[] };
+    if (!provider && !model) return 'Model unavailable';
+    if (!provider) return model ?? 'Model unavailable';
+    if (!model) return provider;
 
-// ===================== Constants =====================
-const MUSCLES = [
-    'chest',
-    'back',
-    'shoulders',
-    'legs',
-    'glutes',
-    'biceps',
-    'triceps',
-    'core',
-    'calves',
-] as const;
-const PAGE_SIZE = 40;
-const normalize = (s: string) => s.toLowerCase().trim();
+    return `${provider} - ${model}`;
+}
 
-function normalizeConditions(conditions: unknown): string[] {
-    if (!Array.isArray(conditions)) return [];
-    return conditions.filter((c): c is string => typeof c === 'string');
+function buildInitialDraft(plan?: WorkoutPlan | null): DayDraft[] {
+    if (!plan?.days?.length) {
+        return Array.from({ length: 3 }, (_, index) => ({
+            day_index: index + 1,
+            name: '',
+            exercises: [],
+        }));
+    }
+
+    return plan.days
+        .slice()
+        .sort((left, right) => left.day_index - right.day_index)
+        .map((day) => ({
+            day_index: day.day_index,
+            name: day.name ?? '',
+            exercises: (day.exercises ?? []).map((exercise) => ({
+                exercise_id: exercise.id,
+                target_sets: exercise.pivot?.sets ?? 3,
+                target_reps: exercise.pivot?.reps_min ?? exercise.pivot?.reps_max ?? 10,
+            })),
+        }));
 }
 
 function stringifyErrors(errors: InertiaErrors): Record<string, string> {
-    return Object.entries(errors).reduce<Record<string, string>>(
-        (acc, [key, value]) => {
-            acc[key] = String(value);
-            return acc;
-        },
-        {},
-    );
+    return Object.entries(errors).reduce<Record<string, string>>((carry, [key, value]) => {
+        carry[key] = String(value);
+        return carry;
+    }, {});
 }
 
-// ===================== Small UI Primitives =====================
-const Chip = memo(function Chip({
-    active,
-    children,
-    onClick,
-}: {
-    active?: boolean;
-    children: React.ReactNode;
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className={[
-                'rounded-full border px-2 py-1 text-[11px] transition',
-                active
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700',
-            ].join(' ')}
-            aria-pressed={!!active}
-        >
-            {children}
-        </button>
-    );
-});
+function templateDays(key: 'fullBody3' | 'pushPullLegs3' | 'upperLower4'): DayDraft[] {
+    if (key === 'upperLower4') {
+        return [
+            { day_index: 1, name: 'Upper A', exercises: [] },
+            { day_index: 2, name: 'Lower A', exercises: [] },
+            { day_index: 3, name: 'Upper B', exercises: [] },
+            { day_index: 4, name: 'Lower B', exercises: [] },
+        ];
+    }
 
-// ===================== Main Page =====================
-export default function PlannerPage() {
-    const page = usePage<Partial<Props>>().props;
-    const plan: Plan = (page.plan as Plan) ?? null;
-    const exercises = useMemo<Exercise[]>(
-        () => (Array.isArray(page.exercises) ? page.exercises : []),
-        [page.exercises],
-    );
+    if (key === 'pushPullLegs3') {
+        return [
+            { day_index: 1, name: 'Push', exercises: [] },
+            { day_index: 2, name: 'Pull', exercises: [] },
+            { day_index: 3, name: 'Legs', exercises: [] },
+        ];
+    }
 
-    const [daysPerWeek, setDaysPerWeek] = useState<number>(
-        plan?.days_per_week ?? 3,
-    );
-    const [days, setDays] = useState<DayDraft[]>(() => buildInitialDays(plan));
+    return [
+        { day_index: 1, name: 'Full Body 1', exercises: [] },
+        { day_index: 2, name: 'Full Body 2', exercises: [] },
+        { day_index: 3, name: 'Full Body 3', exercises: [] },
+    ];
+}
 
+export default function WorkoutPlannerPage() {
+    const { activeAiPlan, manualPlan, premadePlans, recommendedAiDayId, exercises } =
+        usePage<PageProps>().props;
+
+    const [mode, setMode] = useState<'follow-ai' | 'build-own'>(
+        activeAiPlan ? 'follow-ai' : 'build-own',
+    );
+    const [draftName, setDraftName] = useState(manualPlan?.name ?? 'My Workout Draft');
+    const [draftDays, setDraftDays] = useState<DayDraft[]>(buildInitialDraft(manualPlan));
+    const [selectedDay, setSelectedDay] = useState<number>(draftDays[0]?.day_index ?? 1);
+    const [query, setQuery] = useState('');
     const [saving, setSaving] = useState(false);
-    const [flash, setFlash] = useState<string | null>(null);
+    const [status, setStatus] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // ---------- Library state ----------
-    const [search, setSearch] = useState('');
-    const [debounced, setDebounced] = useState('');
-    const [muscleFilters, setMuscleFilters] = useState<string[]>([]);
-    const [conditionFilters, setConditionFilters] = useState<string[]>([]);
-    const [sortBy, setSortBy] = useState<'name' | 'muscle'>('name');
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-    const [activeAddDay, setActiveAddDay] = useState<number>(1);
+    const aiRecommendedDay =
+        activeAiPlan?.days?.find((day) => day.id === recommendedAiDayId) ??
+        activeAiPlan?.days?.[0] ??
+        null;
 
-    // ---------- Derived helpers ----------
-    const exercisesById = useMemo(
-        () => new Map(exercises.map((e) => [e.id, e])),
-        [exercises],
-    );
-
-    // Gather unique conditions from data (fallback to a known set if none present)
-    const allConditions = useMemo(() => {
-        const set = new Set<string>();
-        exercises.forEach((e) => {
-            const conds = normalizeConditions(e.conditions);
-            conds?.forEach((c: string) => typeof c === 'string' && set.add(c));
-        });
-        if (set.size === 0) {
-            // fallback common labels from your seed
-            [
-                'asthma',
-                'heart',
-                'high_blood_pressure',
-                'anemia',
-                'no_legs',
-            ].forEach((c) => set.add(c));
-        }
-        return Array.from(set).sort();
-    }, [exercises]);
-
-    // Keep days length synced with daysPerWeek
-    useEffect(() => {
-        setDays((prev) => syncDaysLength(prev, daysPerWeek));
-        if (activeAddDay > daysPerWeek) setActiveAddDay(daysPerWeek);
-    }, [daysPerWeek, activeAddDay]);
-
-    // Debounce search
-    useEffect(() => {
-        const t = setTimeout(() => setDebounced(search), 200);
-        return () => clearTimeout(t);
-    }, [search]);
-
-    // Filter/sort library
     const filteredLibrary = useMemo(() => {
-        const q = normalize(debounced);
-        let list = exercises;
+        const token = query.trim().toLowerCase();
+        if (token === '') return exercises.slice(0, 60);
 
-        if (q)
-            list = list.filter(
-                (e) =>
-                    normalize(e.name).includes(q) ||
-                    normalize(e.primary_muscle).includes(q),
-            );
+        return exercises.filter((exercise) => {
+            const haystack = `${exercise.name} ${exercise.primary_muscle} ${exercise.equipment ?? ''}`.toLowerCase();
+            return haystack.includes(token);
+        });
+    }, [exercises, query]);
 
-        if (muscleFilters.length) {
-            const s = new Set(muscleFilters);
-            list = list.filter((e) => s.has(normalize(e.primary_muscle)));
-        }
+    const activeDraftDay =
+        draftDays.find((day) => day.day_index === selectedDay) ?? draftDays[0] ?? null;
 
-        if (conditionFilters.length) {
-            const cs = new Set(conditionFilters);
-            list = list.filter((e) => {
-                const conds = normalizeConditions(e.conditions);
-                return conds.some((c) => cs.has(c));
-            });
-        }
-
-        return [...list].sort((a, b) =>
-            sortBy === 'muscle'
-                ? normalize(a.primary_muscle).localeCompare(
-                      normalize(b.primary_muscle),
-                  ) || normalize(a.name).localeCompare(normalize(b.name))
-                : normalize(a.name).localeCompare(normalize(b.name)),
-        );
-    }, [exercises, debounced, muscleFilters, conditionFilters, sortBy]);
-
-    const pagedLibrary = useMemo(
-        () => filteredLibrary.slice(0, visibleCount),
-        [filteredLibrary, visibleCount],
-    );
-
-    // ---------- Mutations ----------
-    const addExercise = useCallback((dayIdx: number, exId: number) => {
-        setDays((prev) =>
-            prev.map((d) =>
-                d.day_index === dayIdx
-                    ? {
-                          ...d,
-                          exercises: d.exercises.some(
-                              (x) => x.exercise_id === exId,
-                          )
-                              ? d.exercises
-                              : [
-                                    ...d.exercises,
-                                    {
-                                        exercise_id: exId,
-                                        target_sets: 3,
-                                        target_reps: 10,
-                                    },
-                                ],
-                      }
-                    : d,
-            ),
-        );
-    }, []);
-
-    const updateSetRep = useCallback(
-        (
-            dayIdx: number,
-            i: number,
-            field: 'target_sets' | 'target_reps',
-            value: number,
-        ) => {
-            setDays((prev) =>
-                prev.map((d) =>
-                    d.day_index === dayIdx
-                        ? {
-                              ...d,
-                              exercises: d.exercises.map((x, idx) =>
-                                  idx === i ? { ...x, [field]: value } : x,
-                              ),
-                          }
-                        : d,
-                ),
-            );
-        },
-        [],
-    );
-
-    const removeExercise = useCallback((dayIdx: number, i: number) => {
-        setDays((prev) =>
-            prev.map((d) =>
-                d.day_index === dayIdx
-                    ? {
-                          ...d,
-                          exercises: d.exercises.filter((_, idx) => idx !== i),
-                      }
-                    : d,
-            ),
-        );
-    }, []);
-
-    const save = useCallback(() => {
+    const saveDraft = () => {
         setSaving(true);
-        setFlash(null);
+        setStatus(null);
         setErrors({});
 
         router.post(
             '/workouts/plan',
-            { name: plan?.name ?? 'My Plan', days_per_week: daysPerWeek, days },
+            {
+                name: draftName,
+                days: draftDays,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    router.reload({ only: ['plan'] });
-                    setFlash('Plan saved!');
+                    setStatus('Your custom workout draft has been saved.');
+                    router.reload({
+                        only: ['manualPlan', 'recommendedManualDayId'],
+                    });
                 },
-                onError: (e) => setErrors(stringifyErrors(e)),
+                onError: (incomingErrors) => setErrors(stringifyErrors(incomingErrors)),
                 onFinish: () => setSaving(false),
             },
         );
-    }, [days, daysPerWeek, plan?.name]);
+    };
 
-    // ---------- A11y flash focus ----------
-    const flashRef = useRef<HTMLSpanElement | null>(null);
-    useEffect(() => {
-        if (flash && flashRef.current) flashRef.current.focus();
-    }, [flash]);
+    const updateDay = (dayIndex: number, updater: (day: DayDraft) => DayDraft) => {
+        setDraftDays((current) =>
+            current.map((day) => (day.day_index === dayIndex ? updater(day) : day)),
+        );
+    };
 
-    // ---------- Template helper ----------
-    const pickExercises = useCallback(
-        (muscle: string, count: number) => {
-            // Respect current condition filters if any
-            const hasCond = conditionFilters.length > 0;
-            const cs = new Set(conditionFilters);
-            const pool = exercises.filter(
-                (e) =>
-                    normalize(e.primary_muscle) === normalize(muscle) &&
-                    (!hasCond ||
-                        normalizeConditions(e.conditions).some((c) =>
-                            cs.has(c),
-                        )),
-            );
-            return pool.slice(0, count).map((e) => ({
-                exercise_id: e.id,
-                target_sets: 3,
-                target_reps: 10,
-            }));
-        },
-        [exercises, conditionFilters],
-    );
+    const addExercise = (exerciseId: number) => {
+        if (!activeDraftDay) return;
 
-    const applyTemplate = useCallback(
-        (key: 'ppl3' | 'upperLower4' | 'fullBody3' | 'arnold6') => {
-            let nextDaysPerWeek = 3;
-            const d: DayDraft[] = [];
-
-            if (key === 'ppl3') {
-                nextDaysPerWeek = 3;
-                d.push(
-                    {
-                        day_index: 1,
-                        title: 'Push',
-                        exercises: [
-                            ...pickExercises('chest', 2),
-                            ...pickExercises('shoulders', 2),
-                            ...pickExercises('triceps', 1),
-                        ],
-                    },
-                    {
-                        day_index: 2,
-                        title: 'Pull',
-                        exercises: [
-                            ...pickExercises('back', 3),
-                            ...pickExercises('biceps', 1),
-                        ],
-                    },
-                    {
-                        day_index: 3,
-                        title: 'Legs',
-                        exercises: [
-                            ...pickExercises('legs', 3),
-                            ...pickExercises('glutes', 1),
-                            ...pickExercises('calves', 1),
-                        ],
-                    },
-                );
+        updateDay(activeDraftDay.day_index, (day) => {
+            if (day.exercises.some((exercise) => exercise.exercise_id === exerciseId)) {
+                return day;
             }
 
-            if (key === 'upperLower4') {
-                nextDaysPerWeek = 4;
-                d.push(
+            return {
+                ...day,
+                exercises: [
+                    ...day.exercises,
                     {
-                        day_index: 1,
-                        title: 'Upper A',
-                        exercises: [
-                            ...pickExercises('chest', 2),
-                            ...pickExercises('back', 2),
-                            ...pickExercises('shoulders', 1),
-                            ...pickExercises('biceps', 1),
-                            ...pickExercises('triceps', 1),
-                        ],
+                        exercise_id: exerciseId,
+                        target_sets: 3,
+                        target_reps: 10,
                     },
-                    {
-                        day_index: 2,
-                        title: 'Lower A',
-                        exercises: [
-                            ...pickExercises('legs', 3),
-                            ...pickExercises('glutes', 1),
-                            ...pickExercises('calves', 1),
-                            ...pickExercises('core', 1),
-                        ],
-                    },
-                    {
-                        day_index: 3,
-                        title: 'Upper B',
-                        exercises: [
-                            ...pickExercises('chest', 1),
-                            ...pickExercises('back', 2),
-                            ...pickExercises('shoulders', 1),
-                            ...pickExercises('biceps', 1),
-                            ...pickExercises('triceps', 1),
-                        ],
-                    },
-                    {
-                        day_index: 4,
-                        title: 'Lower B',
-                        exercises: [
-                            ...pickExercises('legs', 3),
-                            ...pickExercises('glutes', 1),
-                            ...pickExercises('calves', 1),
-                            ...pickExercises('core', 1),
-                        ],
-                    },
-                );
-            }
+                ],
+            };
+        });
+    };
 
-            if (key === 'fullBody3') {
-                nextDaysPerWeek = 3;
-                for (let i = 1; i <= 3; i++) {
-                    d.push({
-                        day_index: i,
-                        title: `Full Body ${i}`,
-                        exercises: [
-                            ...pickExercises('legs', 1),
-                            ...pickExercises('back', 1),
-                            ...pickExercises('chest', 1),
-                            ...pickExercises('shoulders', 1),
-                            ...pickExercises('core', 1),
-                        ],
-                    });
-                }
-            }
-
-            if (key === 'arnold6') {
-                nextDaysPerWeek = 6;
-                d.push(
-                    {
-                        day_index: 1,
-                        title: 'Chest & Back',
-                        exercises: [
-                            ...pickExercises('chest', 3),
-                            ...pickExercises('back', 3),
-                        ],
-                    },
-                    {
-                        day_index: 2,
-                        title: 'Shoulders & Arms',
-                        exercises: [
-                            ...pickExercises('shoulders', 2),
-                            ...pickExercises('biceps', 2),
-                            ...pickExercises('triceps', 2),
-                        ],
-                    },
-                    {
-                        day_index: 3,
-                        title: 'Legs',
-                        exercises: [
-                            ...pickExercises('legs', 4),
-                            ...pickExercises('glutes', 1),
-                            ...pickExercises('calves', 1),
-                        ],
-                    },
-                    {
-                        day_index: 4,
-                        title: 'Chest & Back (B)',
-                        exercises: [
-                            ...pickExercises('chest', 3),
-                            ...pickExercises('back', 3),
-                        ],
-                    },
-                    {
-                        day_index: 5,
-                        title: 'Shoulders & Arms (B)',
-                        exercises: [
-                            ...pickExercises('shoulders', 2),
-                            ...pickExercises('biceps', 2),
-                            ...pickExercises('triceps', 2),
-                        ],
-                    },
-                    {
-                        day_index: 6,
-                        title: 'Legs (B)',
-                        exercises: [
-                            ...pickExercises('legs', 4),
-                            ...pickExercises('glutes', 1),
-                            ...pickExercises('calves', 1),
-                        ],
-                    },
-                );
-            }
-
-            setDaysPerWeek(nextDaysPerWeek);
-            setDays(d);
-            setActiveAddDay(1);
-            setFlash(`Applied ${templateLabel(key)} template`);
-            setTimeout(() => setFlash(null), 1200);
-        },
-        [pickExercises],
-    );
-
-    // ===================== Render =====================
     return (
         <>
             <Head title="Workout Planner" />
+
             <ProductPageShell width="wide" className="space-y-8">
                 <WorkoutTabs active="plan" />
 
-                <HeaderBar
-                    daysPerWeek={daysPerWeek}
-                    setDaysPerWeek={setDaysPerWeek}
-                    saving={saving}
-                    save={save}
-                    flash={flash}
-                    flashRef={flashRef}
+                <ProductHero
+                    eyebrow="Workout Planner"
+                    title={mode === 'follow-ai' ? 'Follow the generated structure' : 'Build your own draft'}
+                    description={
+                        mode === 'follow-ai'
+                            ? "This mode is read-first and action-first: it shows the AI plan you are meant to follow, today's recommended day, and the cleanest path into the workout log."
+                            : 'This mode is for manual editing. It stays separate from the AI plan so you can experiment without replacing the generated structure.'
+                    }
+                    meta={
+                        <div className="space-y-2 text-sm">
+                            {activeAiPlan ? (
+                                <>
+                                    <div className="font-medium text-foreground">
+                                        {sourceLabel(activeAiPlan.ai_request)}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                        Active AI plan: {activeAiPlan.name}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-muted-foreground">
+                                    No active AI workout plan yet.
+                                </div>
+                            )}
+                        </div>
+                    }
+                    actions={
+                        <div className="flex flex-wrap items-center gap-3">
+                            {activeAiPlan ? (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setMode((current) =>
+                                            current === 'follow-ai' ? 'build-own' : 'follow-ai',
+                                        )
+                                    }
+                                    className="inline-flex h-11 items-center rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card"
+                                >
+                                    {mode === 'follow-ai'
+                                        ? "Don't follow this right now"
+                                        : 'Follow AI plan again'}
+                                </button>
+                            ) : null}
+                            <Link
+                                href="/workouts/log"
+                                className="inline-flex h-11 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline transition hover:bg-primary/90"
+                            >
+                                Open workout log
+                            </Link>
+                            <Link
+                                href="/ai/planner"
+                                className="inline-flex h-11 items-center rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground no-underline transition hover:bg-card"
+                            >
+                                Open AI Planner
+                            </Link>
+                        </div>
+                    }
                 />
 
-                {Object.keys(errors).length > 0 && (
-                    <ProductBanner
-                        tone="danger"
-                        role="alert"
-                        aria-live="assertive"
-                    >
-                        There were validation errors while saving. Check your
-                        sets/reps and try again.
+                {status ? <ProductBanner tone="success">{status}</ProductBanner> : null}
+                {Object.keys(errors).length ? (
+                    <ProductBanner tone="danger">
+                        There were validation errors while saving your custom draft.
                     </ProductBanner>
-                )}
+                ) : null}
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-                    {/* Left: days */}
-                    <section
-                        aria-labelledby="days-label"
-                        className="min-w-0 space-y-3"
-                    >
-                        <h2
-                            id="days-label"
-                            className="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                {mode === 'follow-ai' ? (
+                    activeAiPlan ? (
+                        <>
+                            <ProductSection
+                                title="Today's recommended day"
+                                description="The recommended card appears first so following the plan feels easier than rebuilding it."
+                            >
+                                <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+                                    <AiDayCard day={aiRecommendedDay} featured />
+                                    <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                        <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                            Weekly structure
+                                        </div>
+                                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                            {(activeAiPlan.days ?? []).map((day) => (
+                                                <AiDayCard key={day.id} day={day} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </ProductSection>
+
+                            <ProductSection
+                                title="Why this plan is ready to follow"
+                                description="These notes come from the generated plan metadata and keep the AI path clearly different from the manual builder."
+                            >
+                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                    <MetaListCard
+                                        title="Progression rules"
+                                        items={
+                                            Array.isArray(activeAiPlan.meta?.progression_rules)
+                                                ? (activeAiPlan.meta?.progression_rules as string[])
+                                                : []
+                                        }
+                                    />
+                                    <MetaListCard
+                                        title="Recovery rules"
+                                        items={
+                                            Array.isArray(activeAiPlan.meta?.recovery_rules)
+                                                ? (activeAiPlan.meta?.recovery_rules as string[])
+                                                : []
+                                        }
+                                    />
+                                    <MetaListCard
+                                        title="Coach notes"
+                                        items={
+                                            Array.isArray(activeAiPlan.meta?.coach_notes)
+                                                ? (activeAiPlan.meta?.coach_notes as string[])
+                                                : []
+                                        }
+                                    />
+                                </div>
+                            </ProductSection>
+                        </>
+                    ) : (
+                        <ProductEmptyState
+                            title="No active AI workout plan"
+                            description="Generate one from the AI Planner page, then this page will open in follow-plan mode automatically."
+                            action={
+                                <Link
+                                    href="/ai/planner"
+                                    className="inline-flex h-11 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline transition hover:bg-primary/90"
+                                >
+                                    Generate plan
+                                </Link>
+                            }
+                        />
+                    )
+                ) : (
+                    <>
+                        <ProductSection
+                            title="Manual draft builder"
+                            description="This draft stays separate from the AI plan, so you can explore your own structure without overwriting the generated one."
                         >
-                            Plan days
-                        </h2>
-                        {days.slice(0, daysPerWeek).map((d) => (
-                            <DayCard
-                                key={d.day_index}
-                                day={d}
-                                exercisesById={exercisesById}
-                                onTitle={(title) =>
-                                    setDays((prev) =>
-                                        prev.map((x) =>
-                                            x.day_index === d.day_index
-                                                ? { ...x, title }
-                                                : x,
-                                        ),
-                                    )
-                                }
-                                onUpdate={(i, field, val) =>
-                                    updateSetRep(d.day_index, i, field, val)
-                                }
-                                onRemove={(i) => removeExercise(d.day_index, i)}
-                            />
-                        ))}
-                    </section>
+                            <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-medium text-foreground">
+                                        Draft name
+                                        <input
+                                            value={draftName}
+                                            onChange={(event) => setDraftName(event.target.value)}
+                                            className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                                        />
+                                    </label>
 
-                    {/* Right: templates + library in tabs */}
-                    <RightPanel
-                        applyTemplate={applyTemplate}
-                        filteredLibrary={filteredLibrary}
-                        pagedLibrary={pagedLibrary}
-                        search={search}
-                        setSearch={(v) => {
-                            setSearch(v);
-                            setVisibleCount(PAGE_SIZE);
-                        }}
-                        muscleFilters={muscleFilters}
-                        setMuscleFilters={setMuscleFilters}
-                        conditionFilters={conditionFilters}
-                        setConditionFilters={setConditionFilters}
-                        allConditions={allConditions}
-                        sortBy={sortBy}
-                        setSortBy={setSortBy}
-                        daysPerWeek={daysPerWeek}
-                        activeAddDay={activeAddDay}
-                        setActiveAddDay={setActiveAddDay}
-                        remaining={filteredLibrary.length - pagedLibrary.length}
-                        onLoadMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                        onAdd={(exId) => addExercise(activeAddDay, exId)}
-                        isAdded={(exId) => isInDay(days, activeAddDay, exId)}
-                    />
-                </div>
+                                    <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
+                                        <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                            Templates
+                                        </div>
+                                        <div className="mt-3 grid gap-2">
+                                            {[
+                                                ['fullBody3', 'Full Body 3'],
+                                                ['pushPullLegs3', 'Push / Pull / Legs'],
+                                                ['upperLower4', 'Upper / Lower 4'],
+                                            ].map(([key, label]) => (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const next = templateDays(
+                                                            key as 'fullBody3' | 'pushPullLegs3' | 'upperLower4',
+                                                        );
+                                                        setDraftDays(next);
+                                                        setSelectedDay(next[0]?.day_index ?? 1);
+                                                    }}
+                                                    className="inline-flex items-center justify-between rounded-2xl border border-border/70 bg-card px-3 py-3 text-left text-sm font-medium text-foreground transition hover:bg-background"
+                                                >
+                                                    <span>{label}</span>
+                                                    <WandSparkles className="h-4 w-4 text-muted-foreground" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
+                                        <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                            Premade prototypes
+                                        </div>
+                                        <div className="mt-3 grid gap-2">
+                                            {(premadePlans ?? []).length ? (
+                                                (premadePlans ?? []).map((plan) => (
+                                                    <button
+                                                        key={plan.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const next = buildInitialDraft(plan);
+                                                            setDraftName(`${plan.name} (Copy)`);
+                                                            setDraftDays(next);
+                                                            setSelectedDay(next[0]?.day_index ?? 1);
+                                                            setStatus(`Loaded prototype: ${plan.name}`);
+                                                        }}
+                                                        className="inline-flex items-center justify-between rounded-2xl border border-border/70 bg-card px-3 py-3 text-left text-sm font-medium text-foreground transition hover:bg-background"
+                                                    >
+                                                        <span>{plan.name}</span>
+                                                        <WandSparkles className="h-4 w-4 text-muted-foreground" />
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">
+                                                    No premade prototypes are available yet.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {draftDays.map((day) => (
+                                            <button
+                                                key={day.day_index}
+                                                type="button"
+                                                onClick={() => setSelectedDay(day.day_index)}
+                                                className={`w-full rounded-[24px] border px-4 py-3 text-left transition ${
+                                                    day.day_index === selectedDay
+                                                        ? 'border-primary/30 bg-primary/10 text-foreground'
+                                                        : 'border-border/70 bg-background/72 text-foreground hover:bg-card'
+                                                }`}
+                                            >
+                                                <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                    Day {day.day_index}
+                                                </div>
+                                                <div className="mt-1 text-base font-semibold">
+                                                    {day.name || `Workout Day ${day.day_index}`}
+                                                </div>
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {day.exercises.length} exercises
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {activeDraftDay ? (
+                                        <>
+                                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                    Editing day {activeDraftDay.day_index}
+                                                </div>
+                                                <input
+                                                    value={activeDraftDay.name}
+                                                    onChange={(event) =>
+                                                        updateDay(activeDraftDay.day_index, (day) => ({
+                                                            ...day,
+                                                            name: event.target.value,
+                                                        }))
+                                                    }
+                                                    placeholder="Day title"
+                                                    className="mt-3 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-base font-semibold text-foreground"
+                                                />
+                                                <div className="mt-4 space-y-3">
+                                                    {activeDraftDay.exercises.length ? (
+                                                        activeDraftDay.exercises.map((exercise, index) => {
+                                                            const details = exercises.find(
+                                                                (candidate) =>
+                                                                    candidate.id === exercise.exercise_id,
+                                                            );
+
+                                                            return (
+                                                                <div
+                                                                    key={`${activeDraftDay.day_index}-${exercise.exercise_id}-${index}`}
+                                                                    className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                                                >
+                                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                                        <div>
+                                                                            <div className="font-medium text-foreground">
+                                                                                {details?.name ??
+                                                                                    `Exercise #${exercise.exercise_id}`}
+                                                                            </div>
+                                                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                                                {details?.primary_muscle ?? 'General'}
+                                                                                {details?.equipment
+                                                                                    ? ` - ${details.equipment}`
+                                                                                    : ''}
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                updateDay(
+                                                                                    activeDraftDay.day_index,
+                                                                                    (day) => ({
+                                                                                        ...day,
+                                                                                        exercises:
+                                                                                            day.exercises.filter(
+                                                                                                (_, itemIndex) =>
+                                                                                                    itemIndex !==
+                                                                                                    index,
+                                                                                            ),
+                                                                                    }),
+                                                                                )
+                                                                            }
+                                                                            className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
+                                                                        >
+                                                                            Remove
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                                        <label className="text-sm font-medium text-foreground">
+                                                                            Sets
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                max={10}
+                                                                                value={exercise.target_sets}
+                                                                                onChange={(event) =>
+                                                                                    updateDay(
+                                                                                        activeDraftDay.day_index,
+                                                                                        (day) => ({
+                                                                                            ...day,
+                                                                                            exercises:
+                                                                                                day.exercises.map(
+                                                                                                    (
+                                                                                                        item,
+                                                                                                        itemIndex,
+                                                                                                    ) =>
+                                                                                                        itemIndex ===
+                                                                                                        index
+                                                                                                            ? {
+                                                                                                                  ...item,
+                                                                                                                  target_sets:
+                                                                                                                      Number(
+                                                                                                                          event
+                                                                                                                              .target
+                                                                                                                              .value,
+                                                                                                                      ) ||
+                                                                                                                      1,
+                                                                                                              }
+                                                                                                            : item,
+                                                                                                ),
+                                                                                        }),
+                                                                                    )
+                                                                                }
+                                                                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                                                                            />
+                                                                        </label>
+                                                                        <label className="text-sm font-medium text-foreground">
+                                                                            Target reps
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                max={30}
+                                                                                value={exercise.target_reps}
+                                                                                onChange={(event) =>
+                                                                                    updateDay(
+                                                                                        activeDraftDay.day_index,
+                                                                                        (day) => ({
+                                                                                            ...day,
+                                                                                            exercises:
+                                                                                                day.exercises.map(
+                                                                                                    (
+                                                                                                        item,
+                                                                                                        itemIndex,
+                                                                                                    ) =>
+                                                                                                        itemIndex ===
+                                                                                                        index
+                                                                                                            ? {
+                                                                                                                  ...item,
+                                                                                                                  target_reps:
+                                                                                                                      Number(
+                                                                                                                          event
+                                                                                                                              .target
+                                                                                                                              .value,
+                                                                                                                      ) ||
+                                                                                                                      1,
+                                                                                                              }
+                                                                                                            : item,
+                                                                                                ),
+                                                                                        }),
+                                                                                    )
+                                                                                }
+                                                                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                                                                            />
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <ProductEmptyState
+                                                            title="No exercises yet"
+                                                            description="Add from the library on the right to build this manual day."
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : null}
+                                </div>
+
+                                <div className="space-y-4 xl:col-span-2">
+                                    <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                    Exercise library
+                                                </div>
+                                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                                    Add to day {activeDraftDay?.day_index ?? selectedDay}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {filteredLibrary.length} visible
+                                            </div>
+                                        </div>
+
+                                        <input
+                                            value={query}
+                                            onChange={(event) => setQuery(event.target.value)}
+                                            placeholder="Search by name, muscle, or equipment"
+                                            className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
+                                        />
+
+                                        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                                            {filteredLibrary.slice(0, 18).map((exercise) => {
+                                                const alreadyAdded =
+                                                    activeDraftDay?.exercises.some(
+                                                        (item) => item.exercise_id === exercise.id,
+                                                    ) ?? false;
+
+                                                return (
+                                                    <div
+                                                        key={exercise.id}
+                                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <div className="font-medium text-foreground">
+                                                                    {exercise.name}
+                                                                </div>
+                                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                                    {exercise.primary_muscle}
+                                                                    {exercise.equipment
+                                                                        ? ` - ${exercise.equipment}`
+                                                                        : ''}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                disabled={alreadyAdded}
+                                                                onClick={() => addExercise(exercise.id)}
+                                                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+                                                            >
+                                                                {alreadyAdded ? 'Added' : 'Add'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </ProductSection>
+
+                        <ProductStickyActions>
+                            <div className="mr-auto text-sm text-muted-foreground">
+                                This draft stays separate from the active AI workout plan.
+                            </div>
+                            <button
+                                type="button"
+                                onClick={saveDraft}
+                                disabled={saving}
+                                className="inline-flex h-10 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
+                            >
+                                {saving ? 'Saving...' : 'Save custom draft'}
+                            </button>
+                        </ProductStickyActions>
+                    </>
+                )}
             </ProductPageShell>
         </>
     );
 }
 
-// ===================== Subcomponents =====================
-function HeaderBar({
-    daysPerWeek,
-    setDaysPerWeek,
-    saving,
-    save,
-    flash,
-    flashRef,
-}: {
-    daysPerWeek: number;
-    setDaysPerWeek: (n: number) => void;
-    saving: boolean;
-    save: () => void;
-    flash: string | null;
-    flashRef: React.RefObject<HTMLSpanElement | null>;
-}) {
-    const renderLegacyHeader = flash === '__legacy__';
-
-    return (
-        <>
-            <ProductHero
-                eyebrow="Workouts"
-                title="Workout Planner"
-                description="Choose a split, refine each day, and save a routine that feels consistent with the rest of your training workspace."
-                meta={<span>{daysPerWeek} training days per week</span>}
-                actions={
-                    <div className="flex flex-wrap items-center gap-3">
-                        <label
-                            className="flex items-center gap-2 text-sm"
-                            htmlFor="days-per-week"
-                        >
-                            <span className="text-muted-foreground">
-                                Days / week
-                            </span>
-                            <input
-                                id="days-per-week"
-                                type="number"
-                                min={1}
-                                max={7}
-                                value={daysPerWeek}
-                                onChange={(e) =>
-                                    setDaysPerWeek(
-                                        Math.min(
-                                            7,
-                                            Math.max(1, Number(e.target.value)),
-                                        ),
-                                    )
-                                }
-                                className="h-10 w-20 rounded-xl border border-border bg-background px-3 text-center text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring"
-                            />
-                        </label>
-
-                        <button
-                            type="button"
-                            onClick={save}
-                            className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
-                            disabled={saving}
-                        >
-                            {saving ? 'Saving...' : 'Save plan'}
-                        </button>
-                    </div>
-                }
-            />
-
-            {flash ? (
-                <ProductBanner role="status" aria-live="polite">
-                    <span ref={flashRef} tabIndex={-1} className="outline-none">
-                        {flash}
-                    </span>
-                </ProductBanner>
-            ) : null}
-
-            {renderLegacyHeader ? (
-                <header className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-900/80">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-bold md:text-3xl">
-                            Workout Planner
-                        </h1>
-                        <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                            Choose a split, tweak each day, and save your weekly
-                            routine.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        <label
-                            className="flex items-center gap-2 text-sm"
-                            htmlFor="days-per-week"
-                        >
-                            <span className="text-gray-600 dark:text-gray-300">
-                                Days / week
-                            </span>
-                            <input
-                                id="days-per-week"
-                                type="number"
-                                min={1}
-                                max={7}
-                                value={daysPerWeek}
-                                onChange={(e) =>
-                                    setDaysPerWeek(
-                                        Math.min(
-                                            7,
-                                            Math.max(1, Number(e.target.value)),
-                                        ),
-                                    )
-                                }
-                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-center text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100"
-                            />
-                        </label>
-
-                        <button
-                            type="button"
-                            onClick={save}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                            disabled={saving}
-                        >
-                            {saving ? 'Saving…' : 'Save plan'}
-                        </button>
-
-                        {flash && (
-                            <span
-                                ref={flashRef}
-                                tabIndex={-1}
-                                className="ml-1 text-xs text-green-700 outline-none dark:text-green-300"
-                                role="status"
-                                aria-live="polite"
-                            >
-                                {flash}
-                            </span>
-                        )}
-                    </div>
-                </header>
-            ) : null}
-        </>
-    );
-}
-
-const DayCard = memo(function DayCard({
+function AiDayCard({
     day,
-    exercisesById,
-    onTitle,
-    onUpdate,
-    onRemove,
+    featured = false,
 }: {
-    day: DayDraft;
-    exercisesById: Map<number, Exercise>;
-    onTitle: (title: string) => void;
-    onUpdate: (
-        i: number,
-        field: 'target_sets' | 'target_reps',
-        val: number,
-    ) => void;
-    onRemove: (i: number) => void;
+    day: PlanDay | null;
+    featured?: boolean;
 }) {
-    const [open, setOpen] = useState(day.day_index === 1); // first day open by default
-
-    return (
-        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-            {/* header row */}
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center gap-3 px-4 py-3"
-            >
-                <div className="flex items-center gap-2">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600/10 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                        {day.day_index}
-                    </span>
-                    <div className="flex flex-col text-left">
-                        <span className="text-sm font-semibold">
-                            {day.title || `Day ${day.day_index}`}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {day.exercises.length} exercise
-                            {day.exercises.length === 1 ? '' : 's'}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="ml-auto flex items-center gap-3">
-                    <input
-                        placeholder="Title (e.g., Push)"
-                        value={day.title}
-                        onChange={(e) => onTitle(e.target.value)}
-                        className="hidden max-w-[180px] rounded border border-gray-300 bg-white px-3 py-1 text-xs md:inline-flex dark:border-neutral-700 dark:bg-neutral-900"
-                    />
-                    <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                        {open ? 'Hide' : 'Edit'}
-                    </span>
-                    <span className="text-xs text-gray-400" aria-hidden>
-                        {open ? '▴' : '▾'}
-                    </span>
-                </div>
-            </button>
-
-            {open && (
-                <div className="space-y-2 border-t border-gray-100 px-4 py-3 dark:border-neutral-800">
-                    {/* mobile title input */}
-                    <div className="mb-2 md:hidden">
-                        <label
-                            className="sr-only"
-                            htmlFor={`title-${day.day_index}`}
-                        >
-                            Title
-                        </label>
-                        <input
-                            id={`title-${day.day_index}`}
-                            placeholder="Title (e.g., Push)"
-                            value={day.title}
-                            onChange={(e) => onTitle(e.target.value)}
-                            className="w-full rounded border border-gray-300 bg-white px-3 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-                        />
-                    </div>
-
-                    {day.exercises.length ? (
-                        day.exercises.map((ex, i) => {
-                            const ref = exercisesById.get(ex.exercise_id);
-                            if (!ref) return null;
-                            return (
-                                <ExerciseRow
-                                    key={`${ex.exercise_id}-${i}`}
-                                    name={ref.name}
-                                    muscle={ref.primary_muscle}
-                                    sets={ex.target_sets}
-                                    reps={ex.target_reps}
-                                    onSets={(v) =>
-                                        onUpdate(
-                                            i,
-                                            'target_sets',
-                                            clamp(v, 1, 10),
-                                        )
-                                    }
-                                    onReps={(v) =>
-                                        onUpdate(
-                                            i,
-                                            'target_reps',
-                                            clamp(v, 1, 30),
-                                        )
-                                    }
-                                    onRemove={() => onRemove(i)}
-                                />
-                            );
-                        })
-                    ) : (
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                            No exercises yet. Use the library on the right to
-                            add some.
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-});
-
-const ExerciseRow = memo(function ExerciseRow({
-    name,
-    muscle,
-    sets,
-    reps,
-    onSets,
-    onReps,
-    onRemove,
-}: {
-    name: string;
-    muscle: string;
-    sets: number;
-    reps: number;
-    onSets: (v: number) => void;
-    onReps: (v: number) => void;
-    onRemove: () => void;
-}) {
-    return (
-        <div className="flex flex-wrap items-center gap-2 rounded border border-gray-200 p-2 dark:border-neutral-700">
-            <div className="min-w-[200px] flex-1">
-                <div className="text-sm font-medium">
-                    {name}{' '}
-                    <span className="text-[11px] text-gray-600 capitalize dark:text-gray-400">
-                        ({muscle})
-                    </span>
-                </div>
-                <div className="text-[11px] text-gray-600 dark:text-gray-400">
-                    Target: {sets}×{reps}
-                </div>
+    if (!day) {
+        return (
+            <div className="rounded-[26px] border border-dashed border-border/70 bg-background/60 p-5 text-sm text-muted-foreground">
+                No recommended day available yet.
             </div>
+        );
+    }
 
-            <label className="sr-only" htmlFor={`sets-${name}`}>
-                Target sets
-            </label>
-            <input
-                id={`sets-${name}`}
-                type="number"
-                min={1}
-                max={10}
-                value={sets}
-                onChange={(e) => onSets(Number(e.target.value))}
-                className="w-16 rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-            />
-            <span className="text-xs">sets</span>
-
-            <label className="sr-only" htmlFor={`reps-${name}`}>
-                Target reps
-            </label>
-            <input
-                id={`reps-${name}`}
-                type="number"
-                min={1}
-                max={30}
-                value={reps}
-                onChange={(e) => onReps(Number(e.target.value))}
-                className="w-16 rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-            />
-            <span className="text-xs">reps</span>
-
-            <button
-                type="button"
-                onClick={onRemove}
-                className="ml-2 text-xs text-red-600 hover:underline dark:text-red-400"
-            >
-                remove
-            </button>
-        </div>
-    );
-});
-
-// Right-hand panel with Templates / Library tabs
-function RightPanel(props: {
-    applyTemplate: (
-        k: 'ppl3' | 'upperLower4' | 'fullBody3' | 'arnold6',
-    ) => void;
-    filteredLibrary: Exercise[];
-    pagedLibrary: Exercise[];
-    search: string;
-    setSearch: (v: string) => void;
-    muscleFilters: string[];
-    setMuscleFilters: React.Dispatch<React.SetStateAction<string[]>>;
-    conditionFilters: string[];
-    setConditionFilters: React.Dispatch<React.SetStateAction<string[]>>;
-    allConditions: string[];
-    sortBy: 'name' | 'muscle';
-    setSortBy: (s: 'name' | 'muscle') => void;
-    daysPerWeek: number;
-    activeAddDay: number;
-    setActiveAddDay: (n: number) => void;
-    remaining: number;
-    onLoadMore: () => void;
-    onAdd: (exId: number) => void;
-    isAdded: (exId: number) => boolean;
-}) {
-    const {
-        applyTemplate,
-        filteredLibrary,
-        pagedLibrary,
-        search,
-        setSearch,
-        muscleFilters,
-        setMuscleFilters,
-        conditionFilters,
-        setConditionFilters,
-        allConditions,
-        sortBy,
-        setSortBy,
-        daysPerWeek,
-        activeAddDay,
-        setActiveAddDay,
-        remaining,
-        onLoadMore,
-        onAdd,
-        isAdded,
-    } = props;
-
-    const [panelTab, setPanelTab] = useState<'templates' | 'library'>(
-        'templates',
-    );
-    const [showMoreFilters, setShowMoreFilters] = useState(false);
+    const sessionType = typeof day.meta?.session_type === 'string' ? day.meta.session_type : null;
+    const duration = typeof day.meta?.duration_min === 'number' ? day.meta.duration_min : null;
 
     return (
-        <div className="min-w-0 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-            <div className="border-b border-gray-200 px-3 pt-3 pb-2 dark:border-neutral-800">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="inline-flex rounded-2xl bg-gray-100 p-1 text-xs dark:bg-neutral-800">
-                        <button
-                            type="button"
-                            onClick={() => setPanelTab('templates')}
-                            className={
-                                'rounded-xl px-3 py-1 ' +
-                                (panelTab === 'templates'
-                                    ? 'bg-white text-gray-900 shadow dark:bg-neutral-900 dark:text-gray-50'
-                                    : 'text-gray-600 dark:text-gray-300')
-                            }
-                        >
-                            Templates
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setPanelTab('library')}
-                            className={
-                                'rounded-xl px-3 py-1 ' +
-                                (panelTab === 'library'
-                                    ? 'bg-white text-gray-900 shadow dark:bg-neutral-900 dark:text-gray-50'
-                                    : 'text-gray-600 dark:text-gray-300')
-                            }
-                        >
-                            Library
-                        </button>
+        <div
+            className={`rounded-[26px] border p-5 ${
+                featured
+                    ? 'border-primary/30 bg-primary/10'
+                    : 'border-border/70 bg-background/72'
+            }`}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                        Day {day.day_index}
                     </div>
-
-                    <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
-                        <span>Quick-add to</span>
-                        {Array.from(
-                            { length: daysPerWeek },
-                            (_, i) => i + 1,
-                        ).map((idx) => (
-                            <Chip
-                                key={idx}
-                                active={activeAddDay === idx}
-                                onClick={() => setActiveAddDay(idx)}
-                            >
-                                D{idx}
-                            </Chip>
-                        ))}
+                    <div className="mt-1 text-lg font-semibold text-foreground">
+                        {day.name ?? `Workout Day ${day.day_index}`}
                     </div>
                 </div>
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </div>
-
-            {panelTab === 'templates' ? (
-                <div className="grid grid-cols-1 gap-2 p-3 text-sm">
-                    <TemplateButton
-                        label="Push / Pull / Legs (3d)"
-                        onClick={() => applyTemplate('ppl3')}
-                    />
-                    <TemplateButton
-                        label="Upper / Lower (4d)"
-                        onClick={() => applyTemplate('upperLower4')}
-                    />
-                    <TemplateButton
-                        label="Full Body (3d)"
-                        onClick={() => applyTemplate('fullBody3')}
-                    />
-                    <TemplateButton
-                        label="Arnold Split (6d)"
-                        onClick={() => applyTemplate('arnold6')}
-                    />
-                    <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                        Applying a template will overwrite your current days,
-                        but you can still edit everything after.
-                    </p>
-                </div>
-            ) : (
-                <div className="flex h-full flex-col">
-                    {/* filters */}
-                    <div className="space-y-3 border-b border-gray-100 p-3 dark:border-neutral-800">
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="search"
-                                placeholder="Search exercises…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-                            />
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {filteredLibrary.length}
-                            </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            {MUSCLES.map((m) => {
-                                const active = muscleFilters.includes(m);
-                                return (
-                                    <Chip
-                                        key={m}
-                                        active={active}
-                                        onClick={() =>
-                                            setMuscleFilters((prev) =>
-                                                active
-                                                    ? prev.filter(
-                                                          (x) => x !== m,
-                                                      )
-                                                    : [...prev, m],
-                                            )
-                                        }
-                                    >
-                                        {m}
-                                    </Chip>
-                                );
-                            })}
-                            {muscleFilters.length > 0 && (
-                                <Chip onClick={() => setMuscleFilters([])}>
-                                    Clear
-                                </Chip>
-                            )}
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setShowMoreFilters((v) => !v)}
-                            className="text-xs text-gray-600 underline dark:text-gray-300"
-                        >
-                            {showMoreFilters
-                                ? 'Hide health filters'
-                                : 'More filters'}
-                        </button>
-
-                        {showMoreFilters && (
-                            <div className="space-y-1">
-                                <div className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                                    Health conditions
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {allConditions.map((c) => {
-                                        const active =
-                                            conditionFilters.includes(c);
-                                        return (
-                                            <Chip
-                                                key={c}
-                                                active={active}
-                                                onClick={() =>
-                                                    setConditionFilters(
-                                                        (prev) =>
-                                                            active
-                                                                ? prev.filter(
-                                                                      (x) =>
-                                                                          x !==
-                                                                          c,
-                                                                  )
-                                                                : [...prev, c],
-                                                    )
-                                                }
-                                            >
-                                                {c}
-                                            </Chip>
-                                        );
-                                    })}
-                                    {conditionFilters.length > 0 && (
-                                        <Chip
-                                            onClick={() =>
-                                                setConditionFilters([])
-                                            }
-                                        >
-                                            Clear
-                                        </Chip>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="flex items-center justify-between text-xs">
-                            <label className="flex items-center gap-1">
-                                <span className="text-gray-600 dark:text-gray-300">
-                                    Sort
-                                </span>
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) =>
-                                        setSortBy(
-                                            e.target.value as 'name' | 'muscle',
-                                        )
-                                    }
-                                    className="rounded border border-gray-300 bg-white px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-                                >
-                                    <option value="name">Name (A→Z)</option>
-                                    <option value="muscle">Muscle group</option>
-                                </select>
-                            </label>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                {sessionType ? <span className="haye-chip">{sessionType}</span> : null}
+                {duration ? <span className="haye-chip">{duration} min</span> : null}
+                <span className="haye-chip">{day.exercises.length} exercises</span>
+            </div>
+            <div className="mt-4 space-y-2">
+                {day.exercises.slice(0, featured ? 5 : 3).map((exercise) => (
+                    <div
+                        key={`${day.id}-${exercise.id}`}
+                        className="rounded-[18px] border border-border/60 bg-card/80 px-3 py-2 text-sm text-foreground"
+                    >
+                        <div className="font-medium">{exercise.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                            {exercise.pivot?.sets ?? 0} sets
+                            {exercise.pivot?.reps_min ? ` - ${exercise.pivot.reps_min}` : ''}
+                            {exercise.equipment ? ` - ${exercise.equipment}` : ''}
                         </div>
                     </div>
-
-                    {/* grid */}
-                    <div className="max-h-[480px] space-y-3 overflow-y-auto p-3">
-                        {pagedLibrary.length ? (
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                {pagedLibrary.map((ex) => {
-                                    const added = isAdded(ex.id);
-                                    return (
-                                        <div
-                                            key={ex.id}
-                                            className="rounded-xl border border-gray-200 p-3 text-sm dark:border-neutral-700"
-                                        >
-                                            <div
-                                                className="line-clamp-2 font-medium"
-                                                title={ex.name}
-                                            >
-                                                {ex.name}
-                                            </div>
-                                            <div className="mt-0.5 text-[11px] text-gray-600 capitalize dark:text-gray-400">
-                                                {ex.primary_muscle} ·{' '}
-                                                {ex.equipment ?? '—'}
-                                            </div>
-                                            <div className="mt-2 flex items-center justify-between">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onAdd(ex.id)}
-                                                    disabled={added}
-                                                    className={
-                                                        'rounded px-2 py-1 text-xs transition ' +
-                                                        (added
-                                                            ? 'bg-gray-200 text-gray-600 dark:bg-neutral-800 dark:text-gray-400'
-                                                            : 'bg-blue-600 text-white hover:bg-blue-700')
-                                                    }
-                                                    aria-disabled={added}
-                                                    aria-label={
-                                                        added
-                                                            ? 'Already added'
-                                                            : 'Add to selected day'
-                                                    }
-                                                >
-                                                    {added ? 'Added' : 'Add'}
-                                                </button>
-                                                {ex.demo_url && (
-                                                    <a
-                                                        href={ex.demo_url}
-                                                        target="_blank"
-                                                        className="text-[11px] text-blue-600 hover:underline dark:text-blue-400"
-                                                        rel="noreferrer"
-                                                    >
-                                                        demo
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
-                                No exercises match your filters.
-                            </div>
-                        )}
-
-                        {remaining > 0 && (
-                            <div className="flex justify-center">
-                                <button
-                                    type="button"
-                                    onClick={onLoadMore}
-                                    className="rounded border border-gray-300 bg-white px-4 py-2 text-xs text-gray-800 hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
-                                >
-                                    Load more ({remaining} left)
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                ))}
+            </div>
+            {featured ? (
+                <div className="mt-4">
+                    <Link
+                        href="/workouts/log"
+                        className="inline-flex h-10 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline transition hover:bg-primary/90"
+                    >
+                        Log this day
+                    </Link>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
 
-const TemplateButton = ({
-    label,
-    onClick,
-}: {
-    label: string;
-    onClick: () => void;
-}) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-gray-800 transition hover:bg-gray-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
-    >
-        {label}
-    </button>
-);
-
-// ===================== Pure helpers =====================
-function buildInitialDays(plan: Plan): DayDraft[] {
-    const map = new Map<number, DayDraft>();
-    plan?.days?.forEach((d) =>
-        map.set(d.day_index, {
-            day_index: d.day_index,
-            title: d.title ?? '',
-            exercises: (Array.isArray(d.exercises) ? d.exercises : []).map(
-                (e) => ({
-                    exercise_id: e.id,
-                    target_sets: e.pivot?.target_sets ?? 3,
-                    target_reps: e.pivot?.target_reps ?? 10,
-                }),
-            ),
-        }),
-    );
-    const length = Math.max(3, plan?.days_per_week ?? 0);
-    return Array.from(
-        { length },
-        (_, i) =>
-            map.get(i + 1) ?? { day_index: i + 1, title: '', exercises: [] },
-    );
-}
-
-function syncDaysLength(prev: DayDraft[], daysPerWeek: number): DayDraft[] {
-    const arr = [...prev];
-    if (arr.length < daysPerWeek) {
-        for (let i = arr.length; i < daysPerWeek; i++)
-            arr.push({ day_index: i + 1, title: '', exercises: [] });
-    } else if (arr.length > daysPerWeek) {
-        arr.length = daysPerWeek;
-    }
-    return arr;
-}
-
-function clamp(n: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, n));
-}
-
-function isInDay(days: DayDraft[], dayIdx: number, exId: number) {
+function MetaListCard({ title, items }: { title: string; items: string[] }) {
     return (
-        days
-            .find((d) => d.day_index === dayIdx)
-            ?.exercises.some((x) => x.exercise_id === exId) ?? false
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
+            <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Dumbbell className="h-4 w-4" />
+                {title}
+            </div>
+            <ul className="mt-3 space-y-2 text-sm text-foreground">
+                {items.length ? (
+                    items.map((item) => <li key={item}>- {item}</li>)
+                ) : (
+                    <li className="text-muted-foreground">Nothing recorded yet.</li>
+                )}
+            </ul>
+        </div>
     );
 }
 
-function templateLabel(k: 'ppl3' | 'upperLower4' | 'fullBody3' | 'arnold6') {
-    switch (k) {
-        case 'ppl3':
-            return 'Push/Pull/Legs';
-        case 'upperLower4':
-            return 'Upper/Lower';
-        case 'fullBody3':
-            return 'Full Body';
-        case 'arnold6':
-            return 'Arnold Split';
-    }
-}

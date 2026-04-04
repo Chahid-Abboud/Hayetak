@@ -35,4 +35,9 @@ class NutritionPlanItem extends Model
     {
         return $this->belongsTo(Food::class, 'food_id');
     }
+
+    public function mealEntries()
+    {
+        return $this->hasMany(MealEntry::class, 'nutrition_plan_item_id');
+    }
 }

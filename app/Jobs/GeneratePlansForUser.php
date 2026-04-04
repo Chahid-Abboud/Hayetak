@@ -16,7 +16,7 @@ class GeneratePlansForUser implements ShouldQueue
 
     public function __construct(
         public int $userId,
-        public int $days = 7,
+        public int $days = 14,
         public bool $regenerate = true,
         public ?string $reason = 'queued_generation',
     ) {}
@@ -28,6 +28,11 @@ class GeneratePlansForUser implements ShouldQueue
             return;
         }
 
-        $service->generate($user, $this->regenerate, $this->reason, $user->id);
+        $service->generate($user, [
+            'regenerate' => $this->regenerate,
+            'reason' => $this->reason,
+            'created_by' => $user->id,
+            'plan_horizon_days' => $this->days,
+        ]);
     }
 }

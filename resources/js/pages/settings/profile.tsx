@@ -3,6 +3,7 @@ import {
     ProductHero,
     ProductPageShell,
 } from '@/components/product/page';
+import AppearanceTabs from '@/components/appearance-tabs';
 import { Head, router, usePage } from '@inertiajs/react';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -25,10 +26,15 @@ type Prefs = {
     diet_type: string | null;
     diet_other: string | null;
     allergies: string[];
+    workout_days_per_week: number | null;
+    workout_location: string | null;
+    preferred_workout_days: string[];
+    available_equipment: string[];
+    injury_history: string[];
+    medical_conditions: string[];
 } | null;
 
 type Measurement = { date: string; type: 'weight' | 'height'; value: number };
-type ProgressMetric = 'weight' | 'height';
 
 type PageProps = {
     auth?: {
@@ -76,6 +82,12 @@ const DEFAULT_PREFS: NonNullable<Prefs> = {
     diet_type: '',
     diet_other: '',
     allergies: [],
+    workout_days_per_week: null,
+    workout_location: '',
+    preferred_workout_days: [],
+    available_equipment: [],
+    injury_history: [],
+    medical_conditions: [],
 };
 
 const FITNESS_GOAL_OPTIONS = [
@@ -102,6 +114,22 @@ const DIET_TYPES = [
     { value: 'vegan', label: 'Vegan' },
     { value: 'vegetarian', label: 'Vegetarian' },
     { value: 'other', label: 'Other' },
+] as const;
+
+const WORKOUT_LOCATION_OPTIONS = [
+    { value: 'home', label: 'Home' },
+    { value: 'gym', label: 'Gym' },
+    { value: 'both', label: 'Both' },
+] as const;
+
+const WORKOUT_DAY_OPTIONS = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
 ] as const;
 
 /* ---------- Helpers ---------- */
@@ -329,268 +357,6 @@ function LabeledDate({
     );
 }
 
-function EmptyState({
-    title,
-    body,
-    action,
-}: {
-    title: string;
-    body: string;
-    action?: React.ReactNode;
-}) {
-    return (
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="text-sm font-semibold text-foreground">{title}</div>
-            <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-            {action ? <div className="mt-3">{action}</div> : null}
-        </div>
-    );
-}
-
-/* ---------- Lightweight SVG Line Chart (no deps) ---------- */
-type ChartPoint = { xLabel: string; xValue: number; yValue: number };
-
-function LineChart({
-    title,
-    points,
-    ySuffix,
-}: {
-    title: string;
-    points: ChartPoint[];
-    ySuffix?: string;
-}) {
-    // Basic guardrails
-    if (!points?.length) {
-        return (
-            <EmptyState
-                title={`${title}: No data yet`}
-                body="Add a few entries below to see your progress over time."
-            />
-        );
-    }
-
-    const width = 720;
-    const height = 220;
-    const padX = 28;
-    const padY = 18;
-
-    const xs = points.map((p) => p.xValue);
-    const ys = points.map((p) => p.yValue);
-
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-
-    // Avoid flatline divide-by-zero
-    const spanX = Math.max(1, maxX - minX);
-    const spanY = Math.max(1, maxY - minY);
-
-    const toX = (x: number) => padX + ((x - minX) / spanX) * (width - padX * 2);
-    const toY = (y: number) =>
-        height - padY - ((y - minY) / spanY) * (height - padY * 2);
-
-    const d = points
-        .map(
-            (p, idx) =>
-                `${idx === 0 ? 'M' : 'L'} ${toX(p.xValue)} ${toY(p.yValue)}`,
-        )
-        .join(' ');
-
-    const last = points[points.length - 1];
-    const first = points[0];
-
-    return (
-        <div className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-                <div className="text-sm font-semibold text-foreground">
-                    {title}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                    {first?.xLabel} → {last?.xLabel} ·{' '}
-                    <span className="text-foreground tabular-nums">
-                        {first?.yValue}
-                        {ySuffix ?? ''} → {last?.yValue}
-                        {ySuffix ?? ''}
-                    </span>
-                </div>
-            </div>
-
-            <div className="mt-3 overflow-x-auto">
-                <svg
-                    viewBox={`0 0 ${width} ${height}`}
-                    role="img"
-                    aria-label={`${title} line chart`}
-                    className="h-[220px] w-full min-w-[520px]"
-                >
-                    {/* grid lines (minimal) */}
-                    <line
-                        x1={padX}
-                        y1={padY}
-                        x2={padX}
-                        y2={height - padY}
-                        stroke="var(--border)"
-                        strokeWidth="1"
-                    />
-                    <line
-                        x1={padX}
-                        y1={height - padY}
-                        x2={width - padX}
-                        y2={height - padY}
-                        stroke="var(--border)"
-                        strokeWidth="1"
-                    />
-
-                    {/* path */}
-                    <path
-                        d={d}
-                        fill="none"
-                        stroke="var(--primary)"
-                        strokeWidth="2.5"
-                    />
-
-                    {/* points */}
-                    {points.map((p, i) => (
-                        <circle
-                            key={`${p.xLabel}-${i}`}
-                            cx={toX(p.xValue)}
-                            cy={toY(p.yValue)}
-                            r={3.25}
-                            fill="var(--primary)"
-                        />
-                    ))}
-                </svg>
-            </div>
-
-            {/* Screen-reader friendly summary table */}
-            <details className="mt-2">
-                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                    View data table
-                </summary>
-                <div className="mt-2 overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead>
-                            <tr className="text-left text-muted-foreground">
-                                <th className="py-2 pr-4">Date</th>
-                                <th className="py-2 pr-4">Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {points.map((p, i) => (
-                                <tr
-                                    key={`${p.xLabel}-${i}`}
-                                    className="border-t border-border"
-                                >
-                                    <td className="py-2 pr-4">{p.xLabel}</td>
-                                    <td className="py-2 pr-4 tabular-nums">
-                                        {p.yValue}
-                                        {ySuffix ?? ''}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </details>
-        </div>
-    );
-}
-
-function MeasurementProgress({
-    weightPoints,
-    heightPoints,
-}: {
-    weightPoints: ChartPoint[];
-    heightPoints: ChartPoint[];
-}) {
-    const [metric, setMetric] = useState<ProgressMetric>('weight');
-
-    const active =
-        metric === 'weight'
-            ? { label: 'Weight', unit: ' kg', points: weightPoints }
-            : { label: 'Height', unit: ' cm', points: heightPoints };
-
-    const first = active.points[0];
-    const last = active.points[active.points.length - 1];
-    const delta = first && last ? last.yValue - first.yValue : null;
-    const deltaText =
-        delta === null
-            ? '—'
-            : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}${active.unit}`;
-
-    return (
-        <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/40 p-3">
-                <div>
-                    <div className="text-sm font-semibold text-foreground">
-                        Measurement trend
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        Weight is selected by default. Switch anytime to
-                        visualize height history.
-                    </div>
-                </div>
-                <div className="inline-flex rounded-lg border border-border bg-background p-1">
-                    <button
-                        type="button"
-                        onClick={() => setMetric('weight')}
-                        className={cx(
-                            'rounded-md px-3 py-1.5 text-sm transition',
-                            metric === 'weight'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:bg-muted',
-                        )}
-                        aria-pressed={metric === 'weight'}
-                    >
-                        Weight
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMetric('height')}
-                        className={cx(
-                            'rounded-md px-3 py-1.5 text-sm transition',
-                            metric === 'height'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:bg-muted',
-                        )}
-                        aria-pressed={metric === 'height'}
-                    >
-                        Height
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-                <FieldRow
-                    label={`Latest ${active.label}`}
-                    value={last ? `${last.yValue}${active.unit}` : '—'}
-                />
-                <FieldRow
-                    label={`Change (${active.label})`}
-                    value={deltaText}
-                />
-                <FieldRow
-                    label="Logged entries"
-                    value={String(active.points.length)}
-                />
-            </div>
-
-            {active.points.length >= 2 ? (
-                <LineChart
-                    title={`${active.label} over time`}
-                    points={active.points}
-                    ySuffix={active.unit}
-                />
-            ) : (
-                <EmptyState
-                    title={`${active.label} chart: not enough data`}
-                    body={`Add at least 2 ${active.label.toLowerCase()} entries to visualize a trend.`}
-                />
-            )}
-        </div>
-    );
-}
-
 /* ---------- Page ---------- */
 export default function ProfilePage() {
     const page = usePage<PageProps>().props;
@@ -678,18 +444,38 @@ export default function ProfilePage() {
         Array.isArray(prefs.allergies) ? prefs.allergies : [],
     );
     const [newAllergy, setNewAllergy] = useState('');
+    const [workoutDaysPerWeek, setWorkoutDaysPerWeek] = useState<
+        number | ''
+    >(
+        typeof prefs.workout_days_per_week === 'number'
+            ? prefs.workout_days_per_week
+            : '',
+    );
+    const [workoutLocation, setWorkoutLocation] = useState<string>(
+        prefs.workout_location ?? '',
+    );
+    const [preferredWorkoutDays, setPreferredWorkoutDays] = useState<string[]>(
+        Array.isArray(prefs.preferred_workout_days)
+            ? prefs.preferred_workout_days
+            : [],
+    );
+    const [availableEquipment, setAvailableEquipment] = useState<string[]>(
+        Array.isArray(prefs.available_equipment) ? prefs.available_equipment : [],
+    );
+    const [injuryHistory, setInjuryHistory] = useState<string[]>(
+        Array.isArray(prefs.injury_history) ? prefs.injury_history : [],
+    );
+    const [medicalConditions, setMedicalConditions] = useState<string[]>(
+        Array.isArray(prefs.medical_conditions) ? prefs.medical_conditions : [],
+    );
+    const [newEquipment, setNewEquipment] = useState('');
+    const [newInjury, setNewInjury] = useState('');
+    const [newMedicalCondition, setNewMedicalCondition] = useState('');
 
     // measurements
     const [mDate, setMDate] = useState<string>(todayYmd());
     const [mType, setMType] = useState<'weight' | 'height'>('weight');
     const [mValue, setMValue] = useState<string>('');
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
-    const [passwordErrors, setPasswordErrors] = useState<
-        Record<string, string>
-    >({});
 
     // Derived labels
     const dietTypeLabel = useMemo(() => {
@@ -711,29 +497,6 @@ export default function ProfilePage() {
         () => latestMeasurementValue(heightHistory),
         [heightHistory],
     );
-
-    // Charts: map to normalized x
-    const weightPoints: ChartPoint[] = useMemo(() => {
-        const normalized = [...weightHistory]
-            .filter((m) => m.type === 'weight' && Number.isFinite(m.value))
-            .sort((a, b) => (a.date > b.date ? 1 : -1));
-        return normalized.map((m) => ({
-            xLabel: m.date,
-            xValue: new Date(m.date).getTime(),
-            yValue: m.value,
-        }));
-    }, [weightHistory]);
-
-    const heightPoints: ChartPoint[] = useMemo(() => {
-        const normalized = [...heightHistory]
-            .filter((m) => m.type === 'height' && Number.isFinite(m.value))
-            .sort((a, b) => (a.date > b.date ? 1 : -1));
-        return normalized.map((m) => ({
-            xLabel: m.date,
-            xValue: new Date(m.date).getTime(),
-            yValue: m.value,
-        }));
-    }, [heightHistory]);
 
     /* ---------- Actions (keep routes intact) ---------- */
     const saveProfile = () => {
@@ -761,6 +524,13 @@ export default function ProfilePage() {
                 dietary_goal: dietaryGoal || null,
                 fitness_goals: fitnessGoals,
                 allergies,
+                workout_days_per_week:
+                    workoutDaysPerWeek === '' ? null : Number(workoutDaysPerWeek),
+                workout_location: workoutLocation || null,
+                preferred_workout_days: preferredWorkoutDays,
+                available_equipment: availableEquipment,
+                injury_history: injuryHistory,
+                medical_conditions: medicalConditions,
             },
             { preserveScroll: true, onSuccess: () => setEditingPrefs(false) },
         );
@@ -775,6 +545,25 @@ export default function ProfilePage() {
 
     const removeAllergy = (a: string) => {
         setAllergies((prev) => prev.filter((x) => x !== a));
+    };
+
+    const addChip = (
+        nextValue: string,
+        list: string[],
+        setter: React.Dispatch<React.SetStateAction<string[]>>,
+        clear: () => void,
+    ) => {
+        const v = sanitizeChip(nextValue);
+        if (!v || list.includes(v)) return;
+        setter((prev) => [...prev, v]);
+        clear();
+    };
+
+    const removeChip = (
+        value: string,
+        setter: React.Dispatch<React.SetStateAction<string[]>>,
+    ) => {
+        setter((prev) => prev.filter((item) => item !== value));
     };
 
     const addMeasurement = () => {
@@ -797,32 +586,6 @@ export default function ProfilePage() {
         );
     };
 
-    const savePassword = () => {
-        setPasswordStatus(null);
-        setPasswordErrors({});
-
-        router.put(
-            '/settings/password',
-            {
-                current_password: currentPassword,
-                password: newPassword,
-                password_confirmation: confirmPassword,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setCurrentPassword('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                    setPasswordStatus('Password updated successfully.');
-                },
-                onError: (errors: Record<string, string>) => {
-                    setPasswordErrors(errors);
-                },
-            },
-        );
-    };
-
     // IDs (avoid collisions + improve label associations)
     const ids = {
         profileFirst: useId(),
@@ -834,6 +597,11 @@ export default function ProfilePage() {
         prefsDietGoal: useId(),
         prefsDietType: useId(),
         prefsDietOther: useId(),
+        prefsWorkoutDaysPerWeek: useId(),
+        prefsWorkoutLocation: useId(),
+        prefsEquipmentInput: useId(),
+        prefsInjuryInput: useId(),
+        prefsMedicalInput: useId(),
 
         mDate: useId(),
         mType: useId(),
@@ -860,7 +628,7 @@ export default function ProfilePage() {
                 <ProductHero
                     eyebrow="Account settings"
                     title="Profile"
-                    description="Review and update your info, goals, security, and progress without leaving the same consistent workspace."
+                    description="Review and update your info, goals, appearance, and logs. Progress charts now live on Dashboard."
                 />
 
                 <div
@@ -896,16 +664,10 @@ export default function ProfilePage() {
                                     Preferences
                                 </a>
                                 <a
-                                    href="#security"
+                                    href="#appearance"
                                     className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                                 >
-                                    Security
-                                </a>
-                                <a
-                                    href="#progress"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Progress
+                                    Appearance
                                 </a>
                                 <a
                                     href="#logs"
@@ -932,7 +694,7 @@ export default function ProfilePage() {
                         <SectionCard
                             id="overview"
                             title={`Welcome, ${displayName || 'there'}`}
-                            description="Review and update your info, preferences, and progress."
+                            description="Review and update your info, preferences, and logs."
                         >
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <FieldRow label="Email" value={email} />
@@ -985,6 +747,14 @@ export default function ProfilePage() {
                                 <FieldRow
                                     label="Diet type"
                                     value={dietTypeLabel}
+                                />
+                                <FieldRow
+                                    label="Workout location"
+                                    value={prefs?.workout_location || '—'}
+                                />
+                                <FieldRow
+                                    label="Workout days/week"
+                                    value={prefs?.workout_days_per_week ?? '—'}
                                 />
                                 <FieldRow
                                     label="Fitness goals"
@@ -1253,6 +1023,110 @@ export default function ProfilePage() {
                                             )}
                                         </div>
                                     </div>
+
+                                    <FieldRow
+                                        label="Workout days per week"
+                                        value={
+                                            prefs?.workout_days_per_week ?? '—'
+                                        }
+                                    />
+                                    <FieldRow
+                                        label="Workout location"
+                                        value={prefs?.workout_location || '—'}
+                                    />
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Preferred workout days
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.preferred_workout_days
+                                                ?.length ? (
+                                                prefs.preferred_workout_days.map(
+                                                    (day, index) => (
+                                                        <Badge
+                                                            key={`${day}-${index}`}
+                                                        >
+                                                            {day}
+                                                        </Badge>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Available equipment
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.available_equipment?.length ? (
+                                                prefs.available_equipment.map(
+                                                    (item, index) => (
+                                                        <Badge
+                                                            key={`${item}-${index}`}
+                                                        >
+                                                            {item}
+                                                        </Badge>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Injury history
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.injury_history?.length ? (
+                                                prefs.injury_history.map(
+                                                    (item, index) => (
+                                                        <Badge
+                                                            key={`${item}-${index}`}
+                                                        >
+                                                            {item}
+                                                        </Badge>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-border bg-background/40 p-4">
+                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
+                                            Medical conditions
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {prefs?.medical_conditions?.length ? (
+                                                prefs.medical_conditions.map(
+                                                    (item, index) => (
+                                                        <Badge
+                                                            key={`${item}-${index}`}
+                                                        >
+                                                            {item}
+                                                        </Badge>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    —
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <form
@@ -1437,6 +1311,348 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
 
+                                    <div>
+                                        <label
+                                            htmlFor={ids.prefsWorkoutDaysPerWeek}
+                                            className="text-sm font-medium text-foreground"
+                                        >
+                                            Workout days per week
+                                        </label>
+                                        <input
+                                            id={ids.prefsWorkoutDaysPerWeek}
+                                            type="number"
+                                            min={1}
+                                            max={7}
+                                            inputMode="numeric"
+                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={workoutDaysPerWeek}
+                                            onChange={(e) => {
+                                                const next = e.target.value;
+                                                setWorkoutDaysPerWeek(
+                                                    next === ''
+                                                        ? ''
+                                                        : Math.max(
+                                                              1,
+                                                              Math.min(
+                                                                  7,
+                                                                  Number(next),
+                                                              ),
+                                                          ),
+                                                );
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor={ids.prefsWorkoutLocation}
+                                            className="text-sm font-medium text-foreground"
+                                        >
+                                            Workout location
+                                        </label>
+                                        <select
+                                            id={ids.prefsWorkoutLocation}
+                                            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                            value={workoutLocation}
+                                            onChange={(e) =>
+                                                setWorkoutLocation(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        >
+                                            <option value="">—</option>
+                                            {WORKOUT_LOCATION_OPTIONS.map(
+                                                (option) => (
+                                                    <option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </option>
+                                                ),
+                                            )}
+                                        </select>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Preferred workout days
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                            {WORKOUT_DAY_OPTIONS.map((day) => {
+                                                const checked =
+                                                    preferredWorkoutDays.includes(
+                                                        day,
+                                                    );
+                                                return (
+                                                    <label
+                                                        key={day}
+                                                        className={cx(
+                                                            'flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring hover:bg-muted',
+                                                            checked &&
+                                                                'bg-muted/40',
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={(e) =>
+                                                                setPreferredWorkoutDays(
+                                                                    (prev) =>
+                                                                        e.target
+                                                                            .checked
+                                                                            ? [
+                                                                                  ...prev,
+                                                                                  day,
+                                                                              ]
+                                                                            : prev.filter(
+                                                                                  (
+                                                                                      value,
+                                                                                  ) =>
+                                                                                      value !==
+                                                                                      day,
+                                                                              ),
+                                                                )
+                                                            }
+                                                        />
+                                                        <span>{day}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Available equipment
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {availableEquipment.length ? (
+                                                availableEquipment.map((item) => (
+                                                    <span
+                                                        key={item}
+                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
+                                                    >
+                                                        {item}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                            onClick={() =>
+                                                                removeChip(
+                                                                    item,
+                                                                    setAvailableEquipment,
+                                                                )
+                                                            }
+                                                            aria-label={`Remove equipment ${item}`}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    No equipment added.
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input
+                                                id={ids.prefsEquipmentInput}
+                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                placeholder="Add equipment (e.g., Dumbbells)"
+                                                value={newEquipment}
+                                                onChange={(e) =>
+                                                    setNewEquipment(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addChip(
+                                                            newEquipment,
+                                                            availableEquipment,
+                                                            setAvailableEquipment,
+                                                            () =>
+                                                                setNewEquipment(
+                                                                    '',
+                                                                ),
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    addChip(
+                                                        newEquipment,
+                                                        availableEquipment,
+                                                        setAvailableEquipment,
+                                                        () =>
+                                                            setNewEquipment(''),
+                                                    )
+                                                }
+                                            >
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Injury history
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {injuryHistory.length ? (
+                                                injuryHistory.map((item) => (
+                                                    <span
+                                                        key={item}
+                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
+                                                    >
+                                                        {item}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                            onClick={() =>
+                                                                removeChip(
+                                                                    item,
+                                                                    setInjuryHistory,
+                                                                )
+                                                            }
+                                                            aria-label={`Remove injury ${item}`}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    No injuries added.
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input
+                                                id={ids.prefsInjuryInput}
+                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                placeholder="Add an injury (e.g., knee pain)"
+                                                value={newInjury}
+                                                onChange={(e) =>
+                                                    setNewInjury(e.target.value)
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addChip(
+                                                            newInjury,
+                                                            injuryHistory,
+                                                            setInjuryHistory,
+                                                            () =>
+                                                                setNewInjury(
+                                                                    '',
+                                                                ),
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    addChip(
+                                                        newInjury,
+                                                        injuryHistory,
+                                                        setInjuryHistory,
+                                                        () =>
+                                                            setNewInjury(''),
+                                                    )
+                                                }
+                                            >
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <div className="text-sm font-medium text-foreground">
+                                            Medical conditions
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {medicalConditions.length ? (
+                                                medicalConditions.map((item) => (
+                                                    <span
+                                                        key={item}
+                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
+                                                    >
+                                                        {item}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                            onClick={() =>
+                                                                removeChip(
+                                                                    item,
+                                                                    setMedicalConditions,
+                                                                )
+                                                            }
+                                                            aria-label={`Remove medical condition ${item}`}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">
+                                                    No medical conditions added.
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input
+                                                id={ids.prefsMedicalInput}
+                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                placeholder="Add a medical condition"
+                                                value={newMedicalCondition}
+                                                onChange={(e) =>
+                                                    setNewMedicalCondition(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addChip(
+                                                            newMedicalCondition,
+                                                            medicalConditions,
+                                                            setMedicalConditions,
+                                                            () =>
+                                                                setNewMedicalCondition(
+                                                                    '',
+                                                                ),
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    addChip(
+                                                        newMedicalCondition,
+                                                        medicalConditions,
+                                                        setMedicalConditions,
+                                                        () =>
+                                                            setNewMedicalCondition(
+                                                                '',
+                                                            ),
+                                                    )
+                                                }
+                                            >
+                                                Add
+                                            </Button>
+                                        </div>
+                                    </div>
+
                                     <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
                                         <Button type="submit" variant="primary">
                                             Save preferences
@@ -1455,176 +1671,40 @@ export default function ProfilePage() {
                             )}
                         </SectionCard>
 
-                        {/* Security */}
+                        {/* Appearance */}
                         <SectionCard
-                            id="security"
-                            title="Security"
-                            description="Change your account password without leaving this page."
+                            id="appearance"
+                            title="Appearance"
+                            description="Choose the look that feels most comfortable across the product."
                         >
                             <div className="grid gap-4">
                                 <div className="rounded-xl border border-border bg-background/40 p-4">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <div className="text-sm font-semibold text-foreground">
-                                                Two-factor authentication
+                                                Theme preference
                                             </div>
                                             <p className="mt-1 text-sm text-muted-foreground">
-                                                Keep 2FA optional and manage it
-                                                from here whenever you want
-                                                extra account protection.
+                                                Appearance settings now live
+                                                inside profile so your general
+                                                account setup stays together.
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <Badge>
-                                                {twoFactorEnabled
-                                                    ? '2FA enabled'
-                                                    : '2FA optional'}
-                                            </Badge>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    router.visit(
-                                                        '/settings/two-factor',
-                                                    )
-                                                }
-                                            >
-                                                Manage 2FA
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <form
-                                    className="grid gap-4 sm:grid-cols-2"
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        savePassword();
-                                    }}
-                                >
-                                    <div className="sm:col-span-2">
-                                        <label
-                                            className="text-sm font-medium text-foreground"
-                                            htmlFor="current-password"
-                                        >
-                                            Current password
-                                        </label>
-                                        <input
-                                            id="current-password"
-                                            type="password"
-                                            autoComplete="current-password"
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={currentPassword}
-                                            onChange={(e) =>
-                                                setCurrentPassword(
-                                                    e.target.value,
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                router.visit(
+                                                    '/settings/security',
                                                 )
                                             }
-                                        />
-                                        {passwordErrors.current_password ? (
-                                            <p className="mt-1 text-xs text-destructive">
-                                                {
-                                                    passwordErrors.current_password
-                                                }
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            className="text-sm font-medium text-foreground"
-                                            htmlFor="new-password"
                                         >
-                                            New password
-                                        </label>
-                                        <input
-                                            id="new-password"
-                                            type="password"
-                                            autoComplete="new-password"
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={newPassword}
-                                            onChange={(e) =>
-                                                setNewPassword(e.target.value)
-                                            }
-                                        />
-                                        {passwordErrors.password ? (
-                                            <p className="mt-1 text-xs text-destructive">
-                                                {passwordErrors.password}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            className="text-sm font-medium text-foreground"
-                                            htmlFor="confirm-password"
-                                        >
-                                            Confirm new password
-                                        </label>
-                                        <input
-                                            id="confirm-password"
-                                            type="password"
-                                            autoComplete="new-password"
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={confirmPassword}
-                                            onChange={(e) =>
-                                                setConfirmPassword(
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        {passwordErrors.password_confirmation ? (
-                                            <p className="mt-1 text-xs text-destructive">
-                                                {
-                                                    passwordErrors.password_confirmation
-                                                }
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="flex items-center gap-3 sm:col-span-2">
-                                        <Button type="submit" variant="primary">
-                                            Update password
+                                            Open security
                                         </Button>
-                                        {passwordStatus ? (
-                                            <span className="text-sm text-emerald-600">
-                                                {passwordStatus}
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                </form>
-                            </div>
-                        </SectionCard>
-
-                        {/* Progress (Charts) */}
-                        <SectionCard
-                            id="progress"
-                            title="Progress"
-                            description="Visualize your trends from logged measurements and workout data."
-                        >
-                            <div className="grid gap-4">
-                                <MeasurementProgress
-                                    weightPoints={weightPoints}
-                                    heightPoints={heightPoints}
-                                />
-
-                                <div className="rounded-xl border border-border bg-background/40 p-4">
-                                    <div className="text-sm font-semibold text-foreground">
-                                        Exercise progress (max weight & reps)
-                                    </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        This section will show progress per
-                                        exercise (e.g., Bench Press) as line
-                                        charts once the backend provides
-                                        normalized exercise progress data.
-                                    </p>
-                                    <div className="mt-3 text-sm text-muted-foreground">
-                                        <span className="font-medium text-foreground">
-                                            Status:
-                                        </span>{' '}
-                                        waiting for backend data.
                                     </div>
                                 </div>
+
+                                <AppearanceTabs />
                             </div>
                         </SectionCard>
 

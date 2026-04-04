@@ -17,6 +17,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import {
     CalendarClock,
     CheckCircle2,
+    Plus,
     RefreshCcw,
     XCircle,
 } from 'lucide-react';
@@ -199,15 +200,25 @@ export default function AppointmentsPage() {
                             : 'Book, review, and follow your sessions in one calm scheduling workspace.'
                     }
                     actions={
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => void load()}
-                            disabled={loading}
-                        >
-                            <RefreshCcw className="h-4 w-4" />
-                            {loading ? 'Refreshing...' : 'Refresh'}
-                        </Button>
+                        <>
+                            {!roleMode ? (
+                                <Button asChild>
+                                    <Link href="/nearby">
+                                        <Plus className="h-4 w-4" />
+                                        Book session
+                                    </Link>
+                                </Button>
+                            ) : null}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => void load()}
+                                disabled={loading}
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                                {loading ? 'Refreshing...' : 'Refresh'}
+                            </Button>
+                        </>
                     }
                 />
 
@@ -240,7 +251,8 @@ export default function AppointmentsPage() {
                         </div>
                     }
                 >
-                    <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="mb-4 rounded-[22px] border border-border/70 bg-background/72 p-3">
+                        <div className="flex flex-wrap gap-2">
                         {STATUS_FILTERS.map((item) => (
                             <button
                                 key={item}
@@ -251,6 +263,7 @@ export default function AppointmentsPage() {
                                 {item === 'all' ? 'All' : STATUS_LABELS[item]}
                             </button>
                         ))}
+                        </div>
                     </div>
 
                     {error ? <ProductBanner tone="danger">{error}</ProductBanner> : null}
@@ -360,13 +373,29 @@ function AppointmentCard({
     onDecline: () => void;
 }) {
     const canUpdate = actorRole === 'admin' || actorRole === appointment.professional_role;
+    const statusTone =
+        appointment.status === 'accepted'
+            ? 'border-success/20 bg-success/10'
+            : appointment.status === 'requested'
+              ? 'border-warning/25 bg-warning/10'
+              : appointment.status === 'completed'
+                ? 'border-border/70 bg-background/75'
+                : 'border-destructive/20 bg-destructive/10';
 
     return (
-        <article className="rounded-[24px] border border-border/70 bg-card/95 p-4">
+        <article className="rounded-[26px] border border-border/70 bg-card/95 p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
-                    <h4 className="text-sm font-semibold capitalize">
-                        {appointment.professional_role} appointment • {STATUS_LABELS[appointment.status]}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusTone}`}>
+                            {STATUS_LABELS[appointment.status]}
+                        </span>
+                        <span className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                            {appointment.professional_role} appointment
+                        </span>
+                    </div>
+                    <h4 className="text-sm font-semibold capitalize text-foreground">
+                        {appointment.professional?.name || 'Professional'} with {appointment.client?.name || 'client'}
                     </h4>
                     <p className="text-sm text-muted-foreground">
                         {new Date(appointment.scheduled_at).toLocaleString()}

@@ -4,7 +4,6 @@ import BmiCard from '@/components/BmiCard';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
 import {
     BarListCard,
-    InlineRangeToolbar,
     MetricRing,
     TrendCard,
 } from '@/components/product/analytics';
@@ -12,7 +11,7 @@ import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // ---------- Types ----------
 type AuthUser = {
@@ -61,8 +60,16 @@ type PerMealTotals = Record<
     Totals
 >;
 
-type ProgressPoint = { week: string; [muscle: string]: number | string };
-type Motivation = { title: string; lines: string[] } | null;
+type Measurement = { date: string; type: 'weight' | 'height'; value: number };
+type ChartPoint = { xLabel: string; xValue: number; yValue: number };
+type WeeklyWorkoutContext = {
+    week: string;
+    top_set_kg: number;
+    avg_reps: number;
+    total_volume_kg: number;
+    set_count: number;
+    workout_count: number;
+};
 
 // Plan types (from HomeController props)
 type FoodLite = {
@@ -111,6 +118,10 @@ type NutritionPlanLite = {
     duration_days: number;
     is_active: boolean;
     meta?: Record<string, unknown> | null;
+    ai_request?: {
+        provider?: string | null;
+        model?: string | null;
+    } | null;
     days: NutritionPlanDayLite[];
 };
 
@@ -150,6 +161,10 @@ type WorkoutPlanLite = {
     duration_days: number;
     is_active: boolean;
     meta?: Record<string, unknown> | null;
+    ai_request?: {
+        provider?: string | null;
+        model?: string | null;
+    } | null;
     days: WorkoutPlanDayLite[];
 };
 
@@ -171,6 +186,8 @@ type HomeProps = {
         fat: number;
     } | null;
     mealTotals?: PerMealTotals | null;
+    weightHistory?: Measurement[];
+    heightHistory?: Measurement[];
 
     nutritionPlan?: NutritionPlanLite | null;
     workoutPlan?: WorkoutPlanLite | null;
@@ -304,6 +321,8 @@ export default function Home() {
         todayMacros,
         mealTotals,
         mealEntryPreviews,
+        weightHistory,
+        heightHistory,
         nutritionPlan,
         workoutPlan,
     } = usePage<HomeProps>().props;
@@ -725,7 +744,7 @@ export default function Home() {
                         </ActionButton>
                     }
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.22fr)_minmax(380px,0.78fr)]">
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)] 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,1fr)]">
                         <div className="grid gap-4 md:grid-cols-2">
                             {mealOrder.map((mealType) => (
                                 <MealMomentCard
@@ -738,7 +757,7 @@ export default function Home() {
                             ))}
                         </div>
 
-                        <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="grid gap-4">
                             <TrendCard
                                 title="Calorie cadence"
                                 value={`${round(macros.calories)} kcal`}
@@ -753,13 +772,11 @@ export default function Home() {
                                     .reduce((sum, segment) => sum + segment.value, 0)
                                     .toString()}
                                 segments={macroSegments}
-                                className="xl:col-span-2"
                             />
                             <BarListCard
                                 title="Meal distribution"
                                 description="Where today's calories are concentrated."
                                 items={mealDistribution}
-                                className="xl:col-span-2"
                             />
                         </div>
                     </div>
@@ -770,6 +787,12 @@ export default function Home() {
                     description="Generated plans should feel like part of the command center, not buried references."
                     actions={
                         <>
+                            <ActionButton
+                                variant="primary"
+                                onClick={() => router.visit('/ai/planner')}
+                            >
+                                AI Planner
+                            </ActionButton>
                             <ActionButton
                                 variant="secondary"
                                 onClick={() => router.visit('/track-meals')}
@@ -798,7 +821,7 @@ export default function Home() {
                                         ? 'Active'
                                         : nutritionPlan
                                           ? 'Inactive'
-                                          : 'Ã¢â‚¬â€'}
+                                          : 'No plan'}
                                 </span>
                             </div>
 
@@ -842,7 +865,7 @@ export default function Home() {
                                         ? 'Active'
                                         : workoutPlan
                                           ? 'Inactive'
-                                          : 'Ã¢â‚¬â€'}
+                                          : 'No plan'}
                                 </span>
                             </div>
 
@@ -899,52 +922,389 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Workouts */}
+                {/* Progress */}
                 <CardSection
-                    title="Training momentum"
-                    description="Progress should feel encouraging, readable, and close to the workout flow."
+                    title="Progress center"
+                    description="Track your body changes and training output in one place."
                     actions={
                         <>
                             <ActionButton
                                 variant="primary"
                                 onClick={startTodayWorkout}
                             >
-                                Start TodayÃ¢â‚¬â„¢s Workout
+                                Start Today's Workout
                             </ActionButton>
                             <ActionButton
                                 variant="secondary"
-                                onClick={() => router.visit('/workouts/log')}
+                                onClick={() => router.visit('/profile')}
                             >
-                                Open Workout Log
+                                Add Measurements
                             </ActionButton>
                             <ActionButton
                                 variant="soft"
-                                onClick={() => router.visit('/workouts/plan')}
+                                onClick={() => router.visit('/workouts/log')}
                             >
-                                Planner
+                                Open Workout Log
                             </ActionButton>
                         </>
                     }
                     aria-labelledby="log-workouts"
                 >
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div className="rounded-xl border p-4 lg:col-span-2">
-                            <h3 className="mb-2 text-sm font-semibold text-foreground">
-                                Weekly Progress (avg top-set weight)
-                            </h3>
-                            <ProgressMini />
-                        </div>
-
-                        <div className="rounded-xl border p-4">
-                            <h3 className="mb-2 text-sm font-semibold text-foreground">
-                                Motivation
-                            </h3>
-                            <MotivationBox />
-                        </div>
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <MeasurementChartCard
+                            title="Weight Progress"
+                            ySuffix=" kg"
+                            measurements={weightHistory}
+                            metric="weight"
+                            emptyBody="Log at least two weight entries from Profile to unlock this trend."
+                        />
+                        <MeasurementChartCard
+                            title="Height Progress"
+                            ySuffix=" cm"
+                            measurements={heightHistory}
+                            metric="height"
+                            emptyBody="Log at least two height entries from Profile to unlock this trend."
+                        />
+                    </div>
+                    <div className="mt-4">
+                        <WorkoutContextProgressCard weeks={12} />
                     </div>
                 </CardSection>
             </ProductPageShell>
         </>
+    );
+}
+
+function chartPointsFromMeasurements(
+    measurements: Measurement[] | undefined,
+    metric: 'weight' | 'height',
+): ChartPoint[] {
+    const safe = Array.isArray(measurements) ? measurements : [];
+    return safe
+        .filter((item) => item.type === metric && Number.isFinite(item.value))
+        .slice()
+        .sort((a, b) => (a.date > b.date ? 1 : -1))
+        .map((item) => ({
+            xLabel: item.date,
+            xValue: new Date(item.date).getTime(),
+            yValue: item.value,
+        }));
+}
+
+function formatTrendChange(points: ChartPoint[], unit: string): string {
+    if (points.length < 2) return '—';
+    const first = points[0];
+    const last = points[points.length - 1];
+    const delta = last.yValue - first.yValue;
+    return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}${unit}`;
+}
+
+function MeasurementChartCard({
+    title,
+    measurements,
+    metric,
+    ySuffix,
+    emptyBody,
+}: {
+    title: string;
+    measurements?: Measurement[];
+    metric: 'weight' | 'height';
+    ySuffix: string;
+    emptyBody: string;
+}) {
+    const points = useMemo(
+        () => chartPointsFromMeasurements(measurements, metric),
+        [measurements, metric],
+    );
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    return (
+        <div className="rounded-xl border p-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+                {title}
+            </h3>
+
+            <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                <MetricPill
+                    label="Latest"
+                    value={
+                        last ? `${last.yValue}${ySuffix}` : '—'
+                    }
+                />
+                <MetricPill
+                    label="Change"
+                    value={formatTrendChange(points, ySuffix)}
+                />
+                <MetricPill label="Entries" value={String(points.length)} />
+            </div>
+
+            {points.length >= 2 ? (
+                <SimpleLineChart
+                    title={title}
+                    points={points}
+                    ySuffix={ySuffix}
+                />
+            ) : (
+                <p className="text-sm text-muted-foreground">{emptyBody}</p>
+            )}
+            {first && last ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                    {first.xLabel} to {last.xLabel}
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
+            <div className="text-[11px] tracking-wide text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-foreground tabular-nums">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function SimpleLineChart({
+    title,
+    points,
+    ySuffix,
+}: {
+    title: string;
+    points: ChartPoint[];
+    ySuffix: string;
+}) {
+    const width = 720;
+    const height = 220;
+    const padX = 28;
+    const padY = 18;
+
+    const xs = points.map((point) => point.xValue);
+    const ys = points.map((point) => point.yValue);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+
+    const toX = (x: number) => padX + ((x - minX) / spanX) * (width - padX * 2);
+    const toY = (y: number) =>
+        height - padY - ((y - minY) / spanY) * (height - padY * 2);
+
+    const d = points
+        .map(
+            (point, index) =>
+                `${index === 0 ? 'M' : 'L'} ${toX(point.xValue)} ${toY(point.yValue)}`,
+        )
+        .join(' ');
+
+    return (
+        <div>
+            <div className="overflow-x-auto">
+                <svg
+                    viewBox={`0 0 ${width} ${height}`}
+                    role="img"
+                    aria-label={`${title} line chart`}
+                    className="h-[220px] w-full min-w-[520px]"
+                >
+                    <line
+                        x1={padX}
+                        y1={padY}
+                        x2={padX}
+                        y2={height - padY}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <line
+                        x1={padX}
+                        y1={height - padY}
+                        x2={width - padX}
+                        y2={height - padY}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <path
+                        d={d}
+                        fill="none"
+                        stroke="var(--primary)"
+                        strokeWidth="2.5"
+                    />
+                    {points.map((point, index) => (
+                        <circle
+                            key={`${point.xLabel}-${index}`}
+                            cx={toX(point.xValue)}
+                            cy={toY(point.yValue)}
+                            r={3.25}
+                            fill="var(--primary)"
+                        />
+                    ))}
+                </svg>
+            </div>
+
+            <details className="mt-1">
+                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                    View data table
+                </summary>
+                <div className="mt-2 overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-muted-foreground">
+                                <th className="py-2 pr-4">Date</th>
+                                <th className="py-2 pr-4">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {points.map((point, index) => (
+                                <tr
+                                    key={`${point.xLabel}-row-${index}`}
+                                    className="border-t border-border"
+                                >
+                                    <td className="py-2 pr-4">{point.xLabel}</td>
+                                    <td className="py-2 pr-4 tabular-nums">
+                                        {point.yValue}
+                                        {ySuffix}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+    );
+}
+
+function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
+    const [series, setSeries] = useState<WeeklyWorkoutContext[]>([]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch(`/workouts/progress?weeks=${weeks}`, { signal: controller.signal })
+            .then((response) => response.json())
+            .then((payload) =>
+                setSeries(
+                    Array.isArray(payload?.weekly_context)
+                        ? payload.weekly_context
+                        : [],
+                ),
+            )
+            .catch(() => setSeries([]));
+
+        return () => controller.abort();
+    }, [weeks]);
+
+    const points = useMemo<ChartPoint[]>(() => {
+        return series.map((row, index) => ({
+            xLabel: row.week,
+            xValue: index,
+            yValue: row.top_set_kg,
+        }));
+    }, [series]);
+
+    const latest = series[series.length - 1];
+    const first = series[0];
+    const change = latest && first ? latest.top_set_kg - first.top_set_kg : 0;
+
+    return (
+        <div className="rounded-xl border p-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+                Gym Progress (Weekly)
+            </h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+                Trend uses your top set load per week and keeps workout context
+                (volume, reps, sets, and sessions) visible for better decisions.
+            </p>
+
+            <div className="mb-3 grid gap-2 sm:grid-cols-5">
+                <MetricPill
+                    label="Latest Top Set"
+                    value={latest ? `${latest.top_set_kg} kg` : '—'}
+                />
+                <MetricPill
+                    label="Avg Reps"
+                    value={latest ? `${latest.avg_reps}` : '—'}
+                />
+                <MetricPill
+                    label="Volume"
+                    value={latest ? `${Math.round(latest.total_volume_kg)} kg` : '—'}
+                />
+                <MetricPill
+                    label="Workout Days"
+                    value={latest ? String(latest.workout_count) : '—'}
+                />
+                <MetricPill
+                    label="Top Set Change"
+                    value={
+                        latest && first
+                            ? `${change > 0 ? '+' : ''}${change.toFixed(1)} kg`
+                            : '—'
+                    }
+                />
+            </div>
+
+            {points.length >= 2 ? (
+                <SimpleLineChart
+                    title="Weekly Top Set"
+                    points={points}
+                    ySuffix=" kg"
+                />
+            ) : (
+                <p className="text-sm text-muted-foreground">
+                    Log at least two weeks of workouts to see your gym progress trend.
+                </p>
+            )}
+
+            {series.length > 0 ? (
+                <details className="mt-2">
+                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                        View workout context table
+                    </summary>
+                    <div className="mt-2 overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-muted-foreground">
+                                    <th className="py-2 pr-4">Week</th>
+                                    <th className="py-2 pr-4">Top Set (kg)</th>
+                                    <th className="py-2 pr-4">Avg Reps</th>
+                                    <th className="py-2 pr-4">Volume (kg)</th>
+                                    <th className="py-2 pr-4">Sets</th>
+                                    <th className="py-2 pr-4">Workouts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {series.map((row) => (
+                                    <tr key={row.week} className="border-t border-border">
+                                        <td className="py-2 pr-4">{row.week}</td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.top_set_kg}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.avg_reps}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {Math.round(row.total_volume_kg)}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.set_count}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.workout_count}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            ) : null}
+        </div>
     );
 }
 
@@ -1387,7 +1747,7 @@ function MealMomentCard({
                                 {entry.label}
                                 {typeof entry.quantity === 'number' &&
                                 entry.quantity > 0
-                                    ? ` · ${Number.isInteger(entry.quantity) ? entry.quantity : entry.quantity.toFixed(1)}${entry.unit ? ` ${entry.unit}` : ''}`
+                                    ? ` - ${Number.isInteger(entry.quantity) ? entry.quantity : entry.quantity.toFixed(1)}${entry.unit ? ` ${entry.unit}` : ''}`
                                     : ''}
                             </span>
                         </div>
@@ -1410,6 +1770,20 @@ function MealMomentCard({
     );
 }
 
+function sourceBadge(source?: {
+    provider?: string | null;
+    model?: string | null;
+} | null) {
+    const provider = source?.provider?.trim();
+    const model = source?.model?.trim();
+
+    if (!provider && !model) return 'Model unavailable';
+    if (!provider) return model ?? 'Model unavailable';
+    if (!model) return provider;
+
+    return `${provider} / ${model}`;
+}
+
 
 function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -1423,8 +1797,11 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
         <div className="text-sm">
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                    Source: {sourceBadge(plan.ai_request)}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
+                    Goal: {plan.goal ?? 'Not set'} - Start: {plan.start_date} -
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1473,7 +1850,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                                                             : it.servings !=
                                                                 null
                                                               ? `${it.servings} serving(s)`
-                                                              : 'Ã¢â‚¬â€';
+                                                              : 'Not set';
                                                     return (
                                                         <li
                                                             key={it.id}
@@ -1512,8 +1889,11 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
         <div className="text-sm">
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                    Source: {sourceBadge(plan.ai_request)}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
+                    Goal: {plan.goal ?? 'Not set'} - Start: {plan.start_date} -
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1549,7 +1929,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                               ? `${rmin}`
                                               : rmax != null
                                                 ? `${rmax}`
-                                                : 'Ã¢â‚¬â€';
+                                                : 'Not set';
 
                                     return (
                                         <li
@@ -1561,7 +1941,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     {ex.name}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground tabular-nums">
-                                                    {sets} sets Ã‚Â· {repText} reps
+                                                    {sets} sets - {repText} reps
                                                 </div>
                                             </div>
 
@@ -1570,10 +1950,10 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     ? `Primary: ${ex.primary_muscle}`
                                                     : ''}
                                                 {ex.equipment
-                                                    ? ` Ã‚Â· Equipment: ${ex.equipment}`
+                                                    ? ` - Equipment: ${ex.equipment}`
                                                     : ''}
                                                 {ex.difficulty
-                                                    ? ` Ã‚Â· ${ex.difficulty}`
+                                                    ? ` - ${ex.difficulty}`
                                                     : ''}
                                             </div>
                                         </li>
@@ -1588,7 +1968,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
                     {(day1.exercises ?? []).length > 8 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Showing first 8 exercisesÃ¢â‚¬Â¦ open Planner to view the
+                            Showing first 8 exercises... open Planner to view the
                             full day.
                         </p>
                     ) : null}
@@ -1598,173 +1978,3 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
     );
 }
 
-function ProgressMini() {
-    const [series, setSeries] = useState<ProgressPoint[]>([]);
-    const [weeks, setWeeks] = useState(8);
-    const abortRef = useRef<AbortController | null>(null);
-
-    const muscles = useMemo(
-        () => [
-            'chest',
-            'back',
-            'shoulders',
-            'legs',
-            'biceps',
-            'triceps',
-            'core',
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        abortRef.current?.abort();
-        const ac = new AbortController();
-        abortRef.current = ac;
-
-        fetch(`/workouts/progress?weeks=${weeks}`, { signal: ac.signal })
-            .then((r) => r.json())
-            .then((d) => setSeries(Array.isArray(d.series) ? d.series : []))
-            .catch(() => {
-                // ignore abort errors, treat others as empty
-                setSeries([]);
-            });
-
-        return () => ac.abort();
-    }, [weeks]);
-
-    if (!series.length) {
-        return (
-            <div className="space-y-4">
-                <InlineRangeToolbar value={weeks} onChange={setWeeks} />
-                <p className="text-sm text-muted-foreground">
-                    Log a few workouts to unlock progress.
-                </p>
-            </div>
-        );
-    }
-
-    const last4 = series.slice(-4);
-
-    return (
-        <div className="space-y-4">
-            <InlineRangeToolbar value={weeks} onChange={setWeeks} />
-            <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                    <caption className="sr-only">
-                        Weekly progress table showing average top-set weight by
-                        muscle group.
-                    </caption>
-                    <thead>
-                        <tr className="text-left text-muted-foreground">
-                            <th scope="col" className="py-1 pr-4">
-                                Week
-                            </th>
-                            {muscles.map((m) => (
-                                <th
-                                    key={m}
-                                    scope="col"
-                                    className="py-1 pr-4 capitalize"
-                                >
-                                    {m}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {last4.map((row, i) => (
-                            <tr key={i} className="border-t">
-                                <th
-                                    scope="row"
-                                    className="py-1 pr-4 font-medium"
-                                >
-                                    {String(row.week)}
-                                </th>
-                                {muscles.map((m) => (
-                                    <td
-                                        key={m}
-                                        className="py-1 pr-4 tabular-nums"
-                                    >
-                                        {typeof row[m] === 'number'
-                                            ? `${row[m]} kg`
-                                            : 'Ã¢â‚¬â€'}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-}
-
-/**
- * Minimal client-side sanitizer:
- * - removes <script> tags
- * - strips "on*" event handler attributes
- * - keeps basic inline tags if present (e.g., <strong>, <em>, <br>)
- *
- * NOTE: Real sanitization is best done server-side or with a vetted lib.
- */
-function sanitizeMotivationHtml(input: string): string {
-    if (typeof window === 'undefined') return input;
-
-    try {
-        const doc = new DOMParser().parseFromString(input, 'text/html');
-        // remove scripts
-        doc.querySelectorAll('script').forEach((n) => n.remove());
-        // strip on* attributes
-        doc.querySelectorAll('*').forEach((el) => {
-            [...el.attributes].forEach((attr) => {
-                if (attr.name.toLowerCase().startsWith('on')) {
-                    el.removeAttribute(attr.name);
-                }
-            });
-        });
-        return doc.body.innerHTML;
-    } catch {
-        return input;
-    }
-}
-
-function MotivationBox() {
-    const [motivation, setMotivation] = useState<Motivation>(null);
-    const abortRef = useRef<AbortController | null>(null);
-
-    useEffect(() => {
-        abortRef.current?.abort();
-        const ac = new AbortController();
-        abortRef.current = ac;
-
-        fetch('/workouts/progress?weeks=8', { signal: ac.signal })
-            .then((r) => r.json())
-            .then((d) => setMotivation(d.motivation ?? null))
-            .catch(() => setMotivation(null));
-
-        return () => ac.abort();
-    }, []);
-
-    if (!motivation) {
-        return (
-            <p className="text-sm text-muted-foreground">
-                Keep logging to see weekly wins Ã¢Å“Â¨
-            </p>
-        );
-    }
-
-    return (
-        <div className="text-sm" aria-live="polite">
-            <div className="mb-1 font-semibold">{motivation.title}</div>
-            <ul className="list-disc space-y-1 pl-5">
-                {motivation.lines.map((l: string, i: number) => (
-                    <li
-                        key={i}
-                        dangerouslySetInnerHTML={{
-                            __html: sanitizeMotivationHtml(l),
-                        }}
-                    />
-                ))}
-            </ul>
-        </div>
-    );
-}
