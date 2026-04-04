@@ -328,3 +328,218 @@ it('keeps dinner follow-up requests anchored to the current thread and returns t
         ->toContain('Total meal macros:')
         ->toContain('g carbs');
 });
+
+it('treats allergens and injury history questions as a profile summary instead of a food safety correction', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['corn'],
+        'medical_history' => 'asthma',
+    ]);
+
+    $user->prefs()->create([
+        'settings' => [
+            'injury_history' => ['shoulder pain'],
+        ],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'what about my allergens and my injury history?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'restriction_summary');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Based on your profile')
+        ->toContain('Allergies: corn')
+        ->toContain('Medical conditions: asthma')
+        ->toContain('Injuries: shoulder pain')
+        ->not->toContain('I removed a food suggestion');
+});
+
+it('answers ingredient safety checks with a direct safe-or-not response', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['corn', 'sesame'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Is avocado safe for me?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'food_safety_check')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('safe')
+        ->not->toContain('You can ask about meals, macros, workouts');
+});
+
+it('does not misroute avocado alternatives to greek-yogurt taste fallback text', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['corn', 'sesame'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Give me a safe alternative to avocado toast.',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'food_safety_check')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('safe alternative')
+        ->not->toContain('do not like the taste of Greek yogurt');
+});
+
+it('keeps lower-carb follow-ups tied to the active recipe thread', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['avocado'],
+    ]);
+
+    $conversation = AiConversation::query()->create([
+        'user_id' => $user->id,
+        'title' => 'Lower carb thread',
+        'last_message_at' => now(),
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'assistant',
+        'content' => 'For a high-protein snack, try a Greek yogurt berry parfait.',
+        'metadata' => [],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'make it lower carb',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'lower_carb_recipe_follow_up')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('lower-carb version')
+        ->toContain('Updated macros per serving');
+});
+
+it('returns total meal macros on thread follow-up after a dinner suggestion', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+    ]);
+
+    $conversation = AiConversation::query()->create([
+        'user_id' => $user->id,
+        'title' => 'Meal totals thread',
+        'last_message_at' => now(),
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'assistant',
+        'content' => 'Total meal macros: 470 kcal, 44 g protein, 49 g carbs, 12 g fat.',
+        'metadata' => [],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'give me the total macros for the whole meal',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'meal_total_macros_follow_up')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('470 kcal')
+        ->toContain('44 g protein')
+        ->toContain('49 g carbs')
+        ->toContain('12 g fat');
+});
+
+it('does not falsely block low-calorie snack guidance because corn appears inside popcorn', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'allergies' => ['corn'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'What are healthy low-calorie snack ideas?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response->assertCreated();
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Low-calorie snack ideas')
+        ->not->toContain('I removed a food suggestion because it included your saved allergy');
+});
+
+it('preserves line breaks for recipe-style answers after safety review sanitization', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'allergies' => ['corn', 'sesame'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Just give me the recipe and macros.',
+            'screen_context' => 'coach',
+        ]);
+
+    $response->assertCreated();
+
+    $content = (string) data_get($response->json(), 'assistant_message.content');
+    expect($content)
+        ->toContain("Ingredients:\n- 1 cup plain Greek yogurt")
+        ->toContain("Steps:\n1. Add yogurt to a bowl.");
+});

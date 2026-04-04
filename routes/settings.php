@@ -16,7 +16,6 @@ use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
     /** Redirect /settings -> /settings/profile */
@@ -48,6 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
 
+    /** ---------------- Security settings ---------------- */
+    Route::get('settings/security', [PasswordController::class, 'edit'])
+        ->name('security.edit');
+
     /** ---------------- Password settings ---------------- */
     Route::get('settings/password', [PasswordController::class, 'edit'])
         ->name('password.edit');
@@ -56,8 +59,8 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('password.update');
 
-    /** ---------------- Appearance (simple Inertia view) ---------------- */
-    Route::get('settings/appearance', fn () => Inertia::render('settings/appearance'))
+    /** ---------------- Appearance ---------------- */
+    Route::redirect('settings/appearance', '/settings/profile')
         ->name('appearance.edit');
 
     /** ---------------- Two-Factor Authentication ----------------

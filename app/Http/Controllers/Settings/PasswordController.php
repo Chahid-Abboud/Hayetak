@@ -9,16 +9,19 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Fortify\Features;
 
 class PasswordController extends Controller
 {
     /**
-     * Show the user's password settings page.
+     * Show the user's security settings page.
      */
-    public function edit(): Response
+    public function edit(Request $request): Response
     {
-        // You can read this in the page via usePage().props.status if you want
-        return Inertia::render('settings/password');
+        return Inertia::render('settings/security', [
+            'twoFactorEnabled' => $request->user()?->hasEnabledTwoFactorAuthentication() ?? false,
+            'requiresConfirmation' => Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm'),
+        ]);
     }
 
     /**

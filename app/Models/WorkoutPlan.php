@@ -16,6 +16,8 @@ class WorkoutPlan extends Model
         'ai_request_id', // ✅ NEW
         'name',
         'goal',
+        'start_date',
+        'duration_days',
         'notes',
         'is_active',
         'is_public',
@@ -23,6 +25,8 @@ class WorkoutPlan extends Model
     ];
 
     protected $casts = [
+        'start_date' => 'date',
+        'duration_days' => 'integer',
         'meta' => 'array',
         'is_active' => 'boolean',
         'is_public' => 'boolean',

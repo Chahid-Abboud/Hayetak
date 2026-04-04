@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\Ai\Planner\PlannerProfileSyncService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -83,7 +84,7 @@ class CreateNewUser implements CreatesNewUsers
             $fullName = explode('@', (string) $data['email'])[0] ?? 'User';
         }
 
-        return User::create([
+        $user = User::create([
             'name' => $fullName, // <-- important for your NOT NULL column
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
@@ -116,5 +117,9 @@ class CreateNewUser implements CreatesNewUsers
             'verified' => $data['account_type'] === User::ROLE_CLIENT,
             'status' => $data['account_type'] === User::ROLE_CLIENT ? 'active' : 'pending_verification',
         ]);
+
+        app(PlannerProfileSyncService::class)->prepare($user);
+
+        return $user;
     }
 }

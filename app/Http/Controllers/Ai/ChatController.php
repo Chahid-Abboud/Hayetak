@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Ai;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\ReleasesSessionLock;
 use App\Http\Requests\Ai\StoreChatMessageRequest;
 use App\Http\Resources\Ai\AiConversationResource;
 use App\Http\Resources\Ai\AiMessageResource;
@@ -14,6 +15,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ChatController extends Controller
 {
+    use ReleasesSessionLock;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $conversations = AiConversation::query()
@@ -39,11 +42,12 @@ class ChatController extends Controller
 
     public function store(StoreChatMessageRequest $request, ChatOrchestrator $orchestrator): JsonResponse
     {
+        $user = $request->user();
         $conversation = null;
 
         if ($request->filled('conversation_id')) {
             $conversation = AiConversation::query()->findOrFail((int) $request->validated('conversation_id'));
-            abort_unless($conversation->user_id === $request->user()->id, 403);
+            abort_unless($conversation->user_id === $user->id, 403);
         }
 
         $runtimeContext = array_filter([
@@ -56,8 +60,10 @@ class ChatController extends Controller
             'available_ingredients' => $request->validated('available_ingredients'),
         ], fn ($value) => $value !== null && $value !== '');
 
+        $this->releaseSessionLock($request);
+
         $result = $orchestrator->handle(
-            $request->user(),
+            $user,
             $request->validated('message'),
             $runtimeContext,
             $conversation,

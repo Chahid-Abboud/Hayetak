@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ReleasesSessionLock;
 use App\Services\OverpassService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -9,6 +10,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PlacesController extends Controller
 {
+    use ReleasesSessionLock;
+
     public function index(Request $request, OverpassService $overpass)
     {
         // Throttle by IP to avoid hammering Overpass on pan/zoom
@@ -34,6 +37,8 @@ class PlacesController extends Controller
         if ($bbox = $request->query('bbox')) {
             $this->assertValidBbox($bbox);
         }
+
+        $this->releaseSessionLock($request);
 
         // Delegate to service
         $elements = $overpass->searchAround($lat, $lng, $radius, $types);

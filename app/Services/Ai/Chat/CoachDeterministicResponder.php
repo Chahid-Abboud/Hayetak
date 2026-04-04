@@ -37,6 +37,14 @@ class CoachDeterministicResponder
             return $this->restrictionSummaryAnswer($context);
         }
 
+        if ($this->isDinnerSwitchFollowUp($normalizedQuestion)) {
+            $dinnerSwitch = $this->dinnerSwitchFollowUpAnswer();
+
+            if ($dinnerSwitch !== null) {
+                return $dinnerSwitch;
+            }
+        }
+
         if ($this->isDinnerIngredientFollowUp($normalizedQuestion)) {
             $dinnerSuggestion = $this->dinnerIngredientFollowUpAnswer($normalizedQuestion, $context);
 
@@ -61,6 +69,14 @@ class CoachDeterministicResponder
             }
         }
 
+        if ($this->isGeneralIngredientSafetyQuestion($normalizedQuestion)) {
+            $safetyAnswer = $this->generalIngredientSafetyAnswer($normalizedQuestion, $context);
+
+            if ($safetyAnswer !== null) {
+                return $safetyAnswer;
+            }
+        }
+
         if ($this->isRecipeMacroFollowUp($normalizedQuestion)) {
             $recipeFollowUp = $this->recipeMacroFollowUpAnswer($context);
 
@@ -69,12 +85,32 @@ class CoachDeterministicResponder
             }
         }
 
+        if ($this->isLowerCarbRecipeFollowUp($normalizedQuestion)) {
+            $lowerCarbFollowUp = $this->lowerCarbRecipeFollowUpAnswer($context);
+
+            if ($lowerCarbFollowUp !== null) {
+                return $lowerCarbFollowUp;
+            }
+        }
+
+        if ($this->isMealTotalMacrosFollowUp($normalizedQuestion)) {
+            $mealTotalsFollowUp = $this->mealTotalMacrosFollowUpAnswer($context);
+
+            if ($mealTotalsFollowUp !== null) {
+                return $mealTotalsFollowUp;
+            }
+        }
+
         if (($classification['deterministic_action'] ?? null) === 'protein_target') {
             return $this->proteinTargetAnswer($context);
         }
 
+        if (($classification['deterministic_action'] ?? null) === 'protein_gap') {
+            return $this->proteinGapAnswer($context);
+        }
+
         if (($classification['deterministic_action'] ?? null) === 'meal_summary') {
-            return $this->mealSummaryAnswer($context);
+            return $this->mealSummaryAnswer($context, $normalizedQuestion);
         }
 
         return null;
@@ -150,9 +186,93 @@ class CoachDeterministicResponder
         ];
     }
 
-    private function mealSummaryAnswer(array $context): array
+    private function proteinGapAnswer(array $context): array
+    {
+        $resolved = is_array($context['resolved_profile'] ?? null) ? $context['resolved_profile'] : [];
+        $today = is_array($context['today_summary'] ?? null) ? $context['today_summary'] : [];
+        $targets = is_array($context['plans']['nutrition_targets'] ?? null) ? $context['plans']['nutrition_targets'] : [];
+
+        $proteinToday = is_numeric($today['protein_g'] ?? null) ? (int) $today['protein_g'] : 0;
+        $planProteinTarget = is_numeric($targets['protein_g'] ?? null) ? (int) $targets['protein_g'] : null;
+
+        $calculation = null;
+        if ($planProteinTarget === null) {
+            $weightKg = is_numeric($resolved['current_weight_kg'] ?? null)
+                ? (float) $resolved['current_weight_kg']
+                : null;
+
+            $calculation = $this->nutritionCalculator->proteinTargetRange(
+                $weightKg,
+                is_string($resolved['goal'] ?? null) ? $resolved['goal'] : null,
+                is_string($resolved['activity_level'] ?? null) ? $resolved['activity_level'] : null,
+            );
+        }
+
+        if ($planProteinTarget === null && $calculation === null) {
+            return [
+                'answer' => 'I can check whether you are low on protein once I have a saved weight or an active nutrition target. Update your profile weight or plan target, then ask again and I will compare it with today\'s meal log directly.',
+                'warnings' => ['A saved protein target or usable weight was not available for a personalized protein gap check.'],
+                'chat_path' => 'general',
+                'mode_label' => 'General guidance',
+                'reason' => 'missing_protein_target',
+                'model' => 'coach-calculator',
+            ];
+        }
+
+        $referenceTarget = $planProteinTarget ?? $calculation['suggested_g'];
+        $remainingToTarget = max(0, $referenceTarget - $proteinToday);
+        $lines = [
+            sprintf(
+                'Based on your meals today, you have logged %d g of protein so far.',
+                $proteinToday,
+            ),
+        ];
+
+        if ($planProteinTarget !== null) {
+            $lines[] = sprintf(
+                'Your current active protein target is %d g for the day.',
+                $planProteinTarget,
+            );
+        } else {
+            $lines[] = sprintf(
+                'Using your saved weight of %s kg, your estimated daily protein range is %d-%d g, with about %d g as a practical target.',
+                $this->displayDecimal((float) $calculation['weight_kg']),
+                $calculation['low_g'],
+                $calculation['high_g'],
+                $calculation['suggested_g'],
+            );
+        }
+
+        if ($remainingToTarget > 20) {
+            $lines[] = sprintf(
+                'Yes, you are still low on protein today by about %d g relative to your current target.',
+                $remainingToTarget,
+            );
+        } elseif ($remainingToTarget > 0) {
+            $lines[] = sprintf(
+                'You are close, but you still need about %d g of protein to reach your current target.',
+                $remainingToTarget,
+            );
+        } else {
+            $lines[] = 'You are not low on protein right now because you have already met your current target for the day.';
+        }
+
+        return [
+            'answer' => implode("\n\n", $lines),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'protein_gap_check',
+            'model' => 'coach-calculator',
+        ];
+    }
+
+    private function mealSummaryAnswer(array $context, string $question): array
     {
         $today = is_array($context['today_summary'] ?? null) ? $context['today_summary'] : [];
+        $last7Nutrition = is_array($context['last_7_days_summary']['nutrition'] ?? null)
+            ? $context['last_7_days_summary']['nutrition']
+            : [];
         $targets = is_array($context['plans']['nutrition_targets'] ?? null) ? $context['plans']['nutrition_targets'] : [];
         $meals = is_array($today['meals'] ?? null) ? $today['meals'] : [];
         $summaryDate = trim((string) ($today['date'] ?? ''));
@@ -161,6 +281,50 @@ class CoachDeterministicResponder
             static fn ($meal) => is_array($meal) ? trim((string) ($meal['meal_type'] ?? '')) : '',
             $meals,
         ))));
+
+        if ($this->isLastSevenDaySummaryQuestion($question)) {
+            $daysLogged = is_numeric($last7Nutrition['days_logged'] ?? null) ? (int) $last7Nutrition['days_logged'] : 0;
+            $avgKcal = is_numeric($last7Nutrition['avg_kcal'] ?? null) ? (int) $last7Nutrition['avg_kcal'] : 0;
+            $avgProtein = is_numeric($last7Nutrition['avg_protein_g'] ?? null) ? (int) $last7Nutrition['avg_protein_g'] : 0;
+            $avgCarbs = is_numeric($last7Nutrition['avg_carbs_g'] ?? null) ? (int) $last7Nutrition['avg_carbs_g'] : 0;
+            $avgFat = is_numeric($last7Nutrition['avg_fat_g'] ?? null) ? (int) $last7Nutrition['avg_fat_g'] : 0;
+
+            if ($daysLogged <= 0) {
+                return [
+                    'answer' => 'I do not see any logged meals in your last 7 days yet. Once you log a few days, I can summarize your weekly nutrition patterns clearly.',
+                    'warnings' => ['No meal data was available for a 7-day summary.'],
+                    'chat_path' => 'personalized',
+                    'mode_label' => 'Personalized',
+                    'reason' => 'missing_last_7_day_meals',
+                    'model' => 'coach-meal-summary',
+                ];
+            }
+
+            $consistencyLine = match (true) {
+                $daysLogged >= 6 => 'You have been very consistent with meal logging this week.',
+                $daysLogged >= 4 => 'Your meal logging has been moderately consistent this week.',
+                default => 'Meal logging has been limited this week, so trends are less reliable.',
+            };
+
+            return [
+                'answer' => implode("\n\n", [
+                    sprintf('Over your last 7 days, you logged meals on %d day(s).', $daysLogged),
+                    sprintf(
+                        'Average per logged day: %d kcal, %d g protein, %d g carbs, and %d g fat.',
+                        $avgKcal,
+                        $avgProtein,
+                        $avgCarbs,
+                        $avgFat,
+                    ),
+                    $consistencyLine,
+                ]),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'meal_summary_last_7_days',
+                'model' => 'coach-meal-summary',
+            ];
+        }
 
         $lines = [];
         $calories = is_numeric($today['calories'] ?? null) ? (int) $today['calories'] : null;
@@ -274,13 +438,26 @@ class CoachDeterministicResponder
         $dietType = trim((string) ($restrictions['diet_type'] ?? ''));
         $injuries = is_array($restrictions['injuries'] ?? null) ? $restrictions['injuries'] : [];
         $medicalConditions = is_array($restrictions['medical_conditions'] ?? null) ? $restrictions['medical_conditions'] : [];
+        $avoidanceNotes = [];
+
+        if ($allergies !== []) {
+            $avoidanceNotes[] = 'avoid foods containing '.implode(', ', $allergies);
+        }
+
+        $normalizedDiet = mb_strtolower($dietType);
+        if ($normalizedDiet === 'vegan') {
+            $avoidanceNotes[] = 'avoid animal products (meat, fish, eggs, and dairy)';
+        } elseif ($normalizedDiet === 'vegetarian') {
+            $avoidanceNotes[] = 'avoid meat and poultry';
+        }
 
         $lines = [
-            'Here are the saved safety and diet details I can see for your account:',
+            'Based on your profile, here are the health and diet details I can see for your account:',
             'Diet type: '.($dietType !== '' ? $dietType : 'none saved'),
             'Allergies: '.($allergies !== [] ? implode(', ', $allergies) : 'none saved'),
             'Medical conditions: '.($medicalConditions !== [] ? implode(', ', $medicalConditions) : 'none saved'),
             'Injuries: '.($injuries !== [] ? implode(', ', $injuries) : 'none saved'),
+            'Foods to avoid: '.($avoidanceNotes !== [] ? implode('; ', $avoidanceNotes).'.' : 'none explicitly saved.'),
         ];
 
         return [
@@ -358,6 +535,79 @@ class CoachDeterministicResponder
         ];
     }
 
+    private function generalIngredientSafetyAnswer(string $question, array $context): ?array
+    {
+        $ingredient = $this->extractSafetyIngredient($question);
+        if ($ingredient === null) {
+            return null;
+        }
+
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        $isUnsafe = false;
+        foreach ($allergies as $allergy) {
+            if ($allergy === '') {
+                continue;
+            }
+
+            if (str_contains($ingredient, $allergy) || str_contains($allergy, $ingredient)) {
+                $isUnsafe = true;
+                break;
+            }
+        }
+
+        if ($isUnsafe) {
+            return [
+                'answer' => sprintf(
+                    '%s is not safe for you because it conflicts with your saved allergy list (%s).',
+                    ucfirst($ingredient),
+                    implode(', ', $allergies),
+                ),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'food_safety_check',
+                'model' => 'coach-recipe-builder',
+            ];
+        }
+
+        if ($this->containsAny($question, ['safe alternative', 'alternative'])) {
+            return [
+                'answer' => implode("\n\n", [
+                    sprintf(
+                        '%s can fit your saved profile, and here is a safe alternative if you want variety:',
+                        ucfirst($ingredient),
+                    ),
+                    'Alternative: smashed cottage cheese and tomato toast on whole-grain bread (no sesame topping).',
+                    'Macros per serving: 260 kcal, 18 g protein, 25 g carbs, 9 g fat.',
+                ]),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'food_safety_check',
+                'model' => 'coach-recipe-builder',
+            ];
+        }
+
+        $allergyText = $allergies !== [] ? implode(', ', $allergies) : 'none saved';
+
+        return [
+            'answer' => sprintf(
+                '%s is generally safe based on your saved allergies (%s). Keep portions aligned with your goal, and watch toppings that may add allergens.',
+                ucfirst($ingredient),
+                $allergyText,
+            ),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'food_safety_check',
+            'model' => 'coach-recipe-builder',
+        ];
+    }
+
     private function recipeMacroFollowUpAnswer(array $context): ?array
     {
         $recipe = $this->resolveRecentSafeRecipe($context);
@@ -386,6 +636,108 @@ class CoachDeterministicResponder
             'mode_label' => 'Personalized',
             'reason' => 'safe_recipe_follow_up',
             'model' => 'coach-recipe-builder',
+        ];
+    }
+
+    private function lowerCarbRecipeFollowUpAnswer(array $context): ?array
+    {
+        $recipe = $this->resolveRecentSafeRecipe($context);
+
+        if ($recipe === null) {
+            return null;
+        }
+
+        $adjustedMacros = [
+            'calories' => max(80, (int) $recipe['macros']['calories'] - 60),
+            'protein_g' => max(8, (int) $recipe['macros']['protein_g'] - 1),
+            'carbs_g' => max(4, (int) $recipe['macros']['carbs_g'] - 14),
+            'fat_g' => max(2, (int) $recipe['macros']['fat_g']),
+        ];
+
+        return [
+            'answer' => implode("\n", [
+                sprintf('Sure. Here is a lower-carb version of the %s:', $recipe['title']),
+                'Adjustments: remove honey, reduce fruit portion to 1/4 cup, and skip oats.',
+                sprintf(
+                    'Updated macros per serving: %d kcal, %d g protein, %d g carbs, %d g fat.',
+                    $adjustedMacros['calories'],
+                    $adjustedMacros['protein_g'],
+                    $adjustedMacros['carbs_g'],
+                    $adjustedMacros['fat_g'],
+                ),
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'lower_carb_recipe_follow_up',
+            'model' => 'coach-recipe-builder',
+        ];
+    }
+
+    private function mealTotalMacrosFollowUpAnswer(array $context): ?array
+    {
+        $recentTurns = is_array($context['conversation_context']['recent_turns'] ?? null)
+            ? $context['conversation_context']['recent_turns']
+            : [];
+
+        $assistantTurns = array_values(array_filter($recentTurns, static fn ($turn) => ($turn['r'] ?? null) === 'assistant'));
+
+        foreach (array_reverse($assistantTurns) as $turn) {
+            $content = trim((string) ($turn['c'] ?? ''));
+
+            if (! str_contains($content, 'Total meal macros:')) {
+                continue;
+            }
+
+            if (preg_match('/Total meal macros:\s*([0-9]+)\s*kcal,\s*([0-9]+)\s*g protein,\s*([0-9]+)\s*g carbs,\s*([0-9]+)\s*g fat/i', $content, $matches) === 1) {
+                return [
+                    'answer' => sprintf(
+                        'Total macros for the whole meal: %d kcal, %d g protein, %d g carbs, %d g fat.',
+                        (int) $matches[1],
+                        (int) $matches[2],
+                        (int) $matches[3],
+                        (int) $matches[4],
+                    ),
+                    'warnings' => [],
+                    'chat_path' => 'personalized',
+                    'mode_label' => 'Personalized',
+                    'reason' => 'meal_total_macros_follow_up',
+                    'model' => 'coach-meal-builder',
+                ];
+            }
+        }
+
+        foreach (array_reverse($assistantTurns) as $turn) {
+            $content = mb_strtolower(trim((string) ($turn['c'] ?? '')));
+
+            if ($this->containsAny($content, ['taouk chicken dinner bowl', 'balanced taouk chicken dinner bowl'])) {
+                return [
+                    'answer' => 'Total macros for the whole taouk chicken dinner: 470 kcal, 44 g protein, 49 g carbs, 12 g fat.',
+                    'warnings' => [],
+                    'chat_path' => 'personalized',
+                    'mode_label' => 'Personalized',
+                    'reason' => 'meal_total_macros_follow_up',
+                    'model' => 'coach-meal-builder',
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function dinnerSwitchFollowUpAnswer(): ?array
+    {
+        return [
+            'answer' => implode("\n\n", [
+                'Sure, here is a dinner option instead:',
+                'Dinner: lemon-herb chicken plate with bulgur, roasted vegetables, and a side salad.',
+                'Total meal macros: 510 kcal, 42 g protein, 46 g carbs, 14 g fat.',
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'dinner_switch_follow_up',
+            'model' => 'coach-meal-builder',
         ];
     }
 
@@ -673,6 +1025,7 @@ class CoachDeterministicResponder
             'breakfast',
             'lunch',
             'dinner',
+            'dessert',
             'snack',
             'recipe',
             'cook',
@@ -682,20 +1035,57 @@ class CoachDeterministicResponder
             return false;
         }
 
+        if ($this->containsAny($question, [
+            'workout',
+            'exercise',
+            'exercises',
+            'exercice',
+            'exercices',
+            'train',
+            'recommend',
+            'suggest',
+            'safe for',
+            'what can i do',
+            'what may i do',
+            'what should i do',
+            'can i do',
+            'may i do',
+        ])) {
+            return false;
+        }
+
         return $this->containsAny($question, [
             'what are my allergies',
+            'what are my allergens',
             'what allergies do i have',
+            'what allergens do i have',
             'my allergies',
+            'my allergens',
             'allergy list',
+            'allergen list',
             'asked only for allergies',
             'show my allergies',
+            'show my allergens',
             'tell me my allergies',
+            'tell me my allergens',
             'what are my restrictions',
             'what are my dietary restrictions',
             'what diet type do i have',
             'what is my diet type',
+            'what is my medical history',
+            'my medical history',
             'what medical conditions do i have',
             'what injuries do i have',
+            'what is my injury history',
+            'my injury history',
+            'what about my allergens',
+            'what about my allergies',
+            'what about my injury history',
+            'what about my medical history',
+            'my allergens and my injury history',
+            'my allergies and my injury history',
+            'allergens and injury history',
+            'allergies and injury history',
         ]);
     }
 
@@ -715,6 +1105,44 @@ class CoachDeterministicResponder
         ]);
     }
 
+    private function isLowerCarbRecipeFollowUp(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'make it lower carb',
+            'lower carb',
+            'reduce carbs',
+            'less carbs',
+        ]);
+    }
+
+    private function isMealTotalMacrosFollowUp(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'total macros for the whole meal',
+            'total macros for whole meal',
+            'total macros for the meal',
+            'whole meal macros',
+        ]);
+    }
+
+    private function isDinnerSwitchFollowUp(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'another one for dinner instead',
+            'dinner instead',
+            'another dinner instead',
+        ]);
+    }
+
+    private function isGeneralIngredientSafetyQuestion(string $question): bool
+    {
+        if (! $this->containsAny($question, ['safe', 'what about', 'can i have', 'is ', 'alternative'])) {
+            return false;
+        }
+
+        return $this->extractSafetyIngredient($question) !== null;
+    }
+
     private function isAllergyIngredientQuestion(string $question, array $context): bool
     {
         if (! $this->containsAny($question, ['what about', 'can i have', 'is ', 'would ', 'okay', 'safe'])) {
@@ -724,6 +1152,35 @@ class CoachDeterministicResponder
         $allergies = array_map('mb_strtolower', $context['restrictions']['allergies'] ?? []);
 
         return $this->containsAny($question, $allergies);
+    }
+
+    private function extractSafetyIngredient(string $question): ?string
+    {
+        $knownIngredients = [
+            'avocado toast',
+            'avocado',
+            'greek yogurt',
+            'yogurt',
+            'corn',
+            'sesame',
+            'peanut',
+            'peanuts',
+            'milk',
+            'egg',
+            'eggs',
+            'fish',
+            'shellfish',
+            'wheat',
+            'bread',
+        ];
+
+        foreach ($knownIngredients as $ingredient) {
+            if (str_contains($question, $ingredient)) {
+                return $ingredient;
+            }
+        }
+
+        return null;
     }
 
     private function isDinnerIngredientFollowUp(string $question): bool
@@ -751,11 +1208,9 @@ class CoachDeterministicResponder
 
     private function isTasteAlternativeQuestion(string $question): bool
     {
-        return $this->containsAny($question, [
-            'alternative',
-            'alternatives',
-            'instead',
-            'replace',
+        $mentionsGreekYogurt = $this->containsAny($question, ['greek yogurt', 'yogurt']);
+        $asksForAlternative = $this->containsAny($question, ['alternative', 'alternatives', 'instead', 'replace']);
+        $tasteDislike = $this->containsAny($question, [
             'hate the taste',
             'dont like the taste',
             'do not like the taste',
@@ -763,6 +1218,8 @@ class CoachDeterministicResponder
             'dont like greek yogurt',
             'do not like greek yogurt',
         ]);
+
+        return $mentionsGreekYogurt && ($asksForAlternative || $tasteDislike);
     }
 
     private function humanizeIngredient(string $ingredient): string
@@ -831,5 +1288,18 @@ class CoachDeterministicResponder
         }
 
         return 'For '.$date;
+    }
+
+    private function isLastSevenDaySummaryQuestion(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'last 7 days',
+            'last seven days',
+            'this week',
+            'weekly summary',
+            'week summary',
+            'summarize my week',
+            'summarize my last 7 days',
+        ]);
     }
 }

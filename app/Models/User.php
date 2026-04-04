@@ -125,6 +125,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasMany(AiPlan::class, 'user_id');
     }
 
+    public function dietaryRestrictions(): HasMany
+    {
+        return $this->hasMany(UserDietaryRestriction::class, 'user_id');
+    }
+
+    public function medicalHistories(): HasMany
+    {
+        return $this->hasMany(UserMedicalHistory::class, 'user_id');
+    }
+
     public function aiConversations(): HasMany
     {
         return $this->hasMany(AiConversation::class, 'user_id');

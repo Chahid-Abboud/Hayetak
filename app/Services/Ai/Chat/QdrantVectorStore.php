@@ -2,12 +2,15 @@
 
 namespace App\Services\Ai\Chat;
 
+use App\Services\Ai\Runtime\FeatureConfigResolver;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class QdrantVectorStore
 {
+    public function __construct(private readonly FeatureConfigResolver $features) {}
+
     public function ensureCollection(int $vectorSize): void
     {
         $collection = $this->collection();
@@ -25,7 +28,7 @@ class QdrantVectorStore
             ->put("/collections/{$collection}", [
                 'vectors' => [
                     'size' => $vectorSize,
-                    'distance' => (string) config('ai.chat.self_hosted.qdrant.distance', 'Cosine'),
+                    'distance' => $this->features->qdrant()['distance'],
                 ],
             ])
             ->throw();
@@ -65,7 +68,7 @@ class QdrantVectorStore
     {
         $payload = array_filter([
             'query' => $vector,
-            'limit' => $limit ?? (int) config('ai.chat.self_hosted.retrieval.limit', 4),
+            'limit' => $limit ?? (int) $this->features->retrieval(FeatureConfigResolver::FEATURE_CHAT)['limit'],
             'with_payload' => true,
             'score_threshold' => $scoreThreshold,
             'filter' => [
@@ -141,13 +144,15 @@ class QdrantVectorStore
 
     private function request(): PendingRequest
     {
-        return Http::baseUrl(rtrim((string) config('ai.chat.self_hosted.qdrant.base_url', 'http://127.0.0.1:6333'), '/'))
+        $settings = $this->features->qdrant();
+
+        return Http::baseUrl($settings['base_url'])
             ->acceptJson()
-            ->timeout((int) config('ai.chat.self_hosted.qdrant.timeout', 20));
+            ->timeout((int) $settings['timeout']);
     }
 
     private function collection(): string
     {
-        return (string) config('ai.chat.self_hosted.qdrant.collection', 'hayetak_user_context');
+        return $this->features->qdrant()['collection'];
     }
 }

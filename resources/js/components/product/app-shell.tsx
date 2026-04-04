@@ -16,7 +16,6 @@ import {
     MapPin,
     Menu,
     MessageSquare,
-    Palette,
     Search,
     Settings2,
     ShieldCheck,
@@ -384,7 +383,7 @@ export function AppProductShell({
                 href: '/workouts/log',
                 label: 'Workouts',
                 icon: Dumbbell,
-                match: ['/planner', '/workouts/plan'],
+                match: ['/workouts/plan'],
                 keywords: ['workout log', 'workouts', 'training'],
             },
             {
@@ -449,22 +448,46 @@ export function AppProductShell({
             ];
         }
 
-        const groups: NavGroup[] = [
+        const generalItems: NavItem[] = [
             {
-                label: 'Planning',
-                items: [
-                    {
-                        href: '/track-meals',
-                        label: 'Meal Tracker',
-                        icon: UtensilsCrossed,
-                    },
-                    {
-                        href: '/workouts/plan',
-                        label: 'Workout Planner',
-                        icon: Dumbbell,
-                        match: ['/planner'],
-                    },
-                ],
+                href: '/ai/planner',
+                label: 'AI Planner',
+                icon: Sparkles,
+                keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
+                match: ['/planner'],
+            },
+            {
+                href: '/track-meals',
+                label: 'Meal Tracker',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/workouts/plan',
+                label: 'Workout Planner',
+                icon: Dumbbell,
+            },
+        ];
+
+        if (role === 'trainer') {
+            generalItems.push({
+                href: '/trainer/clients',
+                label: 'My Clients',
+                icon: Users,
+            });
+        }
+
+        if (role === 'nutritionist') {
+            generalItems.push({
+                href: '/dietitian/clients',
+                label: 'My Clients',
+                icon: Users,
+            });
+        }
+
+        return [
+            {
+                label: 'General',
+                items: generalItems,
             },
             {
                 label: 'Account',
@@ -475,51 +498,14 @@ export function AppProductShell({
                         icon: UserRound,
                     },
                     {
-                        href: '/settings/password',
-                        label: 'Password',
+                        href: '/settings/security',
+                        label: 'Security',
                         icon: ShieldCheck,
-                    },
-                    {
-                        href: '/settings/two-factor',
-                        label: 'Two-Factor',
-                        icon: Settings2,
-                    },
-                    {
-                        href: '/settings/appearance',
-                        label: 'Appearance',
-                        icon: Palette,
+                        match: ['/settings/password', '/settings/two-factor'],
                     },
                 ],
             },
         ];
-
-        if (role === 'trainer') {
-            groups.splice(1, 0, {
-                label: 'Clients',
-                items: [
-                    {
-                        href: '/trainer/clients',
-                        label: 'My Clients',
-                        icon: Users,
-                    },
-                ],
-            });
-        }
-
-        if (role === 'nutritionist') {
-            groups.splice(1, 0, {
-                label: 'Clients',
-                items: [
-                    {
-                        href: '/dietitian/clients',
-                        label: 'My Clients',
-                        icon: Users,
-                    },
-                ],
-            });
-        }
-
-        return groups;
     }, [role]);
 
     const allNavItems = useMemo(

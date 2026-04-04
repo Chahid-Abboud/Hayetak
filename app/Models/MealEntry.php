@@ -7,11 +7,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MealEntry extends Model
 {
-    protected $fillable = ['user_id', 'food_id', 'meal_type', 'servings', 'eaten_at'];
+    protected $fillable = [
+        'user_id',
+        'food_id',
+        'nutrition_plan_item_id',
+        'meal_type',
+        'servings',
+        'eaten_at',
+    ];
 
     protected $casts = [
         'eaten_at' => 'date:Y-m-d',
         'servings' => 'decimal:2',
+        'nutrition_plan_item_id' => 'integer',
     ];
 
     public function food(): BelongsTo
@@ -22,5 +30,10 @@ class MealEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function nutritionPlanItem(): BelongsTo
+    {
+        return $this->belongsTo(NutritionPlanItem::class, 'nutrition_plan_item_id');
     }
 }

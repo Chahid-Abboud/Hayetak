@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Measurement;
+use App\Models\UserPref;
+use App\Services\Ai\Planner\PlannerProfileSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,9 +18,12 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(private readonly PlannerProfileSyncService $plannerProfiles) {}
+
     public function edit(Request $request): Response
     {
         $u = $request->user();
+        $u->loadMissing(['prefs', 'medicalHistories']);
 
         $userProfile = [
             'first_name' => $u->first_name,
@@ -32,11 +37,33 @@ class ProfileController extends Controller
 
         // Map your stored fields -> prefs shape the React page expects
         $dietName = $u->diet_name;
+        $settings = is_array($u->prefs?->settings) ? $u->prefs->settings : [];
 
         $knownDietSlugs = ['balanced', 'high_protein', 'low_carb', 'mediterranean', 'keto', 'vegan', 'vegetarian'];
         $slug = $dietName ? strtolower(str_replace([' ', '-'], ['_', '_'], trim($dietName))) : null;
         $dietType = in_array($slug, $knownDietSlugs, true) ? $slug : ($slug ? 'other' : null);
         $dietOther = $dietType === 'other' ? $dietName : null;
+        $tableMedical = $u->medicalHistories
+            ->where('is_active', true)
+            ->where('kind', 'medical_condition')
+            ->pluck('value')
+            ->filter()
+            ->values()
+            ->all();
+        $tableInjuries = $u->medicalHistories
+            ->where('is_active', true)
+            ->where('kind', 'injury')
+            ->pluck('value')
+            ->filter()
+            ->values()
+            ->all();
+        $medicalHistoryText = trim((string) ($u->medical_history ?? ''));
+        $medicalFromText = $medicalHistoryText !== ''
+            ? array_values(array_unique(array_filter(array_map(
+                fn ($part) => trim((string) $part),
+                preg_split('/[\r\n,;]+/', $medicalHistoryText) ?: []
+            ))))
+            : [];
 
         $prefs = [
             'dietary_goal' => $u->dietary_goal,
@@ -44,6 +71,21 @@ class ProfileController extends Controller
             'diet_type' => $dietType,
             'diet_other' => $dietOther,
             'allergies' => is_array($u->allergies) ? $u->allergies : [],
+            'workout_days_per_week' => $u->workout_days_per_week !== null ? (int) $u->workout_days_per_week : null,
+            'workout_location' => $u->workout_location,
+            'preferred_workout_days' => is_array($settings['preferred_workout_days'] ?? null) ? $settings['preferred_workout_days'] : [],
+            'available_equipment' => is_array($settings['available_equipment'] ?? null) ? $settings['available_equipment'] : [],
+            'injury_history' => array_values(array_unique(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                array_merge(
+                    is_array($settings['injury_history'] ?? null) ? $settings['injury_history'] : [],
+                    $tableInjuries
+                )
+            )))),
+            'medical_conditions' => array_values(array_unique(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                array_merge($medicalFromText, $tableMedical)
+            )))),
         ];
 
         // ✅ Your real measurements schema uses measured_at + weight_kg
@@ -121,6 +163,7 @@ class ProfileController extends Controller
         ]);
 
         $u->fill($data)->save();
+        $this->plannerProfiles->prepare($u);
 
         return back()->with('status', 'profile-updated')->with('success', 'Profile updated.');
     }
@@ -137,6 +180,16 @@ class ProfileController extends Controller
             'fitness_goals.*' => ['string', 'max:60'],
             'allergies' => ['nullable', 'array'],
             'allergies.*' => ['string', 'max:60'],
+            'workout_days_per_week' => ['nullable', 'integer', 'min:1', 'max:7'],
+            'workout_location' => ['nullable', Rule::in(['home', 'gym', 'both'])],
+            'preferred_workout_days' => ['nullable', 'array'],
+            'preferred_workout_days.*' => ['string', Rule::in(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])],
+            'available_equipment' => ['nullable', 'array'],
+            'available_equipment.*' => ['string', 'max:80'],
+            'injury_history' => ['nullable', 'array'],
+            'injury_history.*' => ['string', 'max:120'],
+            'medical_conditions' => ['nullable', 'array'],
+            'medical_conditions.*' => ['string', 'max:120'],
         ]);
 
         $dietName = null;
@@ -146,12 +199,57 @@ class ProfileController extends Controller
                 : ucfirst(str_replace('_', ' ', $data['diet_type']));
         }
 
+        $fitnessGoals = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim((string) $item),
+            is_array($data['fitness_goals'] ?? null) ? $data['fitness_goals'] : []
+        ))));
+        $allergies = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim((string) $item),
+            is_array($data['allergies'] ?? null) ? $data['allergies'] : []
+        ))));
+        $medicalConditions = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim((string) $item),
+            is_array($data['medical_conditions'] ?? null) ? $data['medical_conditions'] : []
+        ))));
+        $injuryHistory = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim((string) $item),
+            is_array($data['injury_history'] ?? null) ? $data['injury_history'] : []
+        ))));
+        $availableEquipment = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim((string) $item),
+            is_array($data['available_equipment'] ?? null) ? $data['available_equipment'] : []
+        ))));
+        $preferredWorkoutDays = array_values(array_filter(array_unique(array_map(
+            fn ($item) => trim(strtolower((string) $item)),
+            is_array($data['preferred_workout_days'] ?? null) ? $data['preferred_workout_days'] : []
+        ))));
+
         $u->diet_name = $dietName;
         $u->dietary_goal = $data['dietary_goal'] ?? null;
-        $u->fitness_goal = isset($data['fitness_goals'][0]) ? $data['fitness_goals'][0] : null;
-        $u->allergies = $data['allergies'] ?? [];
+        $u->fitness_goal = $fitnessGoals[0] ?? null;
+        $u->allergies = $allergies;
+        $u->workout_days_per_week = $data['workout_days_per_week'] ?? null;
+        $u->workout_location = $data['workout_location'] ?? null;
+        $u->has_medical_history = ($medicalConditions !== [] || $injuryHistory !== []);
+        $u->medical_history = $medicalConditions !== [] ? implode(', ', $medicalConditions) : null;
 
         $u->save();
+
+        $prefs = $u->prefs ?? new UserPref(['user_id' => $u->id]);
+        $settings = is_array($prefs->settings) ? $prefs->settings : [];
+        $settings['injury_history'] = $injuryHistory;
+        $settings['available_equipment'] = $availableEquipment;
+        $settings['preferred_workout_days'] = $preferredWorkoutDays;
+
+        $prefs->fill([
+            'user_id' => $u->id,
+            'settings' => $settings,
+        ])->save();
+
+        $u->unsetRelation('prefs');
+        $u->unsetRelation('medicalHistories');
+        $u->unsetRelation('dietaryRestrictions');
+        $this->plannerProfiles->prepare($u);
 
         return back()->with('status', 'prefs-updated')->with('success', 'Preferences updated.');
     }

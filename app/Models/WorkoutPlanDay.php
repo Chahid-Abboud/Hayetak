@@ -15,10 +15,13 @@ class WorkoutPlanDay extends Model
         'workout_plan_id',
         'day_index',
         'name',
+        'notes',
+        'meta',
     ];
 
     protected $casts = [
         'day_index' => 'integer',
+        'meta' => 'array',
     ];
 
     public function plan()

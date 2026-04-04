@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MealLog;
+use App\Models\Measurement;
 use App\Models\NutritionPlan;
 use App\Models\WaterIntake;
 use App\Models\WorkoutPlan;
@@ -29,6 +30,8 @@ class HomeController extends Controller
         // ---- Water intake ----
         $todayMl = 0;
         $targetMl = 2000;
+        $weightHistory = [];
+        $heightHistory = [];
 
         if ($user) {
             if (is_numeric($user->weight_kg)) {
@@ -41,6 +44,42 @@ class HomeController extends Controller
                         ->whereDate('for_day', $today) // fixed column name
                         ->value('ml') ?? 0
                 );
+            }
+
+            if (Schema::hasTable('measurements')) {
+                $hasHeightColumn = Schema::hasColumn('measurements', 'height_cm');
+                $columns = ['measured_at', 'weight_kg'];
+                if ($hasHeightColumn) {
+                    $columns[] = 'height_cm';
+                }
+
+                $rows = Measurement::query()
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('measured_at')
+                    ->limit(90)
+                    ->get($columns);
+
+                $weightHistory = $rows
+                    ->filter(fn ($row) => $row->weight_kg !== null)
+                    ->map(fn ($row) => [
+                        'date' => (string) optional($row->measured_at)->toDateString(),
+                        'type' => 'weight',
+                        'value' => (float) $row->weight_kg,
+                    ])
+                    ->values()
+                    ->all();
+
+                if ($hasHeightColumn) {
+                    $heightHistory = $rows
+                        ->filter(fn ($row) => $row->height_cm !== null)
+                        ->map(fn ($row) => [
+                            'date' => (string) optional($row->measured_at)->toDateString(),
+                            'type' => 'height',
+                            'value' => (float) $row->height_cm,
+                        ])
+                        ->values()
+                        ->all();
+                }
             }
         }
 
@@ -185,8 +224,10 @@ class HomeController extends Controller
             $nutritionPlan = NutritionPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
+                ->whereNotNull('ai_request_id')
                 ->latest('id')
                 ->with([
+                    'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
                 ])
                 ->first();
@@ -195,8 +236,10 @@ class HomeController extends Controller
             $workoutPlan = WorkoutPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
+                ->whereNotNull('ai_request_id')
                 ->latest('id')
                 ->with([
+                    'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.exercises:id,name,primary_muscle,equipment,difficulty',
                 ])
                 ->first();
@@ -221,6 +264,8 @@ class HomeController extends Controller
             'todayMacros' => $todayMacros,
             'mealTotals' => $mealTotals,
             'mealEntryPreviews' => $mealEntryPreviews,
+            'weightHistory' => $weightHistory,
+            'heightHistory' => $heightHistory,
 
             // ✅ NEW PROPS (safe arrays for TSX)
             'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,

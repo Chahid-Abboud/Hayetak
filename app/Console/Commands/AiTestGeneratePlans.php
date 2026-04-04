@@ -2,34 +2,27 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AiRequest;
 use App\Models\User;
-use App\Services\Ai\Plan\ExerciseSafetyFilter;
-use App\Services\Ai\Plan\FoodSafetyFilter;
-use App\Services\Ai\Plan\Model\DummyPlanModelClient;
-use App\Services\Ai\Plan\Persistence\NutritionPlanPersister;
-use App\Services\Ai\Plan\UserContextBuilder;
-use App\Services\Ai\Plan\Validation\DietPlanValidator;
+use App\Services\Ai\PlannerHealthService;
+use App\Services\Ai\PlannerService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class AiTestGeneratePlans extends Command
 {
     /**
      * Run:
-     *   php artisan ai:test-generate-plans 1 --days=1
+     *   php artisan ai:test-generate-plans 1 --days=7 --timeout=90
      */
-    protected $signature = 'ai:test-generate-plans {userId} {--days=1}';
+    protected $signature = 'ai:test-generate-plans {userId} {--days=7} {--timeout=90}';
 
-    protected $description = 'End-to-end test: create ai_request -> build context -> dummy model -> validate -> persist nutrition plan';
+    protected $description = 'End-to-end test for the structured AI planner pipeline.';
 
-    public function handle(): int
+    public function handle(PlannerService $planner, PlannerHealthService $health): int
     {
         $userId = (int) $this->argument('userId');
-        $days = max(1, (int) $this->option('days'));
+        $days = max(3, min(14, (int) $this->option('days')));
+        $timeout = max(30, min(180, (int) $this->option('timeout')));
 
-        /** @var User|null $user */
         $user = User::query()->find($userId);
         if (! $user) {
             $this->error("User #{$userId} not found.");
@@ -37,94 +30,61 @@ class AiTestGeneratePlans extends Command
             return self::FAILURE;
         }
 
-        $this->info("Running Step-6 E2E test for user #{$userId} ({$user->email}) days={$days}");
+        $this->info("Running AI planner test for user #{$userId} ({$user->email}) with {$days} planned diet days.");
+        $this->line("Planner timeout budget for this run: {$timeout}s.");
 
-        /** @var UserContextBuilder $contextBuilder */
-        $contextBuilder = app(UserContextBuilder::class);
+        $healthSnapshot = $health->snapshot();
+        $primaryProvider = (string) ($healthSnapshot['primary_provider'] ?? 'unknown');
+        $ready = (bool) ($healthSnapshot['ready'] ?? false);
 
-        /** @var FoodSafetyFilter $foodFilter */
-        $foodFilter = app(FoodSafetyFilter::class);
-
-        /** @var ExerciseSafetyFilter $exerciseFilter */
-        $exerciseFilter = app(ExerciseSafetyFilter::class);
-
-        /** @var DummyPlanModelClient $dummyClient */
-        $dummyClient = app(DummyPlanModelClient::class);
-
-        /** @var DietPlanValidator $dietValidator */
-        $dietValidator = app(DietPlanValidator::class);
-
-        /** @var NutritionPlanPersister $dietPersister */
-        $dietPersister = app(NutritionPlanPersister::class);
-
-        // ✅ IMPORTANT: Build context FIRST (because ai_requests.input_context_json is NOT NULL in your DB)
-        $context = $contextBuilder->build($user);
-
-        // ✅ Create ai_request with input_context_json already filled
-        $aiRequest = new AiRequest;
-        $aiRequest->user_id = $user->id;
-        $aiRequest->type = 'plan_generator';
-        $aiRequest->status = 'processing';
-        $aiRequest->input_context_json = $context; // <-- NOT NULL column
-        $aiRequest->save();
-
-        try {
-            // 1) Safety allow lists
-            $food = $foodFilter->build($user);
-            $ex = $exerciseFilter->build($user);
-
-            $allowedFoodIds = $food['allowed_food_ids'] ?? [];
-            $allowedExerciseIds = $ex['allowed_exercise_ids'] ?? [];
-
-            if (count($allowedFoodIds) === 0) {
-                throw new \RuntimeException('FoodSafetyFilter returned 0 allowed_food_ids. Cannot generate a valid diet plan.');
-            }
-
-            // 2) Dummy model output (fixed JSON using allowed IDs)
-            $modelOutput = $dummyClient->generate([
-                'days' => $days,
-                'allowed_food_ids' => $allowedFoodIds,
-                'allowed_exercise_ids' => $allowedExerciseIds,
-                'context' => $context,
-            ]);
-
-            // Store raw output for debugging/training later
-            $aiRequest->output_json = $modelOutput;
-            $aiRequest->save();
-
-            // 3) Validate diet plan output
-            $dietPlan = $modelOutput['nutrition_plan'] ?? null;
-            if (! $dietPlan) {
-                throw new \RuntimeException('Dummy model did not return nutrition_plan.');
-            }
-
-            $validatedDiet = $dietValidator->validate($dietPlan, $allowedFoodIds);
-
-            // 4) Persist validated output
-            DB::transaction(function () use ($dietPersister, $user, $validatedDiet, $aiRequest) {
-                $dietPersister->persist($user, $validatedDiet, $aiRequest->id);
-            });
-
-            // Finalize request
-            $aiRequest->status = 'succeeded';
-            $aiRequest->error_message = null;
-            $aiRequest->save();
-
-            $this->info("✅ SUCCESS: ai_requests.id={$aiRequest->id} generated and persisted.");
-
-            $this->line('Verify in Tinker:');
-            $this->line("  \\App\\Models\\AiRequest::find({$aiRequest->id});");
-            $this->line("  \\App\\Models\\NutritionPlan::where('user_id', {$user->id})->latest('id')->first();");
-
-            return self::SUCCESS;
-        } catch (Throwable $e) {
-            $aiRequest->status = 'failed';
-            $aiRequest->error_message = $e->getMessage();
-            $aiRequest->save();
-
-            $this->error('❌ FAILED: '.$e->getMessage());
+        if (! $ready) {
+            $recommendation = (string) ($healthSnapshot['recommendation'] ?? 'Planner provider is not ready.');
+            $this->error("Planner provider is not ready (primary={$primaryProvider}). {$recommendation}");
 
             return self::FAILURE;
         }
+
+        if (
+            $primaryProvider === 'ollama' &&
+            ! (bool) data_get($healthSnapshot, 'checks.ollama.reachable', false)
+        ) {
+            if ((bool) data_get($healthSnapshot, 'checks.ollama_only.enabled', false)) {
+                $this->warn('Planner is in Ollama-only mode and Ollama is not reachable.');
+            } else {
+                $this->warn('Primary Ollama planner is not reachable; fallback may be attempted when enabled.');
+            }
+        }
+
+        if ($primaryProvider === 'ollama') {
+            config()->set('ai.planner.ollama.timeout', $timeout);
+        }
+
+        try {
+            $result = $planner->generate($user, [
+                'regenerate' => true,
+                'reason' => 'console_test_generation',
+                'created_by' => $user->id,
+                'plan_horizon_days' => $days,
+            ]);
+        } catch (\Throwable $e) {
+            $message = trim((string) $e->getMessage());
+            if (
+                str_contains(strtolower($message), 'cURL error 28') ||
+                str_contains(strtolower($message), 'timed out')
+            ) {
+                $this->error('Planner generation timed out while calling the model provider.');
+                $this->line('Recommendation: verify Ollama is responsive, confirm the planner model is pulled, and tune AI_PLANNER_OLLAMA_TIMEOUT / AI_PLANNER_OLLAMA_MAX_OUTPUT_TOKENS for your hardware.');
+            }
+
+            $this->error('Planner generation failed: '.$message);
+
+            return self::FAILURE;
+        }
+
+        $providerUsed = (string) ($result['provider'] ?? 'unknown');
+        $this->info("SUCCESS: ai_requests.id={$result['ai_request_id']} version={$result['version']} generation_id={$result['generation_id']} provider={$providerUsed}");
+        $this->line('Stored output includes the traced AI request, split ai_plans rows, and normalized active workout/nutrition plan records.');
+
+        return self::SUCCESS;
     }
 }

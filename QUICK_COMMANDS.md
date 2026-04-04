@@ -15,6 +15,15 @@ Open:
 http://localhost:8000/coach
 ```
 
+## 1b. One-Time Self-Hosted AI Setup
+
+Run this once on a new machine or after clearing Docker volumes. It starts local `Qdrant` + `Ollama`, pulls the configured models, creates the vector collection, and indexes existing users.
+
+```powershell
+cd c:\Users\User\hayetaravel
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-selfhosted-ai.ps1
+```
+
 ## 2. Check Which Branch You Are On
 
 ```powershell

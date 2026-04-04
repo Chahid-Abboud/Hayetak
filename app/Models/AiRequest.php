@@ -15,27 +15,21 @@ class AiRequest extends Model
         'user_id',
         'type',
         'status',
-
         'input_context_json',
         'output_json',
-
-        'model_name',
-        'model_version',
-
+        'provider',
+        'model',
         'prompt_version',
-        'duration_ms',
-        'tokens_in',
-        'tokens_out',
-
-        'error_message',
-
-        'meta',
+        'schema_version',
+        'usage_json',
+        'error_json',
     ];
 
     protected $casts = [
         'input_context_json' => 'array',
         'output_json' => 'array',
-        'meta' => 'array',
+        'usage_json' => 'array',
+        'error_json' => 'array',
     ];
 
     public function user()

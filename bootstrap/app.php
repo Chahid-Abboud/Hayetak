@@ -5,10 +5,14 @@ use App\Http\Middleware\EnsureVerifiedProfessional;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests; // ⬅️ add this
 use App\Http\Middleware\RequireRole;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Session\TokenMismatchException;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
@@ -39,5 +43,37 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+        });
+
+        $exceptions->render(function (TokenMismatchException $exception, Request $request) {
+            $details = [
+                'code' => 'CSRF_TOKEN_MISMATCH',
+                'hint' => 'Session expired, CSRF token mismatch, or stale browser tab.',
+                'path' => $request->path(),
+                'method' => $request->method(),
+            ];
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Your session expired or your security token is no longer valid. Please refresh and retry.',
+                    'error' => $details,
+                ], 419);
+            }
+
+            if ($request->header('X-Inertia')) {
+                return Inertia::render('errors/http-error', [
+                    'status' => 419,
+                    'title' => 'Session Expired (419)',
+                    'message' => 'Your session timed out or the CSRF token changed.',
+                    'details' => $details,
+                    'showDetails' => (bool) config('app.debug'),
+                ])->toResponse($request)->setStatusCode(419);
+            }
+
+            return response()->view('errors.419', ['details' => $details], 419);
+        });
     })->create();

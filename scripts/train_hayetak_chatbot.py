@@ -16,68 +16,42 @@ from transformers import (
 )
 
 
-DEFAULT_DATASET_PATH = "storage/app/ai/training/hayetak_client_qa_dataset_150x21.json"
+DEFAULT_DATASET_PATH = "storage/app/ai/training/hayetak_client_qa_dataset_100x10.json"
 DEFAULT_MODEL_NAME = "google/flan-t5-base"
 DEFAULT_SAVE_PATH = "./hayetak_chatbot_model"
 DEFAULT_RESULTS_DIR = "./results/hayetak_chatbot"
 DEFAULT_LOGS_DIR = "./logs/hayetak_chatbot"
-MAX_INPUT_LENGTH = 1024
-MAX_TARGET_LENGTH = 320
+MAX_INPUT_LENGTH = 768
+MAX_TARGET_LENGTH = 256
 os.environ.setdefault("WANDB_DISABLED", "true")
 
 
-def compact_json(value: dict) -> str:
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-
-
-def build_chat_prompt(question: str, context: dict | None = None) -> str:
-    lines = [
-        "You are Hayetak's in-app client fitness and nutrition assistant.",
-        "You only answer post-registration client questions.",
-        "Stay within client features like meals, workouts, progress, plans, nearby help, messages, appointments, and settings.",
-        "Use the provided context when it is relevant to the exact wording.",
-        "Keep the answer short, direct, practical, and safety-aware.",
-    ]
-    if context:
-        lines.append(f"Context: {compact_json(context)}")
-    lines.extend(
+def build_chat_prompt(question: str) -> str:
+    return "\n".join(
         [
+            "You are Hayetak's in-app client fitness and nutrition assistant.",
+            "You only answer post-registration client questions.",
+            "Stay within client features like meals, workouts, progress, plans, nearby help, messages, appointments, and settings.",
+            "Keep the answer short, direct, and practical.",
             f"Question: {question.strip()}",
             "Answer:",
         ]
     )
-
-    return "\n".join(lines)
 
 
 def load_training_rows(file_path: str) -> Dataset:
     with open(file_path, "r", encoding="utf-8") as handle:
         payload = json.load(handle)
 
-    dataset_context = payload.get("inferred_context", {})
     rows = []
     for item in payload.get("items", []):
         feature = item.get("feature", "general")
         intent = item.get("intent", "general_help")
-        item_context = item.get("item_context", {})
         for variant in item.get("variants", []):
             question = str(variant.get("question", "")).strip()
             answer = str(variant.get("answer", "")).strip()
             if not question or not answer:
                 continue
-
-            variant_context = variant.get("context", {})
-            prompt_context = {
-                "feature": feature,
-                "intent": intent,
-                "dataset_context": {
-                    "user_roles": dataset_context.get("user_roles", []),
-                    "included_features": dataset_context.get("included_features", []),
-                    "excluded_features": dataset_context.get("excluded_features", []),
-                },
-                "item_context": item_context,
-                "variant_context": variant_context,
-            }
 
             rows.append(
                 {
@@ -85,8 +59,7 @@ def load_training_rows(file_path: str) -> Dataset:
                     "intent": intent,
                     "question": question,
                     "answer": answer,
-                    "context": prompt_context,
-                    "input_text": build_chat_prompt(question, prompt_context),
+                    "input_text": build_chat_prompt(question),
                     "target_text": answer,
                 }
             )
@@ -187,7 +160,7 @@ def train_model(model, tokenizer, train_dataset, eval_dataset, data_collator):
         "per_device_train_batch_size": 2,
         "per_device_eval_batch_size": 2,
         "gradient_accumulation_steps": 2,
-        "learning_rate": 2e-4,
+        "learning_rate": 5e-5,
         "weight_decay": 0.01,
         "num_train_epochs": 3,
         "logging_steps": 25,

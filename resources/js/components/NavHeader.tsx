@@ -45,30 +45,21 @@ export default function NavHeader() {
         () => {
             const groups: Array<{ label: string; items: NavLinkItem[] }> = [
                 {
-                    label: 'Nutrition',
+                    label: 'General',
                     items: [
+                        { href: '/ai/planner', label: 'AI Planner' },
                         { href: '/track-meals', label: 'Meal Tracker' },
-                        { href: '/planner', label: 'Planner' },
-                    ],
-                },
-                {
-                    label: 'Training',
-                    items: [
-                        { href: '/workouts', label: 'Workouts' },
+                        { href: '/workouts/plan', label: 'Workout Planner' },
+                        { href: '/workouts/log', label: 'Workout Log' },
                         { href: '/appointments', label: 'Appointments' },
+                        { href: '/messages', label: 'Messages' },
                     ],
-                },
-                {
-                    label: 'Connect',
-                    items: [{ href: '/messages', label: 'Messages' }],
                 },
                 {
                     label: 'Account',
                     items: [
                         { href: '/settings/profile', label: 'Profile' },
-                        { href: '/settings/password', label: 'Password' },
-                        { href: '/settings/two-factor', label: 'Two-Factor' },
-                        { href: '/settings/appearance', label: 'Appearance' },
+                        { href: '/settings/security', label: 'Security' },
                     ],
                 },
             ];
@@ -137,12 +128,21 @@ export default function NavHeader() {
     );
 
     const isActive = (href: string) => {
-        if (href === '/workouts') {
+        if (href === '/workouts' || href === '/workouts/log' || href === '/workouts/plan') {
             return pathname.startsWith('/workouts');
         }
 
         if (href === accountHref) {
             return pathname === '/profile' || pathname.startsWith('/settings/profile');
+        }
+
+        if (href === '/settings/security') {
+            return (
+                pathname === href ||
+                pathname.startsWith(`${href}/`) ||
+                pathname === '/settings/password' ||
+                pathname === '/settings/two-factor'
+            );
         }
 
         return pathname === href || pathname.startsWith(`${href}/`);
