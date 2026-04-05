@@ -91,4 +91,23 @@ return [
     'usage_logging' => [
         'enabled' => (bool) env('AI_USAGE_LOG_ENABLED', true),
     ],
+
+    'progress_predictor' => [
+        'inference' => [
+            'enabled' => (bool) env('AI_PROGRESS_PREDICTOR_INFERENCE_ENABLED', true),
+            'python_bin' => env('AI_PROGRESS_PREDICTOR_PYTHON_BIN', 'python'),
+            'script' => env('AI_PROGRESS_PREDICTOR_SCRIPT', 'scripts/predict_progress_from_features.py'),
+            'model_dir' => env('AI_PROGRESS_PREDICTOR_MODEL_DIR', 'storage/app/ai/models/progress_predictor_v1_real_only'),
+            'timeout_seconds' => (float) env('AI_PROGRESS_PREDICTOR_TIMEOUT', 8),
+            'guardrails' => [
+                'enabled' => (bool) env('AI_PROGRESS_PREDICTOR_GUARDRAILS_ENABLED', true),
+                'min_confidence_for_ml' => env('AI_PROGRESS_PREDICTOR_MIN_CONFIDENCE_FOR_ML', 'medium'),
+                'require_macro_targets' => (bool) env('AI_PROGRESS_PREDICTOR_REQUIRE_MACRO_TARGETS', true),
+                'min_meal_logged_days' => (int) env('AI_PROGRESS_PREDICTOR_MIN_MEAL_LOGGED_DAYS', 0),
+                'min_workout_sessions' => (int) env('AI_PROGRESS_PREDICTOR_MIN_WORKOUT_SESSIONS', 0),
+                'max_ml_vs_heuristic_weekly_delta_kg' => (float) env('AI_PROGRESS_PREDICTOR_MAX_WEEKLY_DELTA_GAP_KG', 0.8),
+                'max_abs_ml_weekly_rate_kg' => (float) env('AI_PROGRESS_PREDICTOR_MAX_ABS_WEEKLY_RATE_KG', 1.2),
+            ],
+        ],
+    ],
 ];
