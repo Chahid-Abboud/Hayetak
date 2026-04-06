@@ -69,7 +69,8 @@ export default function HttpErrorPage({
                                 <div>
                                     <dt className="font-semibold">Request</dt>
                                     <dd>
-                                        {details?.method ?? 'GET'} {details?.path ?? '/'}
+                                        {details?.method ?? 'GET'}{' '}
+                                        {details?.path ?? '/'}
                                     </dd>
                                 </div>
                             </dl>

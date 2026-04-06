@@ -138,7 +138,9 @@ const ZERO: Totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
 const SUMMARY_MEALS: MealType[] = ['breakfast', 'lunch', 'dinner'];
 
-function sourceLabel(source?: { provider?: string | null; model?: string | null } | null) {
+function sourceLabel(
+    source?: { provider?: string | null; model?: string | null } | null,
+) {
     const provider = source?.provider?.trim();
     const model = source?.model?.trim();
 
@@ -197,7 +199,8 @@ export default function TrackMealsPage() {
         tone: 'default' | 'danger' | 'success';
         message: string;
     } | null>(null);
-    const [selectedPlannedItem, setSelectedPlannedItem] = useState<PlannedItem | null>(null);
+    const [selectedPlannedItem, setSelectedPlannedItem] =
+        useState<PlannedItem | null>(null);
     const [openAdd, setOpenAdd] = useState(false);
     const [selectedFood, setSelectedFood] = useState<SearchFood | null>(null);
     const [portionCount, setPortionCount] = useState(1);
@@ -251,7 +254,8 @@ export default function TrackMealsPage() {
                                   q: query,
                                   page,
                                   context: 'plan_substitution',
-                                  nutrition_plan_item_id: selectedPlannedItem.id,
+                                  nutrition_plan_item_id:
+                                      selectedPlannedItem.id,
                               }
                             : {
                                   q: query,
@@ -259,7 +263,11 @@ export default function TrackMealsPage() {
                                   meal_type: mealType,
                               },
                 });
-                setResults(Array.isArray(response.data?.data) ? response.data.data : []);
+                setResults(
+                    Array.isArray(response.data?.data)
+                        ? response.data.data
+                        : [],
+                );
             } catch {
                 setResults([]);
             } finally {
@@ -351,7 +359,10 @@ export default function TrackMealsPage() {
             setStatus({ tone: 'success', message: 'Entry removed.' });
             await fetchDay(date);
         } catch {
-            setStatus({ tone: 'danger', message: 'Could not remove this entry.' });
+            setStatus({
+                tone: 'danger',
+                message: 'Could not remove this entry.',
+            });
         }
     };
 
@@ -365,7 +376,11 @@ export default function TrackMealsPage() {
             <ProductPageShell width="wide" className="space-y-8">
                 <ProductHero
                     eyebrow="Meal Tracker"
-                    title={mode === 'follow-plan' ? "Follow today's plan" : 'Quick log your meals'}
+                    title={
+                        mode === 'follow-plan'
+                            ? "Follow today's plan"
+                            : 'Quick log your meals'
+                    }
                     description="The tracker opens in plan-first mode when a nutrition plan exists, but quick logging stays one tap away for users who want a flexible day."
                     meta={
                         <div className="space-y-2 text-sm">
@@ -374,7 +389,9 @@ export default function TrackMealsPage() {
                                     ? sourceLabel(day.plannedDay.plan.source)
                                     : props.dietName || 'Meal tracking'}
                             </div>
-                            <div className="text-muted-foreground">Date: {date}</div>
+                            <div className="text-muted-foreground">
+                                Date: {date}
+                            </div>
                         </div>
                     }
                     actions={
@@ -382,13 +399,18 @@ export default function TrackMealsPage() {
                             <input
                                 type="date"
                                 value={date}
-                                onChange={(event) => setDate(event.target.value)}
+                                onChange={(event) =>
+                                    setDate(event.target.value)
+                                }
                                 className="h-11 rounded-2xl border border-border/70 bg-background px-3 text-sm text-foreground"
                             />
                             <ModeButton
                                 active={mode === 'follow-plan'}
                                 disabled={!day.planModeAvailable}
-                                onClick={() => day.planModeAvailable && setMode('follow-plan')}
+                                onClick={() =>
+                                    day.planModeAvailable &&
+                                    setMode('follow-plan')
+                                }
                             >
                                 Follow Plan
                             </ModeButton>
@@ -411,7 +433,11 @@ export default function TrackMealsPage() {
                     }
                 />
 
-                {status ? <ProductBanner tone={status.tone}>{status.message}</ProductBanner> : null}
+                {status ? (
+                    <ProductBanner tone={status.tone}>
+                        {status.message}
+                    </ProductBanner>
+                ) : null}
 
                 {mode === 'follow-plan' ? (
                     day.plannedDay ? (
@@ -432,10 +458,12 @@ export default function TrackMealsPage() {
                                         Plan context
                                     </div>
                                     <div className="mt-3 text-sm text-muted-foreground">
-                                        {day.plannedDay.plan.name} - Day {day.plannedDay.day.day_index}
+                                        {day.plannedDay.plan.name} - Day{' '}
+                                        {day.plannedDay.day.day_index}
                                     </div>
                                     <div className="mt-3 text-sm text-foreground">
-                                        {day.plannedDay.day.notes ?? 'No extra notes for this day.'}
+                                        {day.plannedDay.day.notes ??
+                                            'No extra notes for this day.'}
                                     </div>
                                 </div>
 
@@ -472,18 +500,30 @@ export default function TrackMealsPage() {
                                                                     ? `${item.grams} g`
                                                                     : `${item.servings ?? item.default_servings} servings`}
                                                                 {' - '}
-                                                                {Math.round(item.food.calories)} kcal
+                                                                {Math.round(
+                                                                    item.food
+                                                                        .calories,
+                                                                )}{' '}
+                                                                kcal
                                                             </div>
                                                         </div>
                                                         <span className="haye-chip">
-                                                            {statusLabel(item.status)}
+                                                            {statusLabel(
+                                                                item.status,
+                                                            )}
                                                         </span>
                                                     </div>
 
                                                     {item.logged_entry ? (
                                                         <div className="mt-3 rounded-[18px] border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-                                                            Logged as {item.logged_entry.food.name}
-                                                            {item.logged_entry.servings
+                                                            Logged as{' '}
+                                                            {
+                                                                item
+                                                                    .logged_entry
+                                                                    .food.name
+                                                            }
+                                                            {item.logged_entry
+                                                                .servings
                                                                 ? ` - ${item.logged_entry.servings} servings`
                                                                 : ''}
                                                         </div>
@@ -492,7 +532,11 @@ export default function TrackMealsPage() {
                                                     <div className="mt-4 flex flex-wrap gap-2">
                                                         <button
                                                             type="button"
-                                                            onClick={() => void logExactPlannedItem(item)}
+                                                            onClick={() =>
+                                                                void logExactPlannedItem(
+                                                                    item,
+                                                                )
+                                                            }
                                                             className="inline-flex h-10 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
                                                         >
                                                             Log exact
@@ -500,8 +544,12 @@ export default function TrackMealsPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => {
-                                                                setMode('follow-plan');
-                                                                setSelectedPlannedItem(item);
+                                                                setMode(
+                                                                    'follow-plan',
+                                                                );
+                                                                setSelectedPlannedItem(
+                                                                    item,
+                                                                );
                                                                 setQuery('');
                                                                 setPage(1);
                                                             }}
@@ -576,7 +624,9 @@ export default function TrackMealsPage() {
                                             <button
                                                 key={type}
                                                 type="button"
-                                                onClick={() => setMealType(type)}
+                                                onClick={() =>
+                                                    setMealType(type)
+                                                }
                                                 className={`rounded-full border px-3 py-1.5 text-sm transition ${
                                                     mealType === type
                                                         ? 'border-primary/30 bg-primary/10 text-foreground'
@@ -600,7 +650,9 @@ export default function TrackMealsPage() {
 
                                 <div className="mt-4 space-y-3">
                                     {loading ? (
-                                        <div className="text-sm text-muted-foreground">Searching...</div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Searching...
+                                        </div>
                                     ) : (
                                         results.map((food) => (
                                             <div
@@ -613,17 +665,26 @@ export default function TrackMealsPage() {
                                                             {food.name}
                                                         </div>
                                                         <div className="mt-1 text-xs text-muted-foreground">
-                                                            {food.category ?? 'Food'}
+                                                            {food.category ??
+                                                                'Food'}
                                                             {' - '}
-                                                            {Math.round(food.calories ?? 0)} kcal
+                                                            {Math.round(
+                                                                food.calories ??
+                                                                    0,
+                                                            )}{' '}
+                                                            kcal
                                                         </div>
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => openAddDialog(food)}
+                                                        onClick={() =>
+                                                            openAddDialog(food)
+                                                        }
                                                         className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
                                                     >
-                                                        {mode === 'follow-plan' ? 'Use substitute' : 'Add'}
+                                                        {mode === 'follow-plan'
+                                                            ? 'Use substitute'
+                                                            : 'Add'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -650,20 +711,35 @@ export default function TrackMealsPage() {
                                                             {entry.food.name}
                                                         </div>
                                                         <div className="mt-1 text-xs text-muted-foreground">
-                                                            {entry.meal_type} - {entry.servings} servings
+                                                            {entry.meal_type} -{' '}
+                                                            {entry.servings}{' '}
+                                                            servings
                                                         </div>
                                                         {entry.plan_tracking ? (
                                                             <div className="mt-2 text-xs text-foreground/80">
-                                                                Linked to planned item:{' '}
-                                                                {entry.plan_tracking.planned_food_name}
+                                                                Linked to
+                                                                planned item:{' '}
+                                                                {
+                                                                    entry
+                                                                        .plan_tracking
+                                                                        .planned_food_name
+                                                                }
                                                                 {' - '}
-                                                                {statusLabel(entry.plan_tracking.status)}
+                                                                {statusLabel(
+                                                                    entry
+                                                                        .plan_tracking
+                                                                        .status,
+                                                                )}
                                                             </div>
                                                         ) : null}
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => void removeEntry(entry.id)}
+                                                        onClick={() =>
+                                                            void removeEntry(
+                                                                entry.id,
+                                                            )
+                                                        }
                                                         className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
                                                     >
                                                         Remove
@@ -727,17 +803,32 @@ export default function TrackMealsPage() {
                                 step={0.25}
                                 value={portionCount}
                                 onChange={(event) =>
-                                    setPortionCount(Number(event.target.value) || 1)
+                                    setPortionCount(
+                                        Number(event.target.value) || 1,
+                                    )
                                 }
                                 className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
                             />
                         </label>
 
                         <div className="mt-4 rounded-[22px] border border-border/70 bg-card/80 p-4 text-sm text-foreground">
-                            Approximate totals: {Math.round((selectedFood.calories ?? 0) * portionCount)} kcal
-                            {' - '}P {Math.round((selectedFood.protein_g ?? 0) * portionCount)}
-                            {' - '}C {Math.round((selectedFood.carbs_g ?? 0) * portionCount)}
-                            {' - '}F {Math.round((selectedFood.fat_g ?? 0) * portionCount)}
+                            Approximate totals:{' '}
+                            {Math.round(
+                                (selectedFood.calories ?? 0) * portionCount,
+                            )}{' '}
+                            kcal
+                            {' - '}P{' '}
+                            {Math.round(
+                                (selectedFood.protein_g ?? 0) * portionCount,
+                            )}
+                            {' - '}C{' '}
+                            {Math.round(
+                                (selectedFood.carbs_g ?? 0) * portionCount,
+                            )}
+                            {' - '}F{' '}
+                            {Math.round(
+                                (selectedFood.fat_g ?? 0) * portionCount,
+                            )}
                         </div>
 
                         <div className="mt-5 flex items-center justify-end gap-2">
@@ -753,7 +844,9 @@ export default function TrackMealsPage() {
                                 onClick={() => void confirmAdd()}
                                 className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
                             >
-                                {mode === 'follow-plan' ? 'Log substitute' : `Add to ${mealType}`}
+                                {mode === 'follow-plan'
+                                    ? 'Log substitute'
+                                    : `Add to ${mealType}`}
                             </button>
                         </div>
                     </div>
@@ -846,28 +939,43 @@ function MacroCard({
         <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <div className="text-lg font-semibold text-foreground">{title}</div>
+                    <div className="text-lg font-semibold text-foreground">
+                        {title}
+                    </div>
                     <div className="mt-1 text-sm text-muted-foreground">
-                        Progress stays visible for the whole day, then rolls into a meal-by-meal summary right underneath.
+                        Progress stays visible for the whole day, then rolls
+                        into a meal-by-meal summary right underneath.
                     </div>
                 </div>
                 {typeof targets?.calories === 'number' ? (
                     <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-foreground">
-                        {Math.round(Math.min(100, (totals.calories / Math.max(1, targets.calories)) * 100))}% of calorie target
+                        {Math.round(
+                            Math.min(
+                                100,
+                                (totals.calories /
+                                    Math.max(1, targets.calories)) *
+                                    100,
+                            ),
+                        )}
+                        % of calorie target
                     </div>
                 ) : null}
             </div>
 
-            <div className="mt-5 grid gap-3 xl:grid-cols-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 {macroCards.map((macro) => {
                     const progress =
                         typeof macro.target === 'number' && macro.target > 0
                             ? (macro.value / macro.target) * 100
                             : null;
                     const baseProgress =
-                        progress === null ? 0 : Math.max(0, Math.min(100, progress));
+                        progress === null
+                            ? 0
+                            : Math.max(0, Math.min(100, progress));
                     const overflowProgress =
-                        progress === null ? 0 : Math.max(0, Math.min(100, progress - 100));
+                        progress === null
+                            ? 0
+                            : Math.max(0, Math.min(100, progress - 100));
 
                     return (
                         <div
@@ -905,12 +1013,17 @@ function MacroCard({
                             <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                                 {typeof macro.target === 'number' ? (
                                     <span className="rounded-full border border-border/70 bg-background px-2.5 py-1">
-                                        Target {Math.round(macro.target)} {macro.unit}
+                                        Target {Math.round(macro.target)}{' '}
+                                        {macro.unit}
                                     </span>
                                 ) : null}
                                 {typeof macro.remaining === 'number' ? (
                                     <span className="rounded-full border border-border/70 bg-background px-2.5 py-1">
-                                        {Math.max(0, Math.round(macro.remaining))} {macro.unit} left
+                                        {Math.max(
+                                            0,
+                                            Math.round(macro.remaining),
+                                        )}{' '}
+                                        {macro.unit} left
                                     </span>
                                 ) : null}
                             </div>
@@ -927,8 +1040,14 @@ function MacroCard({
                     {SUMMARY_MEALS.map((mealType) => {
                         const totalsForMeal = mealTotals[mealType] ?? ZERO;
                         const calorieShare =
-                            typeof targets?.calories === 'number' && targets.calories > 0
-                                ? Math.min(100, (totalsForMeal.calories / targets.calories) * 100)
+                            typeof targets?.calories === 'number' &&
+                            targets.calories > 0
+                                ? Math.min(
+                                      100,
+                                      (totalsForMeal.calories /
+                                          targets.calories) *
+                                          100,
+                                  )
                                 : 0;
 
                         return (
@@ -941,7 +1060,8 @@ function MacroCard({
                                         {mealLabel(mealType)}
                                     </div>
                                     <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                                        {Math.round(totalsForMeal.calories)} kcal
+                                        {Math.round(totalsForMeal.calories)}{' '}
+                                        kcal
                                     </span>
                                 </div>
 
@@ -958,7 +1078,8 @@ function MacroCard({
                                             Protein
                                         </div>
                                         <div className="mt-1 font-medium text-foreground">
-                                            {Math.round(totalsForMeal.protein)} g
+                                            {Math.round(totalsForMeal.protein)}{' '}
+                                            g
                                         </div>
                                     </div>
                                     <div className="rounded-[18px] border border-border/70 bg-background px-3 py-2">
@@ -986,4 +1107,3 @@ function MacroCard({
         </div>
     );
 }
-

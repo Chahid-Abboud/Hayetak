@@ -78,7 +78,9 @@ type PageProps = {
     exercises: Exercise[];
 };
 
-function sourceLabel(source?: { provider?: string | null; model?: string | null } | null) {
+function sourceLabel(
+    source?: { provider?: string | null; model?: string | null } | null,
+) {
     const provider = source?.provider?.trim();
     const model = source?.model?.trim();
 
@@ -90,8 +92,16 @@ function sourceLabel(source?: { provider?: string | null; model?: string | null 
 }
 
 export default function WorkoutLogPage() {
-    const { aiPlan, manualPlan, recommendedAiDayId, recommendedManualDayId, today, recentLogs, flash, exercises } =
-        usePage<PageProps>().props;
+    const {
+        aiPlan,
+        manualPlan,
+        recommendedAiDayId,
+        recommendedManualDayId,
+        today,
+        recentLogs,
+        flash,
+        exercises,
+    } = usePage<PageProps>().props;
 
     const [mode, setMode] = useState<'follow-ai' | 'my-plan' | 'freestyle'>(
         aiPlan ? 'follow-ai' : manualPlan ? 'my-plan' : 'freestyle',
@@ -99,9 +109,9 @@ export default function WorkoutLogPage() {
     const [selectedAiDayId, setSelectedAiDayId] = useState<number | null>(
         recommendedAiDayId ?? aiPlan?.days?.[0]?.id ?? null,
     );
-    const [selectedManualDayId, setSelectedManualDayId] = useState<number | null>(
-        recommendedManualDayId ?? manualPlan?.days?.[0]?.id ?? null,
-    );
+    const [selectedManualDayId, setSelectedManualDayId] = useState<
+        number | null
+    >(recommendedManualDayId ?? manualPlan?.days?.[0]?.id ?? null);
     const [activeLogId, setActiveLogId] = useState<number | null>(
         flash?.activeLogId ?? null,
     );
@@ -120,9 +130,11 @@ export default function WorkoutLogPage() {
 
     const activePlanDay =
         mode === 'follow-ai'
-            ? aiPlan?.days?.find((day) => day.id === selectedAiDayId) ?? null
+            ? (aiPlan?.days?.find((day) => day.id === selectedAiDayId) ?? null)
             : mode === 'my-plan'
-              ? manualPlan?.days?.find((day) => day.id === selectedManualDayId) ?? null
+              ? (manualPlan?.days?.find(
+                    (day) => day.id === selectedManualDayId,
+                ) ?? null)
               : null;
 
     const activeLog =
@@ -145,7 +157,9 @@ export default function WorkoutLogPage() {
         .filter((exercise): exercise is Exercise => Boolean(exercise));
 
     const currentExercises =
-        mode === 'freestyle' ? freestyleExercises : activePlanDay?.exercises ?? [];
+        mode === 'freestyle'
+            ? freestyleExercises
+            : (activePlanDay?.exercises ?? []);
 
     const startSession = () => {
         const dayId =
@@ -188,7 +202,8 @@ export default function WorkoutLogPage() {
         const existingSets =
             activeLog?.sets
                 ?.filter((set) => set.exercise?.id === exerciseId)
-                .sort((left, right) => left.set_number - right.set_number) ?? [];
+                .sort((left, right) => left.set_number - right.set_number) ??
+            [];
 
         router.post(
             `/workouts/log/${activeLogId}/add-set`,
@@ -254,10 +269,12 @@ export default function WorkoutLogPage() {
                                 {mode === 'follow-ai'
                                     ? sourceLabel(aiPlan?.ai_request)
                                     : mode === 'my-plan'
-                                      ? manualPlan?.name ?? 'Custom draft'
+                                      ? (manualPlan?.name ?? 'Custom draft')
                                       : 'Freestyle logging'}
                             </div>
-                            <div className="text-muted-foreground">Today: {today}</div>
+                            <div className="text-muted-foreground">
+                                Today: {today}
+                            </div>
                         </div>
                     }
                     actions={
@@ -326,42 +343,46 @@ export default function WorkoutLogPage() {
                     />
                 ) : null}
 
-                {(mode === 'follow-ai' && aiPlan) || (mode === 'my-plan' && manualPlan) ? (
+                {(mode === 'follow-ai' && aiPlan) ||
+                (mode === 'my-plan' && manualPlan) ? (
                     <ProductSection
                         title="Choose the workout day"
                         description="The old dropdown is replaced with day cards that show the plan focus, exercise count, and the recommended day at a glance."
                     >
                         <div className="space-y-3">
-                            {(mode === 'follow-ai' ? aiPlan?.days ?? [] : manualPlan?.days ?? []).map(
-                                (day) => (
-                                    <DayPickerCard
-                                        key={day.id}
-                                        day={day}
-                                        selected={
-                                            mode === 'follow-ai'
-                                                ? day.id === selectedAiDayId
-                                                : day.id === selectedManualDayId
-                                        }
-                                        recommended={
-                                            mode === 'follow-ai'
-                                                ? day.id === recommendedAiDayId
-                                                : day.id === recommendedManualDayId
-                                        }
-                                        onClick={() =>
-                                            mode === 'follow-ai'
-                                                ? setSelectedAiDayId(day.id)
-                                                : setSelectedManualDayId(day.id)
-                                        }
-                                    />
-                                ),
-                            )}
+                            {(mode === 'follow-ai'
+                                ? (aiPlan?.days ?? [])
+                                : (manualPlan?.days ?? [])
+                            ).map((day) => (
+                                <DayPickerCard
+                                    key={day.id}
+                                    day={day}
+                                    selected={
+                                        mode === 'follow-ai'
+                                            ? day.id === selectedAiDayId
+                                            : day.id === selectedManualDayId
+                                    }
+                                    recommended={
+                                        mode === 'follow-ai'
+                                            ? day.id === recommendedAiDayId
+                                            : day.id === recommendedManualDayId
+                                    }
+                                    onClick={() =>
+                                        mode === 'follow-ai'
+                                            ? setSelectedAiDayId(day.id)
+                                            : setSelectedManualDayId(day.id)
+                                    }
+                                />
+                            ))}
                         </div>
                     </ProductSection>
                 ) : null}
 
                 <ProductSection
                     title={
-                        mode === 'freestyle' ? 'Freestyle library' : 'Planned exercises'
+                        mode === 'freestyle'
+                            ? 'Freestyle library'
+                            : 'Planned exercises'
                     }
                     description={
                         mode === 'freestyle'
@@ -378,13 +399,17 @@ export default function WorkoutLogPage() {
                                 </div>
                                 <input
                                     value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
                                     placeholder="Search by name, muscle, or equipment"
                                     className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
                                 />
                                 <div className="mt-4 space-y-3">
                                     {filteredExercises.map((exercise) => {
-                                        const added = freestyleIds.includes(exercise.id);
+                                        const added = freestyleIds.includes(
+                                            exercise.id,
+                                        );
 
                                         return (
                                             <div
@@ -397,7 +422,9 @@ export default function WorkoutLogPage() {
                                                             {exercise.name}
                                                         </div>
                                                         <div className="mt-1 text-xs text-muted-foreground">
-                                                            {exercise.primary_muscle}
+                                                            {
+                                                                exercise.primary_muscle
+                                                            }
                                                             {exercise.equipment
                                                                 ? ` - ${exercise.equipment}`
                                                                 : ''}
@@ -407,15 +434,21 @@ export default function WorkoutLogPage() {
                                                         type="button"
                                                         disabled={added}
                                                         onClick={() =>
-                                                            setFreestyleIds((current) =>
-                                                                added
-                                                                    ? current
-                                                                    : [...current, exercise.id],
+                                                            setFreestyleIds(
+                                                                (current) =>
+                                                                    added
+                                                                        ? current
+                                                                        : [
+                                                                              ...current,
+                                                                              exercise.id,
+                                                                          ],
                                                             )
                                                         }
                                                         className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background disabled:opacity-50"
                                                     >
-                                                        {added ? 'Added' : 'Add'}
+                                                        {added
+                                                            ? 'Added'
+                                                            : 'Add'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -429,10 +462,16 @@ export default function WorkoutLogPage() {
                                 weights={weights}
                                 reps={reps}
                                 onWeightChange={(exerciseId, value) =>
-                                    setWeights((current) => ({ ...current, [exerciseId]: value }))
+                                    setWeights((current) => ({
+                                        ...current,
+                                        [exerciseId]: value,
+                                    }))
                                 }
                                 onRepsChange={(exerciseId, value) =>
-                                    setReps((current) => ({ ...current, [exerciseId]: value }))
+                                    setReps((current) => ({
+                                        ...current,
+                                        [exerciseId]: value,
+                                    }))
                                 }
                                 onAddSet={(exerciseId) => addSet(exerciseId)}
                             />
@@ -443,10 +482,16 @@ export default function WorkoutLogPage() {
                             weights={weights}
                             reps={reps}
                             onWeightChange={(exerciseId, value) =>
-                                setWeights((current) => ({ ...current, [exerciseId]: value }))
+                                setWeights((current) => ({
+                                    ...current,
+                                    [exerciseId]: value,
+                                }))
                             }
                             onRepsChange={(exerciseId, value) =>
-                                setReps((current) => ({ ...current, [exerciseId]: value }))
+                                setReps((current) => ({
+                                    ...current,
+                                    [exerciseId]: value,
+                                }))
                             }
                             onAddSet={(exerciseId) => addSet(exerciseId)}
                         />
@@ -470,7 +515,9 @@ export default function WorkoutLogPage() {
                                                 {log.workout_date}
                                             </div>
                                             <div className="mt-1 text-xs text-muted-foreground">
-                                                {log.day_name ?? 'Freestyle session'} -{' '}
+                                                {log.day_name ??
+                                                    'Freestyle session'}{' '}
+                                                -{' '}
                                                 {log.plan_source ?? 'freestyle'}
                                             </div>
                                         </div>
@@ -612,10 +659,16 @@ function ExerciseLogList({
                 >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <div className="font-medium text-foreground">{exercise.name}</div>
+                            <div className="font-medium text-foreground">
+                                {exercise.name}
+                            </div>
                             <div className="mt-1 text-xs text-muted-foreground">
-                                {'primary_muscle' in exercise ? exercise.primary_muscle : ''}
-                                {exercise.equipment ? ` - ${exercise.equipment}` : ''}
+                                {'primary_muscle' in exercise
+                                    ? exercise.primary_muscle
+                                    : ''}
+                                {exercise.equipment
+                                    ? ` - ${exercise.equipment}`
+                                    : ''}
                                 {'pivot' in exercise && exercise.pivot?.sets
                                     ? ` - ${exercise.pivot.sets} planned sets`
                                     : ''}
@@ -628,7 +681,12 @@ function ExerciseLogList({
                             Weight (kg)
                             <input
                                 value={weights[exercise.id] ?? ''}
-                                onChange={(event) => onWeightChange(exercise.id, event.target.value)}
+                                onChange={(event) =>
+                                    onWeightChange(
+                                        exercise.id,
+                                        event.target.value,
+                                    )
+                                }
                                 className="mt-2 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
                             />
                         </label>
@@ -636,7 +694,12 @@ function ExerciseLogList({
                             Reps
                             <input
                                 value={reps[exercise.id] ?? ''}
-                                onChange={(event) => onRepsChange(exercise.id, event.target.value)}
+                                onChange={(event) =>
+                                    onRepsChange(
+                                        exercise.id,
+                                        event.target.value,
+                                    )
+                                }
                                 className="mt-2 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
                             />
                         </label>
@@ -653,4 +716,3 @@ function ExerciseLogList({
         </div>
     );
 }
-

@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Runtime;
 
-use App\Services\Ai\OpenAIClient;
+use App\Services\Ai\ExternalResponsesClient;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -11,7 +11,7 @@ class GenerativeAiGateway
 {
     public function __construct(
         private readonly FeatureConfigResolver $features,
-        private readonly OpenAIClient $openAi,
+        private readonly ExternalResponsesClient $openAi,
         private readonly OllamaClient $ollama,
     ) {}
 

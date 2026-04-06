@@ -41,81 +41,80 @@ export default function NavHeader() {
                   { href: '/nearby', label: 'Nearby' },
               ];
 
-    const navGroups = useMemo<Array<{ label: string; items: NavLinkItem[] }>>(
-        () => {
-            const groups: Array<{ label: string; items: NavLinkItem[] }> = [
+    const navGroups = useMemo<
+        Array<{ label: string; items: NavLinkItem[] }>
+    >(() => {
+        const groups: Array<{ label: string; items: NavLinkItem[] }> = [
+            {
+                label: 'General',
+                items: [
+                    { href: '/ai/planner', label: 'AI Planner' },
+                    { href: '/track-meals', label: 'Meal Tracker' },
+                    { href: '/workouts/plan', label: 'Workout Planner' },
+                    { href: '/workouts/log', label: 'Workout Log' },
+                    { href: '/appointments', label: 'Appointments' },
+                    { href: '/messages', label: 'Messages' },
+                ],
+            },
+            {
+                label: 'Account',
+                items: [
+                    { href: '/settings/profile', label: 'Profile' },
+                    { href: '/settings/security', label: 'Security' },
+                ],
+            },
+        ];
+
+        if (role === 'trainer') {
+            groups.splice(2, 0, {
+                label: 'Clients',
+                items: [{ href: '/trainer/clients', label: 'My Clients' }],
+            });
+        }
+
+        if (role === 'nutritionist') {
+            groups.splice(2, 0, {
+                label: 'Clients',
+                items: [{ href: '/dietitian/clients', label: 'My Clients' }],
+            });
+        }
+
+        if (role === 'admin') {
+            return [
                 {
-                    label: 'General',
+                    label: 'Users',
                     items: [
-                        { href: '/ai/planner', label: 'AI Planner' },
-                        { href: '/track-meals', label: 'Meal Tracker' },
-                        { href: '/workouts/plan', label: 'Workout Planner' },
-                        { href: '/workouts/log', label: 'Workout Log' },
-                        { href: '/appointments', label: 'Appointments' },
-                        { href: '/messages', label: 'Messages' },
+                        { href: '/admin/users', label: 'All Users' },
+                        {
+                            href: '/admin/professionals',
+                            label: 'Professionals',
+                        },
+                        {
+                            href: '/admin/professional-verifications',
+                            label: 'Verifications',
+                        },
                     ],
                 },
                 {
-                    label: 'Account',
+                    label: 'Content',
                     items: [
-                        { href: '/settings/profile', label: 'Profile' },
-                        { href: '/settings/security', label: 'Security' },
+                        { href: '/admin/meals', label: 'Meals' },
+                        { href: '/admin/progress', label: 'Progress' },
+                        { href: '/admin/places', label: 'Places' },
+                    ],
+                },
+                {
+                    label: 'System',
+                    items: [
+                        { href: '/admin/logs', label: 'Admin Logs' },
+                        { href: '/admin/notifications', label: 'Alerts' },
                     ],
                 },
             ];
+        }
 
-            if (role === 'trainer') {
-                groups.splice(2, 0, {
-                    label: 'Clients',
-                    items: [{ href: '/trainer/clients', label: 'My Clients' }],
-                });
-            }
-
-            if (role === 'nutritionist') {
-                groups.splice(2, 0, {
-                    label: 'Clients',
-                    items: [{ href: '/dietitian/clients', label: 'My Clients' }],
-                });
-            }
-
-            if (role === 'admin') {
-                return [
-                    {
-                        label: 'Users',
-                        items: [
-                            { href: '/admin/users', label: 'All Users' },
-                            {
-                                href: '/admin/professionals',
-                                label: 'Professionals',
-                            },
-                            {
-                                href: '/admin/professional-verifications',
-                                label: 'Verifications',
-                            },
-                        ],
-                    },
-                    {
-                        label: 'Content',
-                        items: [
-                            { href: '/admin/meals', label: 'Meals' },
-                            { href: '/admin/progress', label: 'Progress' },
-                            { href: '/admin/places', label: 'Places' },
-                        ],
-                    },
-                    {
-                        label: 'System',
-                        items: [
-                            { href: '/admin/logs', label: 'Admin Logs' },
-                            { href: '/admin/notifications', label: 'Alerts' },
-                        ],
-                    },
-                ];
-            }
-
-            return groups;
-        },
-        [role],
-    );
+        return groups;
+    }, [role]);
     const secondaryItems = useMemo(
         () =>
             navGroups.flatMap((group) =>
@@ -128,12 +127,19 @@ export default function NavHeader() {
     );
 
     const isActive = (href: string) => {
-        if (href === '/workouts' || href === '/workouts/log' || href === '/workouts/plan') {
+        if (
+            href === '/workouts' ||
+            href === '/workouts/log' ||
+            href === '/workouts/plan'
+        ) {
             return pathname.startsWith('/workouts');
         }
 
         if (href === accountHref) {
-            return pathname === '/profile' || pathname.startsWith('/settings/profile');
+            return (
+                pathname === '/profile' ||
+                pathname.startsWith('/settings/profile')
+            );
         }
 
         if (href === '/settings/security') {
@@ -256,7 +262,10 @@ export default function NavHeader() {
                                     <span className="min-w-0">
                                         <span
                                             className="block truncate text-xl leading-none tracking-tight"
-                                            style={{ fontFamily: 'var(--font-display)' }}
+                                            style={{
+                                                fontFamily:
+                                                    'var(--font-display)',
+                                            }}
                                         >
                                             Hayetak
                                         </span>
@@ -292,7 +301,9 @@ export default function NavHeader() {
                                         aria-haspopup="dialog"
                                     >
                                         <Search className="h-4 w-4" />
-                                        <span className="hidden xl:inline">Search</span>
+                                        <span className="hidden xl:inline">
+                                            Search
+                                        </span>
                                         <span className="hidden rounded-full border border-white/14 px-2 py-0.5 text-[10px] tracking-[0.16em] uppercase xl:inline-flex">
                                             Ctrl K
                                         </span>
@@ -320,7 +331,9 @@ export default function NavHeader() {
                                         className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 px-3 text-sm font-medium text-[color:var(--sidebar-foreground)] transition hover:bg-white/10 xl:px-4"
                                     >
                                         <LogOut className="h-4 w-4 xl:mr-2" />
-                                        <span className="hidden xl:inline">Logout</span>
+                                        <span className="hidden xl:inline">
+                                            Logout
+                                        </span>
                                     </button>
                                 </div>
 
@@ -337,7 +350,9 @@ export default function NavHeader() {
                                     <NotificationBell compact />
                                     <button
                                         type="button"
-                                        onClick={() => setOpen((value) => !value)}
+                                        onClick={() =>
+                                            setOpen((value) => !value)
+                                        }
                                         className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-[color:var(--sidebar-foreground)]"
                                         aria-label="Toggle navigation"
                                         aria-controls="mobile-hayetak-nav"

@@ -80,6 +80,7 @@ class ChatController extends Controller
             'used_context_keys' => $result['used_context_keys'],
             'provider' => $result['provider'],
             'model' => $result['model'],
+            'quality' => $result['quality'] ?? null,
         ], 201);
     }
 }

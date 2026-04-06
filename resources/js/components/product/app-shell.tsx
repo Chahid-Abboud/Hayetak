@@ -11,7 +11,6 @@ import {
     CalendarDays,
     Dumbbell,
     LayoutDashboard,
-    type LucideIcon,
     LogOut,
     MapPin,
     Menu,
@@ -23,6 +22,7 @@ import {
     UserRound,
     Users,
     UtensilsCrossed,
+    type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -156,7 +156,9 @@ function ShellSidebar({
         <div
             className={cn(
                 'flex h-full flex-col overflow-hidden rounded-[32px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl',
-                mobile ? 'm-3 h-[calc(100svh-1.5rem)]' : 'h-[calc(100svh-2rem)]',
+                mobile
+                    ? 'm-3 h-[calc(100svh-1.5rem)]'
+                    : 'h-[calc(100svh-2rem)]',
             )}
         >
             <div className="border-b border-[color:var(--sidebar-border)] px-4 py-4">
@@ -517,7 +519,8 @@ export function AppProductShell({
     );
 
     const activeItem =
-        allNavItems.find((item) => matchesPath(pathname, item)) ?? primaryNav[0];
+        allNavItems.find((item) => matchesPath(pathname, item)) ??
+        primaryNav[0];
 
     const paletteItems = useMemo<CommandPaletteItem[]>(() => {
         const navigationItems = primaryNav.map((item) => ({
@@ -731,7 +734,9 @@ export function AppProductShell({
                                 </div>
                                 <div
                                     className="truncate text-lg tracking-tight text-foreground"
-                                    style={{ fontFamily: 'var(--font-display)' }}
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
                                 >
                                     {activeItem?.label ?? 'Dashboard'}
                                 </div>
@@ -757,7 +762,7 @@ export function AppProductShell({
                     <main
                         id="main-content"
                         className={cn(
-                            'flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-10 lg:pb-10 lg:pt-8',
+                            'flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-10 lg:pt-8 lg:pb-10',
                         )}
                     >
                         <div className={mainClassName}>{children}</div>

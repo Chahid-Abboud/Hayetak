@@ -121,6 +121,8 @@ type NutritionPlanLite = {
     ai_request?: {
         provider?: string | null;
         model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
     } | null;
     days: NutritionPlanDayLite[];
 };
@@ -164,8 +166,48 @@ type WorkoutPlanLite = {
     ai_request?: {
         provider?: string | null;
         model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
     } | null;
     days: WorkoutPlanDayLite[];
+};
+
+type PlannerModelMeta = {
+    ai_request_id: number;
+    generated_at?: string | null;
+    provider?: string | null;
+    model?: string | null;
+    prompt_version?: string | null;
+    schema_version?: string | null;
+} | null;
+
+type ProgressPrediction = {
+    model_name?: string | null;
+    horizon_days?: number | null;
+    baseline_weight_kg?: number | null;
+    expected_weight_change_kg?: number | null;
+    projected_body_weight_kg?: number | null;
+    confidence?: string | null;
+    inference_source?: string | null;
+    strength_projection?: {
+        upper_body_compound_pct?: number | null;
+        lower_body_compound_pct?: number | null;
+    } | null;
+    feedback_adjustment?: {
+        base_weekly_weight_change_kg?: number | null;
+        adjusted_weekly_weight_change_kg?: number | null;
+        last_prediction_error_kg_per_week?: number | null;
+        notes?: string | null;
+    } | null;
+} | null;
+
+type PredictionTrendPoint = {
+    plan_date: string;
+    horizon_days: number;
+    projected_weight_kg: number;
+    actual_weight_kg: number | null;
+    model_name?: string | null;
+    inference_source?: string | null;
 };
 
 type HomeProps = {
@@ -191,6 +233,9 @@ type HomeProps = {
 
     nutritionPlan?: NutritionPlanLite | null;
     workoutPlan?: WorkoutPlanLite | null;
+    plannerModelMeta?: PlannerModelMeta;
+    progressPrediction?: ProgressPrediction;
+    predictionTrend?: PredictionTrendPoint[];
 } & Pick<SharedData, 'flash' | 'security'>;
 
 type AdminListItem = {
@@ -289,7 +334,10 @@ function CardSection({
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
                     <p className="haye-kicker">Section</p>
-                    <h2 id={headingId} className="mt-2 text-2xl font-semibold tracking-tight">
+                    <h2
+                        id={headingId}
+                        className="mt-2 text-2xl font-semibold tracking-tight"
+                    >
                         {title}
                     </h2>
                     {description ? (
@@ -325,6 +373,9 @@ export default function Home() {
         heightHistory,
         nutritionPlan,
         workoutPlan,
+        plannerModelMeta,
+        progressPrediction,
+        predictionTrend,
     } = usePage<HomeProps>().props;
 
     const isGuest =
@@ -391,8 +442,8 @@ export default function Home() {
     const mealPreviewItems =
         Array.isArray(mealEntryPreviews) && mealEntryPreviews.length > 0
             ? mealEntryPreviews
-            : todayLog?.items ??
-              (latestLog?.consumed_at === todayISO ? latestLog.items : []);
+            : (todayLog?.items ??
+              (latestLog?.consumed_at === todayISO ? latestLog.items : []));
 
     const grouped: Record<MealType, TodayLogItem[]> = {
         breakfast: [],
@@ -490,10 +541,13 @@ export default function Home() {
     const waterState = water ?? { today_ml: 0, target_ml: 2000 };
     const waterProgress = Math.min(
         100,
-        Math.round((waterState.today_ml / Math.max(1, waterState.target_ml)) * 100),
+        Math.round(
+            (waterState.today_ml / Math.max(1, waterState.target_ml)) * 100,
+        ),
     );
     const todayWorkoutDay =
-        workoutPlan?.days?.find((d) => d.day_index === 1) ?? workoutPlan?.days?.[0];
+        workoutPlan?.days?.find((d) => d.day_index === 1) ??
+        workoutPlan?.days?.[0];
     const todayNutritionDay =
         nutritionPlan?.days?.find((d) => d.date === todayISO) ??
         nutritionPlan?.days?.find((d) => d.day_index === 1) ??
@@ -545,7 +599,9 @@ export default function Home() {
                 <section className="haye-panel rounded-[40px] px-6 py-7 lg:px-8 lg:py-8">
                     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                         <div className="max-w-3xl">
-                            <p className="haye-kicker">Today's command center</p>
+                            <p className="haye-kicker">
+                                Today's command center
+                            </p>
                             <h2
                                 className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
                                 style={{ fontFamily: 'var(--font-display)' }}
@@ -614,7 +670,9 @@ export default function Home() {
                                 <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
                                     <div className="haye-kicker">Nutrition</div>
                                     <div className="mt-3 text-2xl font-semibold text-foreground">
-                                        {todayNutritionDay ? 'Ready' : 'Waiting'}
+                                        {todayNutritionDay
+                                            ? 'Ready'
+                                            : 'Waiting'}
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {todayNutritionDay
@@ -625,7 +683,9 @@ export default function Home() {
                                 <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
                                     <div className="haye-kicker">Training</div>
                                     <div className="mt-3 text-2xl font-semibold text-foreground">
-                                        {todayWorkoutDay ? 'Planned' : 'Freestyle'}
+                                        {todayWorkoutDay
+                                            ? 'Planned'
+                                            : 'Freestyle'}
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {todayWorkoutDay
@@ -639,7 +699,8 @@ export default function Home() {
                                         {waterProgress}%
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        {waterState.today_ml} mL of {waterState.target_ml} mL
+                                        {waterState.today_ml} mL of{' '}
+                                        {waterState.target_ml} mL
                                     </p>
                                 </div>
                             </div>
@@ -671,7 +732,8 @@ export default function Home() {
                                         </div>
                                     </div>
                                     <span className="haye-chip">
-                                        {todayWorkoutDay.exercises.length} exercises
+                                        {todayWorkoutDay.exercises.length}{' '}
+                                        exercises
                                     </span>
                                 </div>
                                 <div className="mt-4 space-y-2">
@@ -703,11 +765,15 @@ export default function Home() {
                             <p>
                                 Nutrition is{' '}
                                 <span className="font-medium text-foreground">
-                                    {todayNutritionDay ? 'ready to follow' : 'not generated yet'}
+                                    {todayNutritionDay
+                                        ? 'ready to follow'
+                                        : 'not generated yet'}
                                 </span>
                                 , training is{' '}
                                 <span className="font-medium text-foreground">
-                                    {todayWorkoutDay ? 'ready to log' : 'waiting for your next plan'}
+                                    {todayWorkoutDay
+                                        ? 'ready to log'
+                                        : 'waiting for your next plan'}
                                 </span>
                                 , and hydration is{' '}
                                 <span className="font-medium text-foreground">
@@ -723,10 +789,13 @@ export default function Home() {
                             <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
                                 <p className="haye-kicker">Recovery pulse</p>
                                 <p className="mt-3 text-base font-medium text-foreground">
-                                    {waterState.today_ml} mL logged out of {waterState.target_ml} mL.
+                                    {waterState.today_ml} mL logged out of{' '}
+                                    {waterState.target_ml} mL.
                                 </p>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    Keep water visible between meals and training so the rest of the day stays easier to manage.
+                                    Keep water visible between meals and
+                                    training so the rest of the day stays easier
+                                    to manage.
                                 </p>
                             </div>
                         </div>
@@ -769,7 +838,10 @@ export default function Home() {
                                 description="Protein, carbs, and fat for the current day."
                                 totalLabel="Total grams"
                                 totalValue={macroSegments
-                                    .reduce((sum, segment) => sum + segment.value, 0)
+                                    .reduce(
+                                        (sum, segment) => sum + segment.value,
+                                        0,
+                                    )
                                     .toString()}
                                 segments={macroSegments}
                             />
@@ -888,6 +960,39 @@ export default function Home() {
                     </div>
                 </CardSection>
 
+                <CardSection
+                    title="AI model lane"
+                    description="Keep planner and prediction model outputs visible so your dashboard decisions are transparent."
+                    actions={
+                        <>
+                            <ActionButton
+                                variant="primary"
+                                onClick={() => router.visit('/ai/planner')}
+                            >
+                                Open AI Planner
+                            </ActionButton>
+                            <ActionButton
+                                variant="secondary"
+                                onClick={() => router.visit('/coach')}
+                            >
+                                Ask AI Coach
+                            </ActionButton>
+                        </>
+                    }
+                >
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <PlannerModelCard
+                            plannerModelMeta={plannerModelMeta}
+                            nutritionPlan={nutritionPlan}
+                            workoutPlan={workoutPlan}
+                        />
+                        <PredictionModelCard
+                            prediction={progressPrediction}
+                            trend={predictionTrend}
+                        />
+                    </div>
+                </CardSection>
+
                 {/* BMI + Water */}
                 <section
                     aria-label="Health stats"
@@ -895,7 +1000,9 @@ export default function Home() {
                 >
                     <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
                         <p className="haye-kicker">Body metrics</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">BMI</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                            BMI
+                        </h2>
                         <div className="mt-4">
                             <BmiCard isGuest={isGuest} profile={profileSafe} />
                         </div>
@@ -903,7 +1010,9 @@ export default function Home() {
 
                     <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
                         <p className="haye-kicker">Recovery</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">Water intake</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                            Water intake
+                        </h2>
                         <div className="mt-4">
                             <WaterCard
                                 isGuest={isGuest}
@@ -1028,9 +1137,7 @@ function MeasurementChartCard({
             <div className="mb-3 grid gap-2 sm:grid-cols-3">
                 <MetricPill
                     label="Latest"
-                    value={
-                        last ? `${last.yValue}${ySuffix}` : '—'
-                    }
+                    value={last ? `${last.yValue}${ySuffix}` : '—'}
                 />
                 <MetricPill
                     label="Change"
@@ -1165,7 +1272,9 @@ function SimpleLineChart({
                                     key={`${point.xLabel}-row-${index}`}
                                     className="border-t border-border"
                                 >
-                                    <td className="py-2 pr-4">{point.xLabel}</td>
+                                    <td className="py-2 pr-4">
+                                        {point.xLabel}
+                                    </td>
                                     <td className="py-2 pr-4 tabular-nums">
                                         {point.yValue}
                                         {ySuffix}
@@ -1186,7 +1295,9 @@ function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
     useEffect(() => {
         const controller = new AbortController();
 
-        fetch(`/workouts/progress?weeks=${weeks}`, { signal: controller.signal })
+        fetch(`/workouts/progress?weeks=${weeks}`, {
+            signal: controller.signal,
+        })
             .then((response) => response.json())
             .then((payload) =>
                 setSeries(
@@ -1233,7 +1344,11 @@ function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
                 />
                 <MetricPill
                     label="Volume"
-                    value={latest ? `${Math.round(latest.total_volume_kg)} kg` : '—'}
+                    value={
+                        latest
+                            ? `${Math.round(latest.total_volume_kg)} kg`
+                            : '—'
+                    }
                 />
                 <MetricPill
                     label="Workout Days"
@@ -1257,7 +1372,8 @@ function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
                 />
             ) : (
                 <p className="text-sm text-muted-foreground">
-                    Log at least two weeks of workouts to see your gym progress trend.
+                    Log at least two weeks of workouts to see your gym progress
+                    trend.
                 </p>
             )}
 
@@ -1280,8 +1396,13 @@ function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
                             </thead>
                             <tbody>
                                 {series.map((row) => (
-                                    <tr key={row.week} className="border-t border-border">
-                                        <td className="py-2 pr-4">{row.week}</td>
+                                    <tr
+                                        key={row.week}
+                                        className="border-t border-border"
+                                    >
+                                        <td className="py-2 pr-4">
+                                            {row.week}
+                                        </td>
                                         <td className="py-2 pr-4 tabular-nums">
                                             {row.top_set_kg}
                                         </td>
@@ -1724,7 +1845,7 @@ function MealMomentCard({
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="haye-kicker">Meal block</div>
-                    <div className="mt-2 text-base font-semibold capitalize text-foreground">
+                    <div className="mt-2 text-base font-semibold text-foreground capitalize">
                         {title}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -1732,8 +1853,8 @@ function MealMomentCard({
                     </div>
                 </div>
                 <div className="inline-flex max-w-full rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                    P {Math.round(macros.protein)} / C {Math.round(macros.carbs)} / F{' '}
-                    {Math.round(macros.fat)}
+                    P {Math.round(macros.protein)} / C{' '}
+                    {Math.round(macros.carbs)} / F {Math.round(macros.fat)}
                 </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -1770,10 +1891,12 @@ function MealMomentCard({
     );
 }
 
-function sourceBadge(source?: {
-    provider?: string | null;
-    model?: string | null;
-} | null) {
+function sourceBadge(
+    source?: {
+        provider?: string | null;
+        model?: string | null;
+    } | null,
+) {
     const provider = source?.provider?.trim();
     const model = source?.model?.trim();
 
@@ -1784,6 +1907,471 @@ function sourceBadge(source?: {
     return `${provider} / ${model}`;
 }
 
+function sourceBadgeDetailed(
+    source?: {
+        provider?: string | null;
+        model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
+    } | null,
+) {
+    const base = sourceBadge(source);
+    const prompt = source?.prompt_version?.trim();
+    const schema = source?.schema_version?.trim();
+    const suffixParts = [
+        prompt ? `prompt ${prompt}` : null,
+        schema ? `schema ${schema}` : null,
+    ].filter(Boolean) as string[];
+
+    if (suffixParts.length === 0) return base;
+
+    return `${base} (${suffixParts.join(' / ')})`;
+}
+
+function formatSignedKg(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)} kg`;
+}
+
+function formatKg(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value.toFixed(2)} kg`;
+}
+
+function formatPct(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value.toFixed(1)}%`;
+}
+
+function inferenceSourceTone(source?: string | null) {
+    const normalized = (source ?? '').trim().toLowerCase();
+    if (normalized === 'ml_blend') {
+        return 'border-emerald-300/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+    }
+    if (normalized === 'heuristic') {
+        return 'border-amber-300/60 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    }
+
+    return 'border-border/70 bg-background/70 text-muted-foreground';
+}
+
+function PlannerModelCard({
+    plannerModelMeta,
+    nutritionPlan,
+    workoutPlan,
+}: {
+    plannerModelMeta?: PlannerModelMeta;
+    nutritionPlan?: NutritionPlanLite | null;
+    workoutPlan?: WorkoutPlanLite | null;
+}) {
+    const fallbackSource =
+        nutritionPlan?.ai_request ?? workoutPlan?.ai_request ?? null;
+    const source = plannerModelMeta ?? fallbackSource;
+
+    return (
+        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
+            <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Planner model
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        The model lane that generated your latest dashboard
+                        plans.
+                    </p>
+                </div>
+                <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                    Planner
+                </span>
+            </div>
+
+            {!source ? (
+                <p className="text-sm text-muted-foreground">
+                    No planner model metadata yet. Generate a plan from AI
+                    Planner to populate this card.
+                </p>
+            ) : (
+                <div className="space-y-2 text-sm">
+                    <div className="rounded-[18px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Source
+                        </div>
+                        <div className="mt-1 font-medium text-foreground">
+                            {sourceBadgeDetailed(source)}
+                        </div>
+                    </div>
+
+                    {plannerModelMeta?.ai_request_id ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                                <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                    AI request
+                                </div>
+                                <div className="mt-1 font-medium text-foreground">
+                                    #{plannerModelMeta.ai_request_id}
+                                </div>
+                            </div>
+                            <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                                <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                    Generated
+                                </div>
+                                <div className="mt-1 font-medium text-foreground">
+                                    {plannerModelMeta.generated_at ?? 'n/a'}
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PredictionModelCard({
+    prediction,
+    trend,
+}: {
+    prediction?: ProgressPrediction;
+    trend?: PredictionTrendPoint[];
+}) {
+    const inferenceSource = prediction?.inference_source ?? null;
+    const trendRows = (Array.isArray(trend) ? trend : []).filter(
+        (row) =>
+            typeof row.projected_weight_kg === 'number' &&
+            Number.isFinite(row.projected_weight_kg),
+    );
+
+    return (
+        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
+            <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Prediction model
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Latest weight + strength projection from the planner
+                        generation.
+                    </p>
+                </div>
+                <span
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase ${inferenceSourceTone(
+                        inferenceSource,
+                    )}`}
+                >
+                    {inferenceSource
+                        ? inferenceSource.replace('_', ' ')
+                        : 'n/a'}
+                </span>
+            </div>
+
+            {!prediction ? (
+                <p className="text-sm text-muted-foreground">
+                    No prediction payload yet. Generate a plan first, then this
+                    card will show model output.
+                </p>
+            ) : (
+                <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Model
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {prediction.model_name ?? 'n/a'}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Confidence
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {prediction.confidence ?? 'n/a'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Baseline
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatKg(prediction.baseline_weight_kg)}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Expected change
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatSignedKg(
+                                    prediction.expected_weight_change_kg,
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Projected weight
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatKg(prediction.projected_body_weight_kg)}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Horizon
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {typeof prediction.horizon_days === 'number'
+                                    ? `${prediction.horizon_days} days`
+                                    : 'n/a'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Strength projection
+                        </div>
+                        <div className="mt-1 text-foreground">
+                            Upper{' '}
+                            {formatPct(
+                                prediction.strength_projection
+                                    ?.upper_body_compound_pct,
+                            )}{' '}
+                            / Lower{' '}
+                            {formatPct(
+                                prediction.strength_projection
+                                    ?.lower_body_compound_pct,
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Feedback loop
+                        </div>
+                        <div className="mt-1 text-foreground">
+                            Base{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.base_weekly_weight_change_kg,
+                            )}{' '}
+                            / Adjusted{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.adjusted_weekly_weight_change_kg,
+                            )}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                            Last error:{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.last_prediction_error_kg_per_week,
+                            )}{' '}
+                            per week
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Predicted vs actual trend
+                        </div>
+                        <div className="mt-2">
+                            {trendRows.length >= 2 ? (
+                                <>
+                                    <p className="mb-2 text-[11px] text-muted-foreground">
+                                        Hover any point to view exact date and
+                                        predicted vs actual values.
+                                    </p>
+                                    <PredictionTrendSparkline
+                                        points={trendRows.slice(-10)}
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    Generate more plans and add check-ins to
+                                    unlock this sparkline.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PredictionTrendSparkline({
+    points,
+}: {
+    points: PredictionTrendPoint[];
+}) {
+    const width = 700;
+    const height = 170;
+    const padX = 16;
+    const padY = 18;
+
+    const allYValues = [
+        ...points.map((row) => row.projected_weight_kg),
+        ...points
+            .map((row) => row.actual_weight_kg)
+            .filter((value): value is number => typeof value === 'number'),
+    ];
+
+    if (allYValues.length < 2) {
+        return (
+            <p className="text-xs text-muted-foreground">
+                Not enough points for trend rendering.
+            </p>
+        );
+    }
+
+    const minY = Math.min(...allYValues);
+    const maxY = Math.max(...allYValues);
+    const spanY = Math.max(1, maxY - minY);
+    const spanX = Math.max(1, points.length - 1);
+    const toX = (index: number) => padX + (index / spanX) * (width - padX * 2);
+    const toY = (value: number) =>
+        height - padY - ((value - minY) / spanY) * (height - padY * 2);
+
+    const projectedPath = points
+        .map(
+            (row, index) =>
+                `${index === 0 ? 'M' : 'L'} ${toX(index)} ${toY(row.projected_weight_kg)}`,
+        )
+        .join(' ');
+
+    const actualSeries = points
+        .map((row, index) =>
+            typeof row.actual_weight_kg === 'number'
+                ? {
+                      index,
+                      value: row.actual_weight_kg,
+                      planDate: row.plan_date,
+                      horizonDays: row.horizon_days,
+                      projectedWeight: row.projected_weight_kg,
+                  }
+                : null,
+        )
+        .filter(
+            (
+                row,
+            ): row is {
+                index: number;
+                value: number;
+                planDate: string;
+                horizonDays: number;
+                projectedWeight: number;
+            } => row !== null,
+        );
+
+    const actualPath =
+        actualSeries.length > 0
+            ? actualSeries
+                  .map(
+                      (row, idx) =>
+                          `${idx === 0 ? 'M' : 'L'} ${toX(row.index)} ${toY(row.value)}`,
+                  )
+                  .join(' ')
+            : '';
+
+    const latest = points[points.length - 1];
+    const latestActual =
+        [...points]
+            .reverse()
+            .find((row) => typeof row.actual_weight_kg === 'number')
+            ?.actual_weight_kg ?? null;
+
+    return (
+        <div>
+            <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[var(--primary)]" />
+                    Predicted
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[var(--secondary)]" />
+                    Actual
+                </span>
+                <span>
+                    Latest: {formatKg(latest.projected_weight_kg)} predicted /{' '}
+                    {typeof latestActual === 'number'
+                        ? formatKg(latestActual)
+                        : 'n/a'}{' '}
+                    actual
+                </span>
+            </div>
+
+            <svg
+                viewBox={`0 0 ${width} ${height}`}
+                role="img"
+                aria-label="Predicted versus actual weight trend"
+                className="h-[150px] w-full"
+            >
+                <line
+                    x1={padX}
+                    y1={height - padY}
+                    x2={width - padX}
+                    y2={height - padY}
+                    stroke="var(--border)"
+                    strokeWidth="1"
+                />
+                <path
+                    d={projectedPath}
+                    fill="none"
+                    stroke="var(--primary)"
+                    strokeWidth="2.5"
+                />
+                {actualPath ? (
+                    <path
+                        d={actualPath}
+                        fill="none"
+                        stroke="var(--secondary)"
+                        strokeWidth="2.5"
+                        strokeDasharray="5 4"
+                    />
+                ) : null}
+
+                {points.map((row, index) => (
+                    <circle
+                        key={`pred-${row.plan_date}-${index}`}
+                        cx={toX(index)}
+                        cy={toY(row.projected_weight_kg)}
+                        r={2.6}
+                        fill="var(--primary)"
+                    >
+                        <title>
+                            {`Plan date: ${row.plan_date}
+Horizon: ${row.horizon_days} days
+Predicted: ${formatKg(row.projected_weight_kg)}
+Actual: ${typeof row.actual_weight_kg === 'number' ? formatKg(row.actual_weight_kg) : 'n/a'}`}
+                        </title>
+                    </circle>
+                ))}
+                {actualSeries.map((row) => (
+                    <circle
+                        key={`actual-${row.index}`}
+                        cx={toX(row.index)}
+                        cy={toY(row.value)}
+                        r={2.8}
+                        fill="var(--secondary)"
+                    >
+                        <title>
+                            {`Plan date: ${row.planDate}
+Horizon: ${row.horizonDays} days
+Actual: ${formatKg(row.value)}
+Predicted: ${formatKg(row.projectedWeight)}`}
+                        </title>
+                    </circle>
+                ))}
+            </svg>
+        </div>
+    );
+}
 
 function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -1968,8 +2556,8 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
                     {(day1.exercises ?? []).length > 8 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Showing first 8 exercises... open Planner to view the
-                            full day.
+                            Showing first 8 exercises... open Planner to view
+                            the full day.
                         </p>
                     ) : null}
                 </div>
@@ -1977,4 +2565,3 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
         </div>
     );
 }
-

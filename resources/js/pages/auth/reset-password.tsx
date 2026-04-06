@@ -7,7 +7,12 @@ import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
-import { ArrowLeft, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react';
+import {
+    ArrowLeft,
+    LoaderCircle,
+    LockKeyhole,
+    ShieldCheck,
+} from 'lucide-react';
 
 interface ResetPasswordProps {
     token: string;
@@ -102,7 +107,9 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                                         className={`${fieldClass} pl-11`}
                                     />
                                 </div>
-                                <InputError message={errors.password_confirmation} />
+                                <InputError
+                                    message={errors.password_confirmation}
+                                />
                             </div>
                         </div>
 
@@ -122,7 +129,10 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
             </Form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-                <TextLink href={login()} className="inline-flex items-center gap-1.5">
+                <TextLink
+                    href={login()}
+                    className="inline-flex items-center gap-1.5"
+                >
                     <ArrowLeft className="size-3.5" />
                     Back to sign in
                 </TextLink>

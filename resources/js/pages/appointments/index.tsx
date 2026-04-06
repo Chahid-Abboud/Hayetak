@@ -9,10 +9,7 @@ import {
 } from '@/components/product/page';
 import { Button } from '@/components/ui/button';
 import { jsonRequestInit } from '@/lib/http';
-import {
-    type AppointmentStatus,
-    type SharedData,
-} from '@/types';
+import { type AppointmentStatus, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     CalendarClock,
@@ -92,7 +89,9 @@ export default function AppointmentsPage() {
             const url = params.size
                 ? `/api/appointments?${params.toString()}`
                 : '/api/appointments';
-            const res = await fetch(url, { headers: { Accept: 'application/json' } });
+            const res = await fetch(url, {
+                headers: { Accept: 'application/json' },
+            });
 
             if (!res.ok) {
                 throw new Error('Could not load appointments.');
@@ -169,7 +168,9 @@ export default function AppointmentsPage() {
             items.filter(
                 (item) =>
                     new Date(item.scheduled_at).getTime() < now ||
-                    ['completed', 'declined', 'cancelled'].includes(item.status),
+                    ['completed', 'declined', 'cancelled'].includes(
+                        item.status,
+                    ),
             ),
         [items, now],
     );
@@ -185,7 +186,8 @@ export default function AppointmentsPage() {
         }, {});
     }, [items]);
 
-    const roleMode = auth.user.role === 'trainer' || auth.user.role === 'nutritionist';
+    const roleMode =
+        auth.user.role === 'trainer' || auth.user.role === 'nutritionist';
 
     return (
         <>
@@ -223,10 +225,23 @@ export default function AppointmentsPage() {
                 />
 
                 <ProductStatGrid className="xl:grid-cols-4">
-                    <ProductStatCard label="Requested" value={String(summary.requested)} tone="accent" />
-                    <ProductStatCard label="Accepted" value={String(summary.accepted)} />
-                    <ProductStatCard label="Completed" value={String(summary.completed)} />
-                    <ProductStatCard label="Declined / Cancelled" value={String(summary.declined + summary.cancelled)} />
+                    <ProductStatCard
+                        label="Requested"
+                        value={String(summary.requested)}
+                        tone="accent"
+                    />
+                    <ProductStatCard
+                        label="Accepted"
+                        value={String(summary.accepted)}
+                    />
+                    <ProductStatCard
+                        label="Completed"
+                        value={String(summary.completed)}
+                    />
+                    <ProductStatCard
+                        label="Declined / Cancelled"
+                        value={String(summary.declined + summary.cancelled)}
+                    />
                 </ProductStatGrid>
 
                 <ProductSection
@@ -253,20 +268,24 @@ export default function AppointmentsPage() {
                 >
                     <div className="mb-4 rounded-[22px] border border-border/70 bg-background/72 p-3">
                         <div className="flex flex-wrap gap-2">
-                        {STATUS_FILTERS.map((item) => (
-                            <button
-                                key={item}
-                                type="button"
-                                onClick={() => setStatusFilter(item)}
-                                className={`rounded-full border px-3 py-1.5 text-xs ${statusFilter === item ? 'border-primary/35 bg-primary/10 text-foreground' : 'border-border/70 bg-background text-muted-foreground'}`}
-                            >
-                                {item === 'all' ? 'All' : STATUS_LABELS[item]}
-                            </button>
-                        ))}
+                            {STATUS_FILTERS.map((item) => (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => setStatusFilter(item)}
+                                    className={`rounded-full border px-3 py-1.5 text-xs ${statusFilter === item ? 'border-primary/35 bg-primary/10 text-foreground' : 'border-border/70 bg-background text-muted-foreground'}`}
+                                >
+                                    {item === 'all'
+                                        ? 'All'
+                                        : STATUS_LABELS[item]}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {error ? <ProductBanner tone="danger">{error}</ProductBanner> : null}
+                    {error ? (
+                        <ProductBanner tone="danger">{error}</ProductBanner>
+                    ) : null}
 
                     {loading ? (
                         <ProductEmptyState
@@ -279,47 +298,97 @@ export default function AppointmentsPage() {
                             description="Try another filter, or create a new request from nearby professionals."
                             action={
                                 <Button asChild>
-                                    <Link href="/nearby">Browse professionals</Link>
+                                    <Link href="/nearby">
+                                        Browse professionals
+                                    </Link>
                                 </Button>
                             }
                         />
                     ) : viewMode === 'timeline' ? (
                         <div className="space-y-6">
                             <div>
-                                <h3 className="mb-3 text-sm font-semibold text-foreground">Upcoming</h3>
+                                <h3 className="mb-3 text-sm font-semibold text-foreground">
+                                    Upcoming
+                                </h3>
                                 <div className="space-y-3">
                                     {upcomingItems.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No upcoming sessions.</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            No upcoming sessions.
+                                        </p>
                                     ) : (
                                         upcomingItems.map((appointment) => (
                                             <AppointmentCard
                                                 key={appointment.id}
                                                 appointment={appointment}
-                                                actorRole={auth.user.role ?? 'client'}
-                                                updating={updatingId === appointment.id}
-                                                onAccept={() => void updateStatus(appointment.id, 'accepted')}
-                                                onComplete={() => void updateStatus(appointment.id, 'completed')}
-                                                onDecline={() => void updateStatus(appointment.id, 'declined')}
+                                                actorRole={
+                                                    auth.user.role ?? 'client'
+                                                }
+                                                updating={
+                                                    updatingId ===
+                                                    appointment.id
+                                                }
+                                                onAccept={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'accepted',
+                                                    )
+                                                }
+                                                onComplete={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'completed',
+                                                    )
+                                                }
+                                                onDecline={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'declined',
+                                                    )
+                                                }
                                             />
                                         ))
                                     )}
                                 </div>
                             </div>
                             <div>
-                                <h3 className="mb-3 text-sm font-semibold text-foreground">History</h3>
+                                <h3 className="mb-3 text-sm font-semibold text-foreground">
+                                    History
+                                </h3>
                                 <div className="space-y-3">
                                     {pastItems.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No past sessions yet.</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            No past sessions yet.
+                                        </p>
                                     ) : (
                                         pastItems.map((appointment) => (
                                             <AppointmentCard
                                                 key={appointment.id}
                                                 appointment={appointment}
-                                                actorRole={auth.user.role ?? 'client'}
-                                                updating={updatingId === appointment.id}
-                                                onAccept={() => void updateStatus(appointment.id, 'accepted')}
-                                                onComplete={() => void updateStatus(appointment.id, 'completed')}
-                                                onDecline={() => void updateStatus(appointment.id, 'declined')}
+                                                actorRole={
+                                                    auth.user.role ?? 'client'
+                                                }
+                                                updating={
+                                                    updatingId ===
+                                                    appointment.id
+                                                }
+                                                onAccept={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'accepted',
+                                                    )
+                                                }
+                                                onComplete={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'completed',
+                                                    )
+                                                }
+                                                onDecline={() =>
+                                                    void updateStatus(
+                                                        appointment.id,
+                                                        'declined',
+                                                    )
+                                                }
                                             />
                                         ))
                                     )}
@@ -328,27 +397,53 @@ export default function AppointmentsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {Object.entries(groupedByDate).map(([dateLabel, group]) => (
-                                <div key={dateLabel} className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                                    <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
-                                        <CalendarClock className="h-4 w-4" />
-                                        {dateLabel}
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {group.map((appointment) => (
-                                            <AppointmentCard
-                                                key={appointment.id}
-                                                appointment={appointment}
-                                                actorRole={auth.user.role ?? 'client'}
-                                                updating={updatingId === appointment.id}
-                                                onAccept={() => void updateStatus(appointment.id, 'accepted')}
-                                                onComplete={() => void updateStatus(appointment.id, 'completed')}
-                                                onDecline={() => void updateStatus(appointment.id, 'declined')}
-                                            />
-                                        ))}
+                            {Object.entries(groupedByDate).map(
+                                ([dateLabel, group]) => (
+                                    <div
+                                        key={dateLabel}
+                                        className="rounded-2xl border border-border/70 bg-background/70 p-4"
+                                    >
+                                        <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
+                                            <CalendarClock className="h-4 w-4" />
+                                            {dateLabel}
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {group.map((appointment) => (
+                                                <AppointmentCard
+                                                    key={appointment.id}
+                                                    appointment={appointment}
+                                                    actorRole={
+                                                        auth.user.role ??
+                                                        'client'
+                                                    }
+                                                    updating={
+                                                        updatingId ===
+                                                        appointment.id
+                                                    }
+                                                    onAccept={() =>
+                                                        void updateStatus(
+                                                            appointment.id,
+                                                            'accepted',
+                                                        )
+                                                    }
+                                                    onComplete={() =>
+                                                        void updateStatus(
+                                                            appointment.id,
+                                                            'completed',
+                                                        )
+                                                    }
+                                                    onDecline={() =>
+                                                        void updateStatus(
+                                                            appointment.id,
+                                                            'declined',
+                                                        )
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ),
+                            )}
                         </div>
                     )}
                 </ProductSection>
@@ -372,7 +467,8 @@ function AppointmentCard({
     onComplete: () => void;
     onDecline: () => void;
 }) {
-    const canUpdate = actorRole === 'admin' || actorRole === appointment.professional_role;
+    const canUpdate =
+        actorRole === 'admin' || actorRole === appointment.professional_role;
     const statusTone =
         appointment.status === 'accepted'
             ? 'border-success/20 bg-success/10'
@@ -387,37 +483,59 @@ function AppointmentCard({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusTone}`}>
+                        <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusTone}`}
+                        >
                             {STATUS_LABELS[appointment.status]}
                         </span>
                         <span className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                             {appointment.professional_role} appointment
                         </span>
                     </div>
-                    <h4 className="text-sm font-semibold capitalize text-foreground">
-                        {appointment.professional?.name || 'Professional'} with {appointment.client?.name || 'client'}
+                    <h4 className="text-sm font-semibold text-foreground capitalize">
+                        {appointment.professional?.name || 'Professional'} with{' '}
+                        {appointment.client?.name || 'client'}
                     </h4>
                     <p className="text-sm text-muted-foreground">
                         {new Date(appointment.scheduled_at).toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                        Client: {appointment.client?.name || '-'} • Professional:{' '}
-                        {appointment.professional?.name || '-'}
+                        Client: {appointment.client?.name || '-'} •
+                        Professional: {appointment.professional?.name || '-'}
                     </p>
                     {appointment.notes ? (
-                        <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {appointment.notes}
+                        </p>
                     ) : null}
                 </div>
                 {canUpdate ? (
                     <div className="flex flex-wrap gap-2">
-                        <Button type="button" size="sm" onClick={onAccept} disabled={updating}>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={onAccept}
+                            disabled={updating}
+                        >
                             <CheckCircle2 className="h-4 w-4" />
                             Accept
                         </Button>
-                        <Button type="button" size="sm" variant="outline" onClick={onComplete} disabled={updating}>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={onComplete}
+                            disabled={updating}
+                        >
                             Mark complete
                         </Button>
-                        <Button type="button" size="sm" variant="destructive" onClick={onDecline} disabled={updating}>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={onDecline}
+                            disabled={updating}
+                        >
                             <XCircle className="h-4 w-4" />
                             Decline
                         </Button>

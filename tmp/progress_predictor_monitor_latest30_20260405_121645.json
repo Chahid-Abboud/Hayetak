@@ -1,0 +1,17 @@
+{
+    "generated_at": "2026-04-05T12:16:45+00:00",
+    "limit": 30,
+    "threshold_ml_blend_pct": 90,
+    "completed_plan_requests_scanned": 30,
+    "predictions_considered": 30,
+    "missing_progress_prediction": 0,
+    "missing_inference_source": 3,
+    "source_counts": {
+        "ml_blend": 27,
+        "unknown": 3
+    },
+    "ml_blend_count": 27,
+    "non_ml_blend_count": 3,
+    "ml_blend_pct": 90,
+    "alert_status": "ok"
+}

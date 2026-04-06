@@ -13,7 +13,7 @@ class FeatureConfigResolver
     public function provider(string $feature): string
     {
         return match ($feature) {
-            self::FEATURE_CHAT => (string) config('ai.chat.provider', 'stub'),
+            self::FEATURE_CHAT => $this->resolveChatProvider(),
             self::FEATURE_PLANNER => $this->ollamaOnly(self::FEATURE_PLANNER)
                 ? 'ollama'
                 : (string) config('ai.planner.provider', 'ollama'),
@@ -60,8 +60,8 @@ class FeatureConfigResolver
     public function openAi(string $feature): array
     {
         $model = match ($feature) {
-            self::FEATURE_CHAT => (string) config('ai.models.coach', 'gpt-4.1-mini'),
-            self::FEATURE_PLANNER => (string) config('ai.planner.openai.model', config('ai.models.planner', 'gpt-4.1-mini')),
+            self::FEATURE_CHAT => (string) config('ai.models.coach', config('ai.chat.self_hosted.ollama.chat_model', 'llama3.1:8b')),
+            self::FEATURE_PLANNER => (string) config('ai.planner.openai.model', config('ai.models.planner', 'llama3.1:8b')),
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
 
@@ -162,7 +162,9 @@ class FeatureConfigResolver
     public function localFallbackEnabled(string $feature): bool
     {
         return match ($feature) {
-            self::FEATURE_PLANNER => (bool) config('ai.planner.local_fallback.enabled', true),
+            self::FEATURE_PLANNER => $this->ollamaOnly(self::FEATURE_PLANNER)
+                ? false
+                : (bool) config('ai.planner.local_fallback.enabled', true),
             self::FEATURE_CHAT => false,
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
@@ -185,5 +187,33 @@ class FeatureConfigResolver
     public function usesSelfHostedChat(): bool
     {
         return $this->provider(self::FEATURE_CHAT) === 'self_hosted';
+    }
+
+    private function resolveChatProvider(): string
+    {
+        $configured = strtolower(trim((string) config('ai.chat.provider', 'auto')));
+        if ($configured === '' || $configured === 'auto') {
+            if (app()->environment('testing')) {
+                return 'stub';
+            }
+
+            $selfHostedBase = trim((string) config('ai.chat.self_hosted.ollama.base_url', ''));
+            if ($selfHostedBase !== '') {
+                return 'self_hosted';
+            }
+
+            $httpEndpoint = trim((string) config('ai.chat.http.endpoint', ''));
+            if ($httpEndpoint !== '') {
+                return 'http';
+            }
+
+            return 'stub';
+        }
+
+        if (in_array($configured, ['self_hosted', 'http', 'stub'], true)) {
+            return $configured;
+        }
+
+        return 'stub';
     }
 }

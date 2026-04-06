@@ -155,7 +155,7 @@ export default function Landing() {
                         </div>
                     </div>
                     <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
-                        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-primary-foreground/72">
+                        <p className="text-xs font-semibold tracking-[0.18em] text-primary-foreground/72 uppercase">
                             Coach summary
                         </p>
                         <div className="mt-4 space-y-3">
@@ -184,7 +184,11 @@ export default function Landing() {
                     <div className="space-y-3">
                         {[
                             ['Breakfast', '620 kcal', 'Protein still on pace'],
-                            ['Lunch', 'On target', 'Coach suggests more fiber later'],
+                            [
+                                'Lunch',
+                                'On target',
+                                'Coach suggests more fiber later',
+                            ],
                             ['Snack', 'Needs protein', 'Two safe swaps ready'],
                         ].map(([meal, status, note]) => (
                             <div
@@ -245,7 +249,9 @@ export default function Landing() {
                     <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
                         <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm font-semibold">Push day</p>
+                                <p className="text-sm font-semibold">
+                                    Push day
+                                </p>
                                 <p className="mt-1 text-sm text-primary-foreground/72">
                                     38 minutes active
                                 </p>
@@ -319,9 +325,18 @@ export default function Landing() {
                     </div>
                     <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
                         {[
-                            ['Today', 'Meals, hydration, active workout, current gap'],
-                            ['Last 7 days', 'Consistency, recovery trend, skipped meals'],
-                            ['Profile', 'Goals, allergies, injuries, diet type'],
+                            [
+                                'Today',
+                                'Meals, hydration, active workout, current gap',
+                            ],
+                            [
+                                'Last 7 days',
+                                'Consistency, recovery trend, skipped meals',
+                            ],
+                            [
+                                'Profile',
+                                'Goals, allergies, injuries, diet type',
+                            ],
                         ].map(([label, copy]) => (
                             <div
                                 key={label}
@@ -353,7 +368,7 @@ export default function Landing() {
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(215,109,79,0.18),transparent_60%)] dark:bg-[radial-gradient(circle_at_top,rgba(241,141,107,0.18),transparent_60%)]" />
                     <div className="absolute top-24 right-0 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
-                    <div className="absolute left-0 top-96 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
+                    <div className="absolute top-96 left-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
                 </div>
 
                 <header
@@ -364,14 +379,19 @@ export default function Landing() {
                     }`}
                 >
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                        <a href="#hero" className="inline-flex items-center gap-3 no-underline">
+                        <a
+                            href="#hero"
+                            className="inline-flex items-center gap-3 no-underline"
+                        >
                             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-secondary via-accent to-primary text-primary-foreground shadow-[0_18px_34px_-22px_rgba(23,38,60,0.9)]">
                                 <AppLogoIcon className="size-6 fill-current" />
                             </span>
                             <div>
                                 <p
                                     className="text-xl tracking-tight text-foreground"
-                                    style={{ fontFamily: 'var(--font-display)' }}
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
                                 >
                                     Hayetak
                                 </p>
@@ -409,7 +429,11 @@ export default function Landing() {
                             onClick={() => setMobileOpen((open) => !open)}
                             className={`${FOCUS_RING} inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/78 text-foreground md:hidden`}
                         >
-                            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                            {mobileOpen ? (
+                                <X className="size-5" />
+                            ) : (
+                                <Menu className="size-5" />
+                            )}
                         </button>
                     </div>
                     {mobileOpen ? (
@@ -437,7 +461,7 @@ export default function Landing() {
                 <main id="main-content" className="relative z-10">
                     <section
                         id="hero"
-                        className="mx-auto max-w-7xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
+                        className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
                     >
                         <div className="grid gap-12 lg:grid-cols-[0.96fr_1.04fr] lg:items-start xl:gap-16">
                             <div className="space-y-7 pt-2 lg:pr-4">
@@ -448,7 +472,9 @@ export default function Landing() {
                                 <div className="space-y-4">
                                     <h1
                                         className="max-w-2xl text-[3.15rem] leading-[0.96] tracking-[-0.03em] text-foreground sm:text-[4rem] lg:text-[4.7rem] xl:text-[5.15rem]"
-                                        style={{ fontFamily: 'var(--font-display)' }}
+                                        style={{
+                                            fontFamily: 'var(--font-display)',
+                                        }}
                                     >
                                         Create your profile, generate a safer
                                         plan, track the day, and get coaching
@@ -458,18 +484,33 @@ export default function Landing() {
                                         Hayetak brings nutrition planning,
                                         workout planning, logging, messaging,
                                         appointments, and AI guidance into one
-                                        structured experience built around trust,
-                                        personalization, and readability.
+                                        structured experience built around
+                                        trust, personalization, and readability.
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 text-sm">
                                     {[
-                                        { icon: Activity, label: 'Create profile' },
-                                        { icon: Brain, label: 'Generate AI plan' },
-                                        { icon: Utensils, label: 'Log meals and workouts' },
-                                        { icon: Sparkles, label: 'Get adaptive coaching' },
+                                        {
+                                            icon: Activity,
+                                            label: 'Create profile',
+                                        },
+                                        {
+                                            icon: Brain,
+                                            label: 'Generate AI plan',
+                                        },
+                                        {
+                                            icon: Utensils,
+                                            label: 'Log meals and workouts',
+                                        },
+                                        {
+                                            icon: Sparkles,
+                                            label: 'Get adaptive coaching',
+                                        },
                                     ].map((step, index) => (
-                                        <div key={step.label} className="flex items-center gap-2">
+                                        <div
+                                            key={step.label}
+                                            className="flex items-center gap-2"
+                                        >
                                             {index > 0 ? (
                                                 <ChevronRight className="size-4 text-muted-foreground/60" />
                                             ) : null}
@@ -496,7 +537,10 @@ export default function Landing() {
                                         'Meals + workouts in one flow',
                                         'Profile-based AI guidance',
                                     ].map((signal) => (
-                                        <span key={signal} className="haye-chip">
+                                        <span
+                                            key={signal}
+                                            className="haye-chip"
+                                        >
                                             {signal}
                                         </span>
                                     ))}
@@ -510,10 +554,15 @@ export default function Landing() {
                                     <div className="haye-panel rounded-[34px] p-5 sm:p-6">
                                         <div className="flex items-start justify-between gap-3">
                                             <div>
-                                                <p className="haye-kicker">Today inside Hayetak</p>
+                                                <p className="haye-kicker">
+                                                    Today inside Hayetak
+                                                </p>
                                                 <h3
                                                     className="mt-3 text-2xl tracking-tight text-foreground"
-                                                    style={{ fontFamily: 'var(--font-display)' }}
+                                                    style={{
+                                                        fontFamily:
+                                                            'var(--font-display)',
+                                                    }}
                                                 >
                                                     Daily command center
                                                 </h3>
@@ -551,14 +600,14 @@ export default function Landing() {
                                                     </p>
                                                     <p className="mt-2 text-sm leading-7 text-primary-foreground/80">
                                                         Protein is still low for
-                                                        today. A dairy-free snack
-                                                        after training would
-                                                        close the gap while
-                                                        keeping your
+                                                        today. A dairy-free
+                                                        snack after training
+                                                        would close the gap
+                                                        while keeping your
                                                         restrictions intact.
                                                     </p>
                                                 </div>
-                                                <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em]">
+                                                <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-medium tracking-[0.18em] uppercase">
                                                     Safe
                                                 </span>
                                             </div>
@@ -571,9 +620,18 @@ export default function Landing() {
                                                 </p>
                                                 <div className="mt-3 space-y-2">
                                                     {[
-                                                        ['Breakfast', 'Logged - on target'],
-                                                        ['Lunch', 'Coach suggests more fiber'],
-                                                        ['Snack', 'Protein gap still open'],
+                                                        [
+                                                            'Breakfast',
+                                                            'Logged - on target',
+                                                        ],
+                                                        [
+                                                            'Lunch',
+                                                            'Coach suggests more fiber',
+                                                        ],
+                                                        [
+                                                            'Snack',
+                                                            'Protein gap still open',
+                                                        ],
                                                     ].map(([meal, note]) => (
                                                         <div
                                                             key={meal}
@@ -606,8 +664,15 @@ export default function Landing() {
                                                         swaps stay visible.
                                                     </p>
                                                     <div className="mt-3 flex flex-wrap gap-2">
-                                                        {['38 min', '8 sets logged', 'Alt ready'].map((chip) => (
-                                                            <span key={chip} className="haye-chip">
+                                                        {[
+                                                            '38 min',
+                                                            '8 sets logged',
+                                                            'Alt ready',
+                                                        ].map((chip) => (
+                                                            <span
+                                                                key={chip}
+                                                                className="haye-chip"
+                                                            >
                                                                 {chip}
                                                             </span>
                                                         ))}
@@ -621,7 +686,9 @@ export default function Landing() {
                                         <div className="haye-panel rounded-[30px] p-5">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
-                                                    <p className="haye-kicker">Nearby care</p>
+                                                    <p className="haye-kicker">
+                                                        Nearby care
+                                                    </p>
                                                     <p className="mt-2 text-lg font-semibold text-foreground">
                                                         Discovery stays in flow
                                                     </p>
@@ -630,44 +697,70 @@ export default function Landing() {
                                             </div>
                                             <div className="mt-4 space-y-3 text-sm">
                                                 {[
-                                                    ['FitZone Gym', '0.3 km', 'Verified equipment details'],
-                                                    ['Dr. Sara Khalil', '1.2 km', 'Nutritionist accepting appointments'],
-                                                ].map(([name, distance, note]) => (
-                                                    <div
-                                                        key={name}
-                                                        className="rounded-[22px] border border-border/70 bg-background/74 p-4"
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <p className="font-semibold text-foreground">
-                                                                {name}
+                                                    [
+                                                        'FitZone Gym',
+                                                        '0.3 km',
+                                                        'Verified equipment details',
+                                                    ],
+                                                    [
+                                                        'Dr. Sara Khalil',
+                                                        '1.2 km',
+                                                        'Nutritionist accepting appointments',
+                                                    ],
+                                                ].map(
+                                                    ([
+                                                        name,
+                                                        distance,
+                                                        note,
+                                                    ]) => (
+                                                        <div
+                                                            key={name}
+                                                            className="rounded-[22px] border border-border/70 bg-background/74 p-4"
+                                                        >
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <p className="font-semibold text-foreground">
+                                                                    {name}
+                                                                </p>
+                                                                <span className="haye-chip">
+                                                                    {distance}
+                                                                </span>
+                                                            </div>
+                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                                                {note}
                                                             </p>
-                                                            <span className="haye-chip">
-                                                                {distance}
-                                                            </span>
                                                         </div>
-                                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                                            {note}
-                                                        </p>
-                                                    </div>
-                                                ))}
+                                                    ),
+                                                )}
                                             </div>
                                         </div>
 
                                         <div className="rounded-[30px] border border-border/70 bg-card/84 p-5 shadow-[0_24px_60px_-40px_rgba(23,38,60,0.45)]">
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
-                                                    <p className="haye-kicker">Coach context</p>
+                                                    <p className="haye-kicker">
+                                                        Coach context
+                                                    </p>
                                                     <p className="mt-2 text-lg font-semibold text-foreground">
-                                                        The AI sees the full picture
+                                                        The AI sees the full
+                                                        picture
                                                     </p>
                                                 </div>
                                                 <MessageSquare className="size-5 text-secondary" />
                                             </div>
                                             <div className="mt-4 space-y-3">
                                                 {[
-                                                    ['Today', 'Meals, hydration, workout status, current protein gap'],
-                                                    ['Last 7 days', 'Recovery trend, consistency, skipped sessions or meals'],
-                                                    ['Profile', 'Goals, allergies, medical notes, injuries, diet type'],
+                                                    [
+                                                        'Today',
+                                                        'Meals, hydration, workout status, current protein gap',
+                                                    ],
+                                                    [
+                                                        'Last 7 days',
+                                                        'Recovery trend, consistency, skipped sessions or meals',
+                                                    ],
+                                                    [
+                                                        'Profile',
+                                                        'Goals, allergies, medical notes, injuries, diet type',
+                                                    ],
                                                 ].map(([label, copy]) => (
                                                     <div
                                                         key={label}
@@ -689,7 +782,8 @@ export default function Landing() {
                                                 <ShieldCheck className="mt-0.5 size-5 text-secondary" />
                                                 <div>
                                                     <p className="text-sm font-semibold">
-                                                        Safety signals stay visible
+                                                        Safety signals stay
+                                                        visible
                                                     </p>
                                                     <p className="mt-2 text-sm leading-7 text-muted-foreground">
                                                         Allergies, injuries,
@@ -710,10 +804,22 @@ export default function Landing() {
                     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                             {[
-                                ['2,180 kcal', 'Planner targets built from real profile inputs'],
-                                ['4-day split', 'Workout plan shaped around schedule, equipment, and injury history'],
-                                ['7-day context', 'Coach replies can reference recent meals, training, and recovery patterns'],
-                                ['Safety first', 'Allergies, diet type, and constraints stay visible across the flow'],
+                                [
+                                    '2,180 kcal',
+                                    'Planner targets built from real profile inputs',
+                                ],
+                                [
+                                    '4-day split',
+                                    'Workout plan shaped around schedule, equipment, and injury history',
+                                ],
+                                [
+                                    '7-day context',
+                                    'Coach replies can reference recent meals, training, and recovery patterns',
+                                ],
+                                [
+                                    'Safety first',
+                                    'Allergies, diet type, and constraints stay visible across the flow',
+                                ],
                             ].map(([value, copy]) => (
                                 <div
                                     key={value}
@@ -730,7 +836,10 @@ export default function Landing() {
                         </div>
                     </section>
 
-                    <section id="story" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+                    <section
+                        id="story"
+                        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
+                    >
                         <SectionTitle
                             eyebrow="How it works"
                             title="A full health workflow, not a scattered fitness stack"
@@ -763,7 +872,10 @@ export default function Landing() {
                                     copy: 'Coach replies stay aware of today, the last 7 days, and restrictions before suggesting actions.',
                                 },
                             ].map(({ step, icon: Icon, title, copy }) => (
-                                <div key={step} className="haye-panel rounded-[28px] p-5">
+                                <div
+                                    key={step}
+                                    className="haye-panel rounded-[28px] p-5"
+                                >
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-muted-foreground">
                                             {step}
@@ -781,7 +893,10 @@ export default function Landing() {
                         </div>
                     </section>
 
-                    <section id="preview" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+                    <section
+                        id="preview"
+                        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
+                    >
                         <SectionTitle
                             eyebrow="Product preview"
                             title="Core product surfaces designed for clarity, safety, and momentum"
@@ -806,7 +921,9 @@ export default function Landing() {
                         </div>
                         <div className="mt-8">
                             <PreviewFrame
-                                title={previews[activePreview]?.label ?? 'Planner'}
+                                title={
+                                    previews[activePreview]?.label ?? 'Planner'
+                                }
                                 subtitle="Inside Hayetak"
                             >
                                 {previews[activePreview]?.content}
@@ -814,14 +931,21 @@ export default function Landing() {
                         </div>
                     </section>
 
-                    <section id="trust" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+                    <section
+                        id="trust"
+                        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
+                    >
                         <div className="haye-panel rounded-[36px] p-6 sm:p-8 lg:p-10">
                             <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
                                 <div>
-                                    <p className="haye-kicker">Trust and safety</p>
+                                    <p className="haye-kicker">
+                                        Trust and safety
+                                    </p>
                                     <h2
                                         className="mt-3 text-3xl tracking-tight text-foreground sm:text-4xl"
-                                        style={{ fontFamily: 'var(--font-display)' }}
+                                        style={{
+                                            fontFamily: 'var(--font-display)',
+                                        }}
                                     >
                                         Safety and credibility stay visible
                                         inside the product.

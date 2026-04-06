@@ -35,9 +35,9 @@ class ChatContextBuilder
         $resolvedProfile = $this->profileFactResolver->resolve($user);
         $selectedDate = $this->resolveSelectedDate($runtimeContext, $flags);
         $selectedDateString = $selectedDate->toDateString();
-        $today = Carbon::today();
-        $from = $today->copy()->subDays(6)->startOfDay();
-        $to = $today->copy()->endOfDay();
+        $anchorDate = $selectedDate->copy()->startOfDay();
+        $from = $anchorDate->copy()->subDays(6)->startOfDay();
+        $to = $anchorDate->copy()->endOfDay();
         $selectedMacros = $this->macroSummaryForDay($user->id, $selectedDateString);
 
         $todayMeals = DB::table('meal_entries as me')
@@ -61,14 +61,14 @@ class ChatContextBuilder
 
         $todayWater = (int) (WaterIntake::query()
             ->where('user_id', $user->id)
-            ->whereDate('for_day', $today->toDateString())
+            ->whereDate('for_day', $selectedDateString)
             ->value('ml') ?? 0);
 
         $targetWater = $this->waterTargetForUser($user, $resolvedProfile['current_weight_kg'] ?? null);
 
         $todayWorkouts = WorkoutLog::query()
             ->where('user_id', $user->id)
-            ->whereDate('performed_at', $today->toDateString())
+            ->whereDate('performed_at', $selectedDateString)
             ->with('day:id,workout_plan_id,day_index,name')
             ->latest('performed_at')
             ->get();

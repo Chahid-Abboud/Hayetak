@@ -31,7 +31,7 @@ export function ProductPageShell({
         return (
             <main
                 className={cn(
-                    'px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pb-14 lg:pt-8',
+                    'px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-8 lg:pb-14',
                     mainClassName,
                 )}
             >
@@ -69,7 +69,8 @@ export function ProductHero({
             <div
                 className={cn(
                     'grid gap-6 px-5 py-6 sm:px-7 sm:py-7 lg:gap-8 lg:px-8 lg:py-8',
-                    hasRail && 'lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]',
+                    hasRail &&
+                        'lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]',
                 )}
             >
                 <div className="space-y-4">
@@ -224,7 +225,9 @@ export function ProductEmptyState({
             )}
         >
             <div className="mx-auto max-w-md space-y-2">
-                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                <h3 className="text-lg font-semibold text-foreground">
+                    {title}
+                </h3>
                 {description ? (
                     <p className="text-sm leading-6 text-muted-foreground">
                         {description}
@@ -309,4 +312,3 @@ export function ProductStickyActions({
         </div>
     );
 }
-

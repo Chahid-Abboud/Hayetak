@@ -1,0 +1,27 @@
+{
+  "generated_at_utc": "2026-04-05T12:24:34.556649+00:00",
+  "dataset_path": "tmp\\progress_predictor_dataset_real_only.jsonl",
+  "rows_total": 328,
+  "weight_rows_real_only": 328,
+  "strength_rows_real_only": 328,
+  "weight_holdout_eval": {
+    "status": "ok",
+    "rows": 328,
+    "train_rows": 243,
+    "test_rows": 85,
+    "train_users": 40,
+    "test_users": 10,
+    "mae": 0.38091,
+    "r2": 0.09584
+  },
+  "strength_holdout_eval": {
+    "status": "ok",
+    "rows": 328,
+    "train_rows": 243,
+    "test_rows": 85,
+    "train_users": 40,
+    "test_users": 10,
+    "mae": 0.07558,
+    "r2": 0.992
+  }
+}

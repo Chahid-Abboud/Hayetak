@@ -266,7 +266,12 @@
                 color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
                 transparent 1px
             );
-        background-size: auto, auto, auto, 30px 30px, 30px 30px;
+        background-size:
+            auto,
+            auto,
+            auto,
+            30px 30px,
+            30px 30px;
         background-attachment: fixed;
     }
 
@@ -328,12 +333,11 @@
         position: relative;
         overflow: hidden;
         border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
-        background:
-            linear-gradient(
-                180deg,
-                color-mix(in oklab, var(--card) 92%, white),
-                color-mix(in oklab, var(--card) 88%, var(--background))
-            );
+        background: linear-gradient(
+            180deg,
+            color-mix(in oklab, var(--card) 92%, white),
+            color-mix(in oklab, var(--card) 88%, var(--background))
+        );
         box-shadow:
             0 24px 80px -48px rgba(15, 23, 42, 0.6),
             inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -378,7 +382,7 @@
     }
 
     .haye-input {
-        @apply h-11 w-full rounded-2xl border bg-background/80 px-4 text-sm text-foreground shadow-sm outline-none transition;
+        @apply h-11 w-full rounded-2xl border bg-background/80 px-4 text-sm text-foreground shadow-sm transition outline-none;
         border-color: color-mix(in oklab, var(--border) 82%, transparent);
     }
 
@@ -386,7 +390,8 @@
         @apply inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition;
         background: var(--primary);
         color: var(--primary-foreground);
-        box-shadow: 0 14px 34px -24px color-mix(in oklab, var(--primary) 90%, black);
+        box-shadow: 0 14px 34px -24px
+            color-mix(in oklab, var(--primary) 90%, black);
     }
 
     .haye-button-primary:hover {
@@ -403,7 +408,11 @@
 
     .haye-button-secondary:hover {
         transform: translateY(-1px);
-        background: color-mix(in oklab, var(--secondary) 10%, var(--background));
+        background: color-mix(
+            in oklab,
+            var(--secondary) 10%,
+            var(--background)
+        );
     }
 
     .places-range {

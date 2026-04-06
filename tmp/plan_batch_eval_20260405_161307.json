@@ -1,0 +1,44 @@
+{
+    "summary": {
+        "generated_at": "2026-04-05T16:14:32+00:00",
+        "filters": {
+            "roles": [
+                "all"
+            ],
+            "days": [
+                14
+            ],
+            "limit": 1,
+            "from_user_id": null,
+            "to_user_id": null
+        },
+        "runs_total": 1,
+        "runs_success": 1,
+        "runs_failed": 0,
+        "success_percentage": 100,
+        "average_quality_percentage": 100,
+        "csv_path": "C:\\Users\\User\\hayetaravel\\tmp\\plan_batch_eval_20260405_161307.csv",
+        "failures": []
+    },
+    "rows": [
+        {
+            "run_index": 1,
+            "user_id": 1,
+            "email": "test@example.com",
+            "role": "client",
+            "horizon_days": 14,
+            "status": "success",
+            "provider": "local_fallback",
+            "model": "hayetak-local-fallback-v1",
+            "duration_ms": 84944,
+            "quality_percentage": 100,
+            "quality_passed_checks": 8,
+            "quality_total_checks": 8,
+            "diet_days_count": 14,
+            "workout_days_count": 7,
+            "review_after_days": 14,
+            "error_type": null,
+            "error_message": null
+        }
+    ]
+}

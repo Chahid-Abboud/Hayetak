@@ -65,7 +65,9 @@ function installAxiosDefaults() {
     axios.defaults.withCredentials = true;
 
     syncCsrfToken(
-        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content'),
     );
 }
 
@@ -85,7 +87,8 @@ function installFetchDefaults() {
         }
 
         const headers = new Headers(request.headers);
-        const isApiRequest = url.pathname === '/api' || url.pathname.startsWith('/api/');
+        const isApiRequest =
+            url.pathname === '/api' || url.pathname.startsWith('/api/');
 
         if (isApiRequest && !headers.has('Accept')) {
             headers.set('Accept', 'application/json');
@@ -119,9 +122,7 @@ function installFetchDefaults() {
             new Request(request, {
                 headers,
                 credentials:
-                    init?.credentials ??
-                    request.credentials ??
-                    'same-origin',
+                    init?.credentials ?? request.credentials ?? 'same-origin',
             }),
         );
     };
