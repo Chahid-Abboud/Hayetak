@@ -2,7 +2,7 @@
 
 return [
     'chat' => [
-        'provider' => env('AI_CHAT_PROVIDER', 'stub'),
+        'provider' => env('AI_CHAT_PROVIDER', 'self_hosted'),
         'prompt_version' => env('AI_CHAT_PROMPT_VERSION', 'hayetak_coach_v1'),
         'http' => [
             'endpoint' => env('AI_CHAT_ENDPOINT'),
@@ -45,7 +45,7 @@ return [
         'default_horizon_days' => (int) env('AI_PLANNER_DEFAULT_HORIZON_DAYS', 14),
         'request_timeout_seconds' => (int) env('AI_PLANNER_REQUEST_TIMEOUT', 300),
         'openai' => [
-            'model' => env('OPENAI_MODEL_PLANNER', 'gpt-4.1-mini'),
+            'model' => env('OPENAI_MODEL_PLANNER', env('AI_PLANNER_OLLAMA_MODEL', env('AI_SELF_HOSTED_LLM_MODEL', 'llama3.1:8b'))),
             'max_output_tokens' => (int) env('AI_PLANNER_MAX_OUTPUT_TOKENS', 3200),
         ],
         'ollama' => [
@@ -65,8 +65,8 @@ return [
     ],
 
     'models' => [
-        'planner' => env('OPENAI_MODEL_PLANNER', 'gpt-4.1-mini'),
-        'coach' => env('OPENAI_MODEL_COACH', 'gpt-4.1-mini'),
+        'planner' => env('AI_PLANNER_OLLAMA_MODEL', env('AI_SELF_HOSTED_LLM_MODEL', 'llama3.1:8b')),
+        'coach' => env('AI_SELF_HOSTED_LLM_MODEL', 'llama3.1:8b'),
     ],
 
     'timeouts' => [

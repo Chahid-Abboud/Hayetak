@@ -31,7 +31,9 @@ export function AdminShell({
                             <div className="space-y-2">
                                 <h1
                                     className="text-3xl tracking-tight text-foreground sm:text-4xl"
-                                    style={{ fontFamily: 'var(--font-display)' }}
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
                                 >
                                     {title}
                                 </h1>
@@ -147,7 +149,7 @@ export function AdminSection({
     return (
         <section
             className={cn(
-                'haye-panel rounded-[30px] overflow-hidden',
+                'haye-panel overflow-hidden rounded-[30px]',
                 className,
             )}
         >

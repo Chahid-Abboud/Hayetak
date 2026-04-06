@@ -1,9 +1,9 @@
+import AppearanceTabs from '@/components/appearance-tabs';
 import {
     ProductBanner,
     ProductHero,
     ProductPageShell,
 } from '@/components/product/page';
-import AppearanceTabs from '@/components/appearance-tabs';
 import { Head, router, usePage } from '@inertiajs/react';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -444,9 +444,7 @@ export default function ProfilePage() {
         Array.isArray(prefs.allergies) ? prefs.allergies : [],
     );
     const [newAllergy, setNewAllergy] = useState('');
-    const [workoutDaysPerWeek, setWorkoutDaysPerWeek] = useState<
-        number | ''
-    >(
+    const [workoutDaysPerWeek, setWorkoutDaysPerWeek] = useState<number | ''>(
         typeof prefs.workout_days_per_week === 'number'
             ? prefs.workout_days_per_week
             : '',
@@ -460,7 +458,9 @@ export default function ProfilePage() {
             : [],
     );
     const [availableEquipment, setAvailableEquipment] = useState<string[]>(
-        Array.isArray(prefs.available_equipment) ? prefs.available_equipment : [],
+        Array.isArray(prefs.available_equipment)
+            ? prefs.available_equipment
+            : [],
     );
     const [injuryHistory, setInjuryHistory] = useState<string[]>(
         Array.isArray(prefs.injury_history) ? prefs.injury_history : [],
@@ -525,7 +525,9 @@ export default function ProfilePage() {
                 fitness_goals: fitnessGoals,
                 allergies,
                 workout_days_per_week:
-                    workoutDaysPerWeek === '' ? null : Number(workoutDaysPerWeek),
+                    workoutDaysPerWeek === ''
+                        ? null
+                        : Number(workoutDaysPerWeek),
                 workout_location: workoutLocation || null,
                 preferred_workout_days: preferredWorkoutDays,
                 available_equipment: availableEquipment,
@@ -1064,7 +1066,8 @@ export default function ProfilePage() {
                                             Available equipment
                                         </div>
                                         <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.available_equipment?.length ? (
+                                            {prefs?.available_equipment
+                                                ?.length ? (
                                                 prefs.available_equipment.map(
                                                     (item, index) => (
                                                         <Badge
@@ -1110,7 +1113,8 @@ export default function ProfilePage() {
                                             Medical conditions
                                         </div>
                                         <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.medical_conditions?.length ? (
+                                            {prefs?.medical_conditions
+                                                ?.length ? (
                                                 prefs.medical_conditions.map(
                                                     (item, index) => (
                                                         <Badge
@@ -1313,7 +1317,9 @@ export default function ProfilePage() {
 
                                     <div>
                                         <label
-                                            htmlFor={ids.prefsWorkoutDaysPerWeek}
+                                            htmlFor={
+                                                ids.prefsWorkoutDaysPerWeek
+                                            }
                                             className="text-sm font-medium text-foreground"
                                         >
                                             Workout days per week
@@ -1428,27 +1434,29 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             {availableEquipment.length ? (
-                                                availableEquipment.map((item) => (
-                                                    <span
-                                                        key={item}
-                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                    >
-                                                        {item}
-                                                        <button
-                                                            type="button"
-                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                            onClick={() =>
-                                                                removeChip(
-                                                                    item,
-                                                                    setAvailableEquipment,
-                                                                )
-                                                            }
-                                                            aria-label={`Remove equipment ${item}`}
+                                                availableEquipment.map(
+                                                    (item) => (
+                                                        <span
+                                                            key={item}
+                                                            className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
                                                         >
-                                                            ×
-                                                        </button>
-                                                    </span>
-                                                ))
+                                                            {item}
+                                                            <button
+                                                                type="button"
+                                                                className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                                onClick={() =>
+                                                                    removeChip(
+                                                                        item,
+                                                                        setAvailableEquipment,
+                                                                    )
+                                                                }
+                                                                aria-label={`Remove equipment ${item}`}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    ),
+                                                )
                                             ) : (
                                                 <span className="text-sm text-muted-foreground">
                                                     No equipment added.
@@ -1564,8 +1572,7 @@ export default function ProfilePage() {
                                                         newInjury,
                                                         injuryHistory,
                                                         setInjuryHistory,
-                                                        () =>
-                                                            setNewInjury(''),
+                                                        () => setNewInjury(''),
                                                     )
                                                 }
                                             >
@@ -1580,27 +1587,29 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="mt-2 flex flex-wrap gap-2">
                                             {medicalConditions.length ? (
-                                                medicalConditions.map((item) => (
-                                                    <span
-                                                        key={item}
-                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                    >
-                                                        {item}
-                                                        <button
-                                                            type="button"
-                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                            onClick={() =>
-                                                                removeChip(
-                                                                    item,
-                                                                    setMedicalConditions,
-                                                                )
-                                                            }
-                                                            aria-label={`Remove medical condition ${item}`}
+                                                medicalConditions.map(
+                                                    (item) => (
+                                                        <span
+                                                            key={item}
+                                                            className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
                                                         >
-                                                            ×
-                                                        </button>
-                                                    </span>
-                                                ))
+                                                            {item}
+                                                            <button
+                                                                type="button"
+                                                                className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
+                                                                onClick={() =>
+                                                                    removeChip(
+                                                                        item,
+                                                                        setMedicalConditions,
+                                                                    )
+                                                                }
+                                                                aria-label={`Remove medical condition ${item}`}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    ),
+                                                )
                                             ) : (
                                                 <span className="text-sm text-muted-foreground">
                                                     No medical conditions added.

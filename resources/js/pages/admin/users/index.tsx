@@ -68,8 +68,7 @@ export default function AdminUsersIndex() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-    const [bulkAction, setBulkAction] =
-        useState<AdminBulkUserAction>('verify');
+    const [bulkAction, setBulkAction] = useState<AdminBulkUserAction>('verify');
     const [bulkStatus, setBulkStatus] = useState('active');
     const [bulkBusy, setBulkBusy] = useState(false);
     const [bulkFeedback, setBulkFeedback] = useState<string | null>(null);
@@ -156,7 +155,8 @@ export default function AdminUsersIndex() {
     }, [users]);
 
     const allVisibleSelected =
-        users.length > 0 && users.every((user) => selectedUserIds.includes(user.id));
+        users.length > 0 &&
+        users.every((user) => selectedUserIds.includes(user.id));
 
     async function runBulkAction() {
         if (selectedUserIds.length === 0 || bulkBusy) {
@@ -215,7 +215,8 @@ export default function AdminUsersIndex() {
                 `/api/admin/users?${params.toString()}`,
             );
             if (listResponse.ok) {
-                const listJson = (await listResponse.json()) as AdminUserResponse;
+                const listJson =
+                    (await listResponse.json()) as AdminUserResponse;
                 setUsers(Array.isArray(listJson?.data) ? listJson.data : []);
                 setTotal(Number(listJson?.total ?? 0));
                 setCurrentPage(Number(listJson?.current_page ?? 1));
@@ -422,7 +423,9 @@ export default function AdminUsersIndex() {
                                             ) : null}
                                             <Button
                                                 type="button"
-                                                onClick={() => void runBulkAction()}
+                                                onClick={() =>
+                                                    void runBulkAction()
+                                                }
                                                 disabled={
                                                     selectedUserIds.length ===
                                                         0 || bulkBusy
@@ -481,7 +484,10 @@ export default function AdminUsersIndex() {
                                     <ProductTableBody>
                                         {users.map((user) => {
                                             const title =
-                                                [user.first_name, user.last_name]
+                                                [
+                                                    user.first_name,
+                                                    user.last_name,
+                                                ]
                                                     .filter(Boolean)
                                                     .join(' ') ||
                                                 user.name ||
@@ -497,7 +503,9 @@ export default function AdminUsersIndex() {
                                                             )}
                                                             onChange={(event) =>
                                                                 setSelectedUserIds(
-                                                                    (current) =>
+                                                                    (
+                                                                        current,
+                                                                    ) =>
                                                                         event
                                                                             .target
                                                                             .checked
@@ -555,7 +563,9 @@ export default function AdminUsersIndex() {
                                                                     variant="outline"
                                                                     className="rounded-full px-2 py-0.5 text-[11px]"
                                                                 >
-                                                                    {user.status}
+                                                                    {
+                                                                        user.status
+                                                                    }
                                                                 </Badge>
                                                             ) : null}
                                                         </div>
@@ -572,7 +582,10 @@ export default function AdminUsersIndex() {
                                                             0}
                                                     </ProductTableCell>
                                                     <ProductTableCell>
-                                                        <Button size="sm" asChild>
+                                                        <Button
+                                                            size="sm"
+                                                            asChild
+                                                        >
                                                             <Link
                                                                 href={`/admin/users/${user.id}`}
                                                             >

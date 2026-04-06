@@ -1,0 +1,4 @@
+run_index,user_id,email,role,horizon_days,status,provider,model,duration_ms,quality_percentage,quality_passed_checks,quality_total_checks,diet_days_count,workout_days_count,review_after_days,error_type,error_message
+1,1,test@example.com,client,14,success,local_fallback,hayetak-local-fallback-v1,65902,100,8,8,14,7,14,,
+2,1,test@example.com,client,21,success,local_fallback,hayetak-local-fallback-v1,56822,100,8,8,21,7,21,,
+3,1,test@example.com,client,28,success,local_fallback,hayetak-local-fallback-v1,63144,100,8,8,28,7,28,,

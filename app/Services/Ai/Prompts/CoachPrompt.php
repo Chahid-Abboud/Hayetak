@@ -26,6 +26,7 @@ class CoachPrompt
             'plan_summary_block' => $this->renderPlanSummary($promptContext),
             'conversation_context_block' => $this->renderConversationContext($promptContext),
             'runtime_hints_block' => $this->renderRuntimeHints($promptContext),
+            'tool_results_block' => $this->renderToolResults($promptContext),
             'personal_context' => $retrieval['context_text'] !== ''
                 ? $retrieval['context_text']
                 : 'No vector-retrieved personal context matched this question above the threshold.',
@@ -212,6 +213,27 @@ class CoachPrompt
             'RUNTIME_HINTS:',
             '- Available ingredients: '.$this->displayList($runtime['available_ingredients'] ?? []),
         ]);
+    }
+
+    private function renderToolResults(array $promptContext): string
+    {
+        $toolResults = is_array($promptContext['tool_results'] ?? null) ? $promptContext['tool_results'] : [];
+        if ($toolResults === []) {
+            return 'No tool calls were executed for this turn.';
+        }
+
+        $payload = array_map(static function ($entry): array {
+            $item = is_array($entry) ? $entry : [];
+
+            return [
+                'name' => $item['name'] ?? null,
+                'ok' => $item['ok'] ?? null,
+                'output' => $item['output'] ?? null,
+                'error' => $item['error'] ?? null,
+            ];
+        }, array_slice($toolResults, 0, 5));
+
+        return $this->displayJson($payload);
     }
 
     private function displayValue(mixed $value): string

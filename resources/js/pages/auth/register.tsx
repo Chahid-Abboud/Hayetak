@@ -810,12 +810,15 @@ function RegisterWizard(props: Props) {
                     This takes about 2-3 minutes. We use these answers to tailor
                     your coach, plans, and safety guardrails.
                 </p>
-                <div className="flex items-center justify-between gap-3" aria-hidden="true">
+                <div
+                    className="flex items-center justify-between gap-3"
+                    aria-hidden="true"
+                >
                     <div className="flex flex-1 gap-1.5">
                         {prog.map((i) => (
                             <div
                                 key={i}
-                                className={`transition-all rounded-full ${
+                                className={`rounded-full transition-all ${
                                     i < step
                                         ? 'h-1.5 w-4 bg-accent'
                                         : i === step
@@ -826,7 +829,10 @@ function RegisterWizard(props: Props) {
                         ))}
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">
-                        {Math.round(((step - 1) / Math.max(totalSteps - 1, 1)) * 100)}%
+                        {Math.round(
+                            ((step - 1) / Math.max(totalSteps - 1, 1)) * 100,
+                        )}
+                        %
                     </span>
                 </div>
             </header>
@@ -871,8 +877,7 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Client',
                                             description:
                                                 'Get a personalized AI nutrition and workout plan, track your progress, and receive adaptive coaching.',
-                                            tone:
-                                                'from-secondary to-accent',
+                                            tone: 'from-secondary to-accent',
                                         },
                                         {
                                             value: 'trainer' as AccountType,
@@ -881,8 +886,7 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Professional',
                                             description:
                                                 'Manage clients, create custom workout programs, and communicate securely.',
-                                            tone:
-                                                'from-blue-500 to-blue-700',
+                                            tone: 'from-blue-500 to-blue-700',
                                         },
                                         {
                                             value: 'nutritionist' as AccountType,
@@ -891,8 +895,7 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Professional',
                                             description:
                                                 'Build personalized nutrition plans and monitor clients with more context.',
-                                            tone:
-                                                'from-emerald-500 to-emerald-700',
+                                            tone: 'from-emerald-500 to-emerald-700',
                                         },
                                     ].map((option) => {
                                         const active =
@@ -932,9 +935,7 @@ function RegisterWizard(props: Props) {
                                                             </span>
                                                         </div>
                                                         <p className="text-xs leading-relaxed text-muted-foreground">
-                                                            {
-                                                                option.description
-                                                            }
+                                                            {option.description}
                                                         </p>
                                                     </div>
                                                     <div
@@ -1022,8 +1023,7 @@ function RegisterWizard(props: Props) {
                         {/* Gender as radios for semantics */}
                         <fieldset className="space-y-3">
                             <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                Gender{' '}
-                                <span className="text-red-400">*</span>
+                                Gender <span className="text-red-400">*</span>
                             </legend>
                             <div className="flex flex-wrap gap-2">
                                 {(
@@ -1186,9 +1186,7 @@ function RegisterWizard(props: Props) {
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <Button onClick={next}>
-                            Next
-                        </Button>
+                        <Button onClick={next}>Next</Button>
                     </div>
                 </SectionCard>
             )}
@@ -1214,14 +1212,9 @@ function RegisterWizard(props: Props) {
                                     setData('dietary_goal', e.target.value)
                                 }
                             >
-                                <option value="">
-                                    Select
-                                </option>
+                                <option value="">Select</option>
                                 {dietaryGoals.map((g) => (
-                                    <option
-                                        key={g}
-                                        value={g}
-                                    >
+                                    <option key={g} value={g}>
                                         {g}
                                     </option>
                                 ))}
@@ -1242,14 +1235,9 @@ function RegisterWizard(props: Props) {
                                     setData('fitness_goal', e.target.value)
                                 }
                             >
-                                <option value="">
-                                    Select
-                                </option>
+                                <option value="">Select</option>
                                 {fitnessGoals.map((g) => (
-                                    <option
-                                        key={g}
-                                        value={g}
-                                    >
+                                    <option key={g} value={g}>
                                         {g}
                                     </option>
                                 ))}
@@ -1260,8 +1248,7 @@ function RegisterWizard(props: Props) {
                         <div className="space-y-2 md:col-span-2">
                             <fieldset className="space-y-3">
                                 <legend className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                    Diet{' '}
-                                    <span className="text-red-400">*</span>
+                                    Diet <span className="text-red-400">*</span>
                                 </legend>
 
                                 <div className="flex flex-wrap gap-2">
@@ -1395,9 +1382,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>
-                            Next
-                        </Button>
+                        <Button onClick={next}>Next</Button>
                     </div>
                 </SectionCard>
             )}
@@ -1426,14 +1411,9 @@ function RegisterWizard(props: Props) {
                                     )
                                 }
                             >
-                                <option value="">
-                                    Select
-                                </option>
+                                <option value="">Select</option>
                                 {ACTIVITY_LEVELS.map((lvl) => (
-                                    <option
-                                        key={lvl}
-                                        value={lvl}
-                                    >
+                                    <option key={lvl} value={lvl}>
                                         {lvl}
                                     </option>
                                 ))}
@@ -1503,9 +1483,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>
-                            Next
-                        </Button>
+                        <Button onClick={next}>Next</Button>
                     </div>
                 </SectionCard>
             )}
@@ -1532,9 +1510,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>
-                            Next
-                        </Button>
+                        <Button onClick={next}>Next</Button>
                     </div>
                 </SectionCard>
             )}
@@ -1604,9 +1580,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>
-                            Next
-                        </Button>
+                        <Button onClick={next}>Next</Button>
                     </div>
                 </SectionCard>
             )}
@@ -1789,9 +1763,7 @@ function RegisterWizard(props: Props) {
                                 </button>
                             </div>
                             {data.password_confirmation &&
-                            !showServerOrClientError(
-                                'password_confirmation',
-                            ) &&
+                            !showServerOrClientError('password_confirmation') &&
                             data.password === data.password_confirmation ? (
                                 <p className="mt-2 flex items-center gap-1 text-xs text-emerald-400">
                                     <Check className="size-3" />
@@ -1948,10 +1920,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button
-                            onClick={submit}
-                            disabled={processing}
-                        >
+                        <Button onClick={submit} disabled={processing}>
                             Create Account
                         </Button>
                     </div>
@@ -1975,10 +1944,16 @@ export default function Register(props: Props) {
                 Skip to form
             </a>
 
-            <main id="register-main" className="min-h-screen bg-background text-foreground">
+            <main
+                id="register-main"
+                className="min-h-screen bg-background text-foreground"
+            >
                 <header className="border-b border-border/70 bg-background/80 px-6 py-4 backdrop-blur">
                     <div className="mx-auto flex max-w-6xl items-center justify-between">
-                        <Link href="/" className="flex items-center gap-2.5 no-underline">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2.5 no-underline"
+                        >
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-secondary via-accent to-primary shadow-[0_14px_32px_-20px_rgba(23,38,60,0.55)]">
                                 <AppLogoIcon className="size-3.5 fill-current text-white" />
                             </div>
@@ -2015,9 +1990,8 @@ export default function Register(props: Props) {
                         </h1>
                         <p className="mx-auto max-w-2xl text-sm leading-7 text-muted-foreground">
                             Hayetak uses this setup to generate safer AI
-                            planning, better coaching context, and cleaner
-                            daily workflows for clients, trainers, and
-                            nutritionists.
+                            planning, better coaching context, and cleaner daily
+                            workflows for clients, trainers, and nutritionists.
                         </p>
                     </div>
 

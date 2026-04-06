@@ -47,7 +47,11 @@ type PlannerPlan = {
     diet?: {
         daily_targets?: Record<string, number | string | null>;
         days?: DietDay[];
-        grocery_list?: Array<{ category?: string | null; name?: string | null; quantity?: string | null }>;
+        grocery_list?: Array<{
+            category?: string | null;
+            name?: string | null;
+            quantity?: string | null;
+        }>;
         meal_prep_notes?: string[];
         adherence_notes?: string[];
     };
@@ -155,7 +159,9 @@ type PageProps = {
     };
 };
 
-function sourceLabel(source?: { provider?: string | null; model?: string | null } | null) {
+function sourceLabel(
+    source?: { provider?: string | null; model?: string | null } | null,
+) {
     const provider = source?.provider?.trim();
     const model = source?.model?.trim();
 
@@ -173,8 +179,13 @@ function clampPlanHorizonDays(days: number) {
 }
 
 export default function AiPlannerPage() {
-    const { generation, nutritionPlan, workoutPlan, defaults, profileConstraints } =
-        usePage<PageProps>().props;
+    const {
+        generation,
+        nutritionPlan,
+        workoutPlan,
+        defaults,
+        profileConstraints,
+    } = usePage<PageProps>().props;
 
     const [planHorizonDays, setPlanHorizonDays] = useState<number>(
         clampPlanHorizonDays(defaults.plan_horizon_days ?? 7),
@@ -211,7 +222,12 @@ export default function AiPlannerPage() {
                 value: generation?.schema_version ?? defaults.schema_version,
             },
         ],
-        [defaults.model, defaults.provider, defaults.schema_version, generation],
+        [
+            defaults.model,
+            defaults.provider,
+            defaults.schema_version,
+            generation,
+        ],
     );
 
     const generatePlan = async () => {
@@ -227,7 +243,8 @@ export default function AiPlannerPage() {
 
             setStatus({
                 tone: 'success',
-                message: 'Plan generated successfully. Reloading the latest version now.',
+                message:
+                    'Plan generated successfully. Reloading the latest version now.',
             });
             router.reload({
                 only: ['generation', 'nutritionPlan', 'workoutPlan'],
@@ -258,25 +275,36 @@ export default function AiPlannerPage() {
                         <div className="space-y-3 text-sm">
                             <div className="font-medium text-foreground">
                                 {sourceLabel({
-                                    provider: generation?.provider ?? defaults.provider,
+                                    provider:
+                                        generation?.provider ??
+                                        defaults.provider,
                                     model: generation?.model ?? defaults.model,
                                 })}
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <span className="haye-chip">
-                                    Prompt {generation?.prompt_version ?? defaults.prompt_version}
+                                    Prompt{' '}
+                                    {generation?.prompt_version ??
+                                        defaults.prompt_version}
                                 </span>
                                 <span className="haye-chip">
-                                    Schema {generation?.schema_version ?? defaults.schema_version}
+                                    Schema{' '}
+                                    {generation?.schema_version ??
+                                        defaults.schema_version}
                                 </span>
-                                <span className="haye-chip">{planHorizonDays}-day plan length</span>
+                                <span className="haye-chip">
+                                    {planHorizonDays}-day plan length
+                                </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                Plan length is your check-in window: after this many days we review progress and decide whether to adjust.
+                                Plan length is your check-in window: after this
+                                many days we review progress and decide whether
+                                to adjust.
                             </div>
                             {generation?.usage?.total_tokens ? (
                                 <div className="text-xs text-muted-foreground">
-                                    Total tokens used: {generation.usage.total_tokens}
+                                    Total tokens used:{' '}
+                                    {generation.usage.total_tokens}
                                 </div>
                             ) : null}
                         </div>
@@ -288,7 +316,11 @@ export default function AiPlannerPage() {
                                 <select
                                     value={planHorizonDays}
                                     onChange={(event) =>
-                                        setPlanHorizonDays(clampPlanHorizonDays(Number(event.target.value)))
+                                        setPlanHorizonDays(
+                                            clampPlanHorizonDays(
+                                                Number(event.target.value),
+                                            ),
+                                        )
                                     }
                                     className="rounded-xl border border-border/70 bg-card px-2 py-1 text-sm"
                                 >
@@ -298,7 +330,9 @@ export default function AiPlannerPage() {
                                         </option>
                                     ))}
                                 </select>
-                                <span className="text-xs text-muted-foreground">check-in window</span>
+                                <span className="text-xs text-muted-foreground">
+                                    check-in window
+                                </span>
                             </label>
 
                             <button
@@ -310,7 +344,9 @@ export default function AiPlannerPage() {
                                 <RefreshCw
                                     className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`}
                                 />
-                                {generation ? 'Regenerate plan' : 'Generate plan'}
+                                {generation
+                                    ? 'Regenerate plan'
+                                    : 'Generate plan'}
                             </button>
 
                             <Link
@@ -330,12 +366,17 @@ export default function AiPlannerPage() {
                 />
 
                 {status ? (
-                    <ProductBanner tone={status.tone}>{status.message}</ProductBanner>
+                    <ProductBanner tone={status.tone}>
+                        {status.message}
+                    </ProductBanner>
                 ) : null}
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     {summaryCards.map((card) => (
-                        <div key={card.label} className="haye-panel rounded-[26px] p-5">
+                        <div
+                            key={card.label}
+                            className="haye-panel rounded-[26px] p-5"
+                        >
                             <div className="haye-kicker">{card.label}</div>
                             <div className="mt-3 text-xl font-semibold tracking-tight text-foreground">
                                 {card.value}
@@ -355,7 +396,9 @@ export default function AiPlannerPage() {
                                 disabled={generating}
                                 className="inline-flex h-11 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
                             >
-                                {generating ? 'Generating...' : 'Generate my plan'}
+                                {generating
+                                    ? 'Generating...'
+                                    : 'Generate my plan'}
                             </button>
                         }
                     />
@@ -389,7 +432,8 @@ export default function AiPlannerPage() {
                                         profileConstraints?.workout_days_per_week
                                             ? `Days per week: ${profileConstraints.workout_days_per_week}`
                                             : 'Days per week: not set',
-                                        profileConstraints?.preferred_workout_days?.length
+                                        profileConstraints
+                                            ?.preferred_workout_days?.length
                                             ? `Preferred days: ${profileConstraints.preferred_workout_days.join(', ')}`
                                             : 'Preferred days: not set',
                                     ]}
@@ -398,24 +442,31 @@ export default function AiPlannerPage() {
                                     title="Safety constraints"
                                     items={
                                         profileConstraints?.allergies?.length
-                                            ? profileConstraints.allergies.map((item) => `Allergy: ${item}`)
+                                            ? profileConstraints.allergies.map(
+                                                  (item) => `Allergy: ${item}`,
+                                              )
                                             : ['No allergies saved.']
                                     }
                                 />
                                 <SimpleListCard
                                     title="Medical and equipment"
                                     items={[
-                                        ...(profileConstraints?.medical_conditions?.length
+                                        ...(profileConstraints
+                                            ?.medical_conditions?.length
                                             ? profileConstraints.medical_conditions.map(
-                                                  (item) => `Medical condition: ${item}`,
+                                                  (item) =>
+                                                      `Medical condition: ${item}`,
                                               )
                                             : ['No medical conditions saved.']),
-                                        ...(profileConstraints?.injury_history?.length
+                                        ...(profileConstraints?.injury_history
+                                            ?.length
                                             ? profileConstraints.injury_history.map(
-                                                  (item) => `Injury history: ${item}`,
+                                                  (item) =>
+                                                      `Injury history: ${item}`,
                                               )
                                             : ['No injury history saved.']),
-                                        ...(profileConstraints?.available_equipment?.length
+                                        ...(profileConstraints
+                                            ?.available_equipment?.length
                                             ? [
                                                   `Available equipment: ${profileConstraints.available_equipment.join(', ')}`,
                                               ]
@@ -432,7 +483,8 @@ export default function AiPlannerPage() {
                             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                                 <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
                                     <div className="text-lg font-semibold text-foreground">
-                                        {plan.overview?.summary ?? 'Structured weekly plan'}
+                                        {plan.overview?.summary ??
+                                            'Structured weekly plan'}
                                     </div>
                                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                                         <div>
@@ -440,7 +492,10 @@ export default function AiPlannerPage() {
                                                 Constraints
                                             </div>
                                             <ul className="mt-2 space-y-2 text-sm text-foreground">
-                                                {(plan.overview?.key_constraints ?? []).map((item) => (
+                                                {(
+                                                    plan.overview
+                                                        ?.key_constraints ?? []
+                                                ).map((item) => (
                                                     <li key={item}>- {item}</li>
                                                 ))}
                                             </ul>
@@ -450,7 +505,10 @@ export default function AiPlannerPage() {
                                                 Assumptions
                                             </div>
                                             <ul className="mt-2 space-y-2 text-sm text-foreground">
-                                                {(plan.overview?.assumptions ?? []).map((item) => (
+                                                {(
+                                                    plan.overview
+                                                        ?.assumptions ?? []
+                                                ).map((item) => (
                                                     <li key={item}>- {item}</li>
                                                 ))}
                                             </ul>
@@ -461,15 +519,22 @@ export default function AiPlannerPage() {
                                 <div className="space-y-4">
                                     <SafetyCard
                                         title="Hard rules observed"
-                                        items={plan.safety?.hard_rules_observed ?? []}
+                                        items={
+                                            plan.safety?.hard_rules_observed ??
+                                            []
+                                        }
                                     />
                                     <SafetyCard
                                         title="Food avoidances"
-                                        items={plan.safety?.food_avoidances ?? []}
+                                        items={
+                                            plan.safety?.food_avoidances ?? []
+                                        }
                                     />
                                     <SafetyCard
                                         title="Exercise cautions"
-                                        items={plan.safety?.exercise_cautions ?? []}
+                                        items={
+                                            plan.safety?.exercise_cautions ?? []
+                                        }
                                     />
                                 </div>
                             </div>
@@ -486,74 +551,103 @@ export default function AiPlannerPage() {
                                             Daily targets
                                         </div>
                                         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                            {Object.entries(plan.diet?.daily_targets ?? {}).map(
-                                                ([key, value]) => (
-                                                    <div
-                                                        key={key}
-                                                        className="rounded-[20px] border border-border/70 bg-card/80 p-3"
-                                                    >
-                                                        <div className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                                                            {key.replaceAll('_', ' ')}
-                                                        </div>
-                                                        <div className="mt-2 text-lg font-semibold text-foreground">
-                                                            {String(value)}
-                                                        </div>
+                                            {Object.entries(
+                                                plan.diet?.daily_targets ?? {},
+                                            ).map(([key, value]) => (
+                                                <div
+                                                    key={key}
+                                                    className="rounded-[20px] border border-border/70 bg-card/80 p-3"
+                                                >
+                                                    <div className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                                                        {key.replaceAll(
+                                                            '_',
+                                                            ' ',
+                                                        )}
                                                     </div>
-                                                ),
-                                            )}
+                                                    <div className="mt-2 text-lg font-semibold text-foreground">
+                                                        {String(value)}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
                                     <div className="grid gap-4 lg:grid-cols-2">
-                                        {(plan.diet?.days ?? []).slice(0, 4).map((day) => (
-                                            <div
-                                                key={day.day_index}
-                                                className="rounded-[24px] border border-border/70 bg-background/72 p-4"
-                                            >
-                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    Day {day.day_index}
-                                                </div>
-                                                <div className="mt-1 text-lg font-semibold text-foreground">
-                                                    {day.theme ?? 'Balanced day'}
-                                                </div>
-                                                <div className="mt-4 space-y-3">
-                                                    {(day.meals ?? []).map((meal, index) => (
-                                                        <div
-                                                            key={`${day.day_index}-${meal.meal_code}-${index}`}
-                                                            className="rounded-[20px] border border-border/60 bg-card/80 p-3"
-                                                        >
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <div className="font-medium text-foreground">
-                                                                    {meal.title ?? meal.meal_code ?? 'Meal'}
-                                                                </div>
-                                                                {meal.target_kcal ? (
-                                                                    <div className="text-xs text-muted-foreground">
-                                                                        {meal.target_kcal} kcal
+                                        {(plan.diet?.days ?? [])
+                                            .slice(0, 4)
+                                            .map((day) => (
+                                                <div
+                                                    key={day.day_index}
+                                                    className="rounded-[24px] border border-border/70 bg-background/72 p-4"
+                                                >
+                                                    <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                        Day {day.day_index}
+                                                    </div>
+                                                    <div className="mt-1 text-lg font-semibold text-foreground">
+                                                        {day.theme ??
+                                                            'Balanced day'}
+                                                    </div>
+                                                    <div className="mt-4 space-y-3">
+                                                        {(day.meals ?? []).map(
+                                                            (meal, index) => (
+                                                                <div
+                                                                    key={`${day.day_index}-${meal.meal_code}-${index}`}
+                                                                    className="rounded-[20px] border border-border/60 bg-card/80 p-3"
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <div className="font-medium text-foreground">
+                                                                            {meal.title ??
+                                                                                meal.meal_code ??
+                                                                                'Meal'}
+                                                                        </div>
+                                                                        {meal.target_kcal ? (
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {
+                                                                                    meal.target_kcal
+                                                                                }{' '}
+                                                                                kcal
+                                                                            </div>
+                                                                        ) : null}
                                                                     </div>
-                                                                ) : null}
-                                                            </div>
-                                                            <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                                                                {(meal.items ?? []).map((item, itemIndex) => (
-                                                                    <li key={`${meal.title}-${item.name}-${itemIndex}`}>
-                                                                        <span className="font-medium text-foreground">
-                                                                            {item.name}
-                                                                        </span>
-                                                                        {item.portion ? ` - ${item.portion}` : ''}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    ))}
+                                                                    <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                                                                        {(
+                                                                            meal.items ??
+                                                                            []
+                                                                        ).map(
+                                                                            (
+                                                                                item,
+                                                                                itemIndex,
+                                                                            ) => (
+                                                                                <li
+                                                                                    key={`${meal.title}-${item.name}-${itemIndex}`}
+                                                                                >
+                                                                                    <span className="font-medium text-foreground">
+                                                                                        {
+                                                                                            item.name
+                                                                                        }
+                                                                                    </span>
+                                                                                    {item.portion
+                                                                                        ? ` - ${item.portion}`
+                                                                                        : ''}
+                                                                                </li>
+                                                                            ),
+                                                                        )}
+                                                                    </ul>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
                                     <SimpleListCard
                                         title="Grocery list"
-                                        items={(plan.diet?.grocery_list ?? []).map(
+                                        items={(
+                                            plan.diet?.grocery_list ?? []
+                                        ).map(
                                             (item) =>
                                                 `${item.category ? `${item.category}: ` : ''}${item.name ?? 'Item'}${item.quantity ? ` (${item.quantity})` : ''}`,
                                         )}
@@ -575,76 +669,105 @@ export default function AiPlannerPage() {
                             description="The workout side stays read-first here so the planner page feels different from the manual builder."
                         >
                             <div className="grid gap-4 lg:grid-cols-2">
-                                {(plan.workout?.weekly_schedule ?? []).map((day) => (
-                                    <div
-                                        key={`${day.day_index}-${day.focus}`}
-                                        className="rounded-[24px] border border-border/70 bg-background/72 p-4"
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    Day {day.day_index}
-                                                    {day.day_label ? ` - ${day.day_label}` : ''}
-                                                </div>
-                                                <div className="mt-1 text-lg font-semibold text-foreground">
-                                                    {day.focus ?? 'Workout day'}
-                                                </div>
-                                            </div>
-                                            <div className="rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground">
-                                                {day.session_type ?? 'session'}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                            {day.location ? (
-                                                <span className="haye-chip">{day.location}</span>
-                                            ) : null}
-                                            {day.duration_min ? (
-                                                <span className="haye-chip">{day.duration_min} min</span>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="mt-4 space-y-3">
-                                            {(day.exercises ?? []).length ? (
-                                                (day.exercises ?? []).map((exercise, index) => (
-                                                    <div
-                                                        key={`${day.day_index}-${exercise.name}-${index}`}
-                                                        className="rounded-[20px] border border-border/60 bg-card/80 p-3"
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <div className="font-medium text-foreground">
-                                                                {exercise.name}
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {exercise.sets ?? 0} sets
-                                                                {exercise.reps ? ` - ${exercise.reps}` : ''}
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 text-xs text-muted-foreground">
-                                                            {exercise.equipment ? `${exercise.equipment} - ` : ''}
-                                                            {exercise.rest_sec ? `${exercise.rest_sec}s rest` : 'Controlled pace'}
-                                                        </div>
-                                                        {exercise.safer_alternative ? (
-                                                            <div className="mt-2 text-xs text-foreground/80">
-                                                                Safer alternative: {exercise.safer_alternative}
-                                                            </div>
-                                                        ) : null}
+                                {(plan.workout?.weekly_schedule ?? []).map(
+                                    (day) => (
+                                        <div
+                                            key={`${day.day_index}-${day.focus}`}
+                                            className="rounded-[24px] border border-border/70 bg-background/72 p-4"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                        Day {day.day_index}
+                                                        {day.day_label
+                                                            ? ` - ${day.day_label}`
+                                                            : ''}
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div className="rounded-[20px] border border-dashed border-border/70 px-3 py-4 text-sm text-muted-foreground">
-                                                    Rest or recovery day.
+                                                    <div className="mt-1 text-lg font-semibold text-foreground">
+                                                        {day.focus ??
+                                                            'Workout day'}
+                                                    </div>
                                                 </div>
-                                            )}
+                                                <div className="rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground">
+                                                    {day.session_type ??
+                                                        'session'}
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                {day.location ? (
+                                                    <span className="haye-chip">
+                                                        {day.location}
+                                                    </span>
+                                                ) : null}
+                                                {day.duration_min ? (
+                                                    <span className="haye-chip">
+                                                        {day.duration_min} min
+                                                    </span>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="mt-4 space-y-3">
+                                                {(day.exercises ?? [])
+                                                    .length ? (
+                                                    (day.exercises ?? []).map(
+                                                        (exercise, index) => (
+                                                            <div
+                                                                key={`${day.day_index}-${exercise.name}-${index}`}
+                                                                className="rounded-[20px] border border-border/60 bg-card/80 p-3"
+                                                            >
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    <div className="font-medium text-foreground">
+                                                                        {
+                                                                            exercise.name
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {exercise.sets ??
+                                                                            0}{' '}
+                                                                        sets
+                                                                        {exercise.reps
+                                                                            ? ` - ${exercise.reps}`
+                                                                            : ''}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-2 text-xs text-muted-foreground">
+                                                                    {exercise.equipment
+                                                                        ? `${exercise.equipment} - `
+                                                                        : ''}
+                                                                    {exercise.rest_sec
+                                                                        ? `${exercise.rest_sec}s rest`
+                                                                        : 'Controlled pace'}
+                                                                </div>
+                                                                {exercise.safer_alternative ? (
+                                                                    <div className="mt-2 text-xs text-foreground/80">
+                                                                        Safer
+                                                                        alternative:{' '}
+                                                                        {
+                                                                            exercise.safer_alternative
+                                                                        }
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                        ),
+                                                    )
+                                                ) : (
+                                                    <div className="rounded-[20px] border border-dashed border-border/70 px-3 py-4 text-sm text-muted-foreground">
+                                                        Rest or recovery day.
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ),
+                                )}
                             </div>
 
                             <div className="mt-4 grid gap-4 lg:grid-cols-3">
                                 <SimpleListCard
                                     title="Progression rules"
-                                    items={plan.workout?.progression_rules ?? []}
+                                    items={
+                                        plan.workout?.progression_rules ?? []
+                                    }
                                 />
                                 <SimpleListCard
                                     title="Recovery rules"
@@ -667,10 +790,15 @@ export default function AiPlannerPage() {
                                         Review after
                                     </div>
                                     <div className="mt-2 text-2xl font-semibold text-foreground">
-                                        {plan.adaptive_review?.review_after_days ?? 7} days
+                                        {plan.adaptive_review
+                                            ?.review_after_days ?? 7}{' '}
+                                        days
                                     </div>
                                     <ul className="mt-4 space-y-2 text-sm text-foreground">
-                                        {(plan.adaptive_review?.checkpoints ?? []).map((item) => (
+                                        {(
+                                            plan.adaptive_review?.checkpoints ??
+                                            []
+                                        ).map((item) => (
                                             <li key={item}>- {item}</li>
                                         ))}
                                     </ul>
@@ -678,11 +806,17 @@ export default function AiPlannerPage() {
                                 <div className="space-y-4">
                                     <SimpleListCard
                                         title="Replanning triggers"
-                                        items={plan.adaptive_review?.replanning_triggers ?? []}
+                                        items={
+                                            plan.adaptive_review
+                                                ?.replanning_triggers ?? []
+                                        }
                                     />
                                     <SimpleListCard
                                         title="Next data to collect"
-                                        items={plan.adaptive_review?.next_data_to_collect ?? []}
+                                        items={
+                                            plan.adaptive_review
+                                                ?.next_data_to_collect ?? []
+                                        }
                                     />
                                 </div>
                             </div>
@@ -717,7 +851,8 @@ export default function AiPlannerPage() {
                                         `Base weekly weight change: ${plan.progress_prediction?.feedback_adjustment?.base_weekly_weight_change_kg ?? '-'} kg`,
                                         `Adjusted weekly change: ${plan.progress_prediction?.feedback_adjustment?.adjusted_weekly_weight_change_kg ?? '-'} kg`,
                                         `Last prediction error: ${plan.progress_prediction?.feedback_adjustment?.last_prediction_error_kg_per_week ?? '-'} kg/week`,
-                                        plan.progress_prediction?.feedback_adjustment?.notes ??
+                                        plan.progress_prediction
+                                            ?.feedback_adjustment?.notes ??
                                             'Prediction updates as you log real results.',
                                     ]}
                                 />
@@ -731,11 +866,17 @@ export default function AiPlannerPage() {
                             <div className="grid gap-4 lg:grid-cols-3">
                                 <SimpleListCard
                                     title="Candidate features"
-                                    items={plan.ml_readiness?.candidate_features ?? []}
+                                    items={
+                                        plan.ml_readiness?.candidate_features ??
+                                        []
+                                    }
                                 />
                                 <SimpleListCard
                                     title="Candidate targets"
-                                    items={plan.ml_readiness?.candidate_targets ?? []}
+                                    items={
+                                        plan.ml_readiness?.candidate_targets ??
+                                        []
+                                    }
                                 />
                                 <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
                                     <div className="text-lg font-semibold text-foreground">
@@ -753,9 +894,15 @@ export default function AiPlannerPage() {
 
                 <ProductStickyActions>
                     <div className="mr-auto flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>Active nutrition: {sourceLabel(nutritionPlan?.ai_request)}</span>
+                        <span>
+                            Active nutrition:{' '}
+                            {sourceLabel(nutritionPlan?.ai_request)}
+                        </span>
                         <span>-</span>
-                        <span>Active workout: {sourceLabel(workoutPlan?.ai_request)}</span>
+                        <span>
+                            Active workout:{' '}
+                            {sourceLabel(workoutPlan?.ai_request)}
+                        </span>
                     </div>
                     <Link
                         href="/track-meals"
@@ -795,10 +942,11 @@ function SimpleListCard({ title, items }: { title: string; items: string[] }) {
                 {items.length ? (
                     items.map((item) => <li key={item}>- {item}</li>)
                 ) : (
-                    <li className="text-muted-foreground">Nothing recorded yet.</li>
+                    <li className="text-muted-foreground">
+                        Nothing recorded yet.
+                    </li>
                 )}
             </ul>
         </div>
     );
 }
-

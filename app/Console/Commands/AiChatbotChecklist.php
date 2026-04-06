@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\AiConversation;
 use App\Models\User;
+use App\Services\Ai\Evaluation\ChatChecklistQualityScorer;
 use App\Services\Ai\Chat\ChatOrchestrator;
+use App\Services\Ai\Runtime\FeatureConfigResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -19,7 +21,7 @@ class AiChatbotChecklist extends Command
 
     protected $description = 'Run the chatbot mode checklist and export JSON + Markdown results.';
 
-    public function handle(ChatOrchestrator $orchestrator): int
+    public function handle(ChatOrchestrator $orchestrator, ChatChecklistQualityScorer $scorer): int
     {
         $userId = (int) $this->argument('userId');
         $user = User::query()->find($userId);
@@ -83,12 +85,17 @@ class AiChatbotChecklist extends Command
             $results[$sectionKey] = $sectionResults;
         }
 
+        $quality = $scorer->score($user, $results);
+        $results = $quality['sections'];
+        $qualitySummary = $quality['summary'];
+
         $payload = [
             'ran_at' => $startedAt->toIso8601String(),
             'user_id' => $user->id,
             'user_email' => $user->email,
-            'chat_provider' => (string) config('ai.chat.provider', 'unknown'),
+            'chat_provider' => app(FeatureConfigResolver::class)->provider(FeatureConfigResolver::FEATURE_CHAT),
             'sections' => $results,
+            'quality_summary' => $qualitySummary,
         ];
 
         File::put($jsonPath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -222,6 +229,10 @@ class AiChatbotChecklist extends Command
         $lines[] = '- Ran at: '.(string) ($payload['ran_at'] ?? '');
         $lines[] = '- User: '.(string) ($payload['user_email'] ?? '').' (ID '.(string) ($payload['user_id'] ?? '').')';
         $lines[] = '- Chat provider: '.(string) ($payload['chat_provider'] ?? '');
+        $overallQuality = data_get($payload, 'quality_summary.overall.quality_percentage');
+        if (is_numeric($overallQuality)) {
+            $lines[] = '- Overall quality: '.number_format((float) $overallQuality, 2).'%';
+        }
 
         $sectionTitles = [
             'personalized' => 'Personalized',
@@ -234,6 +245,11 @@ class AiChatbotChecklist extends Command
         foreach ((array) ($payload['sections'] ?? []) as $sectionKey => $entries) {
             $lines[] = '';
             $lines[] = '## '.($sectionTitles[$sectionKey] ?? (string) $sectionKey);
+            $sectionQuality = data_get($payload, "quality_summary.by_section.{$sectionKey}.quality_percentage");
+            if (is_numeric($sectionQuality)) {
+                $lines[] = '';
+                $lines[] = '- Section quality: '.number_format((float) $sectionQuality, 2).'%';
+            }
 
             foreach ((array) $entries as $entry) {
                 $idx = (int) ($entry['index'] ?? 0);
@@ -241,6 +257,7 @@ class AiChatbotChecklist extends Command
                 $answer = (string) ($entry['answer'] ?? '');
                 $intent = (string) ($entry['intent'] ?? '');
                 $model = (string) ($entry['model'] ?? '');
+                $quality = data_get($entry, 'quality.quality_percentage');
 
                 $lines[] = '';
                 $lines[] = "### {$sectionKey} #{$idx}";
@@ -253,10 +270,12 @@ class AiChatbotChecklist extends Command
                 $lines[] = '';
                 $lines[] = "- Intent: `{$intent}`";
                 $lines[] = "- Model: `{$model}`";
+                if (is_numeric($quality)) {
+                    $lines[] = '- Quality: `'.number_format((float) $quality, 2).'%`';
+                }
             }
         }
 
         return implode("\n", $lines)."\n";
     }
 }
-

@@ -4,14 +4,18 @@ namespace App\Services\Ai\Chat;
 
 use App\Models\Measurement;
 use App\Models\User;
+use App\Services\Ai\Profile\UserSafetyProfileResolver;
 
 class UserProfileFactResolver
 {
+    public function __construct(
+        private readonly UserSafetyProfileResolver $safetyProfileResolver,
+    ) {}
+
     public function resolve(User $user): array
     {
-        $user->loadMissing('prefs');
-
-        $settings = is_array($user->prefs?->settings) ? $user->prefs->settings : [];
+        $user->loadMissing(['prefs', 'dietaryRestrictions', 'medicalHistories']);
+        $safetyProfile = $this->safetyProfileResolver->resolve($user);
 
         $latestWeightMeasurement = Measurement::query()
             ->where('user_id', $user->id)
@@ -42,11 +46,11 @@ class UserProfileFactResolver
             'activity_level' => $this->cleanString($user->activity_level),
             'workout_location' => $this->cleanString($user->workout_location),
             'workout_days_per_week' => $user->workout_days_per_week !== null ? (int) $user->workout_days_per_week : null,
-            'diet_type' => $this->cleanString($user->diet_name),
-            'allergies' => $this->normalizeList($user->allergies),
-            'medical_conditions' => $this->normalizeList($user->medical_history),
-            'injuries' => $this->normalizeList($settings['injury_history'] ?? $settings['injuries'] ?? []),
-            'available_equipment' => $this->normalizeList($settings['available_equipment'] ?? []),
+            'diet_type' => $this->cleanString($safetyProfile['diet_type'] ?? $user->diet_name),
+            'allergies' => $this->normalizeList($safetyProfile['allergies'] ?? []),
+            'medical_conditions' => $this->normalizeList($safetyProfile['medical_conditions'] ?? []),
+            'injuries' => $this->normalizeList($safetyProfile['injuries'] ?? []),
+            'available_equipment' => $this->normalizeList($safetyProfile['available_equipment'] ?? []),
         ];
     }
 

@@ -1,0 +1,10 @@
+user_id,email,horizon_days,status,version,generation_id,ai_request_id,provider,model,inference_source,review_after_days,diet_days_count,workout_days_count,duration_ms,error
+1,test@example.com,14,success,10,bf505786-1d1d-409d-b248-5d49db0230e7,352,local_fallback,hayetak-local-fallback-v1,ml_blend,14,14,7,5057,
+1,test@example.com,21,success,11,a17b6cb6-d2eb-474c-a51d-e7dc0d22e65f,353,local_fallback,hayetak-local-fallback-v1,ml_blend,21,21,7,4988,
+1,test@example.com,28,success,12,a42c5a85-3287-4eab-b6a5-7f9beda62a92,354,local_fallback,hayetak-local-fallback-v1,ml_blend,28,28,7,5126,
+40,bingchillin1812@gmail.com,14,success,25,8eebe13d-01c8-4270-8cfe-f5779cfec15c,355,local_fallback,hayetak-local-fallback-v1,ml_blend,14,14,7,4613,
+40,bingchillin1812@gmail.com,21,success,26,14ae3e15-66e3-4d3e-96e0-1fbc65a642ce,356,local_fallback,hayetak-local-fallback-v1,ml_blend,21,21,7,4997,
+40,bingchillin1812@gmail.com,28,success,27,4578461e-8399-4352-96b9-de98152b6d10,357,local_fallback,hayetak-local-fallback-v1,ml_blend,28,28,7,5156,
+50,iemmerich@example.net,14,success,5,fcdb8371-98c7-4102-ad86-92f48f7f91b0,358,local_fallback,hayetak-local-fallback-v1,ml_blend,14,14,7,4547,
+50,iemmerich@example.net,21,success,6,be69e4ab-eec6-42a9-9192-6ff72da6d5bc,359,local_fallback,hayetak-local-fallback-v1,ml_blend,21,21,7,4928,
+50,iemmerich@example.net,28,success,7,8f55001b-dae5-43e6-a084-c089b08cea25,360,local_fallback,hayetak-local-fallback-v1,ml_blend,28,28,7,5198,

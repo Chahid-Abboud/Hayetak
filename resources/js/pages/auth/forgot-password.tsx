@@ -1,14 +1,20 @@
 import PasswordResetLinkController from '@/actions/App/Http/Controllers/Auth/PasswordResetLinkController';
 import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { ProductBanner } from '@/components/product/page';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
-import { ArrowLeft, LoaderCircle, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+    ArrowLeft,
+    LoaderCircle,
+    Mail,
+    ShieldCheck,
+    Sparkles,
+} from 'lucide-react';
 
 const fieldClass =
     'h-[52px] rounded-[20px] border-border/70 bg-background/78 px-4 text-sm shadow-[0_18px_40px_-30px_rgba(15,23,42,0.8)] placeholder:text-muted-foreground/70';
@@ -22,9 +28,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <Head title="Forgot password" />
 
             {status ? (
-                <ProductBanner tone="success">
-                    {status}
-                </ProductBanner>
+                <ProductBanner tone="success">{status}</ProductBanner>
             ) : null}
 
             <div className="mb-6 rounded-[24px] border border-border/70 bg-background/72 p-4 shadow-[0_20px_40px_-32px_rgba(15,23,42,0.75)]">
@@ -37,7 +41,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </div>
             </div>
 
-            <Form {...PasswordResetLinkController.store.form()} className="space-y-6">
+            <Form
+                {...PasswordResetLinkController.store.form()}
+                className="space-y-6"
+            >
                 {({ processing, errors }) => (
                     <>
                         <div className="space-y-2.5">
@@ -79,7 +86,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
             </Form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-                <TextLink href={login()} className="inline-flex items-center gap-1.5">
+                <TextLink
+                    href={login()}
+                    className="inline-flex items-center gap-1.5"
+                >
                     <ArrowLeft className="size-3.5" />
                     Back to sign in
                 </TextLink>

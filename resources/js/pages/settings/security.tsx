@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
 import SettingsLayout from '@/layouts/settings/layout';
 import { disable, enable } from '@/routes/two-factor';
-import { Form, Head } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
+import { Form, Head } from '@inertiajs/react';
 import { ShieldBan, ShieldCheck } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -57,10 +57,14 @@ export default function Security({
                                             Password
                                         </div>
                                         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                            Use a long, unique password for your Hayetak account.
+                                            Use a long, unique password for your
+                                            Hayetak account.
                                         </p>
                                     </div>
-                                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                                    <Badge
+                                        variant="outline"
+                                        className="rounded-full px-3 py-1"
+                                    >
                                         Active
                                     </Badge>
                                 </div>
@@ -73,14 +77,21 @@ export default function Security({
                                             Two-factor authentication
                                         </div>
                                         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                            Add an authenticator code during sign-in for extra protection.
+                                            Add an authenticator code during
+                                            sign-in for extra protection.
                                         </p>
                                     </div>
                                     <Badge
-                                        variant={twoFactorEnabled ? 'default' : 'outline'}
+                                        variant={
+                                            twoFactorEnabled
+                                                ? 'default'
+                                                : 'outline'
+                                        }
                                         className="rounded-full px-3 py-1"
                                     >
-                                        {twoFactorEnabled ? 'Enabled' : 'Optional'}
+                                        {twoFactorEnabled
+                                            ? 'Enabled'
+                                            : 'Optional'}
                                     </Badge>
                                 </div>
                             </div>
@@ -111,7 +122,11 @@ export default function Security({
                             }}
                             className="space-y-6"
                         >
-                            {({ errors: formErrors, processing, recentlySuccessful }) => (
+                            {({
+                                errors: formErrors,
+                                processing,
+                                recentlySuccessful,
+                            }) => (
                                 <>
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="grid gap-2 sm:col-span-2">
@@ -129,7 +144,11 @@ export default function Security({
                                                 placeholder="Current password"
                                             />
 
-                                            <InputError message={formErrors.current_password} />
+                                            <InputError
+                                                message={
+                                                    formErrors.current_password
+                                                }
+                                            />
                                         </div>
 
                                         <div className="grid gap-2">
@@ -147,7 +166,9 @@ export default function Security({
                                                 placeholder="New password"
                                             />
 
-                                            <InputError message={formErrors.password} />
+                                            <InputError
+                                                message={formErrors.password}
+                                            />
                                         </div>
 
                                         <div className="grid gap-2">
@@ -165,7 +186,9 @@ export default function Security({
                                             />
 
                                             <InputError
-                                                message={formErrors.password_confirmation}
+                                                message={
+                                                    formErrors.password_confirmation
+                                                }
                                             />
                                         </div>
                                     </div>
@@ -204,10 +227,16 @@ export default function Security({
                                 <div className="space-y-2">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Badge
-                                            variant={twoFactorEnabled ? 'default' : 'outline'}
+                                            variant={
+                                                twoFactorEnabled
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
                                             className="rounded-full px-3 py-1"
                                         >
-                                            {twoFactorEnabled ? 'Enabled' : 'Optional'}
+                                            {twoFactorEnabled
+                                                ? 'Enabled'
+                                                : 'Optional'}
                                         </Badge>
                                         {!twoFactorEnabled ? (
                                             <Badge
@@ -229,7 +258,8 @@ export default function Security({
                             {twoFactorEnabled ? (
                                 <div className="space-y-4">
                                     <ProductBanner tone="success">
-                                        Two-factor authentication is active for this account.
+                                        Two-factor authentication is active for
+                                        this account.
                                     </ProductBanner>
 
                                     <TwoFactorRecoveryCodes
@@ -254,14 +284,17 @@ export default function Security({
                             ) : (
                                 <div className="space-y-4">
                                     <ProductBanner>
-                                        You can enable two-factor authentication now or skip it for later.
-                                        If you started setup already, continue from this page.
+                                        You can enable two-factor authentication
+                                        now or skip it for later. If you started
+                                        setup already, continue from this page.
                                     </ProductBanner>
 
                                     {hasSetupData ? (
                                         <Button
                                             type="button"
-                                            onClick={() => setShowSetupModal(true)}
+                                            onClick={() =>
+                                                setShowSetupModal(true)
+                                            }
                                         >
                                             <ShieldCheck />
                                             Continue setup
@@ -269,10 +302,15 @@ export default function Security({
                                     ) : (
                                         <Form
                                             {...enable.form()}
-                                            onSuccess={() => setShowSetupModal(true)}
+                                            onSuccess={() =>
+                                                setShowSetupModal(true)
+                                            }
                                         >
                                             {({ processing }) => (
-                                                <Button type="submit" disabled={processing}>
+                                                <Button
+                                                    type="submit"
+                                                    disabled={processing}
+                                                >
                                                     <ShieldCheck />
                                                     Enable 2FA
                                                 </Button>

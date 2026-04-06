@@ -39,7 +39,11 @@ export default function WaterCard({
     const overflowPct = Math.max(0, Math.min(100, pctFloat - 100));
     const remaining = Math.max(0, water.target_ml - water.today_ml);
     const status =
-        pctFloat >= 100 ? 'Target reached' : pctFloat >= 65 ? 'On pace' : 'Build momentum';
+        pctFloat >= 100
+            ? 'Target reached'
+            : pctFloat >= 65
+              ? 'On pace'
+              : 'Build momentum';
 
     const trackStyle: React.CSSProperties = {
         position: 'relative',
@@ -84,11 +88,9 @@ export default function WaterCard({
         opacity: 0.25,
     };
 
-    const QuickAddButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({
-        className = '',
-        style,
-        ...rest
-    }) => (
+    const QuickAddButton: React.FC<
+        React.ButtonHTMLAttributes<HTMLButtonElement>
+    > = ({ className = '', style, ...rest }) => (
         <button
             {...rest}
             className={`rounded-2xl border px-3 py-2 text-sm font-medium ${className}`}
@@ -128,7 +130,10 @@ export default function WaterCard({
                     aria-valuemax={100}
                     aria-valuenow={Math.round(Math.min(100, pctFloat))}
                 >
-                    <div className="absolute inset-y-0 left-0 z-[1]" style={fillStyle}>
+                    <div
+                        className="absolute inset-y-0 left-0 z-[1]"
+                        style={fillStyle}
+                    >
                         <div style={capStyle} />
                     </div>
                     {overStyle ? <div style={overStyle} aria-hidden /> : null}
@@ -145,7 +150,8 @@ export default function WaterCard({
                         <span
                             className="rounded-full border px-2.5 py-1"
                             style={{
-                                borderColor: 'color-mix(in oklab, var(--destructive) 35%, var(--border))',
+                                borderColor:
+                                    'color-mix(in oklab, var(--destructive) 35%, var(--border))',
                                 color: 'var(--destructive)',
                             }}
                         >
@@ -177,7 +183,9 @@ export default function WaterCard({
                         Next move
                     </div>
                     <div className="mt-2 text-lg font-semibold text-foreground">
-                        {remaining > 0 ? `${Math.min(500, remaining)} mL` : 'Sip to maintain'}
+                        {remaining > 0
+                            ? `${Math.min(500, remaining)} mL`
+                            : 'Sip to maintain'}
                     </div>
                 </div>
             </div>

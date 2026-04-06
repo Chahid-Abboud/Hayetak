@@ -6,6 +6,7 @@ use App\Models\AiPlan;
 use App\Models\AiRequest;
 use App\Models\User;
 use App\Services\Ai\Context\PlannerContextBuilder;
+use App\Services\Ai\Evaluation\PlannerRunQualityScorer;
 use App\Services\Ai\Models\ProgressPredictionModel;
 use App\Services\Ai\Persistence\PlannerPersistenceService;
 use App\Services\Ai\Planner\PlannerProfileSyncService;
@@ -32,6 +33,7 @@ class PlannerService
         private readonly AiUsageLogger $usageLogger,
         private readonly PlannerLocalFallbackService $localFallback,
         private readonly ProgressPredictionModel $progressPrediction,
+        private readonly PlannerRunQualityScorer $qualityScorer,
     ) {}
 
     public function generate(User $user, array $options = []): array
@@ -116,6 +118,7 @@ class PlannerService
                 $context,
                 $planHorizonDays
             );
+            $quality = $this->qualityScorer->score($user, $validated, $planHorizonDays, $profile);
 
             $generationId = (string) Str::uuid();
 
@@ -141,6 +144,7 @@ class PlannerService
                     'generation_id' => $generationId,
                     'ai_request_id' => $aiRequest->id,
                     'provider' => $response['provider'] ?? $this->features->provider(FeatureConfigResolver::FEATURE_PLANNER),
+                    'quality' => $quality,
                 ]
             );
 
@@ -162,6 +166,7 @@ class PlannerService
                     'output_tokens' => (int) ($response['usage']['output_tokens'] ?? 0),
                     'total_tokens' => (int) ($response['usage']['total_tokens'] ?? 0),
                 ],
+                'quality' => $quality,
             ];
         } catch (Throwable $e) {
             $this->finishAiRequest($aiRequest, null, [

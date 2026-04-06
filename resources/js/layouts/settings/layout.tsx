@@ -26,7 +26,8 @@ type SettingsNavGroup = {
 const sidebarGroups: SettingsNavGroup[] = [
     {
         label: 'General',
-        description: 'Your profile page now includes identity, preferences, and appearance controls.',
+        description:
+            'Your profile page now includes identity, preferences, and appearance controls.',
         items: [
             {
                 title: 'Profile',
@@ -106,13 +107,15 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                             <div className="rounded-[20px] border border-border/70 bg-card/85 p-4">
                                 <p className="haye-kicker">Profile</p>
                                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    Keep goals, allergies, and baseline data aligned.
+                                    Keep goals, allergies, and baseline data
+                                    aligned.
                                 </p>
                             </div>
                             <div className="rounded-[20px] border border-border/70 bg-card/85 p-4">
                                 <p className="haye-kicker">Security</p>
                                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    Password and two-factor stay in the same lane.
+                                    Password and two-factor stay in the same
+                                    lane.
                                 </p>
                             </div>
                         </div>
@@ -133,70 +136,75 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
                 <aside className="xl:sticky xl:top-8 xl:self-start">
                     <div className="rounded-[28px] border border-border/70 bg-card/95 p-4 shadow-sm">
-                    <div className="space-y-4">
-                        {sidebarGroups.map((group) => (
-                            <section key={group.label} className="space-y-2">
-                                <div className="space-y-1 px-2">
-                                    <h2 className="text-sm font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                        {group.label}
-                                    </h2>
-                                    <p className="text-sm leading-6 text-muted-foreground">
-                                        {group.description}
-                                    </p>
-                                </div>
+                        <div className="space-y-4">
+                            {sidebarGroups.map((group) => (
+                                <section
+                                    key={group.label}
+                                    className="space-y-2"
+                                >
+                                    <div className="space-y-1 px-2">
+                                        <h2 className="text-sm font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                            {group.label}
+                                        </h2>
+                                        <p className="text-sm leading-6 text-muted-foreground">
+                                            {group.description}
+                                        </p>
+                                    </div>
 
-                                <nav className="grid gap-2">
-                                    {group.items.map((item) => {
-                                        const active = [
-                                            item.href,
-                                            ...(item.matches ?? []),
-                                        ].includes(currentPath);
+                                    <nav className="grid gap-2">
+                                        {group.items.map((item) => {
+                                            const active = [
+                                                item.href,
+                                                ...(item.matches ?? []),
+                                            ].includes(currentPath);
 
-                                        return (
-                                            <Button
-                                                key={item.href}
-                                                size="sm"
-                                                variant="ghost"
-                                                asChild
-                                                className={cn(
-                                                    'h-auto justify-start rounded-[22px] px-4 py-3 text-left',
-                                                    active
-                                                        ? 'border border-primary/20 bg-primary/10 text-foreground shadow-[0_12px_30px_-24px_rgba(23,38,60,0.55)] hover:bg-primary/10'
-                                                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
-                                                )}
-                                            >
-                                                <Link href={item.href}>
-                                                    <div className="flex items-start gap-3">
-                                                        <span
-                                                            className={cn(
-                                                                'mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl border',
-                                                                active
-                                                                    ? 'border-primary/20 bg-primary/12 text-foreground'
-                                                                    : 'border-border/70 bg-background/80 text-muted-foreground',
-                                                            )}
-                                                        >
-                                                            <item.icon className="h-4 w-4" />
-                                                        </span>
-                                                        <div className="min-w-0 space-y-1">
-                                                            <div className="font-medium">
-                                                                {item.title}
+                                            return (
+                                                <Button
+                                                    key={item.href}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    asChild
+                                                    className={cn(
+                                                        'h-auto justify-start rounded-[22px] px-4 py-3 text-left',
+                                                        active
+                                                            ? 'border border-primary/20 bg-primary/10 text-foreground shadow-[0_12px_30px_-24px_rgba(23,38,60,0.55)] hover:bg-primary/10'
+                                                            : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                                                    )}
+                                                >
+                                                    <Link href={item.href}>
+                                                        <div className="flex items-start gap-3">
+                                                            <span
+                                                                className={cn(
+                                                                    'mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl border',
+                                                                    active
+                                                                        ? 'border-primary/20 bg-primary/12 text-foreground'
+                                                                        : 'border-border/70 bg-background/80 text-muted-foreground',
+                                                                )}
+                                                            >
+                                                                <item.icon className="h-4 w-4" />
+                                                            </span>
+                                                            <div className="min-w-0 space-y-1">
+                                                                <div className="font-medium">
+                                                                    {item.title}
+                                                                </div>
+                                                                <div className="text-xs leading-5 text-muted-foreground">
+                                                                    {
+                                                                        item.helper
+                                                                    }
+                                                                </div>
                                                             </div>
-                                                            <div className="text-xs leading-5 text-muted-foreground">
-                                                                {item.helper}
-                                                            </div>
+                                                            {active ? (
+                                                                <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+                                                            ) : null}
                                                         </div>
-                                                        {active ? (
-                                                            <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                                                        ) : null}
-                                                    </div>
-                                                </Link>
-                                            </Button>
-                                        );
-                                    })}
-                                </nav>
-                            </section>
-                        ))}
-                    </div>
+                                                    </Link>
+                                                </Button>
+                                            );
+                                        })}
+                                    </nav>
+                                </section>
+                            ))}
+                        </div>
                     </div>
                 </aside>
 

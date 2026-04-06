@@ -76,7 +76,9 @@ type PageProps = {
     exercises: Exercise[];
 };
 
-function sourceLabel(source?: { provider?: string | null; model?: string | null } | null) {
+function sourceLabel(
+    source?: { provider?: string | null; model?: string | null } | null,
+) {
     const provider = source?.provider?.trim();
     const model = source?.model?.trim();
 
@@ -105,19 +107,25 @@ function buildInitialDraft(plan?: WorkoutPlan | null): DayDraft[] {
             exercises: (day.exercises ?? []).map((exercise) => ({
                 exercise_id: exercise.id,
                 target_sets: exercise.pivot?.sets ?? 3,
-                target_reps: exercise.pivot?.reps_min ?? exercise.pivot?.reps_max ?? 10,
+                target_reps:
+                    exercise.pivot?.reps_min ?? exercise.pivot?.reps_max ?? 10,
             })),
         }));
 }
 
 function stringifyErrors(errors: InertiaErrors): Record<string, string> {
-    return Object.entries(errors).reduce<Record<string, string>>((carry, [key, value]) => {
-        carry[key] = String(value);
-        return carry;
-    }, {});
+    return Object.entries(errors).reduce<Record<string, string>>(
+        (carry, [key, value]) => {
+            carry[key] = String(value);
+            return carry;
+        },
+        {},
+    );
 }
 
-function templateDays(key: 'fullBody3' | 'pushPullLegs3' | 'upperLower4'): DayDraft[] {
+function templateDays(
+    key: 'fullBody3' | 'pushPullLegs3' | 'upperLower4',
+): DayDraft[] {
     if (key === 'upperLower4') {
         return [
             { day_index: 1, name: 'Upper A', exercises: [] },
@@ -143,15 +151,26 @@ function templateDays(key: 'fullBody3' | 'pushPullLegs3' | 'upperLower4'): DayDr
 }
 
 export default function WorkoutPlannerPage() {
-    const { activeAiPlan, manualPlan, premadePlans, recommendedAiDayId, exercises } =
-        usePage<PageProps>().props;
+    const {
+        activeAiPlan,
+        manualPlan,
+        premadePlans,
+        recommendedAiDayId,
+        exercises,
+    } = usePage<PageProps>().props;
 
     const [mode, setMode] = useState<'follow-ai' | 'build-own'>(
         activeAiPlan ? 'follow-ai' : 'build-own',
     );
-    const [draftName, setDraftName] = useState(manualPlan?.name ?? 'My Workout Draft');
-    const [draftDays, setDraftDays] = useState<DayDraft[]>(buildInitialDraft(manualPlan));
-    const [selectedDay, setSelectedDay] = useState<number>(draftDays[0]?.day_index ?? 1);
+    const [draftName, setDraftName] = useState(
+        manualPlan?.name ?? 'My Workout Draft',
+    );
+    const [draftDays, setDraftDays] = useState<DayDraft[]>(
+        buildInitialDraft(manualPlan),
+    );
+    const [selectedDay, setSelectedDay] = useState<number>(
+        draftDays[0]?.day_index ?? 1,
+    );
     const [query, setQuery] = useState('');
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<string | null>(null);
@@ -167,13 +186,16 @@ export default function WorkoutPlannerPage() {
         if (token === '') return exercises.slice(0, 60);
 
         return exercises.filter((exercise) => {
-            const haystack = `${exercise.name} ${exercise.primary_muscle} ${exercise.equipment ?? ''}`.toLowerCase();
+            const haystack =
+                `${exercise.name} ${exercise.primary_muscle} ${exercise.equipment ?? ''}`.toLowerCase();
             return haystack.includes(token);
         });
     }, [exercises, query]);
 
     const activeDraftDay =
-        draftDays.find((day) => day.day_index === selectedDay) ?? draftDays[0] ?? null;
+        draftDays.find((day) => day.day_index === selectedDay) ??
+        draftDays[0] ??
+        null;
 
     const saveDraft = () => {
         setSaving(true);
@@ -194,15 +216,21 @@ export default function WorkoutPlannerPage() {
                         only: ['manualPlan', 'recommendedManualDayId'],
                     });
                 },
-                onError: (incomingErrors) => setErrors(stringifyErrors(incomingErrors)),
+                onError: (incomingErrors) =>
+                    setErrors(stringifyErrors(incomingErrors)),
                 onFinish: () => setSaving(false),
             },
         );
     };
 
-    const updateDay = (dayIndex: number, updater: (day: DayDraft) => DayDraft) => {
+    const updateDay = (
+        dayIndex: number,
+        updater: (day: DayDraft) => DayDraft,
+    ) => {
         setDraftDays((current) =>
-            current.map((day) => (day.day_index === dayIndex ? updater(day) : day)),
+            current.map((day) =>
+                day.day_index === dayIndex ? updater(day) : day,
+            ),
         );
     };
 
@@ -210,7 +238,11 @@ export default function WorkoutPlannerPage() {
         if (!activeDraftDay) return;
 
         updateDay(activeDraftDay.day_index, (day) => {
-            if (day.exercises.some((exercise) => exercise.exercise_id === exerciseId)) {
+            if (
+                day.exercises.some(
+                    (exercise) => exercise.exercise_id === exerciseId,
+                )
+            ) {
                 return day;
             }
 
@@ -237,7 +269,11 @@ export default function WorkoutPlannerPage() {
 
                 <ProductHero
                     eyebrow="Workout Planner"
-                    title={mode === 'follow-ai' ? 'Follow the generated structure' : 'Build your own draft'}
+                    title={
+                        mode === 'follow-ai'
+                            ? 'Follow the generated structure'
+                            : 'Build your own draft'
+                    }
                     description={
                         mode === 'follow-ai'
                             ? "This mode is read-first and action-first: it shows the AI plan you are meant to follow, today's recommended day, and the cleanest path into the workout log."
@@ -268,7 +304,9 @@ export default function WorkoutPlannerPage() {
                                     type="button"
                                     onClick={() =>
                                         setMode((current) =>
-                                            current === 'follow-ai' ? 'build-own' : 'follow-ai',
+                                            current === 'follow-ai'
+                                                ? 'build-own'
+                                                : 'follow-ai',
                                         )
                                     }
                                     className="inline-flex h-11 items-center rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card"
@@ -294,10 +332,13 @@ export default function WorkoutPlannerPage() {
                     }
                 />
 
-                {status ? <ProductBanner tone="success">{status}</ProductBanner> : null}
+                {status ? (
+                    <ProductBanner tone="success">{status}</ProductBanner>
+                ) : null}
                 {Object.keys(errors).length ? (
                     <ProductBanner tone="danger">
-                        There were validation errors while saving your custom draft.
+                        There were validation errors while saving your custom
+                        draft.
                     </ProductBanner>
                 ) : null}
 
@@ -309,15 +350,23 @@ export default function WorkoutPlannerPage() {
                                 description="The recommended card appears first so following the plan feels easier than rebuilding it."
                             >
                                 <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-                                    <AiDayCard day={aiRecommendedDay} featured />
+                                    <AiDayCard
+                                        day={aiRecommendedDay}
+                                        featured
+                                    />
                                     <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
                                         <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                                             Weekly structure
                                         </div>
                                         <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                            {(activeAiPlan.days ?? []).map((day) => (
-                                                <AiDayCard key={day.id} day={day} />
-                                            ))}
+                                            {(activeAiPlan.days ?? []).map(
+                                                (day) => (
+                                                    <AiDayCard
+                                                        key={day.id}
+                                                        day={day}
+                                                    />
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -331,24 +380,35 @@ export default function WorkoutPlannerPage() {
                                     <MetaListCard
                                         title="Progression rules"
                                         items={
-                                            Array.isArray(activeAiPlan.meta?.progression_rules)
-                                                ? (activeAiPlan.meta?.progression_rules as string[])
+                                            Array.isArray(
+                                                activeAiPlan.meta
+                                                    ?.progression_rules,
+                                            )
+                                                ? (activeAiPlan.meta
+                                                      ?.progression_rules as string[])
                                                 : []
                                         }
                                     />
                                     <MetaListCard
                                         title="Recovery rules"
                                         items={
-                                            Array.isArray(activeAiPlan.meta?.recovery_rules)
-                                                ? (activeAiPlan.meta?.recovery_rules as string[])
+                                            Array.isArray(
+                                                activeAiPlan.meta
+                                                    ?.recovery_rules,
+                                            )
+                                                ? (activeAiPlan.meta
+                                                      ?.recovery_rules as string[])
                                                 : []
                                         }
                                     />
                                     <MetaListCard
                                         title="Coach notes"
                                         items={
-                                            Array.isArray(activeAiPlan.meta?.coach_notes)
-                                                ? (activeAiPlan.meta?.coach_notes as string[])
+                                            Array.isArray(
+                                                activeAiPlan.meta?.coach_notes,
+                                            )
+                                                ? (activeAiPlan.meta
+                                                      ?.coach_notes as string[])
                                                 : []
                                         }
                                     />
@@ -381,7 +441,9 @@ export default function WorkoutPlannerPage() {
                                         Draft name
                                         <input
                                             value={draftName}
-                                            onChange={(event) => setDraftName(event.target.value)}
+                                            onChange={(event) =>
+                                                setDraftName(event.target.value)
+                                            }
                                             className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
                                         />
                                     </label>
@@ -393,18 +455,32 @@ export default function WorkoutPlannerPage() {
                                         <div className="mt-3 grid gap-2">
                                             {[
                                                 ['fullBody3', 'Full Body 3'],
-                                                ['pushPullLegs3', 'Push / Pull / Legs'],
-                                                ['upperLower4', 'Upper / Lower 4'],
+                                                [
+                                                    'pushPullLegs3',
+                                                    'Push / Pull / Legs',
+                                                ],
+                                                [
+                                                    'upperLower4',
+                                                    'Upper / Lower 4',
+                                                ],
                                             ].map(([key, label]) => (
                                                 <button
                                                     key={key}
                                                     type="button"
                                                     onClick={() => {
-                                                        const next = templateDays(
-                                                            key as 'fullBody3' | 'pushPullLegs3' | 'upperLower4',
-                                                        );
+                                                        const next =
+                                                            templateDays(
+                                                                key as
+                                                                    | 'fullBody3'
+                                                                    | 'pushPullLegs3'
+                                                                    | 'upperLower4',
+                                                            );
                                                         setDraftDays(next);
-                                                        setSelectedDay(next[0]?.day_index ?? 1);
+                                                        setSelectedDay(
+                                                            next[0]
+                                                                ?.day_index ??
+                                                                1,
+                                                        );
                                                     }}
                                                     className="inline-flex items-center justify-between rounded-2xl border border-border/70 bg-card px-3 py-3 text-left text-sm font-medium text-foreground transition hover:bg-background"
                                                 >
@@ -421,26 +497,44 @@ export default function WorkoutPlannerPage() {
                                         </div>
                                         <div className="mt-3 grid gap-2">
                                             {(premadePlans ?? []).length ? (
-                                                (premadePlans ?? []).map((plan) => (
-                                                    <button
-                                                        key={plan.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const next = buildInitialDraft(plan);
-                                                            setDraftName(`${plan.name} (Copy)`);
-                                                            setDraftDays(next);
-                                                            setSelectedDay(next[0]?.day_index ?? 1);
-                                                            setStatus(`Loaded prototype: ${plan.name}`);
-                                                        }}
-                                                        className="inline-flex items-center justify-between rounded-2xl border border-border/70 bg-card px-3 py-3 text-left text-sm font-medium text-foreground transition hover:bg-background"
-                                                    >
-                                                        <span>{plan.name}</span>
-                                                        <WandSparkles className="h-4 w-4 text-muted-foreground" />
-                                                    </button>
-                                                ))
+                                                (premadePlans ?? []).map(
+                                                    (plan) => (
+                                                        <button
+                                                            key={plan.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const next =
+                                                                    buildInitialDraft(
+                                                                        plan,
+                                                                    );
+                                                                setDraftName(
+                                                                    `${plan.name} (Copy)`,
+                                                                );
+                                                                setDraftDays(
+                                                                    next,
+                                                                );
+                                                                setSelectedDay(
+                                                                    next[0]
+                                                                        ?.day_index ??
+                                                                        1,
+                                                                );
+                                                                setStatus(
+                                                                    `Loaded prototype: ${plan.name}`,
+                                                                );
+                                                            }}
+                                                            className="inline-flex items-center justify-between rounded-2xl border border-border/70 bg-card px-3 py-3 text-left text-sm font-medium text-foreground transition hover:bg-background"
+                                                        >
+                                                            <span>
+                                                                {plan.name}
+                                                            </span>
+                                                            <WandSparkles className="h-4 w-4 text-muted-foreground" />
+                                                        </button>
+                                                    ),
+                                                )
                                             ) : (
                                                 <p className="text-xs text-muted-foreground">
-                                                    No premade prototypes are available yet.
+                                                    No premade prototypes are
+                                                    available yet.
                                                 </p>
                                             )}
                                         </div>
@@ -451,9 +545,14 @@ export default function WorkoutPlannerPage() {
                                             <button
                                                 key={day.day_index}
                                                 type="button"
-                                                onClick={() => setSelectedDay(day.day_index)}
+                                                onClick={() =>
+                                                    setSelectedDay(
+                                                        day.day_index,
+                                                    )
+                                                }
                                                 className={`w-full rounded-[24px] border px-4 py-3 text-left transition ${
-                                                    day.day_index === selectedDay
+                                                    day.day_index ===
+                                                    selectedDay
                                                         ? 'border-primary/30 bg-primary/10 text-foreground'
                                                         : 'border-border/70 bg-background/72 text-foreground hover:bg-card'
                                                 }`}
@@ -462,10 +561,12 @@ export default function WorkoutPlannerPage() {
                                                     Day {day.day_index}
                                                 </div>
                                                 <div className="mt-1 text-base font-semibold">
-                                                    {day.name || `Workout Day ${day.day_index}`}
+                                                    {day.name ||
+                                                        `Workout Day ${day.day_index}`}
                                                 </div>
                                                 <div className="mt-1 text-xs text-muted-foreground">
-                                                    {day.exercises.length} exercises
+                                                    {day.exercises.length}{' '}
+                                                    exercises
                                                 </div>
                                             </button>
                                         ))}
@@ -477,148 +578,191 @@ export default function WorkoutPlannerPage() {
                                         <>
                                             <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
                                                 <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    Editing day {activeDraftDay.day_index}
+                                                    Editing day{' '}
+                                                    {activeDraftDay.day_index}
                                                 </div>
                                                 <input
                                                     value={activeDraftDay.name}
                                                     onChange={(event) =>
-                                                        updateDay(activeDraftDay.day_index, (day) => ({
-                                                            ...day,
-                                                            name: event.target.value,
-                                                        }))
+                                                        updateDay(
+                                                            activeDraftDay.day_index,
+                                                            (day) => ({
+                                                                ...day,
+                                                                name: event
+                                                                    .target
+                                                                    .value,
+                                                            }),
+                                                        )
                                                     }
                                                     placeholder="Day title"
                                                     className="mt-3 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-base font-semibold text-foreground"
                                                 />
                                                 <div className="mt-4 space-y-3">
-                                                    {activeDraftDay.exercises.length ? (
-                                                        activeDraftDay.exercises.map((exercise, index) => {
-                                                            const details = exercises.find(
-                                                                (candidate) =>
-                                                                    candidate.id === exercise.exercise_id,
-                                                            );
+                                                    {activeDraftDay.exercises
+                                                        .length ? (
+                                                        activeDraftDay.exercises.map(
+                                                            (
+                                                                exercise,
+                                                                index,
+                                                            ) => {
+                                                                const details =
+                                                                    exercises.find(
+                                                                        (
+                                                                            candidate,
+                                                                        ) =>
+                                                                            candidate.id ===
+                                                                            exercise.exercise_id,
+                                                                    );
 
-                                                            return (
-                                                                <div
-                                                                    key={`${activeDraftDay.day_index}-${exercise.exercise_id}-${index}`}
-                                                                    className="rounded-[22px] border border-border/70 bg-card/80 p-4"
-                                                                >
-                                                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                                                        <div>
-                                                                            <div className="font-medium text-foreground">
-                                                                                {details?.name ??
-                                                                                    `Exercise #${exercise.exercise_id}`}
+                                                                return (
+                                                                    <div
+                                                                        key={`${activeDraftDay.day_index}-${exercise.exercise_id}-${index}`}
+                                                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                                                    >
+                                                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                                                            <div>
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {details?.name ??
+                                                                                        `Exercise #${exercise.exercise_id}`}
+                                                                                </div>
+                                                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                                                    {details?.primary_muscle ??
+                                                                                        'General'}
+                                                                                    {details?.equipment
+                                                                                        ? ` - ${details.equipment}`
+                                                                                        : ''}
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                                                {details?.primary_muscle ?? 'General'}
-                                                                                {details?.equipment
-                                                                                    ? ` - ${details.equipment}`
-                                                                                    : ''}
-                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    updateDay(
+                                                                                        activeDraftDay.day_index,
+                                                                                        (
+                                                                                            day,
+                                                                                        ) => ({
+                                                                                            ...day,
+                                                                                            exercises:
+                                                                                                day.exercises.filter(
+                                                                                                    (
+                                                                                                        _,
+                                                                                                        itemIndex,
+                                                                                                    ) =>
+                                                                                                        itemIndex !==
+                                                                                                        index,
+                                                                                                ),
+                                                                                        }),
+                                                                                    )
+                                                                                }
+                                                                                className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
+                                                                            >
+                                                                                Remove
+                                                                            </button>
                                                                         </div>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                updateDay(
-                                                                                    activeDraftDay.day_index,
-                                                                                    (day) => ({
-                                                                                        ...day,
-                                                                                        exercises:
-                                                                                            day.exercises.filter(
-                                                                                                (_, itemIndex) =>
-                                                                                                    itemIndex !==
-                                                                                                    index,
-                                                                                            ),
-                                                                                    }),
-                                                                                )
-                                                                            }
-                                                                            className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
-                                                                        >
-                                                                            Remove
-                                                                        </button>
-                                                                    </div>
 
-                                                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                                                        <label className="text-sm font-medium text-foreground">
-                                                                            Sets
-                                                                            <input
-                                                                                type="number"
-                                                                                min={1}
-                                                                                max={10}
-                                                                                value={exercise.target_sets}
-                                                                                onChange={(event) =>
-                                                                                    updateDay(
-                                                                                        activeDraftDay.day_index,
-                                                                                        (day) => ({
-                                                                                            ...day,
-                                                                                            exercises:
-                                                                                                day.exercises.map(
-                                                                                                    (
-                                                                                                        item,
-                                                                                                        itemIndex,
-                                                                                                    ) =>
-                                                                                                        itemIndex ===
-                                                                                                        index
-                                                                                                            ? {
-                                                                                                                  ...item,
-                                                                                                                  target_sets:
-                                                                                                                      Number(
-                                                                                                                          event
-                                                                                                                              .target
-                                                                                                                              .value,
-                                                                                                                      ) ||
-                                                                                                                      1,
-                                                                                                              }
-                                                                                                            : item,
-                                                                                                ),
-                                                                                        }),
-                                                                                    )
-                                                                                }
-                                                                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
-                                                                            />
-                                                                        </label>
-                                                                        <label className="text-sm font-medium text-foreground">
-                                                                            Target reps
-                                                                            <input
-                                                                                type="number"
-                                                                                min={1}
-                                                                                max={30}
-                                                                                value={exercise.target_reps}
-                                                                                onChange={(event) =>
-                                                                                    updateDay(
-                                                                                        activeDraftDay.day_index,
-                                                                                        (day) => ({
-                                                                                            ...day,
-                                                                                            exercises:
-                                                                                                day.exercises.map(
-                                                                                                    (
-                                                                                                        item,
-                                                                                                        itemIndex,
-                                                                                                    ) =>
-                                                                                                        itemIndex ===
-                                                                                                        index
-                                                                                                            ? {
-                                                                                                                  ...item,
-                                                                                                                  target_reps:
-                                                                                                                      Number(
-                                                                                                                          event
-                                                                                                                              .target
-                                                                                                                              .value,
-                                                                                                                      ) ||
-                                                                                                                      1,
-                                                                                                              }
-                                                                                                            : item,
-                                                                                                ),
-                                                                                        }),
-                                                                                    )
-                                                                                }
-                                                                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
-                                                                            />
-                                                                        </label>
+                                                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                                            <label className="text-sm font-medium text-foreground">
+                                                                                Sets
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={
+                                                                                        1
+                                                                                    }
+                                                                                    max={
+                                                                                        10
+                                                                                    }
+                                                                                    value={
+                                                                                        exercise.target_sets
+                                                                                    }
+                                                                                    onChange={(
+                                                                                        event,
+                                                                                    ) =>
+                                                                                        updateDay(
+                                                                                            activeDraftDay.day_index,
+                                                                                            (
+                                                                                                day,
+                                                                                            ) => ({
+                                                                                                ...day,
+                                                                                                exercises:
+                                                                                                    day.exercises.map(
+                                                                                                        (
+                                                                                                            item,
+                                                                                                            itemIndex,
+                                                                                                        ) =>
+                                                                                                            itemIndex ===
+                                                                                                            index
+                                                                                                                ? {
+                                                                                                                      ...item,
+                                                                                                                      target_sets:
+                                                                                                                          Number(
+                                                                                                                              event
+                                                                                                                                  .target
+                                                                                                                                  .value,
+                                                                                                                          ) ||
+                                                                                                                          1,
+                                                                                                                  }
+                                                                                                                : item,
+                                                                                                    ),
+                                                                                            }),
+                                                                                        )
+                                                                                    }
+                                                                                    className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                                                                                />
+                                                                            </label>
+                                                                            <label className="text-sm font-medium text-foreground">
+                                                                                Target
+                                                                                reps
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={
+                                                                                        1
+                                                                                    }
+                                                                                    max={
+                                                                                        30
+                                                                                    }
+                                                                                    value={
+                                                                                        exercise.target_reps
+                                                                                    }
+                                                                                    onChange={(
+                                                                                        event,
+                                                                                    ) =>
+                                                                                        updateDay(
+                                                                                            activeDraftDay.day_index,
+                                                                                            (
+                                                                                                day,
+                                                                                            ) => ({
+                                                                                                ...day,
+                                                                                                exercises:
+                                                                                                    day.exercises.map(
+                                                                                                        (
+                                                                                                            item,
+                                                                                                            itemIndex,
+                                                                                                        ) =>
+                                                                                                            itemIndex ===
+                                                                                                            index
+                                                                                                                ? {
+                                                                                                                      ...item,
+                                                                                                                      target_reps:
+                                                                                                                          Number(
+                                                                                                                              event
+                                                                                                                                  .target
+                                                                                                                                  .value,
+                                                                                                                          ) ||
+                                                                                                                          1,
+                                                                                                                  }
+                                                                                                                : item,
+                                                                                                    ),
+                                                                                            }),
+                                                                                        )
+                                                                                    }
+                                                                                    className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                                                                                />
+                                                                            </label>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            );
-                                                        })
+                                                                );
+                                                            },
+                                                        )
                                                     ) : (
                                                         <ProductEmptyState
                                                             title="No exercises yet"
@@ -639,7 +783,9 @@ export default function WorkoutPlannerPage() {
                                                     Exercise library
                                                 </div>
                                                 <div className="mt-1 text-lg font-semibold text-foreground">
-                                                    Add to day {activeDraftDay?.day_index ?? selectedDay}
+                                                    Add to day{' '}
+                                                    {activeDraftDay?.day_index ??
+                                                        selectedDay}
                                                 </div>
                                             </div>
                                             <div className="text-xs text-muted-foreground">
@@ -649,47 +795,65 @@ export default function WorkoutPlannerPage() {
 
                                         <input
                                             value={query}
-                                            onChange={(event) => setQuery(event.target.value)}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
                                             placeholder="Search by name, muscle, or equipment"
                                             className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
                                         />
 
                                         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                                            {filteredLibrary.slice(0, 18).map((exercise) => {
-                                                const alreadyAdded =
-                                                    activeDraftDay?.exercises.some(
-                                                        (item) => item.exercise_id === exercise.id,
-                                                    ) ?? false;
+                                            {filteredLibrary
+                                                .slice(0, 18)
+                                                .map((exercise) => {
+                                                    const alreadyAdded =
+                                                        activeDraftDay?.exercises.some(
+                                                            (item) =>
+                                                                item.exercise_id ===
+                                                                exercise.id,
+                                                        ) ?? false;
 
-                                                return (
-                                                    <div
-                                                        key={exercise.id}
-                                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
-                                                    >
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div>
-                                                                <div className="font-medium text-foreground">
-                                                                    {exercise.name}
+                                                    return (
+                                                        <div
+                                                            key={exercise.id}
+                                                            className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <div className="font-medium text-foreground">
+                                                                        {
+                                                                            exercise.name
+                                                                        }
+                                                                    </div>
+                                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                                        {
+                                                                            exercise.primary_muscle
+                                                                        }
+                                                                        {exercise.equipment
+                                                                            ? ` - ${exercise.equipment}`
+                                                                            : ''}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="mt-1 text-xs text-muted-foreground">
-                                                                    {exercise.primary_muscle}
-                                                                    {exercise.equipment
-                                                                        ? ` - ${exercise.equipment}`
-                                                                        : ''}
-                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={
+                                                                        alreadyAdded
+                                                                    }
+                                                                    onClick={() =>
+                                                                        addExercise(
+                                                                            exercise.id,
+                                                                        )
+                                                                    }
+                                                                    className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+                                                                >
+                                                                    {alreadyAdded
+                                                                        ? 'Added'
+                                                                        : 'Add'}
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                disabled={alreadyAdded}
-                                                                onClick={() => addExercise(exercise.id)}
-                                                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
-                                                            >
-                                                                {alreadyAdded ? 'Added' : 'Add'}
-                                                            </button>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
                                         </div>
                                     </div>
                                 </div>
@@ -698,7 +862,8 @@ export default function WorkoutPlannerPage() {
 
                         <ProductStickyActions>
                             <div className="mr-auto text-sm text-muted-foreground">
-                                This draft stays separate from the active AI workout plan.
+                                This draft stays separate from the active AI
+                                workout plan.
                             </div>
                             <button
                                 type="button"
@@ -731,8 +896,14 @@ function AiDayCard({
         );
     }
 
-    const sessionType = typeof day.meta?.session_type === 'string' ? day.meta.session_type : null;
-    const duration = typeof day.meta?.duration_min === 'number' ? day.meta.duration_min : null;
+    const sessionType =
+        typeof day.meta?.session_type === 'string'
+            ? day.meta.session_type
+            : null;
+    const duration =
+        typeof day.meta?.duration_min === 'number'
+            ? day.meta.duration_min
+            : null;
 
     return (
         <div
@@ -754,9 +925,15 @@ function AiDayCard({
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {sessionType ? <span className="haye-chip">{sessionType}</span> : null}
-                {duration ? <span className="haye-chip">{duration} min</span> : null}
-                <span className="haye-chip">{day.exercises.length} exercises</span>
+                {sessionType ? (
+                    <span className="haye-chip">{sessionType}</span>
+                ) : null}
+                {duration ? (
+                    <span className="haye-chip">{duration} min</span>
+                ) : null}
+                <span className="haye-chip">
+                    {day.exercises.length} exercises
+                </span>
             </div>
             <div className="mt-4 space-y-2">
                 {day.exercises.slice(0, featured ? 5 : 3).map((exercise) => (
@@ -767,8 +944,12 @@ function AiDayCard({
                         <div className="font-medium">{exercise.name}</div>
                         <div className="text-xs text-muted-foreground">
                             {exercise.pivot?.sets ?? 0} sets
-                            {exercise.pivot?.reps_min ? ` - ${exercise.pivot.reps_min}` : ''}
-                            {exercise.equipment ? ` - ${exercise.equipment}` : ''}
+                            {exercise.pivot?.reps_min
+                                ? ` - ${exercise.pivot.reps_min}`
+                                : ''}
+                            {exercise.equipment
+                                ? ` - ${exercise.equipment}`
+                                : ''}
                         </div>
                     </div>
                 ))}
@@ -798,10 +979,11 @@ function MetaListCard({ title, items }: { title: string; items: string[] }) {
                 {items.length ? (
                     items.map((item) => <li key={item}>- {item}</li>)
                 ) : (
-                    <li className="text-muted-foreground">Nothing recorded yet.</li>
+                    <li className="text-muted-foreground">
+                        Nothing recorded yet.
+                    </li>
                 )}
             </ul>
         </div>
     );
 }
-
