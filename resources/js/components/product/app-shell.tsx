@@ -11,12 +11,10 @@ import {
     CalendarDays,
     Dumbbell,
     LayoutDashboard,
-    type LucideIcon,
     LogOut,
     MapPin,
     Menu,
     MessageSquare,
-    Palette,
     Search,
     Settings2,
     ShieldCheck,
@@ -24,6 +22,7 @@ import {
     UserRound,
     Users,
     UtensilsCrossed,
+    type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -157,7 +156,9 @@ function ShellSidebar({
         <div
             className={cn(
                 'flex h-full flex-col overflow-hidden rounded-[32px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl',
-                mobile ? 'm-3 h-[calc(100svh-1.5rem)]' : 'h-[calc(100svh-2rem)]',
+                mobile
+                    ? 'm-3 h-[calc(100svh-1.5rem)]'
+                    : 'h-[calc(100svh-2rem)]',
             )}
         >
             <div className="border-b border-[color:var(--sidebar-border)] px-4 py-4">
@@ -384,7 +385,7 @@ export function AppProductShell({
                 href: '/workouts/log',
                 label: 'Workouts',
                 icon: Dumbbell,
-                match: ['/planner', '/workouts/plan'],
+                match: ['/workouts/plan'],
                 keywords: ['workout log', 'workouts', 'training'],
             },
             {
@@ -449,22 +450,46 @@ export function AppProductShell({
             ];
         }
 
-        const groups: NavGroup[] = [
+        const generalItems: NavItem[] = [
             {
-                label: 'Planning',
-                items: [
-                    {
-                        href: '/track-meals',
-                        label: 'Meal Tracker',
-                        icon: UtensilsCrossed,
-                    },
-                    {
-                        href: '/workouts/plan',
-                        label: 'Workout Planner',
-                        icon: Dumbbell,
-                        match: ['/planner'],
-                    },
-                ],
+                href: '/ai/planner',
+                label: 'AI Planner',
+                icon: Sparkles,
+                keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
+                match: ['/planner'],
+            },
+            {
+                href: '/track-meals',
+                label: 'Meal Tracker',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/workouts/plan',
+                label: 'Workout Planner',
+                icon: Dumbbell,
+            },
+        ];
+
+        if (role === 'trainer') {
+            generalItems.push({
+                href: '/trainer/clients',
+                label: 'My Clients',
+                icon: Users,
+            });
+        }
+
+        if (role === 'nutritionist') {
+            generalItems.push({
+                href: '/dietitian/clients',
+                label: 'My Clients',
+                icon: Users,
+            });
+        }
+
+        return [
+            {
+                label: 'General',
+                items: generalItems,
             },
             {
                 label: 'Account',
@@ -475,51 +500,14 @@ export function AppProductShell({
                         icon: UserRound,
                     },
                     {
-                        href: '/settings/password',
-                        label: 'Password',
+                        href: '/settings/security',
+                        label: 'Security',
                         icon: ShieldCheck,
-                    },
-                    {
-                        href: '/settings/two-factor',
-                        label: 'Two-Factor',
-                        icon: Settings2,
-                    },
-                    {
-                        href: '/settings/appearance',
-                        label: 'Appearance',
-                        icon: Palette,
+                        match: ['/settings/password', '/settings/two-factor'],
                     },
                 ],
             },
         ];
-
-        if (role === 'trainer') {
-            groups.splice(1, 0, {
-                label: 'Clients',
-                items: [
-                    {
-                        href: '/trainer/clients',
-                        label: 'My Clients',
-                        icon: Users,
-                    },
-                ],
-            });
-        }
-
-        if (role === 'nutritionist') {
-            groups.splice(1, 0, {
-                label: 'Clients',
-                items: [
-                    {
-                        href: '/dietitian/clients',
-                        label: 'My Clients',
-                        icon: Users,
-                    },
-                ],
-            });
-        }
-
-        return groups;
     }, [role]);
 
     const allNavItems = useMemo(
@@ -531,7 +519,8 @@ export function AppProductShell({
     );
 
     const activeItem =
-        allNavItems.find((item) => matchesPath(pathname, item)) ?? primaryNav[0];
+        allNavItems.find((item) => matchesPath(pathname, item)) ??
+        primaryNav[0];
 
     const paletteItems = useMemo<CommandPaletteItem[]>(() => {
         const navigationItems = primaryNav.map((item) => ({
@@ -745,7 +734,9 @@ export function AppProductShell({
                                 </div>
                                 <div
                                     className="truncate text-lg tracking-tight text-foreground"
-                                    style={{ fontFamily: 'var(--font-display)' }}
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
                                 >
                                     {activeItem?.label ?? 'Dashboard'}
                                 </div>
@@ -771,7 +762,7 @@ export function AppProductShell({
                     <main
                         id="main-content"
                         className={cn(
-                            'flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-10 lg:pb-10 lg:pt-8',
+                            'flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-10 lg:pt-8 lg:pb-10',
                         )}
                     >
                         <div className={mainClassName}>{children}</div>

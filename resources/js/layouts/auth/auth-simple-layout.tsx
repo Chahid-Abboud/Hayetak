@@ -1,13 +1,7 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
-import {
-    Activity,
-    Brain,
-    ShieldCheck,
-    Sparkles,
-    Utensils,
-} from 'lucide-react';
+import { Activity, Brain, ShieldCheck, Sparkles, Utensils } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 interface AuthLayoutProps {

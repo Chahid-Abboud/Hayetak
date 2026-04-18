@@ -12,6 +12,7 @@ import {
     RefreshCcw,
     Search,
     ShieldAlert,
+    Sparkles,
     UtensilsCrossed,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -19,8 +20,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 type Conversation = {
     id: number;
     participants: Array<{ id: number; name: string }>;
-    peer?: { id: number; name: string; role?: string | null; city?: string | null } | null;
-    last_message?: { id: number; sender_id: number; body: string; created_at: string; read_at?: string | null } | null;
+    peer?: {
+        id: number;
+        name: string;
+        role?: string | null;
+        city?: string | null;
+    } | null;
+    last_message?: {
+        id: number;
+        sender_id: number;
+        body: string;
+        created_at: string;
+        read_at?: string | null;
+    } | null;
     unread_count: number;
     updated_at: string;
 };
@@ -53,6 +65,31 @@ function roleLabel(role?: string | null) {
         : role.charAt(0).toUpperCase() + role.slice(1);
 }
 
+function formatThreadTime(value?: string | null) {
+    if (!value) return 'Just now';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
+}
+
+function initialsFromName(name?: string | null) {
+    return (
+        name
+            ?.split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase() ?? '')
+            .join('') || 'H'
+    );
+}
+
 function isAbortError(error: unknown) {
     return error instanceof Error && error.name === 'AbortError';
 }
@@ -66,16 +103,51 @@ function needsFollowUp(conversation: Conversation, actorId: number) {
     if (!conversation.last_message) return false;
     if (conversation.last_message.sender_id === actorId) return false;
     const ageH =
-        (Date.now() - new Date(conversation.last_message.created_at).getTime()) /
+        (Date.now() -
+            new Date(conversation.last_message.created_at).getTime()) /
         (1000 * 60 * 60);
     return ageH >= 24;
+}
+
+function conversationState(
+    conversation: Conversation,
+    actorId: number,
+): { label: string; className: string } {
+    if (conversation.unread_count > 0) {
+        return {
+            label: `${conversation.unread_count} unread`,
+            className: 'border-secondary/20 bg-secondary/12 text-foreground',
+        };
+    }
+
+    if (needsFollowUp(conversation, actorId)) {
+        return {
+            label: 'Needs follow-up',
+            className: 'border-warning/25 bg-warning/10 text-foreground',
+        };
+    }
+
+    if (isProfessional(conversation.peer?.role)) {
+        return {
+            label: roleLabel(conversation.peer?.role),
+            className:
+                'border-border/70 bg-background/80 text-muted-foreground',
+        };
+    }
+
+    return {
+        label: 'Active',
+        className: 'border-border/70 bg-background/80 text-muted-foreground',
+    };
 }
 
 export default function MessagesPage() {
     const { auth } = usePage<SharedData>().props;
     const actorId = auth.user.id;
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+    const [activeConversationId, setActiveConversationId] = useState<
+        number | null
+    >(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [text, setText] = useState('');
     const [search, setSearch] = useState('');
@@ -84,8 +156,12 @@ export default function MessagesPage() {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
     const [loadingContext, setLoadingContext] = useState(false);
-    const [context, setContext] = useState<ConversationContextPayload | null>(null);
-    const [conversationError, setConversationError] = useState<string | null>(null);
+    const [context, setContext] = useState<ConversationContextPayload | null>(
+        null,
+    );
+    const [conversationError, setConversationError] = useState<string | null>(
+        null,
+    );
     const [messageError, setMessageError] = useState<string | null>(null);
     const [contextError, setContextError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -106,21 +182,29 @@ export default function MessagesPage() {
             const data = Array.isArray(json?.data) ? json.data : [];
             setConversations(data);
             setActiveConversationId((prev) => {
-                if (prev && data.some((item: Conversation) => item.id === prev)) {
+                if (
+                    prev &&
+                    data.some((item: Conversation) => item.id === prev)
+                ) {
                     return prev;
                 }
                 const requested = Number(
-                    new URLSearchParams(window.location.search).get('conversation'),
+                    new URLSearchParams(window.location.search).get(
+                        'conversation',
+                    ),
                 );
                 return (
-                    data.find((item: Conversation) => item.id === requested)?.id ??
+                    data.find((item: Conversation) => item.id === requested)
+                        ?.id ??
                     data[0]?.id ??
                     null
                 );
             });
         } catch (e) {
             setConversationError(
-                e instanceof Error ? e.message : 'Unable to load conversations.',
+                e instanceof Error
+                    ? e.message
+                    : 'Unable to load conversations.',
             );
         } finally {
             setLoadingConversations(false);
@@ -136,7 +220,10 @@ export default function MessagesPage() {
         try {
             const res = await fetch(
                 `/api/messages/conversations/${conversationId}/messages`,
-                { headers: { Accept: 'application/json' }, signal: controller.signal },
+                {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                },
             );
             if (!res.ok) throw new Error('Failed to load messages.');
             const json = await res.json();
@@ -150,7 +237,9 @@ export default function MessagesPage() {
             );
         } catch (e) {
             if (isAbortError(e)) return;
-            setMessageError(e instanceof Error ? e.message : 'Unable to load messages.');
+            setMessageError(
+                e instanceof Error ? e.message : 'Unable to load messages.',
+            );
             setMessages([]);
         } finally {
             if (messageControllerRef.current === controller) {
@@ -169,7 +258,10 @@ export default function MessagesPage() {
         try {
             const res = await fetch(
                 `/api/messages/conversations/${conversationId}/context`,
-                { headers: { Accept: 'application/json' }, signal: controller.signal },
+                {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                },
             );
             if (!res.ok) throw new Error('Failed to load thread context.');
             const json = await res.json();
@@ -177,7 +269,9 @@ export default function MessagesPage() {
         } catch (e) {
             if (isAbortError(e)) return;
             setContextError(
-                e instanceof Error ? e.message : 'Unable to load conversation context.',
+                e instanceof Error
+                    ? e.message
+                    : 'Unable to load conversation context.',
             );
             setContext(null);
         } finally {
@@ -243,7 +337,9 @@ export default function MessagesPage() {
             const json = await res.json();
             const nextMessage = json?.message as Message | undefined;
             setText('');
-            setMessages((prev) => (nextMessage ? [...prev, nextMessage] : prev));
+            setMessages((prev) =>
+                nextMessage ? [...prev, nextMessage] : prev,
+            );
             setConversations((prev) =>
                 prev.map((conversation) =>
                     conversation.id === activeConversationId
@@ -283,62 +379,85 @@ export default function MessagesPage() {
             const searchMatch =
                 q === '' ||
                 peerName.toLowerCase().includes(q) ||
-                (conversation.last_message?.body ?? '').toLowerCase().includes(q);
+                (conversation.last_message?.body ?? '')
+                    .toLowerCase()
+                    .includes(q);
             if (!searchMatch) return false;
             if (filter === 'unread') return conversation.unread_count > 0;
-            if (filter === 'follow_up') return needsFollowUp(conversation, actorId);
-            if (filter === 'professional') return isProfessional(conversation.peer?.role);
+            if (filter === 'follow_up')
+                return needsFollowUp(conversation, actorId);
+            if (filter === 'professional')
+                return isProfessional(conversation.peer?.role);
             return true;
         });
     }, [actorId, conversations, filter, search]);
 
     const activeConversation =
         conversations.find((item) => item.id === activeConversationId) ?? null;
+    const activeState = activeConversation
+        ? conversationState(activeConversation, actorId)
+        : null;
 
     const left = (
-        <aside className="h-full min-h-[70vh] overflow-hidden rounded-3xl border border-border/70 bg-card/95">
+        <aside className="h-full min-h-[70vh] overflow-hidden rounded-[30px] border border-border/70 bg-card/95 shadow-sm">
             <div className="space-y-3 border-b border-border/70 p-4">
-                <p className="text-sm font-semibold">Care Threads</p>
+                <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">
+                        Care Threads
+                    </p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                        Search across conversations, unread replies, and
+                        follow-up needs.
+                    </p>
+                </div>
                 <div className="relative">
                     <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
-                        className="h-10 w-full rounded-2xl border border-border/70 bg-background/80 pl-9 pr-3 text-sm"
+                        className="h-10 w-full rounded-2xl border border-border/70 bg-background/80 pr-3 pl-9 text-sm"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Search person or message"
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                    {(['all', 'unread', 'follow_up', 'professional'] as ConversationFilter[]).map(
-                        (item) => (
-                            <button
-                                key={item}
-                                type="button"
-                                onClick={() => setFilter(item)}
-                                className={
-                                    'rounded-full border px-2 py-1.5 transition ' +
-                                    (filter === item
-                                        ? 'border-primary/35 bg-primary/10 text-foreground'
-                                        : 'border-border/70 bg-background text-muted-foreground')
-                                }
-                            >
-                                {item === 'all'
-                                    ? 'All'
-                                    : item === 'unread'
-                                      ? 'Unread'
-                                      : item === 'follow_up'
-                                        ? 'Follow-up'
-                                        : 'Professionals'}
-                            </button>
-                        ),
-                    )}
+                    {(
+                        [
+                            'all',
+                            'unread',
+                            'follow_up',
+                            'professional',
+                        ] as ConversationFilter[]
+                    ).map((item) => (
+                        <button
+                            key={item}
+                            type="button"
+                            onClick={() => setFilter(item)}
+                            className={
+                                'rounded-full border px-2 py-1.5 transition ' +
+                                (filter === item
+                                    ? 'border-primary/35 bg-primary/10 text-foreground'
+                                    : 'border-border/70 bg-background text-muted-foreground')
+                            }
+                        >
+                            {item === 'all'
+                                ? 'All'
+                                : item === 'unread'
+                                  ? 'Unread'
+                                  : item === 'follow_up'
+                                    ? 'Follow-up'
+                                    : 'Professionals'}
+                        </button>
+                    ))}
                 </div>
             </div>
             <div className="max-h-[70vh] overflow-auto p-2">
                 {loadingConversations ? (
                     <div className="space-y-2">
                         {Array.from({ length: 4 }).map((_, index) => (
-                            <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+                            <Skeleton
+                                key={index}
+                                className="h-16 w-full rounded-2xl"
+                            />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
@@ -351,26 +470,66 @@ export default function MessagesPage() {
                             <button
                                 key={conversation.id}
                                 type="button"
-                                onClick={() => setActiveConversationId(conversation.id)}
+                                onClick={() =>
+                                    setActiveConversationId(conversation.id)
+                                }
                                 className={
-                                    'w-full rounded-2xl border px-3 py-3 text-left transition ' +
+                                    'w-full rounded-[22px] border px-3 py-3 text-left transition ' +
                                     (conversation.id === activeConversationId
-                                        ? 'border-primary/35 bg-primary/8'
+                                        ? 'border-primary/25 bg-primary/8 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.68)]'
                                         : 'border-transparent hover:border-border/70 hover:bg-muted/35')
                                 }
                             >
-                                <p className="truncate text-sm font-medium">
-                                    {conversation.peer?.name ?? `Conversation #${conversation.id}`}
-                                </p>
-                                <p className="mt-1 truncate text-xs text-muted-foreground">
-                                    {conversation.last_message?.body ?? 'No messages yet'}
-                                </p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">
-                                    {roleLabel(conversation.peer?.role)}
-                                    {conversation.unread_count > 0
-                                        ? ` • ${conversation.unread_count} unread`
-                                        : ''}
-                                </p>
+                                <div className="flex items-start gap-3">
+                                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/80 text-xs font-semibold text-foreground">
+                                        {initialsFromName(
+                                            conversation.peer?.name,
+                                        )}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-medium text-foreground">
+                                                    {conversation.peer?.name ??
+                                                        `Conversation #${conversation.id}`}
+                                                </p>
+                                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                                    {roleLabel(
+                                                        conversation.peer?.role,
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <span className="shrink-0 text-[10px] text-muted-foreground">
+                                                {formatThreadTime(
+                                                    conversation.last_message
+                                                        ?.created_at ??
+                                                        conversation.updated_at,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                                            {conversation.last_message?.body ??
+                                                'No messages yet'}
+                                        </p>
+                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                            <span
+                                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${conversationState(conversation, actorId).className}`}
+                                            >
+                                                {
+                                                    conversationState(
+                                                        conversation,
+                                                        actorId,
+                                                    ).label
+                                                }
+                                            </span>
+                                            {conversation.unread_count > 0 ? (
+                                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-[10px] font-semibold text-secondary-foreground">
+                                                    {conversation.unread_count}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                </div>
                             </button>
                         ))}
                     </div>
@@ -380,32 +539,58 @@ export default function MessagesPage() {
     );
 
     const right = (
-        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95">
+        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-[30px] border border-border/70 bg-card/95 shadow-sm">
             {!activeConversation ? (
                 <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
                     Select a conversation to open the thread.
                 </div>
             ) : (
                 <>
-                    <div className="border-b border-border/70 px-5 py-4">
-                        <p className="text-base font-semibold">
-                            {activeConversation.peer?.name ?? 'Conversation'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                            {roleLabel(activeConversation.peer?.role)}
-                            {activeConversation.peer?.city
-                                ? ` • ${activeConversation.peer.city}`
-                                : ''}
-                        </p>
+                    <div className="border-b border-border/70 bg-background/70 px-5 py-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-card text-sm font-semibold text-foreground">
+                                    {initialsFromName(
+                                        activeConversation.peer?.name,
+                                    )}
+                                </span>
+                                <div>
+                                    <p className="text-base font-semibold text-foreground">
+                                        {activeConversation.peer?.name ??
+                                            'Conversation'}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {roleLabel(
+                                            activeConversation.peer?.role,
+                                        )}
+                                        {activeConversation.peer?.city
+                                            ? ` • ${activeConversation.peer.city}`
+                                            : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            {activeState ? (
+                                <span
+                                    className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-medium ${activeState.className}`}
+                                >
+                                    {activeState.label}
+                                </span>
+                            ) : null}
+                        </div>
                     </div>
                     <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_300px]">
                         <div className="flex min-h-0 flex-col">
-                            <div className="min-h-0 flex-1 overflow-auto bg-muted/25 px-4 py-4">
+                            <div className="min-h-0 flex-1 overflow-auto bg-muted/25 px-4 py-5">
                                 {loadingMessages ? (
                                     <div className="space-y-2">
-                                        {Array.from({ length: 4 }).map((_, index) => (
-                                            <Skeleton key={index} className="h-16 w-full rounded-2xl" />
-                                        ))}
+                                        {Array.from({ length: 4 }).map(
+                                            (_, index) => (
+                                                <Skeleton
+                                                    key={index}
+                                                    className="h-16 w-full rounded-2xl"
+                                                />
+                                            ),
+                                        )}
                                     </div>
                                 ) : messages.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
@@ -414,25 +599,34 @@ export default function MessagesPage() {
                                 ) : (
                                     <div className="space-y-3">
                                         {messages.map((message) => {
-                                            const mine = message.sender_id === actorId;
+                                            const mine =
+                                                message.sender_id === actorId;
                                             return (
                                                 <div
                                                     key={message.id}
-                                                    className={mine ? 'flex justify-end' : 'flex justify-start'}
+                                                    className={
+                                                        mine
+                                                            ? 'flex justify-end'
+                                                            : 'flex justify-start'
+                                                    }
                                                 >
                                                     <div
                                                         className={
-                                                            'max-w-[80%] rounded-2xl px-4 py-3 text-sm ' +
+                                                            'max-w-[82%] rounded-[24px] px-4 py-3 text-sm shadow-sm ' +
                                                             (mine
                                                                 ? 'bg-primary text-primary-foreground'
-                                                                : 'border border-border/70 bg-background')
+                                                                : 'border border-border/70 bg-background/95')
                                                         }
                                                     >
                                                         <p className="mb-1 text-[11px] opacity-70">
                                                             {mine
                                                                 ? 'You'
-                                                                : (message.sender?.name ??
-                                                                  activeConversation.peer?.name ??
+                                                                : (message
+                                                                      .sender
+                                                                      ?.name ??
+                                                                  activeConversation
+                                                                      .peer
+                                                                      ?.name ??
                                                                   'Contact')}
                                                         </p>
                                                         <p className="whitespace-pre-wrap">
@@ -446,15 +640,20 @@ export default function MessagesPage() {
                                     </div>
                                 )}
                             </div>
-                            <div className="border-t border-border/70 p-4">
+                            <div className="border-t border-border/70 bg-background/75 p-4">
                                 <div className="flex items-end gap-3">
                                     <textarea
-                                        className="min-h-[48px] flex-1 resize-none rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm"
+                                        className="min-h-[52px] flex-1 resize-none rounded-[24px] border border-border/70 bg-card px-4 py-3 text-sm"
                                         value={text}
                                         disabled={loadingMessages || sending}
-                                        onChange={(e) => setText(e.target.value)}
+                                        onChange={(e) =>
+                                            setText(e.target.value)
+                                        }
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                !e.shiftKey
+                                            ) {
                                                 e.preventDefault();
                                                 void send();
                                             }
@@ -462,9 +661,13 @@ export default function MessagesPage() {
                                         placeholder="Write a message"
                                     />
                                     <button
-                                        className="rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                                        className="rounded-[22px] bg-primary px-4 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
                                         onClick={() => void send()}
-                                        disabled={loadingMessages || sending || !text.trim()}
+                                        disabled={
+                                            loadingMessages ||
+                                            sending ||
+                                            !text.trim()
+                                        }
                                     >
                                         {sending ? 'Sending...' : 'Send'}
                                     </button>
@@ -472,7 +675,12 @@ export default function MessagesPage() {
                             </div>
                         </div>
                         <aside className="border-t border-border/70 bg-background/70 px-4 py-4 xl:border-t-0 xl:border-l xl:border-border/70">
-                            <p className="text-sm font-semibold">Context Snapshot</p>
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-secondary" />
+                                <p className="text-sm font-semibold">
+                                    Context Snapshot
+                                </p>
+                            </div>
                             <div className="mt-3 space-y-3">
                                 {loadingContext ? (
                                     <>
@@ -492,13 +700,17 @@ export default function MessagesPage() {
                                             </p>
                                             <p>
                                                 Allergies:{' '}
-                                                {context.safety.allergies?.length
-                                                    ? context.safety.allergies.join(', ')
+                                                {context.safety.allergies
+                                                    ?.length
+                                                    ? context.safety.allergies.join(
+                                                          ', ',
+                                                      )
                                                     : 'None listed'}
                                             </p>
                                             <p>
                                                 Medical history:{' '}
-                                                {context.safety.has_medical_history
+                                                {context.safety
+                                                    .has_medical_history
                                                     ? 'Yes'
                                                     : 'No'}
                                             </p>
@@ -509,17 +721,26 @@ export default function MessagesPage() {
                                                 Today
                                             </p>
                                             <p>
-                                                Meals: {context.activity.today?.meals_logged ?? 0}
+                                                Meals:{' '}
+                                                {context.activity.today
+                                                    ?.meals_logged ?? 0}
                                             </p>
                                             <p>
                                                 Calories:{' '}
-                                                {context.activity.today?.meal_calories ?? 0}
+                                                {context.activity.today
+                                                    ?.meal_calories ?? 0}
                                             </p>
                                         </div>
                                         <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
-                                            <p className="mb-1 font-medium">Upcoming appointments</p>
+                                            <p className="mb-1 font-medium">
+                                                Upcoming appointments
+                                            </p>
                                             <p className="text-muted-foreground">
-                                                {context.appointments.upcoming_count} planned
+                                                {
+                                                    context.appointments
+                                                        .upcoming_count
+                                                }{' '}
+                                                planned
                                             </p>
                                             <a
                                                 href="/appointments"
@@ -563,7 +784,9 @@ export default function MessagesPage() {
                         </button>
                     }
                 />
-                {error ? <ProductBanner tone="danger">{error}</ProductBanner> : null}
+                {error ? (
+                    <ProductBanner tone="danger">{error}</ProductBanner>
+                ) : null}
                 <ResizablePanels
                     left={left}
                     right={right}
@@ -576,4 +799,3 @@ export default function MessagesPage() {
         </>
     );
 }
-

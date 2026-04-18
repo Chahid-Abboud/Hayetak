@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Food;
 use App\Models\FoodFavorite;
 use App\Models\MealEntry;
+use App\Models\NutritionPlanDay;
+use App\Models\NutritionPlanItem;
 use App\Models\User;
 use App\Models\UserPref;
 use Carbon\Carbon;
@@ -142,6 +144,13 @@ class MealTrackerService
         return is_array($arr) ? array_values($arr) : [];
     }
 
+    public function userDietName(int $userId): ?string
+    {
+        $dietName = User::query()->whereKey($userId)->value('diet_name');
+
+        return is_string($dietName) && trim($dietName) !== '' ? trim($dietName) : null;
+    }
+
     public function daySummary(int $userId, string $dateYmd): array
     {
         $date = Carbon::parse($dateYmd)->toDateString();
@@ -195,7 +204,11 @@ class MealTrackerService
         }
 
         // entries
-        $entries = MealEntry::with('food')
+        $entries = MealEntry::with([
+            'food',
+            'nutritionPlanItem.food',
+            'nutritionPlanItem.meal.day.plan',
+        ])
             ->where('user_id', $userId)
             ->whereDate('eaten_at', $date)
             ->orderBy('meal_type')->orderBy('id')
@@ -213,6 +226,8 @@ class MealTrackerService
                         'meal_type' => (string) $e->meal_type,
                         'servings' => $ratio,
                         'eaten_at' => $e->eaten_at?->toDateString(),
+                        'nutrition_plan_item_id' => $e->nutrition_plan_item_id,
+                        'plan_tracking' => $this->serializeEntryPlanTracking($e),
                         'food' => [
                             'id' => 0,
                             'name' => '',
@@ -234,6 +249,8 @@ class MealTrackerService
                     'servings' => $ratio,
                     // ✅ IDE + runtime safe
                     'eaten_at' => $e->eaten_at?->toDateString(),
+                    'nutrition_plan_item_id' => $e->nutrition_plan_item_id,
+                    'plan_tracking' => $this->serializeEntryPlanTracking($e),
                     'food' => [
                         'id' => (int) $f->id,
                         'name' => (string) $f->name,
@@ -264,6 +281,8 @@ class MealTrackerService
             'fat' => max(0, (float) $targets['fat'] - $dailyTotals['fat']),
         ] : null;
 
+        $plannedDay = $this->plannedDay($userId, $date);
+
         return [
             'date' => $date,
             'dailyTotals' => $dailyTotals,
@@ -271,6 +290,8 @@ class MealTrackerService
             'entries' => $entries,
             'targets' => $targets,
             'remaining' => $remaining,
+            'planModeAvailable' => $plannedDay !== null,
+            'plannedDay' => $plannedDay,
         ];
     }
 
@@ -345,5 +366,175 @@ class MealTrackerService
                 'is_favorite' => $isFav,
             ];
         })->values()->all();
+    }
+
+    public function plannedDay(int $userId, string $dateYmd): ?array
+    {
+        $date = Carbon::parse($dateYmd)->toDateString();
+
+        $day = NutritionPlanDay::query()
+            ->whereDate('date', $date)
+            ->whereHas('plan', function ($query) use ($userId): void {
+                $query
+                    ->where('user_id', $userId)
+                    ->where('is_active', true)
+                    ->whereNotNull('ai_request_id');
+            })
+            ->with([
+                'plan.aiRequest:id,provider,model,prompt_version,schema_version',
+                'meals' => fn ($query) => $query->orderBy('order'),
+                'meals.items.food',
+            ])
+            ->first();
+
+        if (! $day || ! $day->plan) {
+            return null;
+        }
+
+        $planEntries = MealEntry::query()
+            ->with('food')
+            ->where('user_id', $userId)
+            ->whereDate('eaten_at', $date)
+            ->whereNotNull('nutrition_plan_item_id')
+            ->get()
+            ->keyBy('nutrition_plan_item_id');
+
+        return [
+            'plan' => [
+                'id' => (int) $day->plan->id,
+                'name' => (string) $day->plan->name,
+                'goal' => $day->plan->goal,
+                'start_date' => optional($day->plan->start_date)->toDateString(),
+                'duration_days' => (int) ($day->plan->duration_days ?? 0),
+                'source' => [
+                    'provider' => $day->plan->aiRequest?->provider,
+                    'model' => $day->plan->aiRequest?->model,
+                ],
+            ],
+            'day' => [
+                'id' => (int) $day->id,
+                'day_index' => (int) $day->day_index,
+                'date' => $day->date?->toDateString(),
+                'notes' => $day->notes,
+            ],
+            'meals' => $day->meals->map(function ($meal) use ($planEntries) {
+                return [
+                    'id' => (int) $meal->id,
+                    'meal_type' => (string) $meal->meal_type,
+                    'order' => (int) ($meal->order ?? 0),
+                    'title' => $this->mealTitleFromNotes($meal->notes, (string) $meal->meal_type),
+                    'notes' => $meal->notes,
+                    'items' => $meal->items->map(function (NutritionPlanItem $item) use ($planEntries, $meal) {
+                        /** @var MealEntry|null $entry */
+                        $entry = $planEntries->get($item->id);
+                        $defaultServings = $this->defaultServingsForPlannedItem($item);
+
+                        return [
+                            'id' => (int) $item->id,
+                            'meal_type' => (string) $meal->meal_type,
+                            'sort_order' => (int) ($item->sort_order ?? 0),
+                            'servings' => $item->servings !== null ? (float) $item->servings : null,
+                            'grams' => $item->grams !== null ? (float) $item->grams : null,
+                            'default_servings' => $defaultServings,
+                            'notes' => $item->notes,
+                            'status' => $this->plannedStatus($entry, $item),
+                            'food' => $this->serializeFood($item->food),
+                            'logged_entry' => $entry ? [
+                                'id' => (int) $entry->id,
+                                'food_id' => (int) $entry->food_id,
+                                'servings' => (float) $entry->servings,
+                                'eaten_at' => $entry->eaten_at?->toDateString(),
+                                'food' => $this->serializeFood($entry->food, (float) $entry->servings),
+                            ] : null,
+                        ];
+                    })->values()->all(),
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    private function serializeEntryPlanTracking(MealEntry $entry): ?array
+    {
+        $plannedItem = $entry->nutritionPlanItem;
+        if (! $plannedItem || ! $plannedItem->meal || ! $plannedItem->meal->day) {
+            return null;
+        }
+
+        return [
+            'nutrition_plan_item_id' => (int) $plannedItem->id,
+            'planned_food_id' => $plannedItem->food_id ? (int) $plannedItem->food_id : null,
+            'planned_food_name' => $plannedItem->food?->name,
+            'meal_type' => (string) $plannedItem->meal->meal_type,
+            'status' => $this->plannedStatus($entry, $plannedItem),
+            'plan_day' => [
+                'id' => (int) $plannedItem->meal->day->id,
+                'day_index' => (int) $plannedItem->meal->day->day_index,
+                'date' => $plannedItem->meal->day->date?->toDateString(),
+            ],
+        ];
+    }
+
+    private function plannedStatus(?MealEntry $entry, ?NutritionPlanItem $item): string
+    {
+        if (! $entry || ! $item) {
+            return 'pending';
+        }
+
+        return (int) $entry->food_id === (int) $item->food_id
+            ? 'logged_exact'
+            : 'logged_substitute';
+    }
+
+    private function defaultServingsForPlannedItem(NutritionPlanItem $item): float
+    {
+        if ($item->servings !== null) {
+            return max(0.25, (float) $item->servings);
+        }
+
+        $servingSize = (float) ($item->food?->serving_size ?? 0);
+        $grams = (float) ($item->grams ?? 0);
+        if ($grams > 0 && $servingSize > 0) {
+            return max(0.25, round($grams / $servingSize, 2));
+        }
+
+        return 1.0;
+    }
+
+    private function mealTitleFromNotes(?string $notes, string $mealType): string
+    {
+        $first = trim((string) str($notes ?? '')->before('|'));
+
+        return $first !== '' ? $first : str($mealType)->headline()->toString();
+    }
+
+    private function serializeFood(?Food $food, float $ratio = 1.0): array
+    {
+        if (! $food) {
+            return [
+                'id' => 0,
+                'name' => '',
+                'category' => '',
+                'allergens' => [],
+                'serving_unit' => 'g',
+                'serving_size' => 100,
+                'calories' => 0,
+                'protein' => 0,
+                'carbs' => 0,
+                'fat' => 0,
+            ];
+        }
+
+        return [
+            'id' => (int) $food->id,
+            'name' => (string) $food->name,
+            'category' => (string) ($food->category ?? ''),
+            'allergens' => is_array($food->allergens) ? $food->allergens : [],
+            'serving_unit' => (string) ($food->serving_unit ?? 'g'),
+            'serving_size' => (float) ($food->serving_size ?? 100),
+            'calories' => (float) (($food->calories ?? 0) * $ratio),
+            'protein' => (float) (($food->protein_g ?? 0) * $ratio),
+            'carbs' => (float) (($food->carbs_g ?? 0) * $ratio),
+            'fat' => (float) (($food->fat_g ?? 0) * $ratio),
+        ];
     }
 }

@@ -65,7 +65,9 @@ function installAxiosDefaults() {
     axios.defaults.withCredentials = true;
 
     syncCsrfToken(
-        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content'),
     );
 }
 
@@ -79,17 +81,34 @@ function installFetchDefaults() {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         const request = new Request(input, init);
         const method = request.method.toUpperCase();
-
-        if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-            return originalFetch(request);
-        }
-
         const url = new URL(request.url, window.location.origin);
         if (url.origin !== window.location.origin) {
             return originalFetch(request);
         }
 
         const headers = new Headers(request.headers);
+        const isApiRequest =
+            url.pathname === '/api' || url.pathname.startsWith('/api/');
+
+        if (isApiRequest && !headers.has('Accept')) {
+            headers.set('Accept', 'application/json');
+        }
+        if (isApiRequest && !headers.has('X-Requested-With')) {
+            headers.set('X-Requested-With', 'XMLHttpRequest');
+        }
+
+        if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+            return originalFetch(
+                new Request(request, {
+                    headers,
+                    credentials:
+                        init?.credentials ??
+                        request.credentials ??
+                        'same-origin',
+                }),
+            );
+        }
+
         const csrfToken = getCurrentCsrfToken();
 
         if (csrfToken && !headers.has('X-CSRF-TOKEN')) {
@@ -102,7 +121,8 @@ function installFetchDefaults() {
         return originalFetch(
             new Request(request, {
                 headers,
-                credentials: init?.credentials ?? request.credentials,
+                credentials:
+                    init?.credentials ?? request.credentials ?? 'same-origin',
             }),
         );
     };

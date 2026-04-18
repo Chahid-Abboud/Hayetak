@@ -4,7 +4,6 @@ import BmiCard from '@/components/BmiCard';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
 import {
     BarListCard,
-    InlineRangeToolbar,
     MetricRing,
     TrendCard,
 } from '@/components/product/analytics';
@@ -12,7 +11,7 @@ import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // ---------- Types ----------
 type AuthUser = {
@@ -61,8 +60,16 @@ type PerMealTotals = Record<
     Totals
 >;
 
-type ProgressPoint = { week: string; [muscle: string]: number | string };
-type Motivation = { title: string; lines: string[] } | null;
+type Measurement = { date: string; type: 'weight' | 'height'; value: number };
+type ChartPoint = { xLabel: string; xValue: number; yValue: number };
+type WeeklyWorkoutContext = {
+    week: string;
+    top_set_kg: number;
+    avg_reps: number;
+    total_volume_kg: number;
+    set_count: number;
+    workout_count: number;
+};
 
 // Plan types (from HomeController props)
 type FoodLite = {
@@ -111,6 +118,12 @@ type NutritionPlanLite = {
     duration_days: number;
     is_active: boolean;
     meta?: Record<string, unknown> | null;
+    ai_request?: {
+        provider?: string | null;
+        model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
+    } | null;
     days: NutritionPlanDayLite[];
 };
 
@@ -150,7 +163,51 @@ type WorkoutPlanLite = {
     duration_days: number;
     is_active: boolean;
     meta?: Record<string, unknown> | null;
+    ai_request?: {
+        provider?: string | null;
+        model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
+    } | null;
     days: WorkoutPlanDayLite[];
+};
+
+type PlannerModelMeta = {
+    ai_request_id: number;
+    generated_at?: string | null;
+    provider?: string | null;
+    model?: string | null;
+    prompt_version?: string | null;
+    schema_version?: string | null;
+} | null;
+
+type ProgressPrediction = {
+    model_name?: string | null;
+    horizon_days?: number | null;
+    baseline_weight_kg?: number | null;
+    expected_weight_change_kg?: number | null;
+    projected_body_weight_kg?: number | null;
+    confidence?: string | null;
+    inference_source?: string | null;
+    strength_projection?: {
+        upper_body_compound_pct?: number | null;
+        lower_body_compound_pct?: number | null;
+    } | null;
+    feedback_adjustment?: {
+        base_weekly_weight_change_kg?: number | null;
+        adjusted_weekly_weight_change_kg?: number | null;
+        last_prediction_error_kg_per_week?: number | null;
+        notes?: string | null;
+    } | null;
+} | null;
+
+type PredictionTrendPoint = {
+    plan_date: string;
+    horizon_days: number;
+    projected_weight_kg: number;
+    actual_weight_kg: number | null;
+    model_name?: string | null;
+    inference_source?: string | null;
 };
 
 type HomeProps = {
@@ -171,9 +228,14 @@ type HomeProps = {
         fat: number;
     } | null;
     mealTotals?: PerMealTotals | null;
+    weightHistory?: Measurement[];
+    heightHistory?: Measurement[];
 
     nutritionPlan?: NutritionPlanLite | null;
     workoutPlan?: WorkoutPlanLite | null;
+    plannerModelMeta?: PlannerModelMeta;
+    progressPrediction?: ProgressPrediction;
+    predictionTrend?: PredictionTrendPoint[];
 } & Pick<SharedData, 'flash' | 'security'>;
 
 type AdminListItem = {
@@ -272,7 +334,10 @@ function CardSection({
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
                     <p className="haye-kicker">Section</p>
-                    <h2 id={headingId} className="mt-2 text-2xl font-semibold tracking-tight">
+                    <h2
+                        id={headingId}
+                        className="mt-2 text-2xl font-semibold tracking-tight"
+                    >
                         {title}
                     </h2>
                     {description ? (
@@ -304,8 +369,13 @@ export default function Home() {
         todayMacros,
         mealTotals,
         mealEntryPreviews,
+        weightHistory,
+        heightHistory,
         nutritionPlan,
         workoutPlan,
+        plannerModelMeta,
+        progressPrediction,
+        predictionTrend,
     } = usePage<HomeProps>().props;
 
     const isGuest =
@@ -372,8 +442,8 @@ export default function Home() {
     const mealPreviewItems =
         Array.isArray(mealEntryPreviews) && mealEntryPreviews.length > 0
             ? mealEntryPreviews
-            : todayLog?.items ??
-              (latestLog?.consumed_at === todayISO ? latestLog.items : []);
+            : (todayLog?.items ??
+              (latestLog?.consumed_at === todayISO ? latestLog.items : []));
 
     const grouped: Record<MealType, TodayLogItem[]> = {
         breakfast: [],
@@ -471,10 +541,13 @@ export default function Home() {
     const waterState = water ?? { today_ml: 0, target_ml: 2000 };
     const waterProgress = Math.min(
         100,
-        Math.round((waterState.today_ml / Math.max(1, waterState.target_ml)) * 100),
+        Math.round(
+            (waterState.today_ml / Math.max(1, waterState.target_ml)) * 100,
+        ),
     );
     const todayWorkoutDay =
-        workoutPlan?.days?.find((d) => d.day_index === 1) ?? workoutPlan?.days?.[0];
+        workoutPlan?.days?.find((d) => d.day_index === 1) ??
+        workoutPlan?.days?.[0];
     const todayNutritionDay =
         nutritionPlan?.days?.find((d) => d.date === todayISO) ??
         nutritionPlan?.days?.find((d) => d.day_index === 1) ??
@@ -526,7 +599,9 @@ export default function Home() {
                 <section className="haye-panel rounded-[40px] px-6 py-7 lg:px-8 lg:py-8">
                     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                         <div className="max-w-3xl">
-                            <p className="haye-kicker">Today's command center</p>
+                            <p className="haye-kicker">
+                                Today's command center
+                            </p>
                             <h2
                                 className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
                                 style={{ fontFamily: 'var(--font-display)' }}
@@ -595,7 +670,9 @@ export default function Home() {
                                 <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
                                     <div className="haye-kicker">Nutrition</div>
                                     <div className="mt-3 text-2xl font-semibold text-foreground">
-                                        {todayNutritionDay ? 'Ready' : 'Waiting'}
+                                        {todayNutritionDay
+                                            ? 'Ready'
+                                            : 'Waiting'}
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {todayNutritionDay
@@ -606,7 +683,9 @@ export default function Home() {
                                 <div className="rounded-[24px] border border-border/70 bg-background/76 p-4">
                                     <div className="haye-kicker">Training</div>
                                     <div className="mt-3 text-2xl font-semibold text-foreground">
-                                        {todayWorkoutDay ? 'Planned' : 'Freestyle'}
+                                        {todayWorkoutDay
+                                            ? 'Planned'
+                                            : 'Freestyle'}
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {todayWorkoutDay
@@ -620,7 +699,8 @@ export default function Home() {
                                         {waterProgress}%
                                     </div>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        {waterState.today_ml} mL of {waterState.target_ml} mL
+                                        {waterState.today_ml} mL of{' '}
+                                        {waterState.target_ml} mL
                                     </p>
                                 </div>
                             </div>
@@ -652,7 +732,8 @@ export default function Home() {
                                         </div>
                                     </div>
                                     <span className="haye-chip">
-                                        {todayWorkoutDay.exercises.length} exercises
+                                        {todayWorkoutDay.exercises.length}{' '}
+                                        exercises
                                     </span>
                                 </div>
                                 <div className="mt-4 space-y-2">
@@ -684,11 +765,15 @@ export default function Home() {
                             <p>
                                 Nutrition is{' '}
                                 <span className="font-medium text-foreground">
-                                    {todayNutritionDay ? 'ready to follow' : 'not generated yet'}
+                                    {todayNutritionDay
+                                        ? 'ready to follow'
+                                        : 'not generated yet'}
                                 </span>
                                 , training is{' '}
                                 <span className="font-medium text-foreground">
-                                    {todayWorkoutDay ? 'ready to log' : 'waiting for your next plan'}
+                                    {todayWorkoutDay
+                                        ? 'ready to log'
+                                        : 'waiting for your next plan'}
                                 </span>
                                 , and hydration is{' '}
                                 <span className="font-medium text-foreground">
@@ -704,10 +789,13 @@ export default function Home() {
                             <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
                                 <p className="haye-kicker">Recovery pulse</p>
                                 <p className="mt-3 text-base font-medium text-foreground">
-                                    {waterState.today_ml} mL logged out of {waterState.target_ml} mL.
+                                    {waterState.today_ml} mL logged out of{' '}
+                                    {waterState.target_ml} mL.
                                 </p>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    Keep water visible between meals and training so the rest of the day stays easier to manage.
+                                    Keep water visible between meals and
+                                    training so the rest of the day stays easier
+                                    to manage.
                                 </p>
                             </div>
                         </div>
@@ -725,7 +813,7 @@ export default function Home() {
                         </ActionButton>
                     }
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.22fr)_minmax(380px,0.78fr)]">
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)] 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,1fr)]">
                         <div className="grid gap-4 md:grid-cols-2">
                             {mealOrder.map((mealType) => (
                                 <MealMomentCard
@@ -738,7 +826,7 @@ export default function Home() {
                             ))}
                         </div>
 
-                        <div className="grid gap-4 xl:grid-cols-2">
+                        <div className="grid gap-4">
                             <TrendCard
                                 title="Calorie cadence"
                                 value={`${round(macros.calories)} kcal`}
@@ -750,16 +838,17 @@ export default function Home() {
                                 description="Protein, carbs, and fat for the current day."
                                 totalLabel="Total grams"
                                 totalValue={macroSegments
-                                    .reduce((sum, segment) => sum + segment.value, 0)
+                                    .reduce(
+                                        (sum, segment) => sum + segment.value,
+                                        0,
+                                    )
                                     .toString()}
                                 segments={macroSegments}
-                                className="xl:col-span-2"
                             />
                             <BarListCard
                                 title="Meal distribution"
                                 description="Where today's calories are concentrated."
                                 items={mealDistribution}
-                                className="xl:col-span-2"
                             />
                         </div>
                     </div>
@@ -770,6 +859,12 @@ export default function Home() {
                     description="Generated plans should feel like part of the command center, not buried references."
                     actions={
                         <>
+                            <ActionButton
+                                variant="primary"
+                                onClick={() => router.visit('/ai/planner')}
+                            >
+                                AI Planner
+                            </ActionButton>
                             <ActionButton
                                 variant="secondary"
                                 onClick={() => router.visit('/track-meals')}
@@ -798,7 +893,7 @@ export default function Home() {
                                         ? 'Active'
                                         : nutritionPlan
                                           ? 'Inactive'
-                                          : 'Ã¢â‚¬â€'}
+                                          : 'No plan'}
                                 </span>
                             </div>
 
@@ -842,7 +937,7 @@ export default function Home() {
                                         ? 'Active'
                                         : workoutPlan
                                           ? 'Inactive'
-                                          : 'Ã¢â‚¬â€'}
+                                          : 'No plan'}
                                 </span>
                             </div>
 
@@ -865,6 +960,39 @@ export default function Home() {
                     </div>
                 </CardSection>
 
+                <CardSection
+                    title="AI model lane"
+                    description="Keep planner and prediction model outputs visible so your dashboard decisions are transparent."
+                    actions={
+                        <>
+                            <ActionButton
+                                variant="primary"
+                                onClick={() => router.visit('/ai/planner')}
+                            >
+                                Open AI Planner
+                            </ActionButton>
+                            <ActionButton
+                                variant="secondary"
+                                onClick={() => router.visit('/coach')}
+                            >
+                                Ask AI Coach
+                            </ActionButton>
+                        </>
+                    }
+                >
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <PlannerModelCard
+                            plannerModelMeta={plannerModelMeta}
+                            nutritionPlan={nutritionPlan}
+                            workoutPlan={workoutPlan}
+                        />
+                        <PredictionModelCard
+                            prediction={progressPrediction}
+                            trend={predictionTrend}
+                        />
+                    </div>
+                </CardSection>
+
                 {/* BMI + Water */}
                 <section
                     aria-label="Health stats"
@@ -872,7 +1000,9 @@ export default function Home() {
                 >
                     <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
                         <p className="haye-kicker">Body metrics</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">BMI</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                            BMI
+                        </h2>
                         <div className="mt-4">
                             <BmiCard isGuest={isGuest} profile={profileSafe} />
                         </div>
@@ -880,7 +1010,9 @@ export default function Home() {
 
                     <div className="haye-panel rounded-[30px] p-6 text-card-foreground">
                         <p className="haye-kicker">Recovery</p>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">Water intake</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                            Water intake
+                        </h2>
                         <div className="mt-4">
                             <WaterCard
                                 isGuest={isGuest}
@@ -899,52 +1031,401 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Workouts */}
+                {/* Progress */}
                 <CardSection
-                    title="Training momentum"
-                    description="Progress should feel encouraging, readable, and close to the workout flow."
+                    title="Progress center"
+                    description="Track your body changes and training output in one place."
                     actions={
                         <>
                             <ActionButton
                                 variant="primary"
                                 onClick={startTodayWorkout}
                             >
-                                Start TodayÃ¢â‚¬â„¢s Workout
+                                Start Today's Workout
                             </ActionButton>
                             <ActionButton
                                 variant="secondary"
-                                onClick={() => router.visit('/workouts/log')}
+                                onClick={() => router.visit('/profile')}
                             >
-                                Open Workout Log
+                                Add Measurements
                             </ActionButton>
                             <ActionButton
                                 variant="soft"
-                                onClick={() => router.visit('/workouts/plan')}
+                                onClick={() => router.visit('/workouts/log')}
                             >
-                                Planner
+                                Open Workout Log
                             </ActionButton>
                         </>
                     }
                     aria-labelledby="log-workouts"
                 >
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div className="rounded-xl border p-4 lg:col-span-2">
-                            <h3 className="mb-2 text-sm font-semibold text-foreground">
-                                Weekly Progress (avg top-set weight)
-                            </h3>
-                            <ProgressMini />
-                        </div>
-
-                        <div className="rounded-xl border p-4">
-                            <h3 className="mb-2 text-sm font-semibold text-foreground">
-                                Motivation
-                            </h3>
-                            <MotivationBox />
-                        </div>
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <MeasurementChartCard
+                            title="Weight Progress"
+                            ySuffix=" kg"
+                            measurements={weightHistory}
+                            metric="weight"
+                            emptyBody="Log at least two weight entries from Profile to unlock this trend."
+                        />
+                        <MeasurementChartCard
+                            title="Height Progress"
+                            ySuffix=" cm"
+                            measurements={heightHistory}
+                            metric="height"
+                            emptyBody="Log at least two height entries from Profile to unlock this trend."
+                        />
+                    </div>
+                    <div className="mt-4">
+                        <WorkoutContextProgressCard weeks={12} />
                     </div>
                 </CardSection>
             </ProductPageShell>
         </>
+    );
+}
+
+function chartPointsFromMeasurements(
+    measurements: Measurement[] | undefined,
+    metric: 'weight' | 'height',
+): ChartPoint[] {
+    const safe = Array.isArray(measurements) ? measurements : [];
+    return safe
+        .filter((item) => item.type === metric && Number.isFinite(item.value))
+        .slice()
+        .sort((a, b) => (a.date > b.date ? 1 : -1))
+        .map((item) => ({
+            xLabel: item.date,
+            xValue: new Date(item.date).getTime(),
+            yValue: item.value,
+        }));
+}
+
+function formatTrendChange(points: ChartPoint[], unit: string): string {
+    if (points.length < 2) return '—';
+    const first = points[0];
+    const last = points[points.length - 1];
+    const delta = last.yValue - first.yValue;
+    return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}${unit}`;
+}
+
+function MeasurementChartCard({
+    title,
+    measurements,
+    metric,
+    ySuffix,
+    emptyBody,
+}: {
+    title: string;
+    measurements?: Measurement[];
+    metric: 'weight' | 'height';
+    ySuffix: string;
+    emptyBody: string;
+}) {
+    const points = useMemo(
+        () => chartPointsFromMeasurements(measurements, metric),
+        [measurements, metric],
+    );
+    const first = points[0];
+    const last = points[points.length - 1];
+
+    return (
+        <div className="rounded-xl border p-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+                {title}
+            </h3>
+
+            <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                <MetricPill
+                    label="Latest"
+                    value={last ? `${last.yValue}${ySuffix}` : '—'}
+                />
+                <MetricPill
+                    label="Change"
+                    value={formatTrendChange(points, ySuffix)}
+                />
+                <MetricPill label="Entries" value={String(points.length)} />
+            </div>
+
+            {points.length >= 2 ? (
+                <SimpleLineChart
+                    title={title}
+                    points={points}
+                    ySuffix={ySuffix}
+                />
+            ) : (
+                <p className="text-sm text-muted-foreground">{emptyBody}</p>
+            )}
+            {first && last ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                    {first.xLabel} to {last.xLabel}
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
+            <div className="text-[11px] tracking-wide text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-foreground tabular-nums">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function SimpleLineChart({
+    title,
+    points,
+    ySuffix,
+}: {
+    title: string;
+    points: ChartPoint[];
+    ySuffix: string;
+}) {
+    const width = 720;
+    const height = 220;
+    const padX = 28;
+    const padY = 18;
+
+    const xs = points.map((point) => point.xValue);
+    const ys = points.map((point) => point.yValue);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+
+    const toX = (x: number) => padX + ((x - minX) / spanX) * (width - padX * 2);
+    const toY = (y: number) =>
+        height - padY - ((y - minY) / spanY) * (height - padY * 2);
+
+    const d = points
+        .map(
+            (point, index) =>
+                `${index === 0 ? 'M' : 'L'} ${toX(point.xValue)} ${toY(point.yValue)}`,
+        )
+        .join(' ');
+
+    return (
+        <div>
+            <div className="overflow-x-auto">
+                <svg
+                    viewBox={`0 0 ${width} ${height}`}
+                    role="img"
+                    aria-label={`${title} line chart`}
+                    className="h-[220px] w-full min-w-[520px]"
+                >
+                    <line
+                        x1={padX}
+                        y1={padY}
+                        x2={padX}
+                        y2={height - padY}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <line
+                        x1={padX}
+                        y1={height - padY}
+                        x2={width - padX}
+                        y2={height - padY}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <path
+                        d={d}
+                        fill="none"
+                        stroke="var(--primary)"
+                        strokeWidth="2.5"
+                    />
+                    {points.map((point, index) => (
+                        <circle
+                            key={`${point.xLabel}-${index}`}
+                            cx={toX(point.xValue)}
+                            cy={toY(point.yValue)}
+                            r={3.25}
+                            fill="var(--primary)"
+                        />
+                    ))}
+                </svg>
+            </div>
+
+            <details className="mt-1">
+                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                    View data table
+                </summary>
+                <div className="mt-2 overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-muted-foreground">
+                                <th className="py-2 pr-4">Date</th>
+                                <th className="py-2 pr-4">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {points.map((point, index) => (
+                                <tr
+                                    key={`${point.xLabel}-row-${index}`}
+                                    className="border-t border-border"
+                                >
+                                    <td className="py-2 pr-4">
+                                        {point.xLabel}
+                                    </td>
+                                    <td className="py-2 pr-4 tabular-nums">
+                                        {point.yValue}
+                                        {ySuffix}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+    );
+}
+
+function WorkoutContextProgressCard({ weeks }: { weeks: number }) {
+    const [series, setSeries] = useState<WeeklyWorkoutContext[]>([]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch(`/workouts/progress?weeks=${weeks}`, {
+            signal: controller.signal,
+        })
+            .then((response) => response.json())
+            .then((payload) =>
+                setSeries(
+                    Array.isArray(payload?.weekly_context)
+                        ? payload.weekly_context
+                        : [],
+                ),
+            )
+            .catch(() => setSeries([]));
+
+        return () => controller.abort();
+    }, [weeks]);
+
+    const points = useMemo<ChartPoint[]>(() => {
+        return series.map((row, index) => ({
+            xLabel: row.week,
+            xValue: index,
+            yValue: row.top_set_kg,
+        }));
+    }, [series]);
+
+    const latest = series[series.length - 1];
+    const first = series[0];
+    const change = latest && first ? latest.top_set_kg - first.top_set_kg : 0;
+
+    return (
+        <div className="rounded-xl border p-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+                Gym Progress (Weekly)
+            </h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+                Trend uses your top set load per week and keeps workout context
+                (volume, reps, sets, and sessions) visible for better decisions.
+            </p>
+
+            <div className="mb-3 grid gap-2 sm:grid-cols-5">
+                <MetricPill
+                    label="Latest Top Set"
+                    value={latest ? `${latest.top_set_kg} kg` : '—'}
+                />
+                <MetricPill
+                    label="Avg Reps"
+                    value={latest ? `${latest.avg_reps}` : '—'}
+                />
+                <MetricPill
+                    label="Volume"
+                    value={
+                        latest
+                            ? `${Math.round(latest.total_volume_kg)} kg`
+                            : '—'
+                    }
+                />
+                <MetricPill
+                    label="Workout Days"
+                    value={latest ? String(latest.workout_count) : '—'}
+                />
+                <MetricPill
+                    label="Top Set Change"
+                    value={
+                        latest && first
+                            ? `${change > 0 ? '+' : ''}${change.toFixed(1)} kg`
+                            : '—'
+                    }
+                />
+            </div>
+
+            {points.length >= 2 ? (
+                <SimpleLineChart
+                    title="Weekly Top Set"
+                    points={points}
+                    ySuffix=" kg"
+                />
+            ) : (
+                <p className="text-sm text-muted-foreground">
+                    Log at least two weeks of workouts to see your gym progress
+                    trend.
+                </p>
+            )}
+
+            {series.length > 0 ? (
+                <details className="mt-2">
+                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                        View workout context table
+                    </summary>
+                    <div className="mt-2 overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-muted-foreground">
+                                    <th className="py-2 pr-4">Week</th>
+                                    <th className="py-2 pr-4">Top Set (kg)</th>
+                                    <th className="py-2 pr-4">Avg Reps</th>
+                                    <th className="py-2 pr-4">Volume (kg)</th>
+                                    <th className="py-2 pr-4">Sets</th>
+                                    <th className="py-2 pr-4">Workouts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {series.map((row) => (
+                                    <tr
+                                        key={row.week}
+                                        className="border-t border-border"
+                                    >
+                                        <td className="py-2 pr-4">
+                                            {row.week}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.top_set_kg}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.avg_reps}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {Math.round(row.total_volume_kg)}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.set_count}
+                                        </td>
+                                        <td className="py-2 pr-4 tabular-nums">
+                                            {row.workout_count}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            ) : null}
+        </div>
     );
 }
 
@@ -1364,7 +1845,7 @@ function MealMomentCard({
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="haye-kicker">Meal block</div>
-                    <div className="mt-2 text-base font-semibold capitalize text-foreground">
+                    <div className="mt-2 text-base font-semibold text-foreground capitalize">
                         {title}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -1372,8 +1853,8 @@ function MealMomentCard({
                     </div>
                 </div>
                 <div className="inline-flex max-w-full rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                    P {Math.round(macros.protein)} / C {Math.round(macros.carbs)} / F{' '}
-                    {Math.round(macros.fat)}
+                    P {Math.round(macros.protein)} / C{' '}
+                    {Math.round(macros.carbs)} / F {Math.round(macros.fat)}
                 </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -1387,7 +1868,7 @@ function MealMomentCard({
                                 {entry.label}
                                 {typeof entry.quantity === 'number' &&
                                 entry.quantity > 0
-                                    ? ` · ${Number.isInteger(entry.quantity) ? entry.quantity : entry.quantity.toFixed(1)}${entry.unit ? ` ${entry.unit}` : ''}`
+                                    ? ` - ${Number.isInteger(entry.quantity) ? entry.quantity : entry.quantity.toFixed(1)}${entry.unit ? ` ${entry.unit}` : ''}`
                                     : ''}
                             </span>
                         </div>
@@ -1410,6 +1891,487 @@ function MealMomentCard({
     );
 }
 
+function sourceBadge(
+    source?: {
+        provider?: string | null;
+        model?: string | null;
+    } | null,
+) {
+    const provider = source?.provider?.trim();
+    const model = source?.model?.trim();
+
+    if (!provider && !model) return 'Model unavailable';
+    if (!provider) return model ?? 'Model unavailable';
+    if (!model) return provider;
+
+    return `${provider} / ${model}`;
+}
+
+function sourceBadgeDetailed(
+    source?: {
+        provider?: string | null;
+        model?: string | null;
+        prompt_version?: string | null;
+        schema_version?: string | null;
+    } | null,
+) {
+    const base = sourceBadge(source);
+    const prompt = source?.prompt_version?.trim();
+    const schema = source?.schema_version?.trim();
+    const suffixParts = [
+        prompt ? `prompt ${prompt}` : null,
+        schema ? `schema ${schema}` : null,
+    ].filter(Boolean) as string[];
+
+    if (suffixParts.length === 0) return base;
+
+    return `${base} (${suffixParts.join(' / ')})`;
+}
+
+function formatSignedKg(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)} kg`;
+}
+
+function formatKg(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value.toFixed(2)} kg`;
+}
+
+function formatPct(value?: number | null) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+    return `${value.toFixed(1)}%`;
+}
+
+function inferenceSourceTone(source?: string | null) {
+    const normalized = (source ?? '').trim().toLowerCase();
+    if (normalized === 'ml_blend') {
+        return 'border-emerald-300/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+    }
+    if (normalized === 'heuristic') {
+        return 'border-amber-300/60 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    }
+
+    return 'border-border/70 bg-background/70 text-muted-foreground';
+}
+
+function PlannerModelCard({
+    plannerModelMeta,
+    nutritionPlan,
+    workoutPlan,
+}: {
+    plannerModelMeta?: PlannerModelMeta;
+    nutritionPlan?: NutritionPlanLite | null;
+    workoutPlan?: WorkoutPlanLite | null;
+}) {
+    const fallbackSource =
+        nutritionPlan?.ai_request ?? workoutPlan?.ai_request ?? null;
+    const source = plannerModelMeta ?? fallbackSource;
+
+    return (
+        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
+            <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Planner model
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        The model lane that generated your latest dashboard
+                        plans.
+                    </p>
+                </div>
+                <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                    Planner
+                </span>
+            </div>
+
+            {!source ? (
+                <p className="text-sm text-muted-foreground">
+                    No planner model metadata yet. Generate a plan from AI
+                    Planner to populate this card.
+                </p>
+            ) : (
+                <div className="space-y-2 text-sm">
+                    <div className="rounded-[18px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Source
+                        </div>
+                        <div className="mt-1 font-medium text-foreground">
+                            {sourceBadgeDetailed(source)}
+                        </div>
+                    </div>
+
+                    {plannerModelMeta?.ai_request_id ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                                <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                    AI request
+                                </div>
+                                <div className="mt-1 font-medium text-foreground">
+                                    #{plannerModelMeta.ai_request_id}
+                                </div>
+                            </div>
+                            <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                                <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                    Generated
+                                </div>
+                                <div className="mt-1 font-medium text-foreground">
+                                    {plannerModelMeta.generated_at ?? 'n/a'}
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PredictionModelCard({
+    prediction,
+    trend,
+}: {
+    prediction?: ProgressPrediction;
+    trend?: PredictionTrendPoint[];
+}) {
+    const inferenceSource = prediction?.inference_source ?? null;
+    const trendRows = (Array.isArray(trend) ? trend : []).filter(
+        (row) =>
+            typeof row.projected_weight_kg === 'number' &&
+            Number.isFinite(row.projected_weight_kg),
+    );
+
+    return (
+        <div className="rounded-[26px] border border-border/70 bg-background/74 p-4">
+            <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Prediction model
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Latest weight + strength projection from the planner
+                        generation.
+                    </p>
+                </div>
+                <span
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase ${inferenceSourceTone(
+                        inferenceSource,
+                    )}`}
+                >
+                    {inferenceSource
+                        ? inferenceSource.replace('_', ' ')
+                        : 'n/a'}
+                </span>
+            </div>
+
+            {!prediction ? (
+                <p className="text-sm text-muted-foreground">
+                    No prediction payload yet. Generate a plan first, then this
+                    card will show model output.
+                </p>
+            ) : (
+                <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Model
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {prediction.model_name ?? 'n/a'}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Confidence
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {prediction.confidence ?? 'n/a'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Baseline
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatKg(prediction.baseline_weight_kg)}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Expected change
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatSignedKg(
+                                    prediction.expected_weight_change_kg,
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Projected weight
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {formatKg(prediction.projected_body_weight_kg)}
+                            </div>
+                        </div>
+                        <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                            <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                                Horizon
+                            </div>
+                            <div className="mt-1 font-medium text-foreground">
+                                {typeof prediction.horizon_days === 'number'
+                                    ? `${prediction.horizon_days} days`
+                                    : 'n/a'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Strength projection
+                        </div>
+                        <div className="mt-1 text-foreground">
+                            Upper{' '}
+                            {formatPct(
+                                prediction.strength_projection
+                                    ?.upper_body_compound_pct,
+                            )}{' '}
+                            / Lower{' '}
+                            {formatPct(
+                                prediction.strength_projection
+                                    ?.lower_body_compound_pct,
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Feedback loop
+                        </div>
+                        <div className="mt-1 text-foreground">
+                            Base{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.base_weekly_weight_change_kg,
+                            )}{' '}
+                            / Adjusted{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.adjusted_weekly_weight_change_kg,
+                            )}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                            Last error:{' '}
+                            {formatSignedKg(
+                                prediction.feedback_adjustment
+                                    ?.last_prediction_error_kg_per_week,
+                            )}{' '}
+                            per week
+                        </div>
+                    </div>
+
+                    <div className="rounded-[16px] border border-border/70 bg-card px-3 py-2">
+                        <div className="text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
+                            Predicted vs actual trend
+                        </div>
+                        <div className="mt-2">
+                            {trendRows.length >= 2 ? (
+                                <>
+                                    <p className="mb-2 text-[11px] text-muted-foreground">
+                                        Hover any point to view exact date and
+                                        predicted vs actual values.
+                                    </p>
+                                    <PredictionTrendSparkline
+                                        points={trendRows.slice(-10)}
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    Generate more plans and add check-ins to
+                                    unlock this sparkline.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PredictionTrendSparkline({
+    points,
+}: {
+    points: PredictionTrendPoint[];
+}) {
+    const width = 700;
+    const height = 170;
+    const padX = 16;
+    const padY = 18;
+
+    const allYValues = [
+        ...points.map((row) => row.projected_weight_kg),
+        ...points
+            .map((row) => row.actual_weight_kg)
+            .filter((value): value is number => typeof value === 'number'),
+    ];
+
+    if (allYValues.length < 2) {
+        return (
+            <p className="text-xs text-muted-foreground">
+                Not enough points for trend rendering.
+            </p>
+        );
+    }
+
+    const minY = Math.min(...allYValues);
+    const maxY = Math.max(...allYValues);
+    const spanY = Math.max(1, maxY - minY);
+    const spanX = Math.max(1, points.length - 1);
+    const toX = (index: number) => padX + (index / spanX) * (width - padX * 2);
+    const toY = (value: number) =>
+        height - padY - ((value - minY) / spanY) * (height - padY * 2);
+
+    const projectedPath = points
+        .map(
+            (row, index) =>
+                `${index === 0 ? 'M' : 'L'} ${toX(index)} ${toY(row.projected_weight_kg)}`,
+        )
+        .join(' ');
+
+    const actualSeries = points
+        .map((row, index) =>
+            typeof row.actual_weight_kg === 'number'
+                ? {
+                      index,
+                      value: row.actual_weight_kg,
+                      planDate: row.plan_date,
+                      horizonDays: row.horizon_days,
+                      projectedWeight: row.projected_weight_kg,
+                  }
+                : null,
+        )
+        .filter(
+            (
+                row,
+            ): row is {
+                index: number;
+                value: number;
+                planDate: string;
+                horizonDays: number;
+                projectedWeight: number;
+            } => row !== null,
+        );
+
+    const actualPath =
+        actualSeries.length > 0
+            ? actualSeries
+                  .map(
+                      (row, idx) =>
+                          `${idx === 0 ? 'M' : 'L'} ${toX(row.index)} ${toY(row.value)}`,
+                  )
+                  .join(' ')
+            : '';
+
+    const latest = points[points.length - 1];
+    const latestActual =
+        [...points]
+            .reverse()
+            .find((row) => typeof row.actual_weight_kg === 'number')
+            ?.actual_weight_kg ?? null;
+
+    return (
+        <div>
+            <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[var(--primary)]" />
+                    Predicted
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[var(--secondary)]" />
+                    Actual
+                </span>
+                <span>
+                    Latest: {formatKg(latest.projected_weight_kg)} predicted /{' '}
+                    {typeof latestActual === 'number'
+                        ? formatKg(latestActual)
+                        : 'n/a'}{' '}
+                    actual
+                </span>
+            </div>
+
+            <svg
+                viewBox={`0 0 ${width} ${height}`}
+                role="img"
+                aria-label="Predicted versus actual weight trend"
+                className="h-[150px] w-full"
+            >
+                <line
+                    x1={padX}
+                    y1={height - padY}
+                    x2={width - padX}
+                    y2={height - padY}
+                    stroke="var(--border)"
+                    strokeWidth="1"
+                />
+                <path
+                    d={projectedPath}
+                    fill="none"
+                    stroke="var(--primary)"
+                    strokeWidth="2.5"
+                />
+                {actualPath ? (
+                    <path
+                        d={actualPath}
+                        fill="none"
+                        stroke="var(--secondary)"
+                        strokeWidth="2.5"
+                        strokeDasharray="5 4"
+                    />
+                ) : null}
+
+                {points.map((row, index) => (
+                    <circle
+                        key={`pred-${row.plan_date}-${index}`}
+                        cx={toX(index)}
+                        cy={toY(row.projected_weight_kg)}
+                        r={2.6}
+                        fill="var(--primary)"
+                    >
+                        <title>
+                            {`Plan date: ${row.plan_date}
+Horizon: ${row.horizon_days} days
+Predicted: ${formatKg(row.projected_weight_kg)}
+Actual: ${typeof row.actual_weight_kg === 'number' ? formatKg(row.actual_weight_kg) : 'n/a'}`}
+                        </title>
+                    </circle>
+                ))}
+                {actualSeries.map((row) => (
+                    <circle
+                        key={`actual-${row.index}`}
+                        cx={toX(row.index)}
+                        cy={toY(row.value)}
+                        r={2.8}
+                        fill="var(--secondary)"
+                    >
+                        <title>
+                            {`Plan date: ${row.planDate}
+Horizon: ${row.horizonDays} days
+Actual: ${formatKg(row.value)}
+Predicted: ${formatKg(row.projectedWeight)}`}
+                        </title>
+                    </circle>
+                ))}
+            </svg>
+        </div>
+    );
+}
 
 function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -1423,8 +2385,11 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
         <div className="text-sm">
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                    Source: {sourceBadge(plan.ai_request)}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
+                    Goal: {plan.goal ?? 'Not set'} - Start: {plan.start_date} -
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1473,7 +2438,7 @@ function NutritionPlanPreview({ plan }: { plan: NutritionPlanLite }) {
                                                             : it.servings !=
                                                                 null
                                                               ? `${it.servings} serving(s)`
-                                                              : 'Ã¢â‚¬â€';
+                                                              : 'Not set';
                                                     return (
                                                         <li
                                                             key={it.id}
@@ -1512,8 +2477,11 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
         <div className="text-sm">
             <div className="mb-2">
                 <div className="font-semibold">{plan.name}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                    Source: {sourceBadge(plan.ai_request)}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                    Goal: {plan.goal ?? 'Ã¢â‚¬â€'} Ã‚Â· Start: {plan.start_date} Ã‚Â·
+                    Goal: {plan.goal ?? 'Not set'} - Start: {plan.start_date} -
                     Duration: {plan.duration_days} day(s)
                 </div>
             </div>
@@ -1549,7 +2517,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                               ? `${rmin}`
                                               : rmax != null
                                                 ? `${rmax}`
-                                                : 'Ã¢â‚¬â€';
+                                                : 'Not set';
 
                                     return (
                                         <li
@@ -1561,7 +2529,7 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     {ex.name}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground tabular-nums">
-                                                    {sets} sets Ã‚Â· {repText} reps
+                                                    {sets} sets - {repText} reps
                                                 </div>
                                             </div>
 
@@ -1570,10 +2538,10 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
                                                     ? `Primary: ${ex.primary_muscle}`
                                                     : ''}
                                                 {ex.equipment
-                                                    ? ` Ã‚Â· Equipment: ${ex.equipment}`
+                                                    ? ` - Equipment: ${ex.equipment}`
                                                     : ''}
                                                 {ex.difficulty
-                                                    ? ` Ã‚Â· ${ex.difficulty}`
+                                                    ? ` - ${ex.difficulty}`
                                                     : ''}
                                             </div>
                                         </li>
@@ -1588,183 +2556,12 @@ function WorkoutPlanPreview({ plan }: { plan: WorkoutPlanLite }) {
 
                     {(day1.exercises ?? []).length > 8 ? (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Showing first 8 exercisesÃ¢â‚¬Â¦ open Planner to view the
-                            full day.
+                            Showing first 8 exercises... open Planner to view
+                            the full day.
                         </p>
                     ) : null}
                 </div>
             )}
-        </div>
-    );
-}
-
-function ProgressMini() {
-    const [series, setSeries] = useState<ProgressPoint[]>([]);
-    const [weeks, setWeeks] = useState(8);
-    const abortRef = useRef<AbortController | null>(null);
-
-    const muscles = useMemo(
-        () => [
-            'chest',
-            'back',
-            'shoulders',
-            'legs',
-            'biceps',
-            'triceps',
-            'core',
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        abortRef.current?.abort();
-        const ac = new AbortController();
-        abortRef.current = ac;
-
-        fetch(`/workouts/progress?weeks=${weeks}`, { signal: ac.signal })
-            .then((r) => r.json())
-            .then((d) => setSeries(Array.isArray(d.series) ? d.series : []))
-            .catch(() => {
-                // ignore abort errors, treat others as empty
-                setSeries([]);
-            });
-
-        return () => ac.abort();
-    }, [weeks]);
-
-    if (!series.length) {
-        return (
-            <div className="space-y-4">
-                <InlineRangeToolbar value={weeks} onChange={setWeeks} />
-                <p className="text-sm text-muted-foreground">
-                    Log a few workouts to unlock progress.
-                </p>
-            </div>
-        );
-    }
-
-    const last4 = series.slice(-4);
-
-    return (
-        <div className="space-y-4">
-            <InlineRangeToolbar value={weeks} onChange={setWeeks} />
-            <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                    <caption className="sr-only">
-                        Weekly progress table showing average top-set weight by
-                        muscle group.
-                    </caption>
-                    <thead>
-                        <tr className="text-left text-muted-foreground">
-                            <th scope="col" className="py-1 pr-4">
-                                Week
-                            </th>
-                            {muscles.map((m) => (
-                                <th
-                                    key={m}
-                                    scope="col"
-                                    className="py-1 pr-4 capitalize"
-                                >
-                                    {m}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {last4.map((row, i) => (
-                            <tr key={i} className="border-t">
-                                <th
-                                    scope="row"
-                                    className="py-1 pr-4 font-medium"
-                                >
-                                    {String(row.week)}
-                                </th>
-                                {muscles.map((m) => (
-                                    <td
-                                        key={m}
-                                        className="py-1 pr-4 tabular-nums"
-                                    >
-                                        {typeof row[m] === 'number'
-                                            ? `${row[m]} kg`
-                                            : 'Ã¢â‚¬â€'}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-}
-
-/**
- * Minimal client-side sanitizer:
- * - removes <script> tags
- * - strips "on*" event handler attributes
- * - keeps basic inline tags if present (e.g., <strong>, <em>, <br>)
- *
- * NOTE: Real sanitization is best done server-side or with a vetted lib.
- */
-function sanitizeMotivationHtml(input: string): string {
-    if (typeof window === 'undefined') return input;
-
-    try {
-        const doc = new DOMParser().parseFromString(input, 'text/html');
-        // remove scripts
-        doc.querySelectorAll('script').forEach((n) => n.remove());
-        // strip on* attributes
-        doc.querySelectorAll('*').forEach((el) => {
-            [...el.attributes].forEach((attr) => {
-                if (attr.name.toLowerCase().startsWith('on')) {
-                    el.removeAttribute(attr.name);
-                }
-            });
-        });
-        return doc.body.innerHTML;
-    } catch {
-        return input;
-    }
-}
-
-function MotivationBox() {
-    const [motivation, setMotivation] = useState<Motivation>(null);
-    const abortRef = useRef<AbortController | null>(null);
-
-    useEffect(() => {
-        abortRef.current?.abort();
-        const ac = new AbortController();
-        abortRef.current = ac;
-
-        fetch('/workouts/progress?weeks=8', { signal: ac.signal })
-            .then((r) => r.json())
-            .then((d) => setMotivation(d.motivation ?? null))
-            .catch(() => setMotivation(null));
-
-        return () => ac.abort();
-    }, []);
-
-    if (!motivation) {
-        return (
-            <p className="text-sm text-muted-foreground">
-                Keep logging to see weekly wins Ã¢Å“Â¨
-            </p>
-        );
-    }
-
-    return (
-        <div className="text-sm" aria-live="polite">
-            <div className="mb-1 font-semibold">{motivation.title}</div>
-            <ul className="list-disc space-y-1 pl-5">
-                {motivation.lines.map((l: string, i: number) => (
-                    <li
-                        key={i}
-                        dangerouslySetInnerHTML={{
-                            __html: sanitizeMotivationHtml(l),
-                        }}
-                    />
-                ))}
-            </ul>
         </div>
     );
 }

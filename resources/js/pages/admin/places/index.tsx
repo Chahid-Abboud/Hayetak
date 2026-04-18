@@ -4,8 +4,8 @@ import {
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
-import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import NearbyMap from '@/components/NearbyMap';
+import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import {
     ProductTable,
     ProductTableBody,
@@ -512,4 +512,3 @@ function Field({
         </label>
     );
 }
-

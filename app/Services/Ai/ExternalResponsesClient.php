@@ -6,7 +6,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-class OpenAIClient
+class ExternalResponsesClient
 {
     /**
      * @throws RuntimeException

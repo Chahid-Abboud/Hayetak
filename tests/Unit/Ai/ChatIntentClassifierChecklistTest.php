@@ -32,9 +32,17 @@ it('routes personalized checklist prompts toward personal-context-aware handling
         'What protein target does my current weight suggest?',
         ['feature' => 'nutrition', 'deterministic_action' => 'protein_target', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
     ],
+    'protein gap from meals today' => [
+        'Based on my meals today, am I low on protein?',
+        ['feature' => 'nutrition', 'deterministic_action' => 'protein_gap', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
+    ],
     'meals today summary' => [
         'What do my meals today look like so far?',
         ['feature' => 'nutrition', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
+    ],
+    'consistency this week' => [
+        'Have I been consistent this week?',
+        ['feature' => 'progress', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
     ],
     'can i train today' => [
         'Can I train today based on my recent workouts?',
@@ -46,6 +54,10 @@ it('routes personalized checklist prompts toward personal-context-aware handling
     ],
     'dinner fits allergies' => [
         'Suggest a dinner that fits my goal and allergies.',
+        ['feature' => 'nutrition', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
+    ],
+    'greek yogurt snack suggestion' => [
+        'suggest a high-protein snack with Greek yogurt',
         ['feature' => 'nutrition', 'prefer_hybrid_profile' => true, 'include_last_7_days' => true],
     ],
     'my allergies' => [
@@ -104,6 +116,7 @@ it('routes general-guidance checklist prompts as in-domain coach questions', fun
     'stretches after training' => ['What are good stretches after training?', 'wellness'],
     'before cardio' => ['What should someone eat before cardio?', 'nutrition'],
     'simple workout routine' => ['How do I build a simple workout routine?', 'plans'],
+    'injury exercise request with typo' => ['my injury dates 7 months , what exercices may i do', 'workout'],
     'update profile in app' => ['How do I update my profile in the app?', 'settings'],
 ]);
 

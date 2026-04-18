@@ -13,7 +13,8 @@ class CoachContextBuilder
     public function build(User $user, array $runtimeContext = [], ?AiConversation $conversation = null): array
     {
         $settings = is_array($user->prefs?->settings) ? $user->prefs->settings : [];
-        $today = Carbon::today()->toDateString();
+        $selectedDate = $this->resolveSelectedDate($runtimeContext);
+        $today = $selectedDate->toDateString();
 
         $todayMacros = $this->macroSummaryForDay($user->id, $today);
         $citations = [
@@ -23,7 +24,7 @@ class CoachContextBuilder
 
         $last7 = null;
         if ((bool) ($runtimeContext['include_last_7_days'] ?? false)) {
-            $last7 = $this->macroSummaryForRange($user->id, Carbon::today()->subDays(6), Carbon::today());
+            $last7 = $this->macroSummaryForRange($user->id, $selectedDate->copy()->subDays(6), $selectedDate->copy());
             $citations[] = ['source' => 'meal_summary_7d'];
         }
 
@@ -182,5 +183,19 @@ class CoachContextBuilder
         return mb_strlen($clean) > $max
             ? mb_substr($clean, 0, $max).'...'
             : $clean;
+    }
+
+    private function resolveSelectedDate(array $runtimeContext): Carbon
+    {
+        $candidate = trim((string) ($runtimeContext['selected_date'] ?? ''));
+        if ($candidate !== '') {
+            try {
+                return Carbon::createFromFormat('Y-m-d', $candidate)->startOfDay();
+            } catch (\Throwable) {
+                // Ignore malformed date and use today's date.
+            }
+        }
+
+        return Carbon::today();
     }
 }

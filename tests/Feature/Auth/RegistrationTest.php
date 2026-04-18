@@ -1,9 +1,10 @@
 <?php
 
+use App\Jobs\GeneratePlansForUser;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 
 test('registration screen can be rendered', function () {
@@ -13,7 +14,7 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
-    Queue::fake();
+    Bus::fake();
 
     $response = $this->post(route('register.store'), [
         'first_name' => 'Test',
@@ -30,10 +31,14 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('verification.notice', absolute: false));
+    Bus::assertDispatched(
+        GeneratePlansForUser::class,
+        fn (GeneratePlansForUser $job) => $job->reason === 'signup_initial_plan',
+    );
 });
 
 test('professional users can register with verification documents', function () {
-    Queue::fake();
+    Bus::fake();
     Storage::fake('private');
 
     $response = $this->post(route('register.store'), [
@@ -72,4 +77,5 @@ test('professional users can register with verification documents', function () 
         ->and($verification->documents)->toHaveCount(1);
 
     Storage::disk('private')->assertExists($verification->documents[0]);
+    Bus::assertNotDispatched(GeneratePlansForUser::class);
 });

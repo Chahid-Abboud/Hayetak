@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\AdminProgressController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Ai\ChatController;
 use App\Http\Controllers\Ai\PlanGenerationController;
+use App\Http\Controllers\Ai\PlannerHealthController;
+use App\Http\Controllers\Ai\PlannerPageController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Auth\RegisterWizardController;
 use App\Http\Controllers\Chat\ConversationController;
@@ -83,7 +85,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/track-meals', [MealEntryController::class, 'index'])->name('track-meals.index');
     Route::get('/meal-tracker', [MealEntryController::class, 'index'])->name('meal.tracker');
 
-    Route::get('/planner', fn () => Inertia::render('workouts/planner'))->name('planner');
+    Route::get('/planner', fn () => redirect()->route('ai.planner'))->name('planner');
+    Route::get('/ai/planner', [PlannerPageController::class, 'show'])->name('ai.planner');
     Route::get('/coach', fn () => Inertia::render('ai/chat'))->name('coach');
 
     Route::get('/places', fn () => Inertia::render('Places'))->name('places');
@@ -129,6 +132,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/meal-tracker/day', [MealTrackerApiController::class, 'day'])->name('meal.tracker.day');
     Route::get('/api/meal-tracker/month', [MealTrackerApiController::class, 'month'])->name('meal.tracker.month');
     Route::post('/api/meal-tracker/copy-day', [MealTrackerApiController::class, 'copyDay'])->name('meal.tracker.copyDay');
+    Route::post('/api/meal-tracker/planned-items/{nutritionPlanItem}/log', [MealTrackerApiController::class, 'logPlannedItem'])
+        ->name('meal.tracker.planned.log');
 
     /*
     |--------------------------------------------------------------------------
@@ -192,6 +197,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dietitians', [DietitianDiscoveryController::class, 'index']);
         Route::get('/ai/conversations', [ChatController::class, 'index']);
         Route::get('/ai/conversations/{conversation}/messages', [ChatController::class, 'messages']);
+        Route::post('/ai/plan', [PlanGenerationController::class, 'store']);
+        Route::get('/ai/plan/health', PlannerHealthController::class);
         Route::post('/ai/chat', [ChatController::class, 'store']);
 
         Route::middleware('role:admin')->group(function () {

@@ -73,7 +73,6 @@ export default function AiChatPage() {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [warnings, setWarnings] = useState<string[]>([]);
     const [pendingBubbles, setPendingBubbles] = useState<PendingBubble[]>([]);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesRequestRef = useRef<AbortController | null>(null);
@@ -228,8 +227,6 @@ export default function AiChatPage() {
         setText('');
         setSending(true);
         setError(null);
-        setWarnings([]);
-
         try {
             const response = await fetch('/api/ai/chat', {
                 method: 'POST',
@@ -262,11 +259,6 @@ export default function AiChatPage() {
             const assistantMessage = json?.assistant_message as
                 | AiMessage
                 | undefined;
-            const nextWarnings = Array.isArray(json?.warnings)
-                ? json.warnings
-                : [];
-
-            setWarnings(nextWarnings);
             setPendingBubbles([]);
 
             if (conversation) {
@@ -310,7 +302,6 @@ export default function AiChatPage() {
         setActiveConversationId(null);
         setMessages([]);
         setPendingBubbles([]);
-        setWarnings([]);
         setText('');
         setError(null);
     }
@@ -330,7 +321,7 @@ export default function AiChatPage() {
           ];
 
     const coachDescription = isAdmin
-        ? 'Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users’ private data.'
+        ? "Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users' private data."
         : 'Ask about meals, workouts, recovery, progress, plans, nearby help, messages, appointments, or settings using your saved app data when relevant.';
     const coachDescriptionText = isAdmin
         ? 'Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users private data.'
@@ -367,10 +358,6 @@ export default function AiChatPage() {
 
                 {error ? (
                     <ProductBanner tone="danger">{error}</ProductBanner>
-                ) : null}
-
-                {warnings.length > 0 ? (
-                    <ProductBanner>{warnings.join(' ')}</ProductBanner>
                 ) : null}
 
                 <ResizablePanels
@@ -465,7 +452,7 @@ export default function AiChatPage() {
                                 <div className="text-sm text-muted-foreground">
                                     {isAdmin
                                         ? 'Admin view: the coach can help with your own wellness context and Hayetak workflow questions while keeping all other users private.'
-                                        : 'The coach keeps the current thread in mind, uses saved app data when it clearly matches, and falls back to general in-domain guidance when it does not.'}
+                                        : 'Ask naturally about your profile, meals, workouts, progress, recovery, or plans.'}
                                 </div>
                             </div>
 
@@ -523,18 +510,6 @@ export default function AiChatPage() {
                                             const isPending = String(
                                                 message.id,
                                             ).startsWith('pending-');
-                                            const messageWarnings =
-                                                'metadata' in message &&
-                                                Array.isArray(
-                                                    message.metadata?.warnings,
-                                                )
-                                                    ? message.metadata?.warnings
-                                                    : [];
-                                            const modeLabel =
-                                                'metadata' in message
-                                                    ? (message.metadata?.chat
-                                                          ?.mode_label ?? null)
-                                                    : null;
                                             const createdAt =
                                                 'created_at' in message
                                                     ? message.created_at
@@ -568,14 +543,6 @@ export default function AiChatPage() {
                                                                         ? 'You'
                                                                         : 'AI Coach'}
                                                                 </span>
-                                                                {!mine &&
-                                                                modeLabel ? (
-                                                                    <span className="rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-[0.12em] uppercase opacity-80">
-                                                                        {
-                                                                            modeLabel
-                                                                        }
-                                                                    </span>
-                                                                ) : null}
                                                             </div>
                                                         </div>
                                                         {isPending &&
@@ -601,16 +568,6 @@ export default function AiChatPage() {
                                                                 }
                                                             </div>
                                                         )}
-
-                                                        {!mine &&
-                                                        messageWarnings.length >
-                                                            0 ? (
-                                                            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                                                {messageWarnings.join(
-                                                                    ' ',
-                                                                )}
-                                                            </div>
-                                                        ) : null}
 
                                                         {!mine &&
                                                         isAdmin &&

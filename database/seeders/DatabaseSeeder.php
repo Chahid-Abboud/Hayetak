@@ -31,6 +31,8 @@ class DatabaseSeeder extends Seeder
             RbacDemoSeeder::class,
             ProfessionalClientsDemoSeeder::class,
             WelcomeConversationSeeder::class,
+            DocxMealCatalogSeeder::class,
+            UserHistoryBackfillSeeder::class,
         ]);
     }
 }

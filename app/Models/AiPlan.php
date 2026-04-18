@@ -12,6 +12,7 @@ class AiPlan extends Model
 
     protected $fillable = [
         'user_id',
+        'ai_request_id',
         'type',
         'plan_json',
         'version',
@@ -28,6 +29,11 @@ class AiPlan extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function aiRequest(): BelongsTo
+    {
+        return $this->belongsTo(AiRequest::class, 'ai_request_id');
     }
 
     public function creator(): BelongsTo

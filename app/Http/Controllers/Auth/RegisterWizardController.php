@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\GeneratePlansForUser;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
+use App\Services\Ai\AutoPlanGenerationService;
+use App\Services\Ai\Planner\PlannerProfileSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,11 @@ use Inertia\Response;
 
 class RegisterWizardController extends Controller
 {
+    public function __construct(
+        private readonly PlannerProfileSyncService $plannerProfiles,
+        private readonly AutoPlanGenerationService $autoPlanGeneration,
+    ) {}
+
     /**
      * Show the register page.
      */
@@ -162,19 +168,13 @@ class RegisterWizardController extends Controller
             ]);
         }
 
+        $this->plannerProfiles->prepare($user);
+
         Auth::login($user);
         $request->session()->regenerate();
         $user->sendEmailVerificationNotification();
 
-        /**
-         * Generate initial plans in the background.
-         *
-         * If QUEUE_CONNECTION=sync -> runs immediately.
-         * If QUEUE_CONNECTION=database -> requires queue:work running.
-         */
-        if ($user->role === User::ROLE_CLIENT) {
-            GeneratePlansForUser::dispatch($user->id, 7);
-        }
+        $this->autoPlanGeneration->startIfNeeded($user, 'signup_initial_plan');
 
         return redirect()
             ->route('verification.notice')

@@ -25,11 +25,7 @@ interface LoginProps {
     canResetPassword: boolean;
 }
 
-function PasswordField({
-    error,
-}: {
-    error?: string;
-}) {
+function PasswordField({ error }: { error?: string }) {
     const [show, setShow] = useState(false);
 
     return (
@@ -48,7 +44,7 @@ function PasswordField({
                     type={show ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="Enter your password"
-                    className={`w-full rounded-xl border bg-background/80 py-2.5 pr-10 pl-10 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground/70 focus:border-ring focus:ring-2 focus:ring-ring/30 ${
+                    className={`w-full rounded-xl border bg-background/80 py-2.5 pr-10 pl-10 text-sm text-foreground transition-all outline-none placeholder:text-muted-foreground/70 focus:border-ring focus:ring-2 focus:ring-ring/30 ${
                         error
                             ? 'border-destructive/70'
                             : 'border-border/70 hover:border-secondary/50'
@@ -249,7 +245,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                                 autoFocus
                                                 autoComplete="email"
                                                 placeholder="you@example.com"
-                                                className={`w-full rounded-xl border bg-background/80 py-2.5 pr-4 pl-10 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground/70 focus:border-ring focus:ring-2 focus:ring-ring/30 ${
+                                                className={`w-full rounded-xl border bg-background/80 py-2.5 pr-4 pl-10 text-sm text-foreground transition-all outline-none placeholder:text-muted-foreground/70 focus:border-ring focus:ring-2 focus:ring-ring/30 ${
                                                     errors.email
                                                         ? 'border-destructive/70'
                                                         : 'border-border/70 hover:border-secondary/50'
@@ -271,7 +267,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                                 name="remember"
                                                 className="h-4 w-4 rounded border-border bg-background text-secondary focus:ring-secondary/30"
                                             />
-                                            <span className="select-none text-sm text-muted-foreground transition-colors group-hover:text-foreground">
+                                            <span className="text-sm text-muted-foreground transition-colors select-none group-hover:text-foreground">
                                                 Remember me
                                             </span>
                                         </label>

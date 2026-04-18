@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\CarbonImmutable;
 use App\Models\MealLog;
+use App\Models\Measurement;
 use App\Models\NutritionPlan;
+use App\Models\AiRequest;
 use App\Models\WaterIntake;
 use App\Models\WorkoutPlan;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +32,8 @@ class HomeController extends Controller
         // ---- Water intake ----
         $todayMl = 0;
         $targetMl = 2000;
+        $weightHistory = [];
+        $heightHistory = [];
 
         if ($user) {
             if (is_numeric($user->weight_kg)) {
@@ -41,6 +46,42 @@ class HomeController extends Controller
                         ->whereDate('for_day', $today) // fixed column name
                         ->value('ml') ?? 0
                 );
+            }
+
+            if (Schema::hasTable('measurements')) {
+                $hasHeightColumn = Schema::hasColumn('measurements', 'height_cm');
+                $columns = ['measured_at', 'weight_kg'];
+                if ($hasHeightColumn) {
+                    $columns[] = 'height_cm';
+                }
+
+                $rows = Measurement::query()
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('measured_at')
+                    ->limit(90)
+                    ->get($columns);
+
+                $weightHistory = $rows
+                    ->filter(fn ($row) => $row->weight_kg !== null)
+                    ->map(fn ($row) => [
+                        'date' => (string) optional($row->measured_at)->toDateString(),
+                        'type' => 'weight',
+                        'value' => (float) $row->weight_kg,
+                    ])
+                    ->values()
+                    ->all();
+
+                if ($hasHeightColumn) {
+                    $heightHistory = $rows
+                        ->filter(fn ($row) => $row->height_cm !== null)
+                        ->map(fn ($row) => [
+                            'date' => (string) optional($row->measured_at)->toDateString(),
+                            'type' => 'height',
+                            'value' => (float) $row->height_cm,
+                        ])
+                        ->values()
+                        ->all();
+                }
             }
         }
 
@@ -179,14 +220,19 @@ class HomeController extends Controller
         // ✅ NEW: Load active generated plans for showing on the dashboard
         $nutritionPlan = null;
         $workoutPlan = null;
+        $plannerModelMeta = null;
+        $progressPrediction = null;
+        $predictionTrend = [];
 
         if ($user) {
             // Latest ACTIVE nutrition plan (load nested relations + food names)
             $nutritionPlan = NutritionPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
+                ->whereNotNull('ai_request_id')
                 ->latest('id')
                 ->with([
+                    'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
                 ])
                 ->first();
@@ -195,11 +241,50 @@ class HomeController extends Controller
             $workoutPlan = WorkoutPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
+                ->whereNotNull('ai_request_id')
                 ->latest('id')
                 ->with([
+                    'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.exercises:id,name,primary_muscle,equipment,difficulty',
                 ])
                 ->first();
+
+            $latestPlannerRequest = AiRequest::query()
+                ->where('user_id', $user->id)
+                ->where('type', 'plan_generator')
+                ->where('status', 'completed')
+                ->whereNotNull('output_json')
+                ->latest('id')
+                ->first([
+                    'id',
+                    'created_at',
+                    'provider',
+                    'model',
+                    'prompt_version',
+                    'schema_version',
+                    'output_json',
+                ]);
+
+            if ($latestPlannerRequest) {
+                $plannerModelMeta = [
+                    'ai_request_id' => (int) $latestPlannerRequest->id,
+                    'generated_at' => optional($latestPlannerRequest->created_at)?->toDateTimeString(),
+                    'provider' => $latestPlannerRequest->provider,
+                    'model' => $latestPlannerRequest->model,
+                    'prompt_version' => $latestPlannerRequest->prompt_version,
+                    'schema_version' => $latestPlannerRequest->schema_version,
+                ];
+
+                $prediction = is_array($latestPlannerRequest->output_json)
+                    ? data_get($latestPlannerRequest->output_json, 'progress_prediction')
+                    : null;
+
+                if (is_array($prediction)) {
+                    $progressPrediction = $prediction;
+                }
+            }
+
+            $predictionTrend = $this->recentPredictionTrend((int) $user->id, 10);
         }
 
         return Inertia::render('dashboard', [
@@ -221,10 +306,132 @@ class HomeController extends Controller
             'todayMacros' => $todayMacros,
             'mealTotals' => $mealTotals,
             'mealEntryPreviews' => $mealEntryPreviews,
+            'weightHistory' => $weightHistory,
+            'heightHistory' => $heightHistory,
 
             // ✅ NEW PROPS (safe arrays for TSX)
             'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,
             'workoutPlan' => $workoutPlan ? $workoutPlan->toArray() : null,
+            'plannerModelMeta' => $plannerModelMeta,
+            'progressPrediction' => $progressPrediction,
+            'predictionTrend' => $predictionTrend,
         ]);
+    }
+
+    /**
+     * @return array<int, array{
+     *   plan_date:string,
+     *   horizon_days:int,
+     *   projected_weight_kg:float,
+     *   actual_weight_kg:float|null,
+     *   model_name:string|null,
+     *   inference_source:string|null
+     * }>
+     */
+    private function recentPredictionTrend(int $userId, int $limit = 10): array
+    {
+        $requests = AiRequest::query()
+            ->where('user_id', $userId)
+            ->where('type', 'plan_generator')
+            ->where('status', 'completed')
+            ->whereNotNull('output_json')
+            ->latest('id')
+            ->limit(max(2, $limit))
+            ->get(['id', 'created_at', 'output_json']);
+
+        if ($requests->isEmpty()) {
+            return [];
+        }
+
+        $measurements = Measurement::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('weight_kg')
+            ->orderBy('measured_at')
+            ->get(['measured_at', 'weight_kg']);
+
+        $rows = [];
+        foreach ($requests->reverse()->values() as $request) {
+            $output = is_array($request->output_json) ? $request->output_json : [];
+            $prediction = is_array($output['progress_prediction'] ?? null)
+                ? $output['progress_prediction']
+                : null;
+
+            if (! is_array($prediction)) {
+                continue;
+            }
+
+            $horizonDays = $this->normalizePlanHorizonDays(
+                (int) ($prediction['horizon_days'] ?? 14)
+            );
+
+            $planDate = CarbonImmutable::parse((string) $request->created_at)->startOfDay();
+            $expectedEndDate = $planDate->addDays(max(1, $horizonDays) - 1);
+
+            $projectedWeight = $this->toFloatOrNull($prediction['projected_body_weight_kg'] ?? null);
+            if ($projectedWeight === null) {
+                $baseline = $this->toFloatOrNull($prediction['baseline_weight_kg'] ?? null);
+                $expectedChange = $this->toFloatOrNull($prediction['expected_weight_change_kg'] ?? null);
+                if ($baseline !== null && $expectedChange !== null) {
+                    $projectedWeight = $baseline + $expectedChange;
+                }
+            }
+            if ($projectedWeight === null) {
+                continue;
+            }
+
+            $actualWeight = $this->weightNearTargetDateFromRows($measurements, $expectedEndDate);
+
+            $rows[] = [
+                'plan_date' => $planDate->toDateString(),
+                'horizon_days' => $horizonDays,
+                'projected_weight_kg' => round((float) $projectedWeight, 3),
+                'actual_weight_kg' => $actualWeight !== null ? round((float) $actualWeight, 3) : null,
+                'model_name' => is_string($prediction['model_name'] ?? null) ? $prediction['model_name'] : null,
+                'inference_source' => is_string($prediction['inference_source'] ?? null) ? $prediction['inference_source'] : null,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function normalizePlanHorizonDays(int $days): int
+    {
+        if ($days <= 14) {
+            return 14;
+        }
+        if ($days <= 21) {
+            return 21;
+        }
+
+        return 28;
+    }
+
+    private function toFloatOrNull(mixed $value): ?float
+    {
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    private function weightNearTargetDateFromRows(iterable $rows, CarbonImmutable $targetDate): ?float
+    {
+        $targetTs = $targetDate->startOfDay()->getTimestamp();
+        $best = null;
+        $bestDistance = null;
+
+        foreach ($rows as $row) {
+            $rowDate = CarbonImmutable::parse((string) $row->measured_at)->startOfDay();
+            $deltaDays = (int) floor(($rowDate->getTimestamp() - $targetTs) / 86400);
+
+            if ($deltaDays < -7 || $deltaDays > 10) {
+                continue;
+            }
+
+            $distance = abs($deltaDays);
+            if ($bestDistance === null || $distance < $bestDistance) {
+                $bestDistance = $distance;
+                $best = (float) $row->weight_kg;
+            }
+        }
+
+        return $best;
     }
 }

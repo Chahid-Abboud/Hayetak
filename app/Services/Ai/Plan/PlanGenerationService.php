@@ -13,14 +13,19 @@ class PlanGenerationService
     /**
      * Legacy compatibility wrapper.
      */
-    public function generateForUser(User $user, int $days = 7): array
+    public function generateForUser(User $user, int $days = 14): array
     {
-        $result = $this->plannerService->generate($user, true, 'legacy_pipeline', $user->id);
+        $result = $this->plannerService->generate($user, [
+            'regenerate' => true,
+            'reason' => 'legacy_pipeline',
+            'created_by' => $user->id,
+            'plan_horizon_days' => $days,
+        ]);
 
         $latestNutrition = $this->latestActiveNutritionPlan($user);
 
         return [
-            'ai_request_id' => null,
+            'ai_request_id' => $result['ai_request_id'] ?? null,
             'nutrition_plan_id' => $latestNutrition?->id,
             'generation_id' => $result['generation_id'] ?? null,
             'version' => $result['version'] ?? null,

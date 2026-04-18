@@ -7,63 +7,88 @@ use App\Models\Exercise;
 use App\Models\WorkoutLog;
 use App\Models\WorkoutLogSet;
 use App\Models\WorkoutPlan;
+use App\Models\WorkoutPlanDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class WorkoutLogController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $userId = Auth::id();
-
-        // Load plan (days + exercises ordered)
-        $plan = WorkoutPlan::with([
-            'days.exercises' => fn ($q) => $q->orderBy('primary_muscle')->orderBy('name'),
-            'days' => fn ($q) => $q->orderBy('day_index'),
-        ])->where('user_id', $userId)->first();
-
         $today = Carbon::today();
-        $weekday = (int) $today->isoWeekday(); // 1..7
-        $currentDay = optional($plan?->days->firstWhere('day_index', $weekday)) ?: $plan?->days->first();
+        $weekday = (int) $today->isoWeekday();
 
-        // Recent logs (order by performed_at), with sets for the UI
+        $aiPlan = $this->planQuery()
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->whereNotNull('ai_request_id')
+            ->latest('id')
+            ->first();
+
+        $manualPlan = $this->planQuery()
+            ->where('user_id', $userId)
+            ->whereNull('ai_request_id')
+            ->latest('updated_at')
+            ->first();
+
+        $recommendedAiDay = $aiPlan?->days->firstWhere('day_index', $weekday) ?? $aiPlan?->days->first();
+        $recommendedManualDay = $manualPlan?->days->firstWhere('day_index', $weekday) ?? $manualPlan?->days->first();
+
         $recentLogs = WorkoutLog::query()
             ->where('user_id', $userId)
-            ->with(['sets.exercise:id,name'])
+            ->with([
+                'sets.exercise:id,name',
+                'plan:id,name,ai_request_id',
+                'day:id,workout_plan_id,day_index,name',
+            ])
             ->orderByDesc('performed_at')
             ->orderByDesc('id')
             ->limit(14)
             ->get()
-            ->map(function ($l) {
-                $sets = $l->sets->map(function ($s) {
-                    return [
-                        'id' => (int) $s->id,
-                        'exercise' => $s->exercise ? ['id' => (int) $s->exercise->id, 'name' => $s->exercise->name] : null,
-                        'weight_kg' => $s->weight_kg,
-                        'reps' => (int) $s->reps,
-                        'set_number' => (int) $s->order_index + 1, // 1-based for frontend
-                    ];
-                })->sortBy('order_index')->values()->all();
+            ->map(function (WorkoutLog $log) {
+                $sets = $log->sets
+                    ->sortBy('order_index')
+                    ->map(function ($set) {
+                        return [
+                            'id' => (int) $set->id,
+                            'exercise' => $set->exercise ? [
+                                'id' => (int) $set->exercise->id,
+                                'name' => (string) $set->exercise->name,
+                            ] : null,
+                            'weight_kg' => $set->weight_kg,
+                            'reps' => (int) $set->reps,
+                            'set_number' => (int) $set->order_index + 1,
+                        ];
+                    })
+                    ->values()
+                    ->all();
 
                 return [
-                    'id' => (int) $l->id,
-                    'workout_date' => $l->performed_at,
-                    'workout_plan_day_id' => $l->workout_plan_day_id,
+                    'id' => (int) $log->id,
+                    'workout_date' => $log->performed_at?->toDateString(),
+                    'workout_plan_id' => $log->workout_plan_id,
+                    'workout_plan_day_id' => $log->workout_plan_day_id,
+                    'plan_source' => $log->plan?->ai_request_id ? 'ai' : ($log->plan ? 'manual' : 'freestyle'),
+                    'day_name' => $log->day?->name,
                     'sets' => $sets,
                 ];
             });
 
-        // Exercise library (for freestyle picker)
-        $exercises = Exercise::orderBy('primary_muscle')
+        $exercises = Exercise::query()
+            ->orderBy('primary_muscle')
             ->orderBy('name')
             ->get(['id', 'name', 'primary_muscle', 'equipment', 'demo_url']);
 
         return Inertia::render('workouts/log', [
-            'plan' => $plan,
-            'currentDay' => $currentDay,
+            'aiPlan' => $aiPlan,
+            'manualPlan' => $manualPlan,
+            'recommendedAiDayId' => $recommendedAiDay?->id,
+            'recommendedManualDayId' => $recommendedManualDay?->id,
             'today' => $today->toDateString(),
             'recentLogs' => $recentLogs,
             'exercises' => $exercises,
@@ -73,19 +98,30 @@ class WorkoutLogController extends Controller
 
     public function start(Request $request)
     {
-        // Accept either performed_at or legacy workout_date
         $data = $request->validate([
             'performed_at' => ['nullable', 'date'],
-            'workout_date' => ['nullable', 'date'], // legacy field from UI
+            'workout_date' => ['nullable', 'date'],
             'workout_plan_day_id' => ['nullable', 'integer', 'exists:workout_plan_days,id'],
         ]);
 
         $when = $data['performed_at'] ?? $data['workout_date'] ?? now()->toDateString();
+        $dayId = isset($data['workout_plan_day_id']) ? (int) $data['workout_plan_day_id'] : null;
+        $planId = null;
 
-        $log = WorkoutLog::create([
+        if ($dayId) {
+            $day = WorkoutPlanDay::query()
+                ->with('plan:id,user_id')
+                ->findOrFail($dayId);
+
+            abort_unless($day->plan?->user_id === Auth::id(), 403, 'Unauthorized');
+            $planId = $day->workout_plan_id;
+        }
+
+        $log = WorkoutLog::query()->create([
             'user_id' => Auth::id(),
             'performed_at' => Carbon::parse($when),
-            'workout_plan_day_id' => $data['workout_plan_day_id'] ?? null,
+            'workout_plan_id' => $planId,
+            'workout_plan_day_id' => $dayId,
         ]);
 
         return redirect()->route('workouts.log')->with('activeLogId', $log->id);
@@ -102,7 +138,6 @@ class WorkoutLogController extends Controller
             'reps' => ['required', 'integer', 'min:1', 'max:50'],
         ]);
 
-        // DB uses order_index (0-based); frontend sends set_number (1-based)
         $orderIndex = $data['set_number'] - 1;
 
         WorkoutLogSet::updateOrCreate(
@@ -131,7 +166,7 @@ class WorkoutLogController extends Controller
 
         $log->update($data);
 
-        return back()->with('success', 'Great job! Workout saved ');
+        return back()->with('success', 'Great job! Workout saved.');
     }
 
     public function progress(Request $request)
@@ -139,43 +174,89 @@ class WorkoutLogController extends Controller
         $userId = Auth::id();
         $weeks = (int) ($request->get('weeks', 8));
 
-        // Cross-database rollup: fetch rows and aggregate by ISO week in PHP.
         $rows = DB::table('workout_log_sets as s')
             ->join('workout_logs as l', 'l.id', '=', 's.workout_log_id')
             ->join('exercises as e', 'e.id', '=', 's.exercise_id')
             ->where('l.user_id', $userId)
             ->where('l.performed_at', '>=', now()->subWeeks($weeks + 1))
-            ->select('l.performed_at', 'e.primary_muscle')
+            ->select('l.id as workout_log_id', 'l.performed_at', 'e.primary_muscle', 's.reps')
             ->selectRaw('COALESCE(s.weight_kg, 0) AS top_weight')
             ->orderBy('l.performed_at')
             ->get();
 
-        // Build series keyed by ISO week (YYYY-Www)
-        $byWeek = [];
-        foreach ($rows as $r) {
-            $dt = Carbon::parse($r->performed_at);
+        $byWeekMuscles = [];
+        $byWeekContext = [];
+        foreach ($rows as $row) {
+            $dt = Carbon::parse($row->performed_at);
             $weekKey = sprintf('%d-W%02d', $dt->isoWeekYear, $dt->isoWeek);
-            $muscle = (string) $r->primary_muscle;
-            $topWeight = (float) $r->top_weight;
+            $muscle = (string) $row->primary_muscle;
+            $topWeight = (float) $row->top_weight;
+            $reps = (int) ($row->reps ?? 0);
 
-            $byWeek[$weekKey] ??= [];
-            $byWeek[$weekKey][$muscle] = isset($byWeek[$weekKey][$muscle])
-                ? max($byWeek[$weekKey][$muscle], $topWeight)
+            $byWeekMuscles[$weekKey] ??= [];
+            $byWeekMuscles[$weekKey][$muscle] = isset($byWeekMuscles[$weekKey][$muscle])
+                ? max($byWeekMuscles[$weekKey][$muscle], $topWeight)
                 : $topWeight;
+
+            $byWeekContext[$weekKey] ??= [
+                'week' => $weekKey,
+                'top_set_kg' => 0.0,
+                'total_volume_kg' => 0.0,
+                'total_reps' => 0,
+                'set_count' => 0,
+                'workout_log_ids' => [],
+            ];
+
+            $byWeekContext[$weekKey]['top_set_kg'] = max(
+                (float) $byWeekContext[$weekKey]['top_set_kg'],
+                $topWeight
+            );
+            $byWeekContext[$weekKey]['total_volume_kg'] += max(0, $topWeight) * max(0, $reps);
+            $byWeekContext[$weekKey]['total_reps'] += max(0, $reps);
+            $byWeekContext[$weekKey]['set_count'] += 1;
+            $byWeekContext[$weekKey]['workout_log_ids'][(int) $row->workout_log_id] = true;
         }
 
         $series = [];
-        foreach ($byWeek as $week => $muscles) {
+        foreach ($byWeekMuscles as $week => $muscles) {
             $entry = ['week' => $week];
-            foreach ($muscles as $m => $weight) {
-                $entry[$m] = round((float) $weight, 1);
+            foreach ($muscles as $muscle => $weight) {
+                $entry[$muscle] = round((float) $weight, 1);
             }
             $series[] = $entry;
         }
 
+        $weeklyContext = [];
+        foreach ($byWeekContext as $week => $entry) {
+            $setCount = (int) $entry['set_count'];
+            $weeklyContext[] = [
+                'week' => $week,
+                'top_set_kg' => round((float) $entry['top_set_kg'], 1),
+                'avg_reps' => $setCount > 0 ? round(((int) $entry['total_reps']) / $setCount, 1) : 0.0,
+                'total_volume_kg' => round((float) $entry['total_volume_kg'], 1),
+                'set_count' => $setCount,
+                'workout_count' => count($entry['workout_log_ids']),
+            ];
+        }
+
         $motivation = $this->motivationFromSeries($series);
 
-        return response()->json(['series' => $series, 'motivation' => $motivation]);
+        return response()->json([
+            'series' => $series,
+            'weekly_context' => $weeklyContext,
+            'motivation' => $motivation,
+        ]);
+    }
+
+    private function planQuery()
+    {
+        return WorkoutPlan::query()->with([
+            'aiRequest:id,provider,model,prompt_version,schema_version',
+            'days' => fn ($query) => $query->orderBy('day_index'),
+            'days.exercises' => fn ($query) => $query
+                ->orderBy('workout_plan_day_exercises.order_index')
+                ->orderBy('exercises.name'),
+        ]);
     }
 
     private function motivationFromSeries(array $series): array
@@ -183,6 +264,7 @@ class WorkoutLogController extends Controller
         if (count($series) < 2) {
             return ['title' => 'Nice start!', 'lines' => ['Keep logging to unlock progress insights.']];
         }
+
         $last = end($series);
         $prev = prev($series);
 
@@ -191,29 +273,29 @@ class WorkoutLogController extends Controller
         $best = null;
         $bestDelta = 0.0;
 
-        foreach ($muscles as $m) {
-            $a = $last[$m] ?? null;
-            $b = $prev[$m] ?? null;
-            if ($a !== null && $b !== null) {
-                $delta = round($a - $b, 1);
+        foreach ($muscles as $muscle) {
+            $current = $last[$muscle] ?? null;
+            $before = $prev[$muscle] ?? null;
+            if ($current !== null && $before !== null) {
+                $delta = round($current - $before, 1);
                 if ($delta > 0) {
-                    $lines[] = "↑ **{$m}** improved by **{$delta} kg** week-over-week.";
+                    $lines[] = "Improvement in {$muscle}: +{$delta} kg week-over-week.";
                     if ($delta > $bestDelta) {
                         $bestDelta = $delta;
-                        $best = $m;
+                        $best = $muscle;
                     }
                 } elseif ($delta < 0) {
-                    $lines[] = "↔ **{$m}** dipped **".abs($delta).' kg** — deloads happen, bounce back!';
+                    $lines[] = "{$muscle} dipped by ".abs($delta).' kg. Deloads happen, keep going.';
                 } else {
-                    $lines[] = "→ **{$m}** held steady — consistency wins.";
+                    $lines[] = "{$muscle} held steady. Consistency is still progress.";
                 }
             }
         }
 
         $title = $best
-            ? "Crushing it! Biggest gain in **{$best}** (+{$bestDelta} kg)"
-            : 'Solid consistency — keep stacking sets!';
+            ? "Biggest gain this week: {$best} (+{$bestDelta} kg)"
+            : 'Solid consistency. Keep stacking sessions.';
 
-        return ['title' => $title, 'lines' => $lines ?: ['Keep pushing — your future self will thank you.']];
+        return ['title' => $title, 'lines' => $lines ?: ['Keep pushing and the trends will become clearer.']];
     }
 }

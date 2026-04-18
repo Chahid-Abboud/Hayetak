@@ -36,7 +36,7 @@ class TwoFactorAuthenticationController extends Controller implements HasMiddlew
             return redirect()->route('password.confirm');
         }
 
-        return Inertia::render('settings/two-factor', [
+        return Inertia::render('settings/security', [
             'twoFactorEnabled' => $request->user()->hasEnabledTwoFactorAuthentication(),
             'requiresConfirmation' => Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm'),
         ]);

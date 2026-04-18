@@ -20,7 +20,7 @@ export default function WorkoutTabs({ active }: WorkoutTabsProps) {
                             : ' text-muted-foreground hover:bg-background hover:text-foreground')
                     }
                 >
-                    Plan Builder
+                    Workout Planner
                 </Link>
 
                 <Link
@@ -32,7 +32,7 @@ export default function WorkoutTabs({ active }: WorkoutTabsProps) {
                             : ' text-muted-foreground hover:bg-background hover:text-foreground')
                     }
                 >
-                    Live Log
+                    Workout Log
                 </Link>
             </div>
         </div>

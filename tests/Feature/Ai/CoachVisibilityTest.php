@@ -3,6 +3,8 @@
 use App\Models\User;
 
 it('allows an admin to access the coach page', function () {
+    config()->set('ai.chat.provider', 'stub');
+
     $admin = User::factory()->create([
         'role' => User::ROLE_ADMIN,
         'verified' => true,

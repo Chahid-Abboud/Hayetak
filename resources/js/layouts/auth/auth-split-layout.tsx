@@ -35,17 +35,21 @@ export default function AuthSplitLayout({
                         Hayetak access
                     </p>
                     <h2 className="text-4xl font-semibold tracking-tight">
-                        Plans, coaching, and tracking should feel connected from the first screen.
+                        Plans, coaching, and tracking should feel connected from
+                        the first screen.
                     </h2>
                     <p className="text-base leading-7 text-white/72">
-                        This auth shell now matches the refreshed product theme so account flows feel like part of the same experience.
+                        This auth shell now matches the refreshed product theme
+                        so account flows feel like part of the same experience.
                     </p>
                 </div>
 
                 <div className="relative z-20 mt-auto space-y-6">
                     {quote && (
                         <blockquote className="space-y-2">
-                            <p className="text-lg">&ldquo;{quote.message}&rdquo;</p>
+                            <p className="text-lg">
+                                &ldquo;{quote.message}&rdquo;
+                            </p>
                             <footer className="text-sm text-neutral-300">
                                 {quote.author}
                             </footer>
@@ -57,7 +61,8 @@ export default function AuthSplitLayout({
                                 Planner
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white/70">
-                                Health recommendations tailored to goals, restrictions, and history.
+                                Health recommendations tailored to goals,
+                                restrictions, and history.
                             </p>
                         </div>
                         <div className="rounded-[24px] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur">
@@ -65,7 +70,8 @@ export default function AuthSplitLayout({
                                 Coach
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white/70">
-                                Context-aware guidance that keeps meals, workouts, and safety aligned.
+                                Context-aware guidance that keeps meals,
+                                workouts, and safety aligned.
                             </p>
                         </div>
                     </div>

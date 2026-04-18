@@ -208,7 +208,10 @@ function countLoggedMeals(days: WeeklyMealDay[]) {
     return days.reduce((total, day) => {
         return (
             total +
-            day.meals.reduce((mealTotal, meal) => mealTotal + meal.items.length, 0)
+            day.meals.reduce(
+                (mealTotal, meal) => mealTotal + meal.items.length,
+                0,
+            )
         );
     }, 0);
 }
@@ -337,7 +340,9 @@ export default function ProfessionalClientsPage() {
                 normalized === '' ||
                 entry.client.name.toLowerCase().includes(normalized) ||
                 entry.client.email.toLowerCase().includes(normalized) ||
-                (entry.client.username ?? '').toLowerCase().includes(normalized);
+                (entry.client.username ?? '')
+                    .toLowerCase()
+                    .includes(normalized);
 
             if (!searchMatch) {
                 return false;
@@ -368,8 +373,9 @@ export default function ProfessionalClientsPage() {
 
     const activeEntry = useMemo(
         () =>
-            filteredClients.find((entry) => entry.client.id === activeClientId) ??
-            null,
+            filteredClients.find(
+                (entry) => entry.client.id === activeClientId,
+            ) ?? null,
         [activeClientId, filteredClients],
     );
 
@@ -663,17 +669,25 @@ export default function ProfessionalClientsPage() {
                     title={pageTitle}
                     description={`Private client view for your assigned ${roleMode === 'nutritionist' ? 'nutrition' : 'training'} clients.`}
                     actions={
-                        <div className="space-y-1 rounded-2xl border bg-card px-4 py-2 text-xs text-muted-foreground">
-                            <div>
-                                {filteredClients.length} in view
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-[22px] border border-border/70 bg-card/88 px-4 py-3 text-sm">
+                                <div className="haye-kicker">In view</div>
+                                <div className="mt-2 font-semibold text-foreground">
+                                    {filteredClients.length} clients
+                                </div>
                             </div>
-                            <div>
-                                {
-                                    filteredClients.filter((entry) =>
-                                        isAttentionClient(entry, roleMode),
-                                    ).length
-                                }{' '}
-                                need follow-up
+                            <div className="rounded-[22px] border border-border/70 bg-card/88 px-4 py-3 text-sm">
+                                <div className="haye-kicker">
+                                    Needs follow-up
+                                </div>
+                                <div className="mt-2 font-semibold text-foreground">
+                                    {
+                                        filteredClients.filter((entry) =>
+                                            isAttentionClient(entry, roleMode),
+                                        ).length
+                                    }{' '}
+                                    flagged
+                                </div>
                             </div>
                         </div>
                     }
@@ -693,7 +707,7 @@ export default function ProfessionalClientsPage() {
                     </div>
                 ) : (
                     <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-                        <aside className="rounded-3xl border bg-card p-4 shadow-sm">
+                        <aside className="rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
                             <div className="space-y-4">
                                 <ProductFilterRow>
                                     <label className="relative min-w-0 flex-1">
@@ -710,26 +724,30 @@ export default function ProfessionalClientsPage() {
                                 </ProductFilterRow>
 
                                 <div className="flex flex-wrap gap-2">
-                                    {(['all', 'attention', 'stable'] as ClientFilter[]).map(
-                                        (item) => (
-                                            <button
-                                                key={item}
-                                                type="button"
-                                                className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                                                    filter === item
-                                                        ? 'border-primary/35 bg-primary/10 text-foreground'
-                                                        : 'border-border/70 bg-background text-muted-foreground hover:bg-muted/40'
-                                                }`}
-                                                onClick={() => setFilter(item)}
-                                            >
-                                                {item === 'all'
-                                                    ? 'All'
-                                                    : item === 'attention'
-                                                      ? 'Needs follow-up'
-                                                      : 'Stable'}
-                                            </button>
-                                        ),
-                                    )}
+                                    {(
+                                        [
+                                            'all',
+                                            'attention',
+                                            'stable',
+                                        ] as ClientFilter[]
+                                    ).map((item) => (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                                                filter === item
+                                                    ? 'border-primary/35 bg-primary/10 text-foreground'
+                                                    : 'border-border/70 bg-background text-muted-foreground hover:bg-muted/40'
+                                            }`}
+                                            onClick={() => setFilter(item)}
+                                        >
+                                            {item === 'all'
+                                                ? 'All'
+                                                : item === 'attention'
+                                                  ? 'Needs follow-up'
+                                                  : 'Stable'}
+                                        </button>
+                                    ))}
                                 </div>
 
                                 <div className="space-y-2">
@@ -753,10 +771,10 @@ export default function ProfessionalClientsPage() {
                                                             entry.client.id,
                                                         )
                                                     }
-                                                    className={`w-full rounded-2xl border p-3 text-left transition ${
+                                                    className={`w-full rounded-[22px] border p-3 text-left transition ${
                                                         activeClientId ===
                                                         entry.client.id
-                                                            ? 'border-primary/35 bg-primary/10'
+                                                            ? 'border-primary/25 bg-primary/10 shadow-[0_18px_44px_-36px_rgba(17,24,39,0.68)]'
                                                             : 'border-border/70 bg-background/70 hover:bg-muted/35'
                                                     }`}
                                                 >
@@ -793,325 +811,362 @@ export default function ProfessionalClientsPage() {
                                     No clients match this filter.
                                 </div>
                             ) : (
-                                (activeEntry ? [activeEntry] : filteredClients).map(
-                                    (entry) => (
-                                        <section
-                                            key={entry.assignment_id}
-                                            className="rounded-3xl border bg-card p-5 shadow-sm"
-                                        >
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h2 className="text-xl font-semibold">
-                                                {entry.client.name}
-                                            </h2>
-                                            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                                                {formatRoleLabel(roleMode)}{' '}
-                                                client
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                            <span>{entry.client.email}</span>
-                                            {entry.client.age ? (
-                                                <span>
-                                                    Age {entry.client.age}
-                                                </span>
-                                            ) : null}
-                                            {entry.client.username ? (
-                                                <span>
-                                                    @{entry.client.username}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        {entry.notes ? (
-                                            <p className="mt-2 text-sm text-muted-foreground">
-                                                {entry.notes}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        <button
-                                            type="button"
-                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                            onClick={() =>
-                                                void openConversation(
-                                                    entry.client.id,
-                                                )
-                                            }
-                                            disabled={
-                                                busyClientId === entry.client.id
-                                            }
-                                        >
-                                            Message
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="rounded-full bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95"
-                                            onClick={() =>
-                                                openAppointmentDialog(
-                                                    entry.client,
-                                                )
-                                            }
-                                            disabled={
-                                                busyClientId === entry.client.id
-                                            }
-                                        >
-                                            Appointment
-                                        </button>
-                                        {roleMode === 'nutritionist' ? (
-                                            <button
-                                                type="button"
-                                                className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                                onClick={() =>
-                                                    openMealNoteDialog(entry)
-                                                }
-                                                disabled={
-                                                    busyClientId ===
-                                                    entry.client.id
-                                                }
-                                            >
-                                                Meal Note
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                </div>
-
-                                <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-                                    <div className="rounded-2xl border bg-background p-4">
-                                        <div className="mb-3 flex items-center justify-between gap-3">
-                                            <h3 className="text-sm font-semibold">
-                                                Height and weight progress
-                                            </h3>
-                                            <div className="text-xs text-muted-foreground">
-                                                Latest:{' '}
-                                                {entry.progress
-                                                    .latest_weight_kg !== null
-                                                    ? `${entry.progress.latest_weight_kg} kg`
-                                                    : 'n/a'}
-                                                {' / '}
-                                                {entry.progress
-                                                    .latest_height_cm !== null
-                                                    ? `${entry.progress.latest_height_cm} cm`
-                                                    : 'n/a'}
-                                            </div>
-                                        </div>
-
-                                        {entry.progress.points.length === 0 ? (
-                                            <p className="text-sm text-muted-foreground">
-                                                No measurement history logged
-                                                yet.
-                                            </p>
-                                        ) : (
-                                            <div className="overflow-x-auto">
-                                                <table className="min-w-full text-sm">
-                                                    <thead className="text-left text-muted-foreground">
-                                                        <tr>
-                                                            <th className="py-2 pr-4">
-                                                                Date
-                                                            </th>
-                                                            <th className="py-2 pr-4">
-                                                                Weight
-                                                            </th>
-                                                            <th className="py-2">
-                                                                Height
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {entry.progress.points
-                                                            .slice(-6)
-                                                            .map((point) => (
-                                                                <tr
-                                                                    key={
-                                                                        point.date
-                                                                    }
-                                                                    className="border-t"
-                                                                >
-                                                                    <td className="py-2 pr-4">
-                                                                        {
-                                                                            point.date
-                                                                        }
-                                                                    </td>
-                                                                    <td className="py-2 pr-4">
-                                                                        {point.weight_kg !==
-                                                                        null
-                                                                            ? `${point.weight_kg} kg`
-                                                                            : '-'}
-                                                                    </td>
-                                                                    <td className="py-2">
-                                                                        {point.height_cm !==
-                                                                        null
-                                                                            ? `${point.height_cm} cm`
-                                                                            : '-'}
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {roleMode === 'trainer' ? (
-                                        <div className="rounded-2xl border bg-background p-4">
-                                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                                                <h3 className="text-sm font-semibold">
-                                                    Workout progress
-                                                </h3>
-                                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                                    <span className="rounded-full bg-muted px-2.5 py-1">
-                                                        Sessions:{' '}
-                                                        {
-                                                            entry.training
-                                                                ?.summary
-                                                                .logged_sessions
-                                                        }
-                                                    </span>
-                                                    <span className="rounded-full bg-muted px-2.5 py-1">
-                                                        Sets:{' '}
-                                                        {
-                                                            entry.training
-                                                                ?.summary
-                                                                .total_sets
-                                                        }
+                                (activeEntry
+                                    ? [activeEntry]
+                                    : filteredClients
+                                ).map((entry) => (
+                                    <section
+                                        key={entry.assignment_id}
+                                        className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
+                                    >
+                                        <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <h2 className="text-xl font-semibold">
+                                                        {entry.client.name}
+                                                    </h2>
+                                                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                                                        {formatRoleLabel(
+                                                            roleMode,
+                                                        )}{' '}
+                                                        client
                                                     </span>
                                                 </div>
+                                                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                                    <span>
+                                                        {entry.client.email}
+                                                    </span>
+                                                    {entry.client.age ? (
+                                                        <span>
+                                                            Age{' '}
+                                                            {entry.client.age}
+                                                        </span>
+                                                    ) : null}
+                                                    {entry.client.username ? (
+                                                        <span>
+                                                            @
+                                                            {
+                                                                entry.client
+                                                                    .username
+                                                            }
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                {entry.notes ? (
+                                                    <p className="mt-2 text-sm text-muted-foreground">
+                                                        {entry.notes}
+                                                    </p>
+                                                ) : null}
                                             </div>
 
-                                            {entry.training?.recent_workouts
-                                                .length ? (
-                                                <div className="space-y-3">
-                                                    {entry.training.recent_workouts.map(
-                                                        (workout) => (
-                                                            <div
-                                                                key={workout.id}
-                                                                className="rounded-2xl border p-3"
-                                                            >
-                                                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                                                    <div className="font-medium">
-                                                                        {formatDateTime(
-                                                                            workout.performed_at,
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="text-xs text-muted-foreground">
-                                                                        {workout.duration_min
-                                                                            ? `${workout.duration_min} min`
-                                                                            : 'No duration'}
-                                                                        {' - '}
-                                                                        {
-                                                                            workout.sets_count
-                                                                        }{' '}
-                                                                        sets
-                                                                    </div>
-                                                                </div>
-                                                                {workout.notes ? (
-                                                                    <p className="mt-2 text-sm text-muted-foreground">
-                                                                        {
-                                                                            workout.notes
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                    onClick={() =>
+                                                        void openConversation(
+                                                            entry.client.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        busyClientId ===
+                                                        entry.client.id
+                                                    }
+                                                >
+                                                    Message
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="rounded-full bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95"
+                                                    onClick={() =>
+                                                        openAppointmentDialog(
+                                                            entry.client,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        busyClientId ===
+                                                        entry.client.id
+                                                    }
+                                                >
+                                                    Appointment
+                                                </button>
+                                                {roleMode === 'nutritionist' ? (
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                        onClick={() =>
+                                                            openMealNoteDialog(
+                                                                entry,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            busyClientId ===
+                                                            entry.client.id
+                                                        }
+                                                    >
+                                                        Meal Note
+                                                    </button>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                                            <div className="rounded-2xl border bg-background p-4">
+                                                <div className="mb-3 flex items-center justify-between gap-3">
+                                                    <h3 className="text-sm font-semibold">
+                                                        Height and weight
+                                                        progress
+                                                    </h3>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Latest:{' '}
+                                                        {entry.progress
+                                                            .latest_weight_kg !==
+                                                        null
+                                                            ? `${entry.progress.latest_weight_kg} kg`
+                                                            : 'n/a'}
+                                                        {' / '}
+                                                        {entry.progress
+                                                            .latest_height_cm !==
+                                                        null
+                                                            ? `${entry.progress.latest_height_cm} cm`
+                                                            : 'n/a'}
+                                                    </div>
+                                                </div>
+
+                                                {entry.progress.points
+                                                    .length === 0 ? (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        No measurement history
+                                                        logged yet.
+                                                    </p>
+                                                ) : (
+                                                    <div className="overflow-x-auto">
+                                                        <table className="min-w-full text-sm">
+                                                            <thead className="text-left text-muted-foreground">
+                                                                <tr>
+                                                                    <th className="py-2 pr-4">
+                                                                        Date
+                                                                    </th>
+                                                                    <th className="py-2 pr-4">
+                                                                        Weight
+                                                                    </th>
+                                                                    <th className="py-2">
+                                                                        Height
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {entry.progress.points
+                                                                    .slice(-6)
+                                                                    .map(
+                                                                        (
+                                                                            point,
+                                                                        ) => (
+                                                                            <tr
+                                                                                key={
+                                                                                    point.date
+                                                                                }
+                                                                                className="border-t"
+                                                                            >
+                                                                                <td className="py-2 pr-4">
+                                                                                    {
+                                                                                        point.date
+                                                                                    }
+                                                                                </td>
+                                                                                <td className="py-2 pr-4">
+                                                                                    {point.weight_kg !==
+                                                                                    null
+                                                                                        ? `${point.weight_kg} kg`
+                                                                                        : '-'}
+                                                                                </td>
+                                                                                <td className="py-2">
+                                                                                    {point.height_cm !==
+                                                                                    null
+                                                                                        ? `${point.height_cm} cm`
+                                                                                        : '-'}
+                                                                                </td>
+                                                                            </tr>
+                                                                        ),
+                                                                    )}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {roleMode === 'trainer' ? (
+                                                <div className="rounded-2xl border bg-background p-4">
+                                                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Workout progress
+                                                        </h3>
+                                                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                            <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                Sessions:{' '}
+                                                                {
+                                                                    entry
+                                                                        .training
+                                                                        ?.summary
+                                                                        .logged_sessions
+                                                                }
+                                                            </span>
+                                                            <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                Sets:{' '}
+                                                                {
+                                                                    entry
+                                                                        .training
+                                                                        ?.summary
+                                                                        .total_sets
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {entry.training
+                                                        ?.recent_workouts
+                                                        .length ? (
+                                                        <div className="space-y-3">
+                                                            {entry.training.recent_workouts.map(
+                                                                (workout) => (
+                                                                    <div
+                                                                        key={
+                                                                            workout.id
                                                                         }
-                                                                    </p>
-                                                                ) : null}
-                                                            </div>
-                                                        ),
+                                                                        className="rounded-2xl border p-3"
+                                                                    >
+                                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                            <div className="font-medium">
+                                                                                {formatDateTime(
+                                                                                    workout.performed_at,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {workout.duration_min
+                                                                                    ? `${workout.duration_min} min`
+                                                                                    : 'No duration'}
+                                                                                {
+                                                                                    ' - '
+                                                                                }
+                                                                                {
+                                                                                    workout.sets_count
+                                                                                }{' '}
+                                                                                sets
+                                                                            </div>
+                                                                        </div>
+                                                                        {workout.notes ? (
+                                                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                                                {
+                                                                                    workout.notes
+                                                                                }
+                                                                            </p>
+                                                                        ) : null}
+                                                                    </div>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            No workout logs yet
+                                                            for this client.
+                                                        </p>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <p className="text-sm text-muted-foreground">
-                                                    No workout logs yet for this
-                                                    client.
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-2xl border bg-background p-4">
-                                            <div className="mb-3 flex items-center justify-between gap-3">
-                                                <h3 className="text-sm font-semibold">
-                                                    Weekly meals
-                                                </h3>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Last 7 days
-                                                </div>
-                                            </div>
+                                                <div className="rounded-2xl border bg-background p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Weekly meals
+                                                        </h3>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Last 7 days
+                                                        </div>
+                                                    </div>
 
-                                            <div className="space-y-3">
-                                                {entry.nutrition?.weekly_days.map(
-                                                    (day) => (
-                                                        <div
-                                                            key={day.date}
-                                                            className="rounded-2xl border p-3"
-                                                        >
-                                                            <div className="mb-2 flex items-center justify-between gap-3">
-                                                                <div className="font-medium">
-                                                                    {day.label}
-                                                                </div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    {day.date}
-                                                                </div>
-                                                            </div>
+                                                    <div className="space-y-3">
+                                                        {entry.nutrition?.weekly_days.map(
+                                                            (day) => (
+                                                                <div
+                                                                    key={
+                                                                        day.date
+                                                                    }
+                                                                    className="rounded-2xl border p-3"
+                                                                >
+                                                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                                                        <div className="font-medium">
+                                                                            {
+                                                                                day.label
+                                                                            }
+                                                                        </div>
+                                                                        <div className="text-xs text-muted-foreground">
+                                                                            {
+                                                                                day.date
+                                                                            }
+                                                                        </div>
+                                                                    </div>
 
-                                                            {day.meals
-                                                                .length ? (
-                                                                <div className="space-y-2">
-                                                                    {day.meals.map(
-                                                                        (
-                                                                            meal,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    meal.meal_type
-                                                                                }
-                                                                                className="rounded-xl bg-muted/40 p-3"
-                                                                            >
-                                                                                <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                                                                    {formatMealType(
-                                                                                        meal.meal_type,
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="mt-2 space-y-1 text-sm">
-                                                                                    {meal.items.map(
-                                                                                        (
-                                                                                            item,
-                                                                                        ) => (
-                                                                                            <div
-                                                                                                key={
-                                                                                                    item.id
-                                                                                                }
-                                                                                                className="flex items-center justify-between gap-3"
-                                                                                            >
-                                                                                                <span className="min-w-0 truncate">
-                                                                                                    {
-                                                                                                        item.food_name
-                                                                                                    }
-                                                                                                </span>
-                                                                                                <span className="text-xs text-muted-foreground">
-                                                                                                    {item.servings !==
-                                                                                                    null
-                                                                                                        ? `${item.servings} serving(s)`
-                                                                                                        : ''}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        ),
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        ),
+                                                                    {day.meals
+                                                                        .length ? (
+                                                                        <div className="space-y-2">
+                                                                            {day.meals.map(
+                                                                                (
+                                                                                    meal,
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={
+                                                                                            meal.meal_type
+                                                                                        }
+                                                                                        className="rounded-xl bg-muted/40 p-3"
+                                                                                    >
+                                                                                        <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                                            {formatMealType(
+                                                                                                meal.meal_type,
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="mt-2 space-y-1 text-sm">
+                                                                                            {meal.items.map(
+                                                                                                (
+                                                                                                    item,
+                                                                                                ) => (
+                                                                                                    <div
+                                                                                                        key={
+                                                                                                            item.id
+                                                                                                        }
+                                                                                                        className="flex items-center justify-between gap-3"
+                                                                                                    >
+                                                                                                        <span className="min-w-0 truncate">
+                                                                                                            {
+                                                                                                                item.food_name
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                        <span className="text-xs text-muted-foreground">
+                                                                                                            {item.servings !==
+                                                                                                            null
+                                                                                                                ? `${item.servings} serving(s)`
+                                                                                                                : ''}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                ),
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ),
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            No
+                                                                            meals
+                                                                            logged.
+                                                                        </p>
                                                                     )}
                                                                 </div>
-                                                            ) : (
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    No meals
-                                                                    logged.
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            </section>
+                                    </section>
                                 ))
                             )}
                         </div>
@@ -1604,5 +1659,3 @@ export default function ProfessionalClientsPage() {
         </>
     );
 }
-
-
