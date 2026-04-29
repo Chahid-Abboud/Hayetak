@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Models\Measurement;
 use App\Models\UserPref;
 use App\Services\Ai\Planner\PlannerProfileSyncService;
 use Carbon\Carbon;

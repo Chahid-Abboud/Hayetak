@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\ProfessionalVerification;
 use App\Models\ProfessionalClientAssignment;
+use App\Models\ProfessionalVerification;
 use App\Models\User;
 
 class ProfessionalAccessService

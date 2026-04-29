@@ -1,7 +1,4 @@
-import {
-    ProductPageShell,
-    ProductStatGrid,
-} from '@/components/product/page';
+import { ProductPageShell, ProductStatGrid } from '@/components/product/page';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import {
@@ -9,8 +6,8 @@ import {
     Bell,
     type LucideIcon,
     MapPin,
-    ShieldCheck,
     Settings2,
+    ShieldCheck,
     Sparkles,
     Users,
     UtensilsCrossed,
@@ -32,7 +29,11 @@ type AdminWorkspaceGroup = {
 const adminWorkspaceLinks: AdminWorkspaceLink[] = [
     { href: '/admin', label: 'Overview', icon: Activity },
     { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/safety-profiles', label: 'Safety Profiles', icon: ShieldCheck },
+    {
+        href: '/admin/safety-profiles',
+        label: 'Safety Profiles',
+        icon: ShieldCheck,
+    },
     { href: '/admin/professionals', label: 'Professionals', icon: ShieldCheck },
     {
         href: '/admin/professional-verifications',
@@ -53,9 +54,21 @@ const adminWorkspaceLinks: AdminWorkspaceLink[] = [
     { href: '/admin/support-cases', label: 'Support Cases', icon: Users },
     { href: '/admin/analytics', label: 'Analytics', icon: Activity },
     { href: '/admin/logs', label: 'Audit Logs', icon: Settings2 },
-    { href: '/admin/roles-permissions', label: 'Roles & Permissions', icon: ShieldCheck },
-    { href: '/admin/privacy-compliance', label: 'Privacy & Compliance', icon: ShieldCheck },
-    { href: '/admin/settings-feature-flags', label: 'Settings / Feature Flags', icon: Settings2 },
+    {
+        href: '/admin/roles-permissions',
+        label: 'Roles & Permissions',
+        icon: ShieldCheck,
+    },
+    {
+        href: '/admin/privacy-compliance',
+        label: 'Privacy & Compliance',
+        icon: ShieldCheck,
+    },
+    {
+        href: '/admin/settings-feature-flags',
+        label: 'Settings / Feature Flags',
+        icon: Settings2,
+    },
     { href: '/admin/ai-rollouts', label: 'AI Rollouts', icon: Sparkles },
 ];
 
@@ -66,23 +79,50 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
     },
     {
         label: 'People',
-        links: [adminWorkspaceLinks[1], adminWorkspaceLinks[2], adminWorkspaceLinks[3], adminWorkspaceLinks[4], adminWorkspaceLinks[5]],
+        links: [
+            adminWorkspaceLinks[1],
+            adminWorkspaceLinks[2],
+            adminWorkspaceLinks[3],
+            adminWorkspaceLinks[4],
+            adminWorkspaceLinks[5],
+        ],
     },
     {
         label: 'Health Data',
-        links: [adminWorkspaceLinks[6], adminWorkspaceLinks[7], adminWorkspaceLinks[8], adminWorkspaceLinks[9], adminWorkspaceLinks[10]],
+        links: [
+            adminWorkspaceLinks[6],
+            adminWorkspaceLinks[7],
+            adminWorkspaceLinks[8],
+            adminWorkspaceLinks[9],
+            adminWorkspaceLinks[10],
+        ],
     },
     {
         label: 'AI Operations',
-        links: [adminWorkspaceLinks[11], adminWorkspaceLinks[12], adminWorkspaceLinks[13], adminWorkspaceLinks[14]],
+        links: [
+            adminWorkspaceLinks[11],
+            adminWorkspaceLinks[12],
+            adminWorkspaceLinks[13],
+            adminWorkspaceLinks[14],
+        ],
     },
     {
         label: 'Operations',
-        links: [adminWorkspaceLinks[15], adminWorkspaceLinks[16], adminWorkspaceLinks[17]],
+        links: [
+            adminWorkspaceLinks[15],
+            adminWorkspaceLinks[16],
+            adminWorkspaceLinks[17],
+        ],
     },
     {
         label: 'System',
-        links: [adminWorkspaceLinks[18], adminWorkspaceLinks[19], adminWorkspaceLinks[20], adminWorkspaceLinks[21], adminWorkspaceLinks[22]],
+        links: [
+            adminWorkspaceLinks[18],
+            adminWorkspaceLinks[19],
+            adminWorkspaceLinks[20],
+            adminWorkspaceLinks[21],
+            adminWorkspaceLinks[22],
+        ],
     },
 ];
 
@@ -104,45 +144,45 @@ function AdminWorkspaceRail({ pathname }: { pathname: string }) {
                     <div className="haye-kicker">{group.label}</div>
                     <div className="mt-2 max-h-28 overflow-auto pr-1 [scrollbar-width:thin]">
                         <div className="flex flex-wrap gap-2">
-                        {group.links.map((link) => {
-                            const active =
-                                !link.comingSoon &&
-                                isActiveWorkspace(pathname, link.href);
-                            const classes = cn(
-                                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium no-underline transition',
-                                active
-                                    ? 'border-primary/28 bg-primary text-primary-foreground shadow-[0_16px_34px_-24px_rgba(15,23,42,0.32)]'
-                                    : 'border-border/55 bg-background/70 text-muted-foreground hover:border-primary/22 hover:text-foreground',
-                                link.comingSoon &&
-                                    'cursor-default border-dashed hover:border-border/55 hover:text-muted-foreground',
-                            );
+                            {group.links.map((link) => {
+                                const active =
+                                    !link.comingSoon &&
+                                    isActiveWorkspace(pathname, link.href);
+                                const classes = cn(
+                                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium no-underline transition',
+                                    active
+                                        ? 'border-primary/28 bg-primary text-primary-foreground shadow-[0_16px_34px_-24px_rgba(15,23,42,0.32)]'
+                                        : 'border-border/55 bg-background/70 text-muted-foreground hover:border-primary/22 hover:text-foreground',
+                                    link.comingSoon &&
+                                        'cursor-default border-dashed hover:border-border/55 hover:text-muted-foreground',
+                                );
 
-                            if (link.comingSoon) {
+                                if (link.comingSoon) {
+                                    return (
+                                        <span
+                                            key={`${group.label}-${link.label}`}
+                                            className={classes}
+                                        >
+                                            <link.icon className="h-3.5 w-3.5" />
+                                            {link.label}
+                                            <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[9px] tracking-[0.16em] uppercase">
+                                                Soon
+                                            </span>
+                                        </span>
+                                    );
+                                }
+
                                 return (
-                                    <span
-                                        key={`${group.label}-${link.label}`}
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
                                         className={classes}
                                     >
                                         <link.icon className="h-3.5 w-3.5" />
                                         {link.label}
-                                        <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[9px] tracking-[0.16em] uppercase">
-                                            Soon
-                                        </span>
-                                    </span>
+                                    </Link>
                                 );
-                            }
-
-                            return (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={classes}
-                                >
-                                    <link.icon className="h-3.5 w-3.5" />
-                                    {link.label}
-                                </Link>
-                            );
-                        })}
+                            })}
                         </div>
                     </div>
                 </div>

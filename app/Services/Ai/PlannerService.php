@@ -239,8 +239,7 @@ class PlannerService
         array $profile,
         array $context,
         int $userId
-    ): array
-    {
+    ): array {
         $normalized = $payload;
         $targetDietDays = $this->normalizePlanHorizonDays($planHorizonDays);
         $targetWorkoutDays = 7;
@@ -306,15 +305,15 @@ class PlannerService
             $template['location'] = $this->normalizeWorkoutLocation($template['location'] ?? null, $profile);
             $template['duration_min'] = max(0, (int) ($template['duration_min'] ?? 30));
             $template['warmup'] = is_array($template['warmup'] ?? null) ? array_values($template['warmup']) : [];
-                $template['exercises'] = $this->normalizeExercises(
-                    is_array($template['exercises'] ?? null) ? array_values($template['exercises']) : [],
-                    $exerciseCatalog,
-                    $template['location'],
-                    (($i - 1) * 4) + $profileSeed,
-                    [],
-                    $this->normalizeList($profile['available_equipment'] ?? []),
-                    $profile
-                );
+            $template['exercises'] = $this->normalizeExercises(
+                is_array($template['exercises'] ?? null) ? array_values($template['exercises']) : [],
+                $exerciseCatalog,
+                $template['location'],
+                (($i - 1) * 4) + $profileSeed,
+                [],
+                $this->normalizeList($profile['available_equipment'] ?? []),
+                $profile
+            );
             $template['cooldown'] = is_array($template['cooldown'] ?? null) ? array_values($template['cooldown']) : [];
             $template['safety_notes'] = is_array($template['safety_notes'] ?? null) ? array_values($template['safety_notes']) : [];
             $expandedWeekly[] = $template;
@@ -971,8 +970,7 @@ class PlannerService
         int $seed = 0,
         ?array $requiredMealCodes = null,
         bool $enforceExactCalorieAlignment = true
-    ): array
-    {
+    ): array {
         $blockedNeedles = $this->blockedFoodNeedles($profile);
         $requiredMealCodes = $requiredMealCodes !== null && $requiredMealCodes !== []
             ? array_values(array_unique(array_map(fn ($code): string => $this->normalizeMealCode((string) $code), $requiredMealCodes)))
@@ -1222,8 +1220,7 @@ class PlannerService
         array $preferredCategories = [],
         array $availableEquipment = [],
         array $profile = []
-    ): array
-    {
+    ): array {
         $pool = $this->filterCatalogExercisesByLocation($exerciseCatalog, $location, $availableEquipment, $profile);
         $strictCategories = array_values(array_unique(array_filter(array_map(
             static fn ($item): string => strtolower(trim((string) $item)),
@@ -1638,6 +1635,7 @@ class PlannerService
                 foreach ($priority as $macro) {
                     if ($macro === 'fat' && $delta >= 9) {
                         $fat++;
+
                         continue 2;
                     }
                     if ($delta >= 4) {
@@ -1657,14 +1655,17 @@ class PlannerService
             foreach ($priority as $macro) {
                 if ($macro === 'fat' && $fat > 0 && abs($delta) >= 9) {
                     $fat--;
+
                     continue 2;
                 }
                 if ($macro === 'protein' && $protein > 0 && abs($delta) >= 4) {
                     $protein--;
+
                     continue 2;
                 }
                 if ($macro === 'carbs' && $carbs > 0 && abs($delta) >= 4) {
                     $carbs--;
+
                     continue 2;
                 }
             }
@@ -2547,8 +2548,7 @@ class PlannerService
         array $profile,
         array $exerciseCatalog,
         int $seed = 0
-    ): array
-    {
+    ): array {
         $targetDays = max(1, min(7, (int) ($profile['workout_days_per_week'] ?? 3)));
         $preferredIndexes = $this->preferredWorkoutDayIndexes($profile['preferred_workout_days'] ?? []);
         $planLocation = $this->normalizeWorkoutLocation($profile['workout_location'] ?? null, $profile);
@@ -2762,6 +2762,7 @@ class PlannerService
             usort($pool, static function (array $a, array $b): int {
                 $score = static function (array $exercise): int {
                     $equipment = strtolower((string) ($exercise['equipment'] ?? ''));
+
                     return match (true) {
                         str_contains($equipment, 'machine') => 0,
                         str_contains($equipment, 'cable') => 1,
@@ -3055,14 +3056,14 @@ class PlannerService
                 'Pea protein yogurt cup',
             ]
             : [
-            'Greek yogurt and berries cup',
-            'Cottage cheese with fruit',
-            'Milk banana protein shake',
-            'Wholegrain crackers with labneh',
-            'Apple with peanut-free nut butter',
-            'Boiled eggs and cherry tomatoes',
-            'Tuna and wholegrain crackers',
-        ];
+                'Greek yogurt and berries cup',
+                'Cottage cheese with fruit',
+                'Milk banana protein shake',
+                'Wholegrain crackers with labneh',
+                'Apple with peanut-free nut butter',
+                'Boiled eggs and cherry tomatoes',
+                'Tuna and wholegrain crackers',
+            ];
 
         return array_values(array_filter(
             $options,

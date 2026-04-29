@@ -180,6 +180,7 @@ class UserFacingAiPayloadSanitizer
 
             if (is_array($value)) {
                 $sanitized[$key] = $this->sanitizeArray($value, false);
+
                 continue;
             }
 

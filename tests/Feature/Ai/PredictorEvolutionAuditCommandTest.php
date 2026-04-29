@@ -216,4 +216,3 @@ it('builds predictor evolution, planner adaptation, and chatbot summaries', func
     expect((int) data_get($firstUser, 'summary.feedback_applied_cycles'))->toBeGreaterThanOrEqual(1)
         ->and((int) data_get($firstUser, 'summary.transitions_changed'))->toBeGreaterThanOrEqual(1);
 });
-

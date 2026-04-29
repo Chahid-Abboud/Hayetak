@@ -27,4 +27,3 @@ class PlaceLocalFactory extends Factory
         ];
     }
 }
-

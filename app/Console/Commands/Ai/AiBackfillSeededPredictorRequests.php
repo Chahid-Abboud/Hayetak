@@ -43,6 +43,7 @@ class AiBackfillSeededPredictorRequests extends Command
 
             if (! is_string($latestMeasurementDate) || trim($latestMeasurementDate) === '') {
                 $skippedUsers++;
+
                 continue;
             }
 
@@ -69,6 +70,7 @@ class AiBackfillSeededPredictorRequests extends Command
                         $horizon,
                         $targetCreatedAt->toDateTimeString()
                     ));
+
                     continue;
                 }
 

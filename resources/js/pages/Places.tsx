@@ -274,7 +274,9 @@ export default function Places() {
                 type: 'place' as const,
                 name: place.name ?? 'Nearby place',
                 distanceM:
-                    typeof place.distanceM === 'number' ? place.distanceM : null,
+                    typeof place.distanceM === 'number'
+                        ? place.distanceM
+                        : null,
                 filterTag,
                 place,
                 searchIndex: [
@@ -293,7 +295,9 @@ export default function Places() {
 
         const professionalItems = linkedProfessionals.map((professional) => {
             const filterTag: FixedListFilter =
-                professional.role === 'nutritionist' ? 'dietitians' : 'trainers';
+                professional.role === 'nutritionist'
+                    ? 'dietitians'
+                    : 'trainers';
             return {
                 key: `professional-${professional.id}`,
                 type: 'professional' as const,
@@ -546,7 +550,8 @@ export default function Places() {
                                     <div className="flex items-center justify-between gap-3">
                                         <span>{counts.gym} gyms</span>
                                         <span>
-                                            {counts.nutritionist} nutrition centers
+                                            {counts.nutritionist} nutrition
+                                            centers
                                         </span>
                                     </div>
                                 </div>
@@ -689,7 +694,8 @@ export default function Places() {
                                     value={listFilter}
                                     onChange={(event) =>
                                         setListFilter(
-                                            event.target.value as FixedListFilter,
+                                            event.target
+                                                .value as FixedListFilter,
                                         )
                                     }
                                 >
@@ -802,7 +808,9 @@ export default function Places() {
                                                                     undefined ? (
                                                                     <span>
                                                                         Rating{' '}
-                                                                        {p.rating}
+                                                                        {
+                                                                            p.rating
+                                                                        }
                                                                     </span>
                                                                 ) : null}
                                                                 <span>
@@ -1179,7 +1187,9 @@ function toSafeHttpUrl(value?: string | null): string | null {
     return null;
 }
 
-function normalizePlaceCategory(value: string): 'gym' | 'nutritionist' | 'other' {
+function normalizePlaceCategory(
+    value: string,
+): 'gym' | 'nutritionist' | 'other' {
     const v = value.toLowerCase();
     if (v.includes('gym')) return 'gym';
     if (v.includes('nutri') || v.includes('diet') || v.includes('clinic')) {
@@ -1190,15 +1200,19 @@ function normalizePlaceCategory(value: string): 'gym' | 'nutritionist' | 'other'
 }
 
 function isGymPlace(place: Place): boolean {
-    return normalizePlaceCategory(
-        (place.category ?? place.type ?? 'other').toString(),
-    ) === 'gym';
+    return (
+        normalizePlaceCategory(
+            (place.category ?? place.type ?? 'other').toString(),
+        ) === 'gym'
+    );
 }
 
 function isNutritionCenterPlace(place: Place): boolean {
-    return normalizePlaceCategory(
-        (place.category ?? place.type ?? 'other').toString(),
-    ) === 'nutritionist';
+    return (
+        normalizePlaceCategory(
+            (place.category ?? place.type ?? 'other').toString(),
+        ) === 'nutritionist'
+    );
 }
 
 function findClosestPlaceForProfessional(

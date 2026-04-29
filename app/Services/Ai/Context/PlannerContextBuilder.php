@@ -266,8 +266,7 @@ class PlannerContextBuilder
         mixed $value,
         ?string $fallbackCategory = null,
         ?string $fallbackName = null
-    ): array
-    {
+    ): array {
         $types = [];
 
         if (is_array($value)) {

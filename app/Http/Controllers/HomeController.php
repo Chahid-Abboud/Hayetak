@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ai\AiConversation;
-use Carbon\CarbonImmutable;
+use App\Models\Ai\AiRequest;
 use App\Models\MealLog;
 use App\Models\Measurement;
 use App\Models\NutritionPlan;
-use App\Models\Ai\AiRequest;
 use App\Models\WaterIntake;
 use App\Models\WorkoutPlan;
 use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 // ✅ Add these

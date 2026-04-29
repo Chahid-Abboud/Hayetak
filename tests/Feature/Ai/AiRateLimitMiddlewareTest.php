@@ -75,4 +75,3 @@ function clearAiRateLimiterKeys(string $feature, int $userId): void
     RateLimiter::clear("ai:{$feature}:burst:{$identity}");
     RateLimiter::clear("ai:{$feature}:daily:{$date}:{$identity}");
 }
-

@@ -295,7 +295,9 @@ function VerificationDecisionSurface({
             >
                 <Button
                     type="button"
-                    variant={reviewStatus === 'approved' ? 'default' : 'outline'}
+                    variant={
+                        reviewStatus === 'approved' ? 'default' : 'outline'
+                    }
                     onClick={() => onReviewStatusChange('approved')}
                     disabled={!verification || saving}
                 >
@@ -313,7 +315,9 @@ function VerificationDecisionSurface({
                 </Button>
                 <Button
                     type="button"
-                    variant={reviewStatus === 'rejected' ? 'destructive' : 'outline'}
+                    variant={
+                        reviewStatus === 'rejected' ? 'destructive' : 'outline'
+                    }
                     onClick={() => onReviewStatusChange('rejected')}
                     disabled={!verification || saving}
                 >
@@ -541,10 +545,7 @@ export default function AdminProfessionalVerifications() {
             return;
         }
 
-        if (
-            !selectedId ||
-            !filteredRows.some((row) => row.id === selectedId)
-        ) {
+        if (!selectedId || !filteredRows.some((row) => row.id === selectedId)) {
             setSelectedId(filteredRows[0].id);
         }
     }, [filteredRows, selectedId]);
@@ -569,8 +570,9 @@ export default function AdminProfessionalVerifications() {
 
     const summary = useMemo(
         () => ({
-            pending: filteredRows.filter((row) => row.review_status === 'pending')
-                .length,
+            pending: filteredRows.filter(
+                (row) => row.review_status === 'pending',
+            ).length,
             approved: filteredRows.filter(
                 (row) => row.review_status === 'approved',
             ).length,
@@ -649,9 +651,7 @@ export default function AdminProfessionalVerifications() {
                         <AdminStatsGrid>
                             <AdminStatCard
                                 label="Requests Matching State"
-                                value={
-                                    loading ? '...' : String(total)
-                                }
+                                value={loading ? '...' : String(total)}
                                 tone="accent"
                                 helper="Server-side count for the current review state filter."
                             />
@@ -733,7 +733,9 @@ export default function AdminProfessionalVerifications() {
                                                     : 'Waiting for queue data'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Pagination keeps the review queue stable while search refines only the current page.
+                                                Pagination keeps the review
+                                                queue stable while search
+                                                refines only the current page.
                                             </div>
                                         </div>
                                     </div>
@@ -774,7 +776,10 @@ export default function AdminProfessionalVerifications() {
                                                     : 'Pending selection'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Save one clear decision with notes so the next admin can trust the outcome without reopening the whole case.
+                                                Save one clear decision with
+                                                notes so the next admin can
+                                                trust the outcome without
+                                                reopening the whole case.
                                             </div>
                                         </div>
 
@@ -784,17 +789,23 @@ export default function AdminProfessionalVerifications() {
                                             </div>
                                             <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
                                                 {selectedVerification
-                                                    ? selectedExpiryDelta === null
+                                                    ? selectedExpiryDelta ===
+                                                      null
                                                         ? 'Expiry not available'
-                                                        : selectedExpiryDelta < 0
+                                                        : selectedExpiryDelta <
+                                                            0
                                                           ? 'Credential expired'
-                                                          : selectedExpiryDelta === 0
+                                                          : selectedExpiryDelta ===
+                                                              0
                                                             ? 'Expires today'
                                                             : `${selectedExpiryDelta} day${selectedExpiryDelta === 1 ? '' : 's'} remaining`
                                                     : 'Open a request to inspect timing'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Near-expiry requests should usually end with either a renewal follow-up note or a deliberate approval rationale.
+                                                Near-expiry requests should
+                                                usually end with either a
+                                                renewal follow-up note or a
+                                                deliberate approval rationale.
                                             </div>
                                         </div>
                                     </div>
@@ -900,126 +911,128 @@ export default function AdminProfessionalVerifications() {
                                                         </tr>
                                                     </ProductTableHead>
                                                     <ProductTableBody>
-                                                        {filteredRows.map((row) => {
-                                                            const isSelected =
-                                                                selectedId ===
-                                                                row.id;
+                                                        {filteredRows.map(
+                                                            (row) => {
+                                                                const isSelected =
+                                                                    selectedId ===
+                                                                    row.id;
 
-                                                            return (
-                                                                <ProductTableRow
-                                                                    key={
-                                                                        row.id
-                                                                    }
-                                                                    interactive
-                                                                    className={
-                                                                        isSelected
-                                                                            ? 'bg-primary/6'
-                                                                            : undefined
-                                                                    }
-                                                                >
-                                                                    <ProductTableCell>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                setSelectedId(
-                                                                                    row.id,
-                                                                                )
-                                                                            }
-                                                                            className="space-y-2 text-left"
-                                                                        >
-                                                                            <div className="font-medium text-foreground">
-                                                                                {personName(
-                                                                                    row.user,
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                                <Badge
-                                                                                    variant="outline"
-                                                                                    className="rounded-full px-2.5 py-1 capitalize"
-                                                                                >
-                                                                                    {row.role ===
-                                                                                    'nutritionist'
-                                                                                        ? 'Dietitian'
-                                                                                        : 'Trainer'}
-                                                                                </Badge>
-                                                                                <span>
-                                                                                    {
-                                                                                        row.authority
-                                                                                    }
-                                                                                </span>
-                                                                                <span>
-                                                                                    {
-                                                                                        row.country_state
-                                                                                    }
-                                                                                </span>
-                                                                            </div>
-                                                                        </button>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <div className="space-y-1">
-                                                                            <div className="font-medium text-foreground">
-                                                                                {
-                                                                                    row.license_number
-                                                                                }
-                                                                            </div>
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {
-                                                                                    row.full_legal_name
-                                                                                }
-                                                                            </div>
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                Expires{' '}
-                                                                                {formatDate(
-                                                                                    row.expiry_date,
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <div className="space-y-2">
-                                                                            <StatusChipSet
-                                                                                items={[
-                                                                                    {
-                                                                                        value: row.review_status,
-                                                                                    },
-                                                                                    {
-                                                                                        value: row
-                                                                                            .user
-                                                                                            ?.verified
-                                                                                            ? 'verified'
-                                                                                            : 'unverified',
-                                                                                    },
-                                                                                ]}
-                                                                            />
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {reviewerName(
-                                                                                    row,
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <div className="flex flex-wrap gap-2">
-                                                                            <Button
+                                                                return (
+                                                                    <ProductTableRow
+                                                                        key={
+                                                                            row.id
+                                                                        }
+                                                                        interactive
+                                                                        className={
+                                                                            isSelected
+                                                                                ? 'bg-primary/6'
+                                                                                : undefined
+                                                                        }
+                                                                    >
+                                                                        <ProductTableCell>
+                                                                            <button
                                                                                 type="button"
-                                                                                size="sm"
-                                                                                variant="outline"
-                                                                                onClick={() => {
+                                                                                onClick={() =>
                                                                                     setSelectedId(
                                                                                         row.id,
-                                                                                    );
-                                                                                    setDrawerOpen(
-                                                                                        true,
-                                                                                    );
-                                                                                }}
+                                                                                    )
+                                                                                }
+                                                                                className="space-y-2 text-left"
                                                                             >
-                                                                                Review
-                                                                            </Button>
-                                                                        </div>
-                                                                    </ProductTableCell>
-                                                                </ProductTableRow>
-                                                            );
-                                                        })}
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {personName(
+                                                                                        row.user,
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                                    <Badge
+                                                                                        variant="outline"
+                                                                                        className="rounded-full px-2.5 py-1 capitalize"
+                                                                                    >
+                                                                                        {row.role ===
+                                                                                        'nutritionist'
+                                                                                            ? 'Dietitian'
+                                                                                            : 'Trainer'}
+                                                                                    </Badge>
+                                                                                    <span>
+                                                                                        {
+                                                                                            row.authority
+                                                                                        }
+                                                                                    </span>
+                                                                                    <span>
+                                                                                        {
+                                                                                            row.country_state
+                                                                                        }
+                                                                                    </span>
+                                                                                </div>
+                                                                            </button>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-1">
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {
+                                                                                        row.license_number
+                                                                                    }
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {
+                                                                                        row.full_legal_name
+                                                                                    }
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    Expires{' '}
+                                                                                    {formatDate(
+                                                                                        row.expiry_date,
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-2">
+                                                                                <StatusChipSet
+                                                                                    items={[
+                                                                                        {
+                                                                                            value: row.review_status,
+                                                                                        },
+                                                                                        {
+                                                                                            value: row
+                                                                                                .user
+                                                                                                ?.verified
+                                                                                                ? 'verified'
+                                                                                                : 'unverified',
+                                                                                        },
+                                                                                    ]}
+                                                                                />
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {reviewerName(
+                                                                                        row,
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={() => {
+                                                                                        setSelectedId(
+                                                                                            row.id,
+                                                                                        );
+                                                                                        setDrawerOpen(
+                                                                                            true,
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    Review
+                                                                                </Button>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                    </ProductTableRow>
+                                                                );
+                                                            },
+                                                        )}
 
                                                         {!loading &&
                                                         filteredRows.length ===
@@ -1070,8 +1083,7 @@ export default function AdminProfessionalVerifications() {
                                         onRefresh={() => void load()}
                                         onSubmit={() => void submitReview()}
                                         loading={
-                                            loading &&
-                                            filteredRows.length === 0
+                                            loading && filteredRows.length === 0
                                         }
                                         saving={saving}
                                         error={

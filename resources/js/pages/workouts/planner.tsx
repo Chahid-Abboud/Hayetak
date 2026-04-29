@@ -8,10 +8,7 @@ import {
     ProductStatGrid,
     ProductStickyActions,
 } from '@/components/product/page';
-import {
-    ProductButton,
-    ProductInput,
-} from '@/components/product/product-ui';
+import { ProductButton, ProductInput } from '@/components/product/product-ui';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import type { Errors as InertiaErrors } from '@inertiajs/core';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -118,10 +115,7 @@ function normalizeDayIndexes(days: DayDraft[]): DayDraft[] {
     return days.map((day, index) => ({
         ...day,
         day_index: index + 1,
-        name:
-            day.name.trim() !== ''
-                ? day.name
-                : `Day ${index + 1}`,
+        name: day.name.trim() !== '' ? day.name : `Day ${index + 1}`,
     }));
 }
 
@@ -129,7 +123,9 @@ function recommendedDraftDayIndex(
     plan?: WorkoutPlan | null,
     recommendedDayId?: number | null,
 ): number {
-    const recommendedDay = plan?.days?.find((day) => day.id === recommendedDayId);
+    const recommendedDay = plan?.days?.find(
+        (day) => day.id === recommendedDayId,
+    );
     return recommendedDay?.day_index ?? plan?.days?.[0]?.day_index ?? 1;
 }
 
@@ -180,8 +176,10 @@ function arrayStrings(value: unknown): string[] {
 function planSummary(plan?: WorkoutPlan | null) {
     const days = plan?.days?.length ?? 0;
     const exercises =
-        plan?.days?.reduce((total, day) => total + (day.exercises?.length ?? 0), 0) ??
-        0;
+        plan?.days?.reduce(
+            (total, day) => total + (day.exercises?.length ?? 0),
+            0,
+        ) ?? 0;
 
     return { days, exercises };
 }
@@ -287,7 +285,9 @@ export default function WorkoutPlannerPage() {
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setStatus('Your workout draft has been saved successfully.');
+                    setStatus(
+                        'Your workout draft has been saved successfully.',
+                    );
                     router.reload({
                         only: ['manualPlan', 'recommendedManualDayId'],
                     });
@@ -400,11 +400,13 @@ export default function WorkoutPlannerPage() {
     const selectedDayExercises = (activeDraftDay?.exercises ?? [])
         .map((exercise) => ({
             draft: exercise,
-            item: exercises.find((libraryExercise) => libraryExercise.id === exercise.exercise_id),
+            item: exercises.find(
+                (libraryExercise) =>
+                    libraryExercise.id === exercise.exercise_id,
+            ),
         }))
-        .filter(
-            (item): item is { draft: DraftExercise; item: Exercise } =>
-                Boolean(item.item),
+        .filter((item): item is { draft: DraftExercise; item: Exercise } =>
+            Boolean(item.item),
         );
 
     return (
@@ -450,7 +452,9 @@ export default function WorkoutPlannerPage() {
                                 </ProductButton>
                             ) : null}
                             <ProductButton asChild>
-                                <Link href="/workouts/log">Open workout log</Link>
+                                <Link href="/workouts/log">
+                                    Open workout log
+                                </Link>
                             </ProductButton>
                             <ProductButton asChild emphasis="secondary">
                                 <Link href="/ai/planner">Open AI planner</Link>
@@ -515,15 +519,18 @@ export default function WorkoutPlannerPage() {
                                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                                     <AiFocusCard day={aiRecommendedDay} />
                                     <div className="grid gap-4 md:grid-cols-2">
-                                        {(activeAiPlan.days ?? []).map((day) => (
-                                            <AiDayCard
-                                                key={day.id}
-                                                day={day}
-                                                highlighted={
-                                                    aiRecommendedDay?.id === day.id
-                                                }
-                                            />
-                                        ))}
+                                        {(activeAiPlan.days ?? []).map(
+                                            (day) => (
+                                                <AiDayCard
+                                                    key={day.id}
+                                                    day={day}
+                                                    highlighted={
+                                                        aiRecommendedDay?.id ===
+                                                        day.id
+                                                    }
+                                                />
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                             </ProductSection>
@@ -536,7 +543,8 @@ export default function WorkoutPlannerPage() {
                                     <MetaListCard
                                         title="Progression rules"
                                         items={arrayStrings(
-                                            activeAiPlan.meta?.progression_rules,
+                                            activeAiPlan.meta
+                                                ?.progression_rules,
                                         )}
                                     />
                                     <MetaListCard
@@ -561,7 +569,9 @@ export default function WorkoutPlannerPage() {
                             action={
                                 <div className="flex flex-wrap justify-center gap-3">
                                     <ProductButton asChild>
-                                        <Link href="/ai/planner">Generate plan</Link>
+                                        <Link href="/ai/planner">
+                                            Generate plan
+                                        </Link>
                                     </ProductButton>
                                     <ProductButton
                                         emphasis="secondary"
@@ -592,7 +602,9 @@ export default function WorkoutPlannerPage() {
                                             <input
                                                 value={draftName}
                                                 onChange={(event) =>
-                                                    setDraftName(event.target.value)
+                                                    setDraftName(
+                                                        event.target.value,
+                                                    )
                                                 }
                                                 className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-background px-4 text-base text-foreground"
                                             />
@@ -615,7 +627,9 @@ export default function WorkoutPlannerPage() {
                                                     }
                                                     className="flex items-center justify-between rounded-[22px] border border-border/70 bg-card/80 px-4 py-4 text-left text-base font-semibold text-foreground transition hover:bg-background"
                                                 >
-                                                    <span>{templateLabel(key)}</span>
+                                                    <span>
+                                                        {templateLabel(key)}
+                                                    </span>
                                                     <WandSparkles className="h-4 w-4 text-muted-foreground" />
                                                 </button>
                                             ))}
@@ -632,10 +646,13 @@ export default function WorkoutPlannerPage() {
                                                     key={day.day_index}
                                                     type="button"
                                                     onClick={() =>
-                                                        setSelectedDay(day.day_index)
+                                                        setSelectedDay(
+                                                            day.day_index,
+                                                        )
                                                     }
                                                     className={`w-full rounded-[22px] border px-4 py-4 text-left transition ${
-                                                        selectedDay === day.day_index
+                                                        selectedDay ===
+                                                        day.day_index
                                                             ? 'border-primary/30 bg-primary/10'
                                                             : 'border-border/70 bg-card/80 hover:bg-background'
                                                     }`}
@@ -643,14 +660,19 @@ export default function WorkoutPlannerPage() {
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div>
                                                             <div className="text-sm font-semibold text-muted-foreground">
-                                                                Day {day.day_index}
+                                                                Day{' '}
+                                                                {day.day_index}
                                                             </div>
                                                             <div className="mt-1 text-base font-semibold text-foreground">
                                                                 {day.name}
                                                             </div>
                                                         </div>
                                                         <span className="rounded-full border border-border/70 bg-background px-3 py-1 text-sm text-muted-foreground">
-                                                            {day.exercises.length} exercises
+                                                            {
+                                                                day.exercises
+                                                                    .length
+                                                            }{' '}
+                                                            exercises
                                                         </span>
                                                     </div>
                                                 </button>
@@ -669,7 +691,9 @@ export default function WorkoutPlannerPage() {
                                                 emphasis="secondary"
                                                 onClick={() =>
                                                     activeDraftDay &&
-                                                    removeDay(activeDraftDay.day_index)
+                                                    removeDay(
+                                                        activeDraftDay.day_index,
+                                                    )
                                                 }
                                                 className="h-11 justify-center"
                                             >
@@ -696,13 +720,17 @@ export default function WorkoutPlannerPage() {
                                                         Day title
                                                     </span>
                                                     <input
-                                                        value={activeDraftDay.name}
+                                                        value={
+                                                            activeDraftDay.name
+                                                        }
                                                         onChange={(event) =>
                                                             updateDay(
                                                                 activeDraftDay.day_index,
                                                                 (day) => ({
                                                                     ...day,
-                                                                    name: event.target.value,
+                                                                    name: event
+                                                                        .target
+                                                                        .value,
                                                                 }),
                                                             )
                                                         }
@@ -713,15 +741,28 @@ export default function WorkoutPlannerPage() {
                                                 {selectedDayExercises.length ? (
                                                     <div className="grid gap-4">
                                                         {selectedDayExercises.map(
-                                                            ({ draft, item }) => (
+                                                            ({
+                                                                draft,
+                                                                item,
+                                                            }) => (
                                                                 <SelectedExerciseCard
-                                                                    key={item.id}
-                                                                    exercise={item}
-                                                                    draft={draft}
-                                                                    onSetsChange={(value) =>
+                                                                    key={
+                                                                        item.id
+                                                                    }
+                                                                    exercise={
+                                                                        item
+                                                                    }
+                                                                    draft={
+                                                                        draft
+                                                                    }
+                                                                    onSetsChange={(
+                                                                        value,
+                                                                    ) =>
                                                                         updateDay(
                                                                             activeDraftDay.day_index,
-                                                                            (day) => ({
+                                                                            (
+                                                                                day,
+                                                                            ) => ({
                                                                                 ...day,
                                                                                 exercises:
                                                                                     day.exercises.map(
@@ -740,10 +781,14 @@ export default function WorkoutPlannerPage() {
                                                                             }),
                                                                         )
                                                                     }
-                                                                    onRepsChange={(value) =>
+                                                                    onRepsChange={(
+                                                                        value,
+                                                                    ) =>
                                                                         updateDay(
                                                                             activeDraftDay.day_index,
-                                                                            (day) => ({
+                                                                            (
+                                                                                day,
+                                                                            ) => ({
                                                                                 ...day,
                                                                                 exercises:
                                                                                     day.exercises.map(
@@ -763,7 +808,9 @@ export default function WorkoutPlannerPage() {
                                                                         )
                                                                     }
                                                                     onRemove={() =>
-                                                                        removeExercise(item.id)
+                                                                        removeExercise(
+                                                                            item.id,
+                                                                        )
                                                                     }
                                                                 />
                                                             ),
@@ -813,10 +860,14 @@ export default function WorkoutPlannerPage() {
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="space-y-2">
                                                                 <div className="text-base font-semibold text-foreground">
-                                                                    {exercise.name}
+                                                                    {
+                                                                        exercise.name
+                                                                    }
                                                                 </div>
                                                                 <div className="text-sm text-muted-foreground">
-                                                                    {exercise.primary_muscle}
+                                                                    {
+                                                                        exercise.primary_muscle
+                                                                    }
                                                                     {exercise.equipment
                                                                         ? ` - ${exercise.equipment}`
                                                                         : ''}
@@ -824,7 +875,9 @@ export default function WorkoutPlannerPage() {
                                                             </div>
                                                             <ProductButton
                                                                 emphasis="secondary"
-                                                                disabled={alreadyAdded}
+                                                                disabled={
+                                                                    alreadyAdded
+                                                                }
                                                                 onClick={() =>
                                                                     addExercise(
                                                                         exercise.id,
@@ -893,7 +946,9 @@ export default function WorkoutPlannerPage() {
                                 onClick={saveDraft}
                                 disabled={saving}
                             >
-                                {saving ? 'Saving draft...' : 'Save custom draft'}
+                                {saving
+                                    ? 'Saving draft...'
+                                    : 'Save custom draft'}
                             </ProductButton>
                         </ProductStickyActions>
                     </>

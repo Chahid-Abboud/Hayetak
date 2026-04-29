@@ -218,6 +218,7 @@ class RestoreUsersFromSqlDump extends Command
                 if ($char === '\\' && ($index + 1) < $length) {
                     $buffer .= $raw[$index + 1];
                     $index++;
+
                     continue;
                 }
 
@@ -225,25 +226,30 @@ class RestoreUsersFromSqlDump extends Command
                     if (($index + 1) < $length && $raw[$index + 1] === "'") {
                         $buffer .= "'";
                         $index++;
+
                         continue;
                     }
 
                     $inQuote = false;
+
                     continue;
                 }
 
                 $buffer .= $char;
+
                 continue;
             }
 
             if ($char === "'") {
                 $inQuote = true;
+
                 continue;
             }
 
             if ($char === ',') {
                 $values[] = trim($buffer);
                 $buffer = '';
+
                 continue;
             }
 

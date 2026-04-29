@@ -13,12 +13,11 @@ use App\Models\User;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
 use App\Models\WorkoutPlanExercise;
-use Carbon\Carbon;
 use App\Services\Ai\Exercises\PlannerExerciseCatalogSyncService;
 use App\Services\Ai\Seed\SeededPlanCleanupService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class PlannerPersistenceService
 {
@@ -192,6 +191,7 @@ class PlannerPersistenceService
 
                     if ($foodId === null) {
                         $unmatchedItems[] = trim($name.' '.$portion);
+
                         continue;
                     }
 
@@ -305,10 +305,12 @@ class PlannerPersistenceService
                 $exerciseId = $this->matchExerciseId($name, $exercises, $exerciseMap);
                 if ($exerciseId === null) {
                     $unmatchedExercises[] = $name;
+
                     continue;
                 }
                 if (in_array($exerciseId, $insertedExerciseIds, true)) {
                     $unmatchedExercises[] = $name.' (duplicate skipped)';
+
                     continue;
                 }
 

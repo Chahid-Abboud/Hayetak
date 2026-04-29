@@ -126,7 +126,7 @@ class PlannerOutputValidator
                 $signature = $this->mealSignature($meal, $mealCode);
                 if ($signature === '' || ! in_array($signature, $optionSignatures[$mealCode] ?? [], true)) {
                     throw new PlannerValidationException(sprintf(
-                        "Diet day %d contains a %s meal that does not match the advertised meal options.",
+                        'Diet day %d contains a %s meal that does not match the advertised meal options.',
                         $dayIndex + 1,
                         $mealCode
                     ));

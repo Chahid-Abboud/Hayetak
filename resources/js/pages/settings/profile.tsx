@@ -192,10 +192,7 @@ export default function ProfilePage() {
 
     const displayName =
         page.displayName ||
-        [
-            userProfile.first_name ?? '',
-            userProfile.last_name ?? '',
-        ]
+        [userProfile.first_name ?? '', userProfile.last_name ?? '']
             .join(' ')
             .trim() ||
         authUser?.username ||
@@ -272,9 +269,9 @@ export default function ProfilePage() {
     const dietSummary =
         dietType === 'other'
             ? dietOther || 'Other'
-            : DIET_TYPES.find((item) => item.value === dietType)?.label ??
+            : (DIET_TYPES.find((item) => item.value === dietType)?.label ??
               page.dietName ??
-              'Not set';
+              'Not set');
 
     const flashMessage = page.flash?.error ?? page.flash?.success ?? null;
     const flashTone = page.flash?.error ? 'danger' : 'success';
@@ -352,7 +349,11 @@ export default function ProfilePage() {
 
     const addMeasurement = () => {
         const numericValue = Number(measurementValue);
-        if (!measurementDate || !Number.isFinite(numericValue) || numericValue <= 0)
+        if (
+            !measurementDate ||
+            !Number.isFinite(numericValue) ||
+            numericValue <= 0
+        )
             return;
 
         router.post(
@@ -444,7 +445,10 @@ export default function ProfilePage() {
                                     description="Passwords, sessions, and two-factor live in the dedicated security area."
                                     icon={<ShieldCheck className="h-5 w-5" />}
                                     action={
-                                        <ProductButton asChild emphasis="secondary">
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
                                             <Link href="/settings/security">
                                                 Open security
                                             </Link>
@@ -456,7 +460,10 @@ export default function ProfilePage() {
                                     description="Jump straight into the plan generator with your saved profile context."
                                     icon={<Sparkles className="h-5 w-5" />}
                                     action={
-                                        <ProductButton asChild emphasis="secondary">
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
                                             <Link href="/ai/planner">
                                                 Open AI planner
                                             </Link>
@@ -495,7 +502,8 @@ export default function ProfilePage() {
                             <ProductStatCard
                                 label="Safety notes"
                                 value={
-                                    injuryHistory.length + medicalConditions.length
+                                    injuryHistory.length +
+                                    medicalConditions.length
                                 }
                                 helper="Medical and injury information is preserved for safer recommendations."
                             />
@@ -580,7 +588,10 @@ export default function ProfilePage() {
                                         value={dietType}
                                         onChange={setDietType}
                                         options={[
-                                            { value: '', label: 'Select diet type' },
+                                            {
+                                                value: '',
+                                                label: 'Select diet type',
+                                            },
                                             ...DIET_TYPES,
                                         ]}
                                     />
@@ -610,7 +621,9 @@ export default function ProfilePage() {
                                         {FITNESS_GOAL_OPTIONS.map((goal) => (
                                             <TogglePill
                                                 key={goal}
-                                                active={fitnessGoals.includes(goal)}
+                                                active={fitnessGoals.includes(
+                                                    goal,
+                                                )}
                                                 onClick={() =>
                                                     toggleSelection(
                                                         goal,
@@ -800,7 +813,9 @@ export default function ProfilePage() {
                             Save workout setup
                         </ProductButton>
                         <ProductButton asChild emphasis="secondary">
-                            <Link href="/workouts/plan">Open workout planner</Link>
+                            <Link href="/workouts/plan">
+                                Open workout planner
+                            </Link>
                         </ProductButton>
                     </div>
                 </ProductSection>
@@ -1100,7 +1115,10 @@ function ChipEditor({
                     placeholder={placeholder}
                 />
                 <div className="flex items-end">
-                    <ProductButton onClick={onAdd} className="h-12 w-full sm:w-auto">
+                    <ProductButton
+                        onClick={onAdd}
+                        className="h-12 w-full sm:w-auto"
+                    >
                         Add
                     </ProductButton>
                 </div>

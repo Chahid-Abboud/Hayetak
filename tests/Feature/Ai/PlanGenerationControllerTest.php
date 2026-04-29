@@ -1,16 +1,16 @@
 <?php
 
+use App\Jobs\Ai\RunPlannerAudit;
 use App\Models\Ai\AiPlan;
 use App\Models\Ai\AiRequest;
+use App\Models\Ai\Audit\PlannerAuditRun;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;
-use App\Models\Ai\Audit\PlannerAuditRun;
 use App\Models\User;
 use App\Models\UserDietaryRestriction;
 use App\Models\UserMedicalHistory;
 use App\Models\WorkoutPlan;
-use App\Jobs\Ai\RunPlannerAudit;
 use App\Services\Ai\PlannerService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;

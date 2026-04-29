@@ -37,7 +37,7 @@ return [
             ],
             'sync_during_tests' => (bool) env('AI_SELF_HOSTED_SYNC_DURING_TESTS', false),
         ],
-    ], 
+    ],
 
     'planner' => [
         'ollama_only' => true,
@@ -124,7 +124,7 @@ return [
                 'max_weight_mae_kg_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MAX_WEIGHT_MAE_KG_FOR_ML', 0.4),
                 'max_strength_mae_pct_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MAX_STRENGTH_MAE_PCT_FOR_ML', 1.2),
             ],
-        ],              
+        ],
     ],
 
     'seed_measurements' => [
@@ -139,4 +139,3 @@ return [
         'end_date' => env('AI_SEED_ACTIVITY_HISTORY_END_DATE', '2026-05-18'),
     ],
 ];
-                             

@@ -12,6 +12,10 @@ on:
       - develop
       - main
 
+env:
+  PUPPETEER_SKIP_DOWNLOAD: 'true'
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -36,17 +40,8 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci
 
-      - name: Install Playwright Dependencies
-        run: npm install playwright@latest
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Install Pest Browser Plugin
-        run: composer require pestphp/pest-plugin-browser:^4.1 --dev --no-interaction --no-progress --prefer-dist --no-scripts
 
       - name: Copy Environment File
         run: cp .env.example .env

@@ -37,7 +37,6 @@ class SeededPlanCleanupService
     }
 
     /**
-     * @param  \App\Models\User|int  $user
      * @return array{nutrition_deleted:int,workout_deleted:int}
      */
     public function cleanupForUser(User|int $user, array $allowedDurations = self::ALLOWED_DURATIONS): array

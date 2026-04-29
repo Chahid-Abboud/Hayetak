@@ -118,7 +118,7 @@ class AiPolishSeededHistoryVariety extends Command
 
     private function bootSeederHelpers(CarbonImmutable $start, CarbonImmutable $end): void
     {
-        $this->seeder = new UserHistoryBackfillSeeder();
+        $this->seeder = new UserHistoryBackfillSeeder;
         $this->seederReflection = new \ReflectionClass($this->seeder);
 
         $this->setSeederProperty('today', CarbonImmutable::today(config('app.timezone', 'UTC'))->startOfDay());
@@ -358,6 +358,7 @@ class AiPolishSeededHistoryVariety extends Command
 
                     if ($dryRun) {
                         $stats['workout_set_updates']++;
+
                         continue;
                     }
 

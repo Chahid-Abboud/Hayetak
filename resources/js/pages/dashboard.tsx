@@ -13,10 +13,7 @@ import {
 } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
-import {
-    BarListCard,
-    TrendCard,
-} from '@/components/product/analytics';
+import { BarListCard, TrendCard } from '@/components/product/analytics';
 import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { cn } from '@/lib/utils';
@@ -595,10 +592,7 @@ export default function Home() {
                 }
             />
 
-            <ProductPageShell
-                width="wide"
-                className="px-1 sm:px-2 xl:px-3"
-            >
+            <ProductPageShell width="wide" className="px-1 sm:px-2 xl:px-3">
                 <div className="space-y-14 sm:space-y-16 lg:space-y-18 xl:space-y-20">
                     <section className="haye-panel rounded-[40px] px-6 py-7 lg:px-8 lg:py-8">
                         <h1 className="sr-only">Hayetak dashboard</h1>
@@ -607,7 +601,9 @@ export default function Home() {
                                 <p className="haye-kicker">Command center</p>
                                 <h2
                                     className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
-                                    style={{ fontFamily: 'var(--font-display)' }}
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
                                 >
                                     {isGuest
                                         ? 'Preview the new Hayetak flow.'
@@ -615,14 +611,16 @@ export default function Home() {
                                 </h2>
                                 <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
                                     A tighter look at what needs attention now,
-                                    what is already on track, and the fastest place
-                                    to act next.
+                                    what is already on track, and the fastest
+                                    place to act next.
                                 </p>
                                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                                     <QuickActionCard
                                         title="Log meal"
                                         description="Open the quick diary."
-                                        onClick={() => router.visit('/track-meals')}
+                                        onClick={() =>
+                                            router.visit('/track-meals')
+                                        }
                                     />
                                     <QuickActionCard
                                         title="Start lift"
@@ -640,7 +638,9 @@ export default function Home() {
                             <div className="dashboard-surface rounded-[32px] p-5 shadow-[0_28px_65px_-48px_rgba(15,23,42,0.65)]">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="haye-kicker">Today pulse</p>
+                                        <p className="haye-kicker">
+                                            Today pulse
+                                        </p>
                                         <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
                                             Clear, quick, and current
                                         </h3>
@@ -704,8 +704,9 @@ export default function Home() {
                                                 Tracking depth
                                             </span>
                                             <span className="text-sm text-muted-foreground">
-                                                {loggedItemCount} nutrition entries
-                                                and {weightLogCount} weigh-ins
+                                                {loggedItemCount} nutrition
+                                                entries and {weightLogCount}{' '}
+                                                weigh-ins
                                             </span>
                                         </div>
                                     </div>
@@ -746,9 +747,9 @@ export default function Home() {
                                     </div>
                                 ) : (
                                     <div className="rounded-[24px] border border-dashed border-border/60 bg-background/55 p-4 text-sm text-muted-foreground">
-                                        No coach thread yet. Start one question and
-                                        the coach will keep your follow-ups in the
-                                        same conversation.
+                                        No coach thread yet. Start one question
+                                        and the coach will keep your follow-ups
+                                        in the same conversation.
                                     </div>
                                 )}
                                 <div className="dashboard-surface-accent rounded-[24px] p-4 text-sm text-foreground">
@@ -766,7 +767,9 @@ export default function Home() {
                                 <>
                                     <ActionButton
                                         variant="primary"
-                                        onClick={() => router.visit('/ai/planner')}
+                                        onClick={() =>
+                                            router.visit('/ai/planner')
+                                        }
                                     >
                                         Open Planner
                                     </ActionButton>
@@ -783,7 +786,9 @@ export default function Home() {
                         >
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="dashboard-surface rounded-[24px] p-4">
-                                    <p className="haye-kicker">Nutrition plan</p>
+                                    <p className="haye-kicker">
+                                        Nutrition plan
+                                    </p>
                                     <p className="mt-2 text-xl font-semibold text-foreground">
                                         {nutritionPlan ? 'Ready' : 'Not ready'}
                                     </p>
@@ -933,8 +938,8 @@ export default function Home() {
                                             ) : (
                                                 <div className="rounded-[20px] border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
                                                     No entries yet. The detailed
-                                                    meal tracker is still one tap
-                                                    away when you want it.
+                                                    meal tracker is still one
+                                                    tap away when you want it.
                                                 </div>
                                             )}
                                         </div>
@@ -968,7 +973,10 @@ export default function Home() {
                                 BMI
                             </h2>
                             <div className="mt-4">
-                                <BmiCard isGuest={isGuest} profile={profileSafe} />
+                                <BmiCard
+                                    isGuest={isGuest}
+                                    profile={profileSafe}
+                                />
                             </div>
                         </div>
 
@@ -981,7 +989,10 @@ export default function Home() {
                                 <WaterCard
                                     isGuest={isGuest}
                                     water={
-                                        water ?? { today_ml: 0, target_ml: 2000 }
+                                        water ?? {
+                                            today_ml: 0,
+                                            target_ml: 2000,
+                                        }
                                     }
                                     onQuickAdd={(ml: number) =>
                                         router.post(
@@ -1015,7 +1026,9 @@ export default function Home() {
                                 </ActionButton>
                                 <ActionButton
                                     variant="soft"
-                                    onClick={() => router.visit('/workouts/log')}
+                                    onClick={() =>
+                                        router.visit('/workouts/log')
+                                    }
                                 >
                                     Open Workout Log
                                 </ActionButton>
@@ -1104,16 +1117,13 @@ function CalorieDistributionGraphCard({
     const circumference = 2 * Math.PI * radius;
     const toneForLabel = (label: string) => {
         const map: Record<string, string> = {
-                Breakfast:
-                    'color-mix(in oklab, var(--palette-primary-400) 88%, white 12%)',
-                Lunch: 'color-mix(in oklab, var(--info) 88%, white 12%)',
-                Dinner:
-                    'color-mix(in oklab, var(--warning) 90%, white 10%)',
-                Snack:
-                    'color-mix(in oklab, var(--destructive) 90%, white 10%)',
-                Drink:
-                    'color-mix(in oklab, var(--success) 88%, white 12%)',
-            };
+            Breakfast:
+                'color-mix(in oklab, var(--palette-primary-400) 88%, white 12%)',
+            Lunch: 'color-mix(in oklab, var(--info) 88%, white 12%)',
+            Dinner: 'color-mix(in oklab, var(--warning) 90%, white 10%)',
+            Snack: 'color-mix(in oklab, var(--destructive) 90%, white 10%)',
+            Drink: 'color-mix(in oklab, var(--success) 88%, white 12%)',
+        };
 
         return map[label] ?? 'var(--foreground)';
     };
@@ -1284,11 +1294,9 @@ function ProgressCenterCard({
         > = {
             weight: {
                 title: 'Weight progress',
-                helper:
-                    'Every logged body-weight check-in stays on this graph so shifts are easy to spot.',
+                helper: 'Every logged body-weight check-in stays on this graph so shifts are easy to spot.',
                 points: weightPoints,
-                seriesColor:
-                    'color-mix(in oklab, var(--info) 86%, white 14%)',
+                seriesColor: 'color-mix(in oklab, var(--info) 86%, white 14%)',
                 ySuffix: ' kg',
                 xAxisLabel: 'Check-in date',
                 yAxisLabel: 'Weight (kg)',
@@ -1319,8 +1327,7 @@ function ProgressCenterCard({
             },
             height: {
                 title: 'Height progress',
-                helper:
-                    'Height stays available here when you want a clean history without opening profile details.',
+                helper: 'Height stays available here when you want a clean history without opening profile details.',
                 points: heightPoints,
                 seriesColor:
                     'color-mix(in oklab, var(--warning) 84%, white 16%)',
@@ -1354,8 +1361,7 @@ function ProgressCenterCard({
             },
             gym: {
                 title: 'Gym progress',
-                helper:
-                    'Weekly top-set load is paired with your latest reps, volume, and workout count.',
+                helper: 'Weekly top-set load is paired with your latest reps, volume, and workout count.',
                 points: gymPoints,
                 seriesColor:
                     'color-mix(in oklab, var(--success) 82%, white 18%)',
@@ -1461,7 +1467,7 @@ function ProgressCenterCard({
 
 function MetricPill({ label, value }: { label: string; value: string }) {
     return (
-            <div className="dashboard-surface-soft rounded-lg px-3 py-2">
+        <div className="dashboard-surface-soft rounded-lg px-3 py-2">
             <div className="text-[11px] tracking-wide text-muted-foreground uppercase">
                 {label}
             </div>
@@ -1715,7 +1721,9 @@ function PredictorVsActualCard({
                 return current;
             }
 
-            if (monthOptions.some((option) => option.value === currentMonthKey)) {
+            if (
+                monthOptions.some((option) => option.value === currentMonthKey)
+            ) {
                 return currentMonthKey;
             }
 
@@ -1728,7 +1736,8 @@ function PredictorVsActualCard({
             selectedMonthKey === 'all'
                 ? rowsWithFeedback
                 : rowsWithFeedback.filter(
-                      (row) => monthKeyFromIso(row.dateKey) === selectedMonthKey,
+                      (row) =>
+                          monthKeyFromIso(row.dateKey) === selectedMonthKey,
                   );
         const filteredWeights =
             selectedMonthKey === 'all'
@@ -1907,10 +1916,9 @@ function PredictorVsActualCard({
     const latestWeightPoint =
         visibleWeightPoints[visibleWeightPoints.length - 1] ??
         weightPoints[weightPoints.length - 1];
-    const latestProjectedActive =
-        latestPrediction?.feedback_unlocked
-            ? latestPrediction.projected_after_feedback_kg
-            : latestPrediction?.projected_weight_kg;
+    const latestProjectedActive = latestPrediction?.feedback_unlocked
+        ? latestPrediction.projected_after_feedback_kg
+        : latestPrediction?.projected_weight_kg;
     const latestBaselineWeight = latestPrediction?.baseline_weight_kg ?? null;
     const latestHorizonDays = latestPrediction?.horizon_days ?? null;
     const weeklyProjectedWeight =
@@ -1923,7 +1931,8 @@ function PredictorVsActualCard({
                   latestHorizonDays) *
                   7
             : null;
-    const actualColor = 'color-mix(in oklab, var(--palette-primary-400) 90%, white 10%)';
+    const actualColor =
+        'color-mix(in oklab, var(--palette-primary-400) 90%, white 10%)';
 
     return (
         <div className="space-y-4">
@@ -1979,10 +1988,7 @@ function PredictorVsActualCard({
                             className="w-full rounded-[18px] border border-border/60 bg-card px-4 py-3 text-sm text-foreground"
                         >
                             {weekOptions.map((option) => (
-                                <option
-                                    key={option.value}
-                                    value={option.value}
-                                >
+                                <option key={option.value} value={option.value}>
                                     {option.label}
                                 </option>
                             ))}
@@ -2125,19 +2131,13 @@ function PredictorVsActualCard({
     );
 }
 
-function PredictionStat({
-    label,
-    value,
-}: {
-    label: string;
-    value: string;
-}) {
+function PredictionStat({ label, value }: { label: string; value: string }) {
     return (
         <div className="dashboard-surface-soft rounded-[20px] p-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                 {label}
             </p>
-            <p className="mt-2 text-sm font-medium leading-6 text-foreground">
+            <p className="mt-2 text-sm leading-6 font-medium text-foreground">
                 {value}
             </p>
         </div>
@@ -2151,9 +2151,7 @@ function parseIsoDate(value: string): Date {
     }
 
     const [, year, month, day] = match;
-    return new Date(
-        Date.UTC(Number(year), Number(month) - 1, Number(day), 12),
-    );
+    return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12));
 }
 
 function isoDateToAxisValue(value: string): number {
@@ -2400,8 +2398,7 @@ function AdminDashboard() {
             return {
                 tone: 'info' as const,
                 label: 'Not run',
-                detail:
-                    'No planner audit snapshot is loaded yet. Keep deeper AI debugging inside the planner workspace.',
+                detail: 'No planner audit snapshot is loaded yet. Keep deeper AI debugging inside the planner workspace.',
                 statValue: 'Not run',
                 statHelper:
                     'Use AI Planner for audit runs, schema checks, and technical review.',
@@ -2706,7 +2703,9 @@ function AdminDashboard() {
                                     onClick={
                                         primaryQueue.href
                                             ? () =>
-                                                  router.visit(primaryQueue.href)
+                                                  router.visit(
+                                                      primaryQueue.href,
+                                                  )
                                             : undefined
                                     }
                                 />
@@ -2752,9 +2751,7 @@ function AdminDashboard() {
                                     meta="Profile triage"
                                     tone="default"
                                     actionLabel="Open users"
-                                    onClick={() =>
-                                        router.visit('/admin/users')
-                                    }
+                                    onClick={() => router.visit('/admin/users')}
                                 />
                                 <AdminSignalCard
                                     eyebrow="Planner health"
@@ -2821,7 +2818,9 @@ function AdminDashboard() {
                             <AdminPriorityCard
                                 icon={Users}
                                 eyebrow="Accounts"
-                                count={loading ? '...' : String(recentUsers.length)}
+                                count={
+                                    loading ? '...' : String(recentUsers.length)
+                                }
                                 title="Recent users"
                                 description="Recent accounts awaiting profile checks and support follow-up."
                                 actionLabel="Open users"
@@ -2854,19 +2853,21 @@ function AdminDashboard() {
                                         '/admin/professional-verifications',
                                     )
                                 }
-                                items={pendingVerifications.map((verification) => ({
-                                    id: verification.id,
-                                    title:
-                                        [
-                                            verification.user?.first_name,
-                                            verification.user?.last_name,
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' ') ||
-                                        verification.user?.email ||
-                                        'Professional',
-                                    subtitle: `${verification.role ?? 'professional'} - ${verification.review_status ?? 'pending'}`,
-                                }))}
+                                items={pendingVerifications.map(
+                                    (verification) => ({
+                                        id: verification.id,
+                                        title:
+                                            [
+                                                verification.user?.first_name,
+                                                verification.user?.last_name,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' ') ||
+                                            verification.user?.email ||
+                                            'Professional',
+                                        subtitle: `${verification.role ?? 'professional'} - ${verification.review_status ?? 'pending'}`,
+                                    }),
+                                )}
                                 emptyText="No pending verification requests."
                             />
                             <AdminPriorityCard
@@ -3246,7 +3247,8 @@ function AdminPlannerAuditCard({
                                 : 'No run'}
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                            Completed runs loaded from the latest audit snapshot.
+                            Completed runs loaded from the latest audit
+                            snapshot.
                         </div>
                     </div>
                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-3">
@@ -3257,7 +3259,8 @@ function AdminPlannerAuditCard({
                             {audit ? String(audit.failed_runs) : '0'}
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                            Use AI Planner or logs for the raw trace when this rises.
+                            Use AI Planner or logs for the raw trace when this
+                            rises.
                         </div>
                     </div>
                 </div>
@@ -3456,4 +3459,3 @@ function QuickActionCard({
         </button>
     );
 }
-

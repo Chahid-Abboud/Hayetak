@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminActionLogController;
-use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminMealController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPlaceLocalController;
 use App\Http\Controllers\Admin\AdminProfessionalController;
 use App\Http\Controllers\Admin\AdminProfessionalVerificationController;
@@ -26,8 +26,8 @@ use App\Http\Controllers\MealTrackerApiController;
 use App\Http\Controllers\PlacesController;
 use App\Http\Controllers\PlacesLocalController;
 use App\Http\Controllers\Professional\AssignmentController;
-use App\Http\Controllers\Professional\ProfessionalClientController;
 use App\Http\Controllers\Professional\NutritionistDietPlanController;
+use App\Http\Controllers\Professional\ProfessionalClientController;
 use App\Http\Controllers\Professional\TrainerProgressNoteController;
 use App\Http\Controllers\Professional\TrainerWorkoutPlanController;
 use App\Http\Controllers\Settings\ProfileController;

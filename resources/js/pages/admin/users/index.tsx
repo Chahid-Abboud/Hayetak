@@ -935,7 +935,9 @@ export default function AdminUsersIndex() {
                                                     : `${selectedUserIds.length} selected`}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Use bulk verification or status changes without leaving the current filter context.
+                                                Use bulk verification or status
+                                                changes without leaving the
+                                                current filter context.
                                             </div>
                                         </div>
                                     </div>
@@ -952,7 +954,9 @@ export default function AdminUsersIndex() {
                                             </div>
                                             <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
                                                 {detail?.user
-                                                    ? formatUserName(detail.user)
+                                                    ? formatUserName(
+                                                          detail.user,
+                                                      )
                                                     : 'No user selected'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -972,7 +976,10 @@ export default function AdminUsersIndex() {
                                                     : 'Pending selection'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Allergies, medical history, moderation state, and verification gaps should stay visible before edits.
+                                                Allergies, medical history,
+                                                moderation state, and
+                                                verification gaps should stay
+                                                visible before edits.
                                             </div>
                                         </div>
                                     </div>
@@ -1275,191 +1282,197 @@ export default function AdminUsersIndex() {
                                 list={
                                     <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
                                         <AdminDataTable>
-                                        <ProductTableHead>
-                                            <tr>
-                                                <ProductTableHeaderCell className="w-10">
-                                                    <Checkbox
-                                                        checked={
-                                                            allVisibleSelected
-                                                        }
-                                                        onCheckedChange={(
-                                                            checked,
-                                                        ) =>
-                                                            setSelectedUserIds(
-                                                                checked
-                                                                    ? users.map(
-                                                                          (
-                                                                              user,
-                                                                          ) =>
-                                                                              user.id,
-                                                                      )
-                                                                    : [],
-                                                            )
-                                                        }
-                                                        aria-label="Select visible users"
-                                                    />
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    User
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    Status
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    Activity
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell className="w-44">
-                                                    Actions
-                                                </ProductTableHeaderCell>
-                                            </tr>
-                                        </ProductTableHead>
-                                        <ProductTableBody>
-                                            {users.map((user) => {
-                                                const title =
-                                                    formatUserName(user);
-                                                const isSelected =
-                                                    selectedUserId === user.id;
+                                            <ProductTableHead>
+                                                <tr>
+                                                    <ProductTableHeaderCell className="w-10">
+                                                        <Checkbox
+                                                            checked={
+                                                                allVisibleSelected
+                                                            }
+                                                            onCheckedChange={(
+                                                                checked,
+                                                            ) =>
+                                                                setSelectedUserIds(
+                                                                    checked
+                                                                        ? users.map(
+                                                                              (
+                                                                                  user,
+                                                                              ) =>
+                                                                                  user.id,
+                                                                          )
+                                                                        : [],
+                                                                )
+                                                            }
+                                                            aria-label="Select visible users"
+                                                        />
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        User
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Status
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Activity
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell className="w-44">
+                                                        Actions
+                                                    </ProductTableHeaderCell>
+                                                </tr>
+                                            </ProductTableHead>
+                                            <ProductTableBody>
+                                                {users.map((user) => {
+                                                    const title =
+                                                        formatUserName(user);
+                                                    const isSelected =
+                                                        selectedUserId ===
+                                                        user.id;
 
-                                                return (
-                                                    <ProductTableRow
-                                                        key={user.id}
-                                                        interactive
-                                                        className={
-                                                            isSelected
-                                                                ? 'bg-primary/6'
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <ProductTableCell>
-                                                            <Checkbox
-                                                                checked={selectedUserIds.includes(
-                                                                    user.id,
-                                                                )}
-                                                                onCheckedChange={(
-                                                                    checked,
-                                                                ) =>
-                                                                    setSelectedUserIds(
-                                                                        (
-                                                                            current,
-                                                                        ) =>
-                                                                            checked
-                                                                                ? current.includes(
-                                                                                      user.id,
-                                                                                  )
-                                                                                    ? current
-                                                                                    : [
-                                                                                          ...current,
-                                                                                          user.id,
-                                                                                      ]
-                                                                                : current.filter(
-                                                                                      (
-                                                                                          id,
-                                                                                      ) =>
-                                                                                          id !==
-                                                                                          user.id,
-                                                                                  ),
-                                                                    )
-                                                                }
-                                                                aria-label={`Select ${title}`}
-                                                            />
-                                                        </ProductTableCell>
-                                                        <ProductTableCell>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    selectUser(
+                                                    return (
+                                                        <ProductTableRow
+                                                            key={user.id}
+                                                            interactive
+                                                            className={
+                                                                isSelected
+                                                                    ? 'bg-primary/6'
+                                                                    : undefined
+                                                            }
+                                                        >
+                                                            <ProductTableCell>
+                                                                <Checkbox
+                                                                    checked={selectedUserIds.includes(
                                                                         user.id,
-                                                                    )
-                                                                }
-                                                                className="space-y-1 text-left"
-                                                            >
-                                                                <p className="text-sm font-semibold text-foreground">
-                                                                    {title}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {user.email}
-                                                                </p>
-                                                                {user.city ? (
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {
-                                                                            user.city
-                                                                        }
-                                                                    </p>
-                                                                ) : null}
-                                                            </button>
-                                                        </ProductTableCell>
-                                                        <ProductTableCell>
-                                                            <div className="space-y-2">
-                                                                <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
-                                                                    {user.role}
-                                                                </Badge>
-                                                                <StatusChipSet
-                                                                    items={[
-                                                                        {
-                                                                            value: user.verified
-                                                                                ? 'verified'
-                                                                                : 'unverified',
-                                                                        },
-                                                                        {
-                                                                            value:
-                                                                                user.status ||
-                                                                                'pending',
-                                                                        },
-                                                                    ]}
+                                                                    )}
+                                                                    onCheckedChange={(
+                                                                        checked,
+                                                                    ) =>
+                                                                        setSelectedUserIds(
+                                                                            (
+                                                                                current,
+                                                                            ) =>
+                                                                                checked
+                                                                                    ? current.includes(
+                                                                                          user.id,
+                                                                                      )
+                                                                                        ? current
+                                                                                        : [
+                                                                                              ...current,
+                                                                                              user.id,
+                                                                                          ]
+                                                                                    : current.filter(
+                                                                                          (
+                                                                                              id,
+                                                                                          ) =>
+                                                                                              id !==
+                                                                                              user.id,
+                                                                                      ),
+                                                                        )
+                                                                    }
+                                                                    aria-label={`Select ${title}`}
                                                                 />
-                                                            </div>
-                                                        </ProductTableCell>
-                                                        <ProductTableCell className="text-xs text-muted-foreground">
-                                                            Meals{' '}
-                                                            {user.meal_entries_count ??
-                                                                0}
-                                                            {' • '}Workouts{' '}
-                                                            {user.workout_logs_count ??
-                                                                0}
-                                                            {' • '}AI{' '}
-                                                            {user.ai_conversations_count ??
-                                                                0}
-                                                        </ProductTableCell>
-                                                        <ProductTableCell>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                <Button
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <button
                                                                     type="button"
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    onClick={() => {
+                                                                    onClick={() =>
                                                                         selectUser(
                                                                             user.id,
-                                                                        );
-                                                                        setDrawerOpen(
-                                                                            true,
-                                                                        );
-                                                                    }}
+                                                                        )
+                                                                    }
+                                                                    className="space-y-1 text-left"
                                                                 >
-                                                                    Inspect
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    asChild
-                                                                >
-                                                                    <Link
-                                                                        href={`/admin/users/${user.id}`}
+                                                                    <p className="text-sm font-semibold text-foreground">
+                                                                        {title}
+                                                                    </p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        {
+                                                                            user.email
+                                                                        }
+                                                                    </p>
+                                                                    {user.city ? (
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {
+                                                                                user.city
+                                                                            }
+                                                                        </p>
+                                                                    ) : null}
+                                                                </button>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="space-y-2">
+                                                                    <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
+                                                                        {
+                                                                            user.role
+                                                                        }
+                                                                    </Badge>
+                                                                    <StatusChipSet
+                                                                        items={[
+                                                                            {
+                                                                                value: user.verified
+                                                                                    ? 'verified'
+                                                                                    : 'unverified',
+                                                                            },
+                                                                            {
+                                                                                value:
+                                                                                    user.status ||
+                                                                                    'pending',
+                                                                            },
+                                                                        ]}
+                                                                    />
+                                                                </div>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell className="text-xs text-muted-foreground">
+                                                                Meals{' '}
+                                                                {user.meal_entries_count ??
+                                                                    0}
+                                                                {' • '}Workouts{' '}
+                                                                {user.workout_logs_count ??
+                                                                    0}
+                                                                {' • '}AI{' '}
+                                                                {user.ai_conversations_count ??
+                                                                    0}
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            selectUser(
+                                                                                user.id,
+                                                                            );
+                                                                            setDrawerOpen(
+                                                                                true,
+                                                                            );
+                                                                        }}
                                                                     >
-                                                                        Open
-                                                                    </Link>
-                                                                </Button>
-                                                            </div>
-                                                        </ProductTableCell>
-                                                    </ProductTableRow>
-                                                );
-                                            })}
-                                            {!loading && users.length === 0 ? (
-                                                <ProductTableEmptyRow
-                                                    colSpan={5}
-                                                    title="No users matched"
-                                                    description="Try different filters or reset search criteria."
-                                                />
-                                            ) : null}
-                                        </ProductTableBody>
+                                                                        Inspect
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        asChild
+                                                                    >
+                                                                        <Link
+                                                                            href={`/admin/users/${user.id}`}
+                                                                        >
+                                                                            Open
+                                                                        </Link>
+                                                                    </Button>
+                                                                </div>
+                                                            </ProductTableCell>
+                                                        </ProductTableRow>
+                                                    );
+                                                })}
+                                                {!loading &&
+                                                users.length === 0 ? (
+                                                    <ProductTableEmptyRow
+                                                        colSpan={5}
+                                                        title="No users matched"
+                                                        description="Try different filters or reset search criteria."
+                                                    />
+                                                ) : null}
+                                            </ProductTableBody>
                                         </AdminDataTable>
                                     </AdminScrollArea>
                                 }

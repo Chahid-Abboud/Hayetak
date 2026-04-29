@@ -8,7 +8,6 @@ use App\Services\Ai\Evaluation\DeepAuditAnswerGrader;
 use App\Services\Ai\Runtime\FeatureConfigResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Throwable;

@@ -466,9 +466,7 @@ function buildDietMealOptionGroups(
                                 : (option.title ?? '').trim();
                         const title =
                             titleSeed &&
-                            !/^(simple|structured|alternate)\b/i.test(
-                                titleSeed,
-                            )
+                            !/^(simple|structured|alternate)\b/i.test(titleSeed)
                                 ? titleSeed
                                 : items
                                       .map((item) => (item.name ?? '').trim())
@@ -479,14 +477,14 @@ function buildDietMealOptionGroups(
                         return {
                             key: signature,
                             title:
-                                title ||
-                                `${humanizeMealCode(mealCode)} option`,
+                                title || `${humanizeMealCode(mealCode)} option`,
                             targetKcal: Number(
                                 option.target_kcal ?? totalCalories ?? 0,
                             ),
                             caloriesKcal: totalCalories,
                             proteinG: items.reduce(
-                                (sum, item) => sum + Number(item.protein_g ?? 0),
+                                (sum, item) =>
+                                    sum + Number(item.protein_g ?? 0),
                                 0,
                             ),
                             carbsG: items.reduce(
@@ -508,10 +506,7 @@ function buildDietMealOptionGroups(
 
     const grouped = new Map<
         string,
-        Map<
-            string,
-            DietMealOptionGroup['options'][number]
-        >
+        Map<string, DietMealOptionGroup['options'][number]>
     >();
 
     for (const day of days) {
@@ -537,7 +532,8 @@ function buildDietMealOptionGroups(
                     ? items[0]?.name?.trim()
                     : (meal.title ?? '').trim();
             const title =
-                titleSeed && !/^(simple|structured|alternate)\b/i.test(titleSeed)
+                titleSeed &&
+                !/^(simple|structured|alternate)\b/i.test(titleSeed)
                     ? titleSeed
                     : items
                           .map((item) => (item.name ?? '').trim())
@@ -624,9 +620,9 @@ export default function AiPlannerPage() {
     const [auditRun, setAuditRun] = useState<PlannerAuditRunState | null>(
         latestAuditRun ?? null,
     );
-    const [lastPromptedAuditId, setLastPromptedAuditId] = useState<number | null>(
-        null,
-    );
+    const [lastPromptedAuditId, setLastPromptedAuditId] = useState<
+        number | null
+    >(null);
 
     const plan = generation?.plan ?? null;
 
@@ -647,11 +643,7 @@ export default function AiPlannerPage() {
 
         setAuditGpuLoad('low');
         setAuditExecutionMode(latestAuditRun?.execution_mode ?? 'standard');
-    }, [
-        auditDialogOpen,
-        auditRun,
-        latestAuditRun?.execution_mode,
-    ]);
+    }, [auditDialogOpen, auditRun, latestAuditRun?.execution_mode]);
 
     const summaryCards = useMemo(
         () => [
@@ -694,7 +686,8 @@ export default function AiPlannerPage() {
     );
 
     useEffect(() => {
-        if (!auditRun || !['queued', 'running'].includes(auditRun.status)) return;
+        if (!auditRun || !['queued', 'running'].includes(auditRun.status))
+            return;
         if (lastPromptedAuditId === auditRun.id) return;
 
         setAuditGpuLoad(auditRun.gpu_load);
@@ -705,7 +698,11 @@ export default function AiPlannerPage() {
 
     useEffect(() => {
         if (!isAdmin || currentAuditId === null) return;
-        if (!currentAuditStatus || !['queued', 'running'].includes(currentAuditStatus)) return;
+        if (
+            !currentAuditStatus ||
+            !['queued', 'running'].includes(currentAuditStatus)
+        )
+            return;
 
         let cancelled = false;
 
@@ -715,7 +712,8 @@ export default function AiPlannerPage() {
                     `/api/ai/planner-audits/${currentAuditId}`,
                 );
                 if (!cancelled && response.data?.audit) {
-                    const nextAudit = response.data.audit as PlannerAuditRunState;
+                    const nextAudit = response.data
+                        .audit as PlannerAuditRunState;
                     setAuditRun(nextAudit);
                     if (['queued', 'running'].includes(nextAudit.status)) {
                         setAuditGpuLoad(nextAudit.gpu_load);
@@ -761,11 +759,12 @@ export default function AiPlannerPage() {
 
             setStatus({
                 tone: 'success',
-                message: generateDiet && generateWorkout
-                    ? 'Diet and workout generated successfully. Reloading the latest version now.'
-                    : generateDiet
-                      ? 'Diet generated successfully. Reloading the latest version now.'
-                      : 'Workout generated successfully. Reloading the latest version now.',
+                message:
+                    generateDiet && generateWorkout
+                        ? 'Diet and workout generated successfully. Reloading the latest version now.'
+                        : generateDiet
+                          ? 'Diet generated successfully. Reloading the latest version now.'
+                          : 'Workout generated successfully. Reloading the latest version now.',
             });
             router.reload({
                 only: [
@@ -801,7 +800,8 @@ export default function AiPlannerPage() {
                 horizons: [14, 21, 28],
             });
 
-            const nextAudit = response.data?.audit as PlannerAuditRunState | null;
+            const nextAudit = response.data
+                ?.audit as PlannerAuditRunState | null;
             setAuditRun(nextAudit);
             if (nextAudit) {
                 setAuditGpuLoad(nextAudit.gpu_load);
@@ -841,7 +841,8 @@ export default function AiPlannerPage() {
                 },
             );
 
-            const nextAudit = response.data?.audit as PlannerAuditRunState | null;
+            const nextAudit = response.data
+                ?.audit as PlannerAuditRunState | null;
             setAuditRun(nextAudit);
             if (nextAudit) {
                 setAuditGpuLoad(nextAudit.gpu_load);
@@ -1316,7 +1317,8 @@ export default function AiPlannerPage() {
                                                     {group.options.map(
                                                         (option) => {
                                                             const showTarget =
-                                                                option.targetKcal > 0 &&
+                                                                option.targetKcal >
+                                                                    0 &&
                                                                 Math.abs(
                                                                     option.targetKcal -
                                                                         option.caloriesKcal,
@@ -1335,7 +1337,9 @@ export default function AiPlannerPage() {
                                                                                     option.title
                                                                                 }
                                                                             </div>
-                                                                            {option.days.length ? (
+                                                                            {option
+                                                                                .days
+                                                                                .length ? (
                                                                                 <div className="mt-1 text-xs text-muted-foreground">
                                                                                     Days{' '}
                                                                                     {option.days.join(
@@ -1405,7 +1409,8 @@ export default function AiPlannerPage() {
                                                                                             0,
                                                                                     );
                                                                                 const showItemCalories =
-                                                                                    itemCalories > 0;
+                                                                                    itemCalories >
+                                                                                    0;
 
                                                                                 return (
                                                                                     <li
@@ -1712,8 +1717,7 @@ export default function AiPlannerPage() {
                                             </div>
                                             <div className="mt-2 font-semibold text-foreground">
                                                 {auditRun.completed_runs}/
-                                                {auditRun.total_runs || 0}{' '}
-                                                runs
+                                                {auditRun.total_runs || 0} runs
                                             </div>
                                         </div>
                                         <div className="rounded-[16px] border border-border/60 bg-background/70 p-3 text-sm">
@@ -1820,9 +1824,7 @@ export default function AiPlannerPage() {
                                 <ProductButton
                                     type="button"
                                     emphasis="secondary"
-                                    onClick={() =>
-                                        setAuditDialogOpen(true)
-                                    }
+                                    onClick={() => setAuditDialogOpen(true)}
                                 >
                                     {auditIsActive
                                         ? 'Open workload control'
@@ -1954,7 +1956,8 @@ export default function AiPlannerPage() {
                                         {(auditRun?.gpu_load ?? auditGpuLoad)
                                             .charAt(0)
                                             .toUpperCase() +
-                                            (auditRun?.gpu_load ??
+                                            (
+                                                auditRun?.gpu_load ??
                                                 auditGpuLoad
                                             ).slice(1)}
                                     </span>
@@ -2092,5 +2095,3 @@ function SimpleListCard({ title, items }: { title: string; items: string[] }) {
         </div>
     );
 }
-
-

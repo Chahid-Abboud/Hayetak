@@ -5,8 +5,11 @@ namespace App\Services\Ai\Evaluation;
 class DeepAuditAnswerGrader
 {
     public const BUCKET_GREAT = 'great';
+
     public const BUCKET_GOOD = 'good';
+
     public const BUCKET_BAD = 'bad';
+
     public const BUCKET_COMPLETELY_WRONG = 'completely_wrong';
 
     /**

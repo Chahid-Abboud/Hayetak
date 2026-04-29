@@ -38,4 +38,3 @@ it('dispatches separate context sync jobs for different users', function () {
 
     Queue::assertPushed(SyncUserAiContext::class, 2);
 });
-
