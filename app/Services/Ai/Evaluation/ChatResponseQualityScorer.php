@@ -17,11 +17,16 @@ class ChatResponseQualityScorer
             'question' => $question,
             'classification' => $classification,
         ]);
+        $safetyWarnings = array_values($safetyReview['warnings'] ?? []);
+        $materialSafetyIntervention = $this->containsAnyWarning($safetyWarnings, [
+            'Removed a food suggestion',
+            'Adjusted the reply to respect the saved diet type',
+        ]);
 
         $checks = [
             'answer_non_empty' => $normalizedAnswer !== '',
             'no_internal_labels' => ! $this->containsInternalLabel($normalizedAnswer),
-            'restriction_safe_after_review' => trim((string) ($safetyReview['answer'] ?? '')) === $normalizedAnswer,
+            'restriction_safe_after_review' => ! $materialSafetyIntervention,
             'warning_count_reasonable' => count($warnings) <= 3,
         ];
 
@@ -51,6 +56,23 @@ class ChatResponseQualityScorer
         ] as $label) {
             if (str_contains($text, $label)) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, string>  $warnings
+     * @param  array<int, string>  $needles
+     */
+    private function containsAnyWarning(array $warnings, array $needles): bool
+    {
+        foreach ($warnings as $warning) {
+            foreach ($needles as $needle) {
+                if ($needle !== '' && str_contains($warning, $needle)) {
+                    return true;
+                }
             }
         }
 

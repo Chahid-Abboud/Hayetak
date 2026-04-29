@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Ai;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ReleasesSessionLock;
 use App\Http\Requests\Ai\StorePlanRequest;
-use App\Jobs\GeneratePlansForUser;
+use App\Jobs\Ai\GeneratePlansForUser;
 use App\Services\Ai\PlannerService;
+use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use App\Services\Ai\Validation\PlannerValidationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,14 @@ class PlanGenerationController extends Controller
 {
     use ReleasesSessionLock;
 
-    public function store(StorePlanRequest $request, PlannerService $planner): JsonResponse
+    /**
+     * Generate a diet/workout plan immediately, validate it, persist it, and return the user-safe payload.
+     */
+    public function store(
+        StorePlanRequest $request,
+        PlannerService $planner,
+        UserFacingAiPayloadSanitizer $sanitizer
+    ): JsonResponse
     {
         if (function_exists('set_time_limit')) {
             @set_time_limit((int) config('ai.planner.request_timeout_seconds', 300));
@@ -31,12 +39,15 @@ class PlanGenerationController extends Controller
             'persist_profile_overrides' => $request->boolean('persist_profile_overrides'),
             'plan_horizon_days' => $request->validated('plan_horizon_days')
                 ?? (int) config('ai.planner.default_horizon_days', 14),
+            'generate_diet' => $request->generateDiet(),
+            'generate_workout' => $request->generateWorkout(),
         ];
 
         $this->releaseSessionLock($request);
 
         try {
             $result = $planner->generate($user, $options);
+            $result = $sanitizer->sanitizePlannerResponse($result, false);
         } catch (PlannerValidationException $e) {
             return response()->json([
                 'ok' => false,
@@ -52,12 +63,14 @@ class PlanGenerationController extends Controller
                 || str_contains($lowerMessage, 'cURL error 28')
                 || str_contains($lowerMessage, 'maximum execution time')
             ) {
-                $message = 'The planner model took too long to respond. Try a 14-day plan length and make sure Ollama is running.';
+                $message = 'Plan generation took longer than expected. Try again with a shorter cycle in a moment.';
+            } else {
+                $message = 'Could not generate a plan right now. Please try again shortly.';
             }
 
             return response()->json([
                 'ok' => false,
-                'message' => $message !== '' ? $message : 'Could not generate a plan right now.',
+                'message' => $message,
             ], 503);
         }
 
@@ -65,8 +78,9 @@ class PlanGenerationController extends Controller
     }
 
     /**
-     * Trigger plan generation for the currently logged-in user.
-     * Useful for manual testing without re-registering.
+     * Dispatch background plan generation for the currently logged-in user.
+     *
+     * Useful for manual testing without re-registering or waiting on the HTTP request.
      */
     public function generate(Request $request)
     {
@@ -85,7 +99,9 @@ class PlanGenerationController extends Controller
             userId: $user->id,
             days: $days,
             regenerate: true,
-            reason: 'manual_background_generation'
+            reason: 'manual_background_generation',
+            generateDiet: $request->boolean('generate_diet', true),
+            generateWorkout: $request->boolean('generate_workout', true),
         );
 
         return response()->json([

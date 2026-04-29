@@ -381,7 +381,6 @@ class MealTrackerService
                     ->whereNotNull('ai_request_id');
             })
             ->with([
-                'plan.aiRequest:id,provider,model,prompt_version,schema_version',
                 'meals' => fn ($query) => $query->orderBy('order'),
                 'meals.items.food',
             ])
@@ -406,10 +405,6 @@ class MealTrackerService
                 'goal' => $day->plan->goal,
                 'start_date' => optional($day->plan->start_date)->toDateString(),
                 'duration_days' => (int) ($day->plan->duration_days ?? 0),
-                'source' => [
-                    'provider' => $day->plan->aiRequest?->provider,
-                    'model' => $day->plan->aiRequest?->model,
-                ],
             ],
             'day' => [
                 'id' => (int) $day->id,

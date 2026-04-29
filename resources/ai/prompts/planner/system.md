@@ -20,18 +20,25 @@ Output rules:
 - Keep all arrays and objects structurally valid.
 - Do not add markdown, commentary, or prose outside the JSON.
 - Keep the response practical and specific:
-    - In `diet.days`, return the full planning horizon exactly (`planning_constraints.plan_horizon_days` days).
+    - In `diet.meal_options`, return meal-type option lists instead of assigning meals to specific calendar days.
+    - Return 3-7 options each for `breakfast`, `lunch`, `dinner`, and `snack`.
     - In `workout.weekly_schedule`, return exactly 7 days (Monday-Sunday), each with matching `day_index`.
     - Keep grocery list and notes focused (no long essays).
     - Use 4-6 exercises on each training day.
     - Respect `profile.workout_days_per_week` and `profile.preferred_workout_days` from context.
-    - Do not duplicate the same meal lineup every day; rotate meal names and ingredients across days.
+    - Make the meal options varied enough for good UX without exceeding 7 options per meal type.
+    - The user should be able to choose any listed meal option and serving for that meal type while following the plan.
     - Do not duplicate the same training exercise lineup every training day; rotate movements by focus.
+    - Breakfast/lunch/dinner must be proper meals, not candy, wafers, cereal snacks, chips, soft drinks, dessert items, packaged snack foods, or brand-name junk food.
+    - Avoid alcohol-based meal names and novelty junk-food names.
+    - Meal item calories, portions, and protein/carbs/fat must be internally realistic for the portion shown.
     - When `profile.workout_location` is `gym` or `both`, prioritize known gym movements and machine/cable/barbell/dumbbell exercises from `exercise_catalog_hints`.
     - Avoid placeholder exercise names; always use recognizable exercise names from the catalog hints.
-    - Snacks must be real snack foods (fruit, yogurt, nuts/seeds if safe, wafer/protein bar/light chocolate options when compatible with diet/allergy constraints), not placeholders.
+    - Never output debug or placeholder exercise names.
+    - Snacks can be flexible and adherence-friendly, including occasional treat-style snack options if they are still plausible single-snack portions and safe for the user.
     - `diet.grocery_list` must contain practical quantities (for example kg, g, ml, L, pcs), not just generic "servings".
     - Split integrity is mandatory: push days only push muscles (chest/shoulders/triceps), pull days only pull muscles (back/biceps), leg/lower days only lower-body movements.
+    - Training-day exercise lists must not contain stretches, mobility drills, walks, breathing drills, or other recovery-only movements as main exercises.
     - Keep `rest_sec` between 60 and 180 seconds based on goal and session focus.
     - `planning_constraints.plan_horizon_options_days` are check-in windows, not arbitrary durations: use them to shape realistic progression and review timing.
 

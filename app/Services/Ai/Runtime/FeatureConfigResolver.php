@@ -10,17 +10,21 @@ class FeatureConfigResolver
 
     public const FEATURE_PLANNER = 'planner';
 
+    /**
+     * Resolve the active provider for a feature.
+     */
     public function provider(string $feature): string
     {
         return match ($feature) {
             self::FEATURE_CHAT => $this->resolveChatProvider(),
-            self::FEATURE_PLANNER => $this->ollamaOnly(self::FEATURE_PLANNER)
-                ? 'ollama'
-                : (string) config('ai.planner.provider', 'ollama'),
+            self::FEATURE_PLANNER => 'ollama',
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
     }
 
+    /**
+     * Resolve prompt-template directory name for a feature.
+     */
     public function promptDirectory(string $feature): string
     {
         return match ($feature) {
@@ -30,6 +34,9 @@ class FeatureConfigResolver
         };
     }
 
+    /**
+     * Resolve current prompt version tag for traceability.
+     */
     public function promptVersion(string $feature): string
     {
         return match ($feature) {
@@ -39,6 +46,9 @@ class FeatureConfigResolver
         };
     }
 
+    /**
+     * Resolve schema version tag (planner only).
+     */
     public function schemaVersion(string $feature): ?string
     {
         return match ($feature) {
@@ -48,6 +58,9 @@ class FeatureConfigResolver
         };
     }
 
+    /**
+     * Resolve request timeout budget for the feature.
+     */
     public function requestTimeoutSeconds(string $feature): int
     {
         return match ($feature) {
@@ -57,26 +70,9 @@ class FeatureConfigResolver
         };
     }
 
-    public function openAi(string $feature): array
-    {
-        $model = match ($feature) {
-            self::FEATURE_CHAT => (string) config('ai.models.coach', config('ai.chat.self_hosted.ollama.chat_model', 'llama3.1:8b')),
-            self::FEATURE_PLANNER => (string) config('ai.planner.openai.model', config('ai.models.planner', 'llama3.1:8b')),
-            default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
-        };
-
-        $maxOutputTokens = match ($feature) {
-            self::FEATURE_CHAT => (int) config('ai.tokens.coach_max_output', 900),
-            self::FEATURE_PLANNER => (int) config('ai.planner.openai.max_output_tokens', config('ai.tokens.planner_max_output', 3200)),
-            default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
-        };
-
-        return [
-            'model' => $model,
-            'max_output_tokens' => $maxOutputTokens,
-        ];
-    }
-
+    /**
+     * Return Ollama chat settings for planner/chat features.
+     */
     public function ollamaChat(string $feature): array
     {
         return match ($feature) {
@@ -113,6 +109,9 @@ class FeatureConfigResolver
         };
     }
 
+    /**
+     * Return Ollama embedding settings (chat retrieval).
+     */
     public function ollamaEmbedding(string $feature): array
     {
         $settings = $this->ollamaChat($feature);
@@ -125,6 +124,9 @@ class FeatureConfigResolver
         ];
     }
 
+    /**
+     * Return retrieval settings for self-hosted chat context search.
+     */
     public function retrieval(string $feature): array
     {
         if ($feature !== self::FEATURE_CHAT) {
@@ -138,6 +140,9 @@ class FeatureConfigResolver
         ];
     }
 
+    /**
+     * Return Qdrant connection settings.
+     */
     public function qdrant(): array
     {
         return [
@@ -148,47 +153,61 @@ class FeatureConfigResolver
         ];
     }
 
+    /**
+     * Legacy fallback toggle (currently disabled for chat/planner).
+     */
     public function fallbackEnabled(string $feature): bool
     {
         return match ($feature) {
-            self::FEATURE_PLANNER => $this->ollamaOnly(self::FEATURE_PLANNER)
-                ? false
-                : (bool) config('ai.planner.fallback.enabled', false),
+            self::FEATURE_PLANNER => false,
             self::FEATURE_CHAT => false,
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
     }
 
+    /**
+     * Local deterministic fallback toggle.
+     */
     public function localFallbackEnabled(string $feature): bool
     {
         return match ($feature) {
-            self::FEATURE_PLANNER => $this->ollamaOnly(self::FEATURE_PLANNER)
-                ? false
-                : (bool) config('ai.planner.local_fallback.enabled', true),
+            self::FEATURE_PLANNER => (bool) config('ai.planner.local_fallback.enabled', true),
             self::FEATURE_CHAT => false,
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
     }
 
+    /**
+     * Whether a feature is locked to Ollama-only mode.
+     */
     public function ollamaOnly(string $feature): bool
     {
         return match ($feature) {
-            self::FEATURE_PLANNER => (bool) config('ai.planner.ollama_only', true),
+            self::FEATURE_PLANNER => true,
             self::FEATURE_CHAT => false,
             default => throw new InvalidArgumentException("Unsupported AI feature [{$feature}]."),
         };
     }
 
+    /**
+     * Toggle context sync behavior in tests.
+     */
     public function shouldSyncContextDuringTests(): bool
     {
         return (bool) config('ai.chat.self_hosted.sync_during_tests', false);
     }
 
+    /**
+     * Convenience check for self-hosted chat activation.
+     */
     public function usesSelfHostedChat(): bool
     {
         return $this->provider(self::FEATURE_CHAT) === 'self_hosted';
     }
 
+    /**
+     * Resolve chat provider with auto-mode fallback rules.
+     */
     private function resolveChatProvider(): string
     {
         $configured = strtolower(trim((string) config('ai.chat.provider', 'auto')));

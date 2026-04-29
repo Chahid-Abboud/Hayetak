@@ -18,13 +18,13 @@ The chatbot can run fully self-hosted with:
 One-time setup:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-selfhosted-ai.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\setup-selfhosted-ai.ps1
 ```
 
 Daily start:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 ## AI Planner

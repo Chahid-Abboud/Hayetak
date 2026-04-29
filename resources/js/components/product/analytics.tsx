@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { CSSProperties, ReactNode } from 'react';
+import { useId, type CSSProperties, type ReactNode } from 'react';
 
 type MetricRingSegment = {
     label: string;
@@ -117,7 +117,7 @@ export function MetricRing({
                                                         segment.color,
                                                 }}
                                             />
-                                            <span className="text-sm font-medium text-foreground">
+                                            <span className="min-w-0 text-sm font-medium text-foreground">
                                                 {segment.label}
                                             </span>
                                         </div>
@@ -238,6 +238,7 @@ export function TrendCard({
     color?: string;
     className?: string;
 }) {
+    const gradientId = useId();
     const path = buildPath(points, 240, 70);
     const areaPath = path ? `${path} L 240 70 L 0 70 Z` : '';
 
@@ -272,7 +273,7 @@ export function TrendCard({
                         >
                             <defs>
                                 <linearGradient
-                                    id="trend-fill"
+                                    id={gradientId}
                                     x1="0%"
                                     x2="0%"
                                     y1="0%"
@@ -292,7 +293,7 @@ export function TrendCard({
                             </defs>
                             <path
                                 d={areaPath}
-                                fill="url(#trend-fill)"
+                                fill={`url(#${gradientId})`}
                                 opacity="1"
                             />
                             <path

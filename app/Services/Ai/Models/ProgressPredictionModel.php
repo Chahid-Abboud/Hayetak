@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Models;
 
-use App\Models\AiRequest;
+use App\Models\Ai\AiRequest;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -15,8 +15,14 @@ class ProgressPredictionModel
     /** @var array<int, \Illuminate\Support\Collection<int, object>> */
     private array $measurementCache = [];
 
+    private ?string $lastMlInferenceSkipReason = null;
+
+    /**
+     * Predict expected body-weight and strength trajectory for the selected planner horizon.
+     */
     public function predict(User $user, array $profile, array $context, array $plan, int $horizonDays): array
     {
+        $this->lastMlInferenceSkipReason = null;
         $horizonDays = $this->normalizePlanHorizonDays($horizonDays);
         $weeks = max(1.0, $horizonDays / 7.0);
         $currentWeight = $this->latestKnownWeight($user);
@@ -98,6 +104,9 @@ class ProgressPredictionModel
             }
         } else {
             $adjustedWeeklyRate = $this->clampWeeklyRate($adjustedWeeklyRate, $goalMode);
+            if ($this->lastMlInferenceSkipReason !== null) {
+                $guardrailNote = $this->lastMlInferenceSkipReason;
+            }
         }
 
         $expectedWeightChange = round($adjustedWeeklyRate * $weeks, 2);
@@ -121,6 +130,9 @@ class ProgressPredictionModel
         ];
     }
 
+    /**
+     * Clamp plan horizon days to supported review windows.
+     */
     private function normalizePlanHorizonDays(int $days): int
     {
         if ($days <= 14) {
@@ -133,6 +145,9 @@ class ProgressPredictionModel
         return 28;
     }
 
+    /**
+     * Map free-text goals into lose/gain/maintain prediction modes.
+     */
     private function goalMode(array $profile): string
     {
         $goalText = strtolower(trim(
@@ -149,6 +164,9 @@ class ProgressPredictionModel
         return 'maintain';
     }
 
+    /**
+     * Baseline weekly weight-change heuristic before adherence/feedback adjustments.
+     */
     private function baseWeeklyRateKg(string $goalMode, array $profile): float
     {
         $days = (int) ($profile['workout_days_per_week'] ?? 3);
@@ -160,6 +178,9 @@ class ProgressPredictionModel
         };
     }
 
+    /**
+     * Compute adherence multiplier from recent calorie and workout consistency.
+     */
     private function adherenceMultiplier(array $context, array $plan, array $profile): float
     {
         $nutritionAvg = (array) data_get($context, 'recent_history.nutrition_last_7_days.averages', []);
@@ -185,6 +206,9 @@ class ProgressPredictionModel
         return max(0.7, min(1.2, ($nutritionScore * 0.6) + ($trainingScore * 0.4)));
     }
 
+    /**
+     * Keep weekly-rate outputs inside safe, goal-aligned bounds.
+     */
     private function clampWeeklyRate(float $rate, string $goalMode): float
     {
         return match ($goalMode) {
@@ -194,6 +218,9 @@ class ProgressPredictionModel
         };
     }
 
+    /**
+     * Estimate weekly compound-strength progress percentage.
+     */
     private function strengthWeeklyGainPercent(string $goalMode, float $adherenceMultiplier): float
     {
         $base = match ($goalMode) {
@@ -205,6 +232,9 @@ class ProgressPredictionModel
         return max(0.3, min(3.2, $base * $adherenceMultiplier));
     }
 
+    /**
+     * Convert adherence/error signal into high/medium/low confidence.
+     */
     private function confidenceLabel(float $adherenceMultiplier, ?float $feedbackDelta): string
     {
         $uncertainty = abs((float) $feedbackDelta);
@@ -218,6 +248,9 @@ class ProgressPredictionModel
         return 'low';
     }
 
+    /**
+     * Describe how feedback and guardrails affected the final projection.
+     */
     private function feedbackNotes(?string $guardrailNote = null): string
     {
         $base = 'Prediction auto-adjusts using adherence signals and measured real-world error when available.';
@@ -229,6 +262,8 @@ class ProgressPredictionModel
     }
 
     /**
+     * Apply configurable ML blend guardrails before trusting trained-model output.
+     *
      * @return array{allow: bool, reason?: string}
      */
     private function mlBlendGuardrailDecision(
@@ -295,6 +330,9 @@ class ProgressPredictionModel
         return ['allow' => true];
     }
 
+    /**
+     * Rank confidence labels for threshold comparisons.
+     */
     private function confidenceRank(string $label): int
     {
         return match (strtolower(trim($label))) {
@@ -304,6 +342,9 @@ class ProgressPredictionModel
         };
     }
 
+    /**
+     * Run the Python-trained predictor and return normalized inference values.
+     */
     private function predictWithTrainedModel(
         User $user,
         array $profile,
@@ -318,12 +359,12 @@ class ProgressPredictionModel
             return null;
         }
 
-        $scriptPath = base_path((string) config('ai.progress_predictor.inference.script', 'scripts/predict_progress_from_features.py'));
-        $modelDir = base_path((string) config('ai.progress_predictor.inference.model_dir', 'storage/app/ai/models/progress_predictor_v1'));
+        $scriptPath = base_path((string) config('ai.progress_predictor.inference.script', 'scripts/ai/training/predict_progress_from_features.py'));
+        $modelDir = $this->resolveInferenceModelDir();
         $pythonBin = (string) config('ai.progress_predictor.inference.python_bin', 'python');
         $timeout = (float) config('ai.progress_predictor.inference.timeout_seconds', 8);
 
-        if (! is_file($scriptPath) || ! is_dir($modelDir) || ! is_file($modelDir.'/weight_change_model.joblib')) {
+        if ($modelDir === null || ! is_file($scriptPath) || ! is_dir($modelDir) || ! is_file($modelDir.'/weight_change_model.joblib')) {
             return null;
         }
 
@@ -373,6 +414,183 @@ class ProgressPredictionModel
         }
     }
 
+    private function resolveInferenceModelDir(): ?string
+    {
+        $primaryModelDir = base_path((string) config(
+            'ai.progress_predictor.inference.model_dir',
+            'storage/app/ai/models/progress_predictor_v1_real_only'
+        ));
+        $fallbackModelDir = base_path((string) config(
+            'ai.progress_predictor.inference.fallback_model_dir',
+            'storage/app/ai/models/progress_predictor_v1'
+        ));
+        $minWeightRows = max(0, (int) config('ai.progress_predictor.inference.min_weight_rows_for_primary', 60));
+
+        if ($this->modelDirIsUsable($primaryModelDir)) {
+            if (! $this->modelManifestIndicatesSparseTraining($primaryModelDir, $minWeightRows)) {
+                if ($this->modelManifestPassesQualityGate($primaryModelDir)) {
+                    return $primaryModelDir;
+                }
+
+                $this->lastMlInferenceSkipReason = 'primary_model_failed_manifest_quality_gate';
+            }
+
+            if ($this->modelDirIsUsable($fallbackModelDir)) {
+                if (! $this->modelManifestPassesQualityGate($fallbackModelDir)) {
+                    $this->lastMlInferenceSkipReason = 'all_models_failed_manifest_quality_gate';
+                    Log::info('Progress predictor inference skipped because available trained artifacts failed manifest quality gates.', [
+                        'primary_model_dir' => $primaryModelDir,
+                        'fallback_model_dir' => $fallbackModelDir,
+                    ]);
+
+                    return null;
+                }
+
+                Log::info('Progress predictor inference is using the broader fallback model because the primary artifact is sparse or below quality gates.', [
+                    'primary_model_dir' => $primaryModelDir,
+                    'fallback_model_dir' => $fallbackModelDir,
+                    'min_weight_rows' => $minWeightRows,
+                ]);
+
+                return $fallbackModelDir;
+            }
+        }
+
+        foreach ([$primaryModelDir, $fallbackModelDir] as $modelDir) {
+            if ($this->modelDirIsUsable($modelDir) && $this->modelManifestPassesQualityGate($modelDir)) {
+                return $modelDir;
+            }
+        }
+
+        if ($this->modelDirIsUsable($primaryModelDir) || $this->modelDirIsUsable($fallbackModelDir)) {
+            $this->lastMlInferenceSkipReason ??= 'all_models_failed_manifest_quality_gate';
+        }
+
+        return null;
+    }
+
+    private function modelDirIsUsable(string $modelDir): bool
+    {
+        return is_dir($modelDir) && is_file($modelDir.'/weight_change_model.joblib');
+    }
+
+    private function modelManifestIndicatesSparseTraining(string $modelDir, int $minWeightRows): bool
+    {
+        if ($minWeightRows <= 0) {
+            return false;
+        }
+
+        $manifestPath = $modelDir.'/manifest.json';
+        if (! is_file($manifestPath)) {
+            return false;
+        }
+
+        $decoded = json_decode((string) file_get_contents($manifestPath), true);
+        if (! is_array($decoded)) {
+            return false;
+        }
+
+        $weightRows = (int) ($decoded['weight_rows'] ?? 0);
+        $realOnly = (bool) ($decoded['real_only'] ?? false);
+
+        return $realOnly && $weightRows > 0 && $weightRows < $minWeightRows;
+    }
+
+    private function modelManifestPassesQualityGate(string $modelDir): bool
+    {
+        $settings = (array) config('ai.progress_predictor.inference.guardrails', []);
+        if (! (bool) ($settings['require_manifest_quality'] ?? true)) {
+            return true;
+        }
+
+        $manifestPath = $modelDir.'/manifest.json';
+        if (! is_file($manifestPath)) {
+            $this->lastMlInferenceSkipReason = 'missing_model_manifest';
+
+            return false;
+        }
+
+        $decoded = json_decode((string) file_get_contents($manifestPath), true);
+        if (! is_array($decoded)) {
+            $this->lastMlInferenceSkipReason = 'invalid_model_manifest';
+
+            return false;
+        }
+
+        $minTestUsers = max(0, (int) ($settings['min_manifest_test_users'] ?? 5));
+        $minWeightR2 = (float) ($settings['min_weight_r2_for_ml'] ?? 0.05);
+        $minStrengthR2 = (float) ($settings['min_strength_r2_for_ml'] ?? 0.05);
+        $maxWeightMae = (float) ($settings['max_weight_mae_kg_for_ml'] ?? 0.4);
+        $maxStrengthMae = (float) ($settings['max_strength_mae_pct_for_ml'] ?? 1.2);
+        $allowWeightOnlyMl = (bool) ($settings['allow_weight_only_ml'] ?? true);
+
+        $weightTestUsers = (int) ($decoded['weight_test_users'] ?? 0);
+        if ($weightTestUsers < $minTestUsers) {
+            $this->lastMlInferenceSkipReason = 'insufficient_manifest_holdout_users';
+
+            return false;
+        }
+
+        $weightR2 = $this->toFloatOrNull(data_get($decoded, 'weight_metrics.r2'));
+        $weightMae = $this->toFloatOrNull(data_get($decoded, 'weight_metrics.mae'));
+
+        if ($weightR2 === null || $weightR2 < $minWeightR2) {
+            $this->lastMlInferenceSkipReason = 'weight_model_holdout_r2_below_threshold';
+
+            return false;
+        }
+
+        if ($weightMae !== null && $maxWeightMae > 0 && $weightMae > $maxWeightMae) {
+            $this->lastMlInferenceSkipReason = 'weight_model_holdout_mae_above_threshold';
+
+            return false;
+        }
+
+        $strengthModelStatus = (string) data_get($decoded, 'strength_model.status', '');
+        $strengthMetrics = data_get($decoded, 'strength_model.metrics');
+        $strengthModelPath = $modelDir.'/strength_progress_model.joblib';
+        $hasStrengthModel = is_file($strengthModelPath)
+            && is_array($strengthMetrics)
+            && $strengthModelStatus !== 'disabled_by_training_option';
+
+        if (! $hasStrengthModel) {
+            if ($allowWeightOnlyMl) {
+                return true;
+            }
+
+            $this->lastMlInferenceSkipReason = 'missing_strength_model_quality';
+
+            return false;
+        }
+
+        $strengthTestUsers = (int) data_get($decoded, 'strength_model.test_users', 0);
+        if ($strengthTestUsers < $minTestUsers) {
+            $this->lastMlInferenceSkipReason = 'insufficient_manifest_holdout_users';
+
+            return false;
+        }
+
+        $strengthR2 = $this->toFloatOrNull(data_get($decoded, 'strength_model.metrics.r2'));
+        $strengthMae = $this->toFloatOrNull(data_get($decoded, 'strength_model.metrics.mae'));
+
+        if ($strengthR2 === null || $strengthR2 < $minStrengthR2) {
+            $this->lastMlInferenceSkipReason = 'strength_model_holdout_r2_below_threshold';
+
+            return false;
+        }
+
+        if ($strengthMae !== null && $maxStrengthMae > 0 && $strengthMae > $maxStrengthMae) {
+            $this->lastMlInferenceSkipReason = 'strength_model_holdout_mae_above_threshold';
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Build one tabular feature row consumed by the external trained model.
+     */
     private function buildInferenceFeatureRow(
         User $user,
         array $profile,
@@ -424,11 +642,18 @@ class ProgressPredictionModel
         }
 
         $recentWorkoutFeatures = $this->recentWorkoutFeatureStats((int) $user->id);
+        $historyStart = CarbonImmutable::today()->subDays(6)->toDateString();
+        $historyEnd = CarbonImmutable::today()->toDateString();
+        $mealEntryCount = (int) DB::table('meal_entries as me')
+            ->where('me.user_id', $user->id)
+            ->whereDate('me.eaten_at', '>=', $historyStart)
+            ->whereDate('me.eaten_at', '<=', $historyEnd)
+            ->count();
         $snackVarietyCount = (int) DB::table('meal_entries as me')
             ->where('me.user_id', $user->id)
             ->where('me.meal_type', 'snack')
-            ->whereDate('me.eaten_at', '>=', CarbonImmutable::today()->subDays(6)->toDateString())
-            ->whereDate('me.eaten_at', '<=', CarbonImmutable::today()->toDateString())
+            ->whereDate('me.eaten_at', '>=', $historyStart)
+            ->whereDate('me.eaten_at', '<=', $historyEnd)
             ->distinct('me.food_id')
             ->count('me.food_id');
 
@@ -454,7 +679,7 @@ class ProgressPredictionModel
             'planned_exercises_per_train_day_avg' => $plannedWorkoutDays > 0 ? round($plannedExerciseCount / $plannedWorkoutDays, 2) : 0.0,
             'meal_logged_days' => $loggedDays,
             'meal_logged_days_pct' => round(($loggedDays / 7) * 100, 2),
-            'meal_entry_count' => null,
+            'meal_entry_count' => $mealEntryCount,
             'actual_avg_calories' => $avgCalories,
             'actual_avg_protein_g' => $avgProtein,
             'actual_avg_carbs_g' => $avgCarbs,
@@ -480,6 +705,9 @@ class ProgressPredictionModel
         ];
     }
 
+    /**
+     * Aggregate recent workout set/volume features used by prediction logic.
+     */
     private function recentWorkoutFeatureStats(int $userId): array
     {
         $end = CarbonImmutable::today()->endOfDay();
@@ -508,16 +736,25 @@ class ProgressPredictionModel
         ];
     }
 
+    /**
+     * Safe float casting helper for nullable numeric payload fields.
+     */
     private function toFloatOrNull(mixed $value): ?float
     {
         return is_numeric($value) ? (float) $value : null;
     }
 
+    /**
+     * Safe int casting helper for nullable numeric payload fields.
+     */
     private function toIntOrNull(mixed $value): ?int
     {
         return is_numeric($value) ? (int) round((float) $value) : null;
     }
 
+    /**
+     * Fetch the most recent completed planner prediction from ai_requests.
+     */
     private function latestPreviousPrediction(User $user): ?array
     {
         $row = AiRequest::query()
@@ -537,6 +774,9 @@ class ProgressPredictionModel
         return is_array($prediction) ? $prediction : null;
     }
 
+    /**
+     * Resolve current baseline weight from measurements or user profile fallback.
+     */
     private function latestKnownWeight(User $user): float
     {
         $latestMeasurement = DB::table('measurements')
@@ -552,6 +792,9 @@ class ProgressPredictionModel
         return max(35.0, min(250.0, $weight));
     }
 
+    /**
+     * Estimate weighted weekly prediction error from recent completed plan runs.
+     */
     private function recentPredictionErrorPerWeek(User $user): ?float
     {
         $rows = AiRequest::query()
@@ -613,6 +856,9 @@ class ProgressPredictionModel
         return $weightedError / $weightTotal;
     }
 
+    /**
+     * Return the last known weight on or before the given baseline date.
+     */
     private function weightOnOrBefore(int $userId, CarbonImmutable $date): ?float
     {
         $rows = $this->measurementsForUser($userId);
@@ -632,6 +878,9 @@ class ProgressPredictionModel
         return $best;
     }
 
+    /**
+     * Pick the closest measured weight around the target horizon date.
+     */
     private function weightNearTargetDate(int $userId, CarbonImmutable $targetDate): ?float
     {
         $rows = $this->measurementsForUser($userId);
@@ -661,6 +910,8 @@ class ProgressPredictionModel
     }
 
     /**
+     * Cached ordered measurements stream reused across error-calculation helpers.
+     *
      * @return \Illuminate\Support\Collection<int, object>
      */
     private function measurementsForUser(int $userId): Collection

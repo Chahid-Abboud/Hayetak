@@ -1,12 +1,32 @@
 import {
+    AdminDataTable,
+    AdminEmpty,
+    AdminField,
+    AdminNativeSelect,
+    AdminNotice,
+    AdminOverviewCard,
+    AdminPagination,
+    AdminPanel,
+    AdminScrollArea,
+    AdminSearchInput,
+    AdminStickyBar,
+    AdminToolbar,
+    AdminToolbarGroup,
+} from '@/components/admin/admin-ui';
+import {
+    AdminSplitView,
+    EntityDetailDrawer,
+    ReviewDecisionPanel,
+    RiskBannerStack,
+    StatusChipSet,
+} from '@/components/admin/admin-workflows';
+import {
     AdminSection,
     AdminShell,
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
-import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import {
-    ProductTable,
     ProductTableBody,
     ProductTableCell,
     ProductTableEmptyRow,
@@ -17,20 +37,22 @@ import {
 import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { jsonRequestInit } from '@/lib/http';
 import { Head } from '@inertiajs/react';
-import { RefreshCcw, ShieldCheck } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    CalendarClock,
+    FileBadge2,
+    RefreshCcw,
+    ShieldCheck,
+    UserRound,
+} from 'lucide-react';
+import {
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 
 type ReviewStatus = 'approved' | 'rejected' | 'needs_info';
 
@@ -63,12 +85,11 @@ type Verification = {
 
 type VerificationResponse = {
     data?: Verification[];
-};
-
-type ReviewDialogState = {
-    verification: Verification;
-    reviewStatus: ReviewStatus;
-    notes: string;
+    total?: number;
+    current_page?: number;
+    last_page?: number;
+    from?: number | null;
+    to?: number | null;
 };
 
 function personName(user?: Verification['user']) {
@@ -89,27 +110,370 @@ function reviewerName(verification: Verification) {
     );
 }
 
-function statusLabel(value: string) {
-    return value.replace(/_/g, ' ');
+function formatDate(value?: string | null) {
+    if (!value) {
+        return 'Not available';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+function formatDateTime(value?: string | null) {
+    if (!value) {
+        return 'Not available';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(date);
+}
+
+function daysUntil(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return Math.ceil((date.getTime() - Date.now()) / 86400000);
+}
+
+function normalizeReviewStatus(value: string): ReviewStatus {
+    if (value === 'rejected' || value === 'needs_info') {
+        return value;
+    }
+
+    return 'approved';
+}
+
+function formatStatusLabel(value: string) {
+    return value
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function EvidenceRow({
+    icon,
+    label,
+    value,
+    meta,
+}: {
+    icon: ReactNode;
+    label: string;
+    value: string;
+    meta?: string;
+}) {
+    return (
+        <div className="dashboard-surface-soft rounded-[22px] px-4 py-3">
+            <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-muted-foreground">{icon}</span>
+                <div className="min-w-0">
+                    <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                        {label}
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-foreground">
+                        {value}
+                    </div>
+                    {meta ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                            {meta}
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VerificationDecisionSurface({
+    verification,
+    reviewStatus,
+    reviewNotes,
+    onReviewStatusChange,
+    onReviewNotesChange,
+    onRefresh,
+    onSubmit,
+    loading,
+    saving,
+    error,
+}: {
+    verification: Verification | null;
+    reviewStatus: ReviewStatus;
+    reviewNotes: string;
+    onReviewStatusChange: (value: ReviewStatus) => void;
+    onReviewNotesChange: (value: string) => void;
+    onRefresh: () => void;
+    onSubmit: () => void;
+    loading: boolean;
+    saving: boolean;
+    error: string | null;
+}) {
+    if (loading) {
+        return (
+            <AdminEmpty
+                title="Loading verification context"
+                description="Pulling queue evidence, reviewer history, and account state for the selected request."
+            />
+        );
+    }
+
+    if (!verification) {
+        return (
+            <AdminEmpty
+                title="Select a request"
+                description="Choose a verification request from the queue to review evidence and take action here."
+            />
+        );
+    }
+
+    const expiryDelta = daysUntil(verification.expiry_date);
+    const riskItems = [];
+
+    if (expiryDelta !== null && expiryDelta < 0) {
+        riskItems.push({
+            severity: 'danger' as const,
+            title: 'License is expired',
+            description:
+                'This verification should not be approved until the professional provides an updated credential.',
+            meta: formatDate(verification.expiry_date),
+        });
+    } else if (expiryDelta !== null && expiryDelta <= 30) {
+        riskItems.push({
+            severity: 'warning' as const,
+            title: 'Credential expires soon',
+            description:
+                'Renewal follow-up may be needed even if the submission is otherwise valid.',
+            meta: `${expiryDelta} day${expiryDelta === 1 ? '' : 's'} remaining`,
+        });
+    }
+
+    if (!verification.user?.verified) {
+        riskItems.push({
+            severity: 'info' as const,
+            title: 'User account is still unverified',
+            description:
+                'Approving this request will also change the professional account state.',
+        });
+    }
+
+    if (verification.notes && verification.review_status !== 'pending') {
+        riskItems.push({
+            severity:
+                verification.review_status === 'rejected'
+                    ? ('danger' as const)
+                    : ('warning' as const),
+            title: 'Existing reviewer notes',
+            description: verification.notes,
+            meta: verification.review_status.replace(/_/g, ' '),
+        });
+    }
+
+    return (
+        <div className="space-y-4">
+            {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+
+            <AdminStickyBar
+                summary="Decision actions"
+                className="border-border/65 bg-background/82"
+            >
+                <Button
+                    type="button"
+                    variant={reviewStatus === 'approved' ? 'default' : 'outline'}
+                    onClick={() => onReviewStatusChange('approved')}
+                    disabled={!verification || saving}
+                >
+                    Approve
+                </Button>
+                <Button
+                    type="button"
+                    variant={
+                        reviewStatus === 'needs_info' ? 'default' : 'outline'
+                    }
+                    onClick={() => onReviewStatusChange('needs_info')}
+                    disabled={!verification || saving}
+                >
+                    Needs info
+                </Button>
+                <Button
+                    type="button"
+                    variant={reviewStatus === 'rejected' ? 'destructive' : 'outline'}
+                    onClick={() => onReviewStatusChange('rejected')}
+                    disabled={!verification || saving}
+                >
+                    Reject
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onRefresh}
+                    disabled={!verification || saving}
+                >
+                    Refresh
+                </Button>
+                <Button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={!verification || saving}
+                >
+                    {saving ? 'Saving...' : 'Save review'}
+                </Button>
+            </AdminStickyBar>
+
+            <ReviewDecisionPanel
+                title={personName(verification.user)}
+                description="Review evidence, set the decision state, and leave a note that future admins can trust."
+                summary={
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
+                                {verification.role === 'nutritionist'
+                                    ? 'Dietitian'
+                                    : 'Trainer'}
+                            </Badge>
+                            <StatusChipSet
+                                items={[
+                                    { value: verification.review_status },
+                                    {
+                                        value: verification.user?.verified
+                                            ? 'verified'
+                                            : 'unverified',
+                                    },
+                                    {
+                                        value:
+                                            verification.user?.status ||
+                                            'pending',
+                                    },
+                                ]}
+                            />
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <EvidenceRow
+                                icon={<FileBadge2 className="h-4 w-4" />}
+                                label="License"
+                                value={verification.license_number}
+                                meta={verification.full_legal_name}
+                            />
+                            <EvidenceRow
+                                icon={<CalendarClock className="h-4 w-4" />}
+                                label="Expiry"
+                                value={formatDate(verification.expiry_date)}
+                                meta={`${verification.authority} - ${verification.country_state}`}
+                            />
+                        </div>
+                    </div>
+                }
+                statusValue={reviewStatus}
+                onStatusChange={(value) =>
+                    onReviewStatusChange(value as ReviewStatus)
+                }
+                statusOptions={[
+                    { value: 'approved', label: 'Approved' },
+                    { value: 'needs_info', label: 'Needs info' },
+                    { value: 'rejected', label: 'Rejected' },
+                ]}
+                notes={reviewNotes}
+                onNotesChange={onReviewNotesChange}
+                notesLabel="Review notes"
+                notesPlaceholder="Capture why this decision was made and what the professional should know next."
+                primaryActionLabel="Save review"
+                onPrimaryAction={onSubmit}
+                busy={saving}
+                secondaryAction={
+                    <Button type="button" variant="outline" onClick={onRefresh}>
+                        <RefreshCcw className="h-4 w-4" />
+                        Refresh
+                    </Button>
+                }
+                footerMeta={`Last reviewed by ${reviewerName(verification)} - ${formatDateTime(verification.reviewed_at)}`}
+            >
+                {riskItems.length > 0 ? (
+                    <RiskBannerStack items={riskItems} />
+                ) : (
+                    <AdminNotice tone="success">
+                        No immediate risks surfaced from this request. Review
+                        the credential details and account state, then save the
+                        final decision.
+                    </AdminNotice>
+                )}
+
+                <AdminPanel
+                    title="Evidence trail"
+                    description="Core facts that admins usually need before approving or requesting more information."
+                >
+                    <div className="space-y-3">
+                        <EvidenceRow
+                            icon={<UserRound className="h-4 w-4" />}
+                            label="Applicant"
+                            value={personName(verification.user)}
+                            meta={verification.user?.email}
+                        />
+                        <EvidenceRow
+                            icon={<ShieldCheck className="h-4 w-4" />}
+                            label="Authority"
+                            value={verification.authority}
+                            meta={verification.country_state}
+                        />
+                        <EvidenceRow
+                            icon={<RefreshCcw className="h-4 w-4" />}
+                            label="Reviewer history"
+                            value={reviewerName(verification)}
+                            meta={formatDateTime(verification.reviewed_at)}
+                        />
+                    </div>
+                </AdminPanel>
+            </ReviewDecisionPanel>
+        </div>
+    );
 }
 
 export default function AdminProfessionalVerifications() {
     const [rows, setRows] = useState<Verification[]>([]);
     const [status, setStatus] = useState('pending');
+    const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [reviewDialog, setReviewDialog] = useState<ReviewDialogState | null>(
-        null,
-    );
     const [saving, setSaving] = useState(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [reviewStatus, setReviewStatus] = useState<ReviewStatus>('approved');
+    const [reviewNotes, setReviewNotes] = useState('');
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [from, setFrom] = useState<number | null>(null);
+    const [to, setTo] = useState<number | null>(null);
+    const [total, setTotal] = useState(0);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
+            const params = new URLSearchParams({
+                status,
+                page: String(currentPage),
+                per_page: '20',
+            });
+
             const res = await fetch(
-                `/api/admin/professional-verifications?status=${encodeURIComponent(status)}`,
+                `/api/admin/professional-verifications?${params.toString()}`,
                 {
                     headers: { Accept: 'application/json' },
                 },
@@ -120,7 +484,14 @@ export default function AdminProfessionalVerifications() {
             }
 
             const json = (await res.json()) as VerificationResponse;
-            setRows(Array.isArray(json?.data) ? json.data : []);
+            const nextRows = Array.isArray(json?.data) ? json.data : [];
+
+            setRows(nextRows);
+            setTotal(Number(json?.total ?? 0));
+            setCurrentPage(Number(json?.current_page ?? 1));
+            setLastPage(Number(json?.last_page ?? 1));
+            setFrom(json?.from ?? null);
+            setTo(json?.to ?? null);
         } catch (loadError) {
             setRows([]);
             setError(
@@ -131,31 +502,104 @@ export default function AdminProfessionalVerifications() {
         } finally {
             setLoading(false);
         }
-    }, [status]);
+    }, [currentPage, status]);
 
     useEffect(() => {
         void load();
     }, [load]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [status]);
+
+    const filteredRows = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+        if (normalizedQuery === '') {
+            return rows;
+        }
+
+        return rows.filter((row) =>
+            [
+                row.full_legal_name,
+                row.license_number,
+                row.authority,
+                row.country_state,
+                row.user?.email,
+                row.user?.first_name,
+                row.user?.last_name,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+                .includes(normalizedQuery),
+        );
+    }, [query, rows]);
+
+    useEffect(() => {
+        if (filteredRows.length === 0) {
+            setSelectedId(null);
+            return;
+        }
+
+        if (
+            !selectedId ||
+            !filteredRows.some((row) => row.id === selectedId)
+        ) {
+            setSelectedId(filteredRows[0].id);
+        }
+    }, [filteredRows, selectedId]);
+
+    const selectedVerification = useMemo(
+        () => filteredRows.find((row) => row.id === selectedId) ?? null,
+        [filteredRows, selectedId],
+    );
+
+    useEffect(() => {
+        if (!selectedVerification) {
+            setReviewStatus('approved');
+            setReviewNotes('');
+            return;
+        }
+
+        setReviewStatus(
+            normalizeReviewStatus(selectedVerification.review_status),
+        );
+        setReviewNotes(selectedVerification.notes ?? '');
+    }, [selectedVerification]);
+
     const summary = useMemo(
         () => ({
-            approved: rows.filter((row) => row.review_status === 'approved')
+            pending: filteredRows.filter((row) => row.review_status === 'pending')
                 .length,
-            needsInfo: rows.filter((row) => row.review_status === 'needs_info')
-                .length,
-            expiringSoon: rows.filter((row) => {
-                const expiry = new Date(row.expiry_date);
-                if (Number.isNaN(expiry.getTime())) return false;
-                const daysUntilExpiry =
-                    (expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-                return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
+            approved: filteredRows.filter(
+                (row) => row.review_status === 'approved',
+            ).length,
+            needsInfo: filteredRows.filter(
+                (row) => row.review_status === 'needs_info',
+            ).length,
+            expiringSoon: filteredRows.filter((row) => {
+                const delta = daysUntil(row.expiry_date);
+                return delta !== null && delta >= 0 && delta <= 30;
             }).length,
         }),
-        [rows],
+        [filteredRows],
+    );
+
+    const activeFilterCount = useMemo(
+        () => (status !== 'pending' ? 1 : 0) + (query.trim() ? 1 : 0),
+        [query, status],
+    );
+
+    const selectedExpiryDelta = useMemo(
+        () =>
+            selectedVerification
+                ? daysUntil(selectedVerification.expiry_date)
+                : null,
+        [selectedVerification],
     );
 
     async function submitReview() {
-        if (!reviewDialog) {
+        if (!selectedVerification) {
             return;
         }
 
@@ -164,10 +608,10 @@ export default function AdminProfessionalVerifications() {
 
         try {
             const response = await fetch(
-                `/api/admin/professional-verifications/${reviewDialog.verification.id}/review`,
+                `/api/admin/professional-verifications/${selectedVerification.id}/review`,
                 jsonRequestInit('PATCH', {
-                    review_status: reviewDialog.reviewStatus,
-                    notes: reviewDialog.notes.trim() || null,
+                    review_status: reviewStatus,
+                    notes: reviewNotes.trim() || null,
                 }),
             );
 
@@ -180,7 +624,6 @@ export default function AdminProfessionalVerifications() {
                 );
             }
 
-            setReviewDialog(null);
             await load();
         } catch (reviewError) {
             setError(
@@ -200,42 +643,33 @@ export default function AdminProfessionalVerifications() {
             <RoleGuard roles={['admin']}>
                 <AdminShell
                     title="Professional verifications"
-                    description="Review trainer and nutritionist verification requests with cleaner status handling, notes, and action history."
-                    actions={
-                        <div className="flex flex-wrap items-center gap-2">
-                            <select
-                                value={status}
-                                onChange={(event) =>
-                                    setStatus(event.target.value)
-                                }
-                                className="flex h-10 rounded-full border border-input bg-background px-4 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            >
-                                <option value="pending">Pending</option>
-                                <option value="needs_info">Needs info</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="all">All</option>
-                            </select>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void load()}
-                                disabled={loading}
-                            >
-                                <RefreshCcw className="h-4 w-4" />
-                                {loading ? 'Refreshing...' : 'Refresh'}
-                            </Button>
-                        </div>
-                    }
+                    description="Keep the queue, evidence, and decision surface together so approvals and follow-ups are easier to trust."
                 >
                     <div className="space-y-6">
                         <AdminStatsGrid>
                             <AdminStatCard
-                                label="Visible requests"
-                                value={loading ? '...' : String(rows.length)}
+                                label="Requests Matching State"
+                                value={
+                                    loading ? '...' : String(total)
+                                }
                                 tone="accent"
-                                helper="Filtered by the selected review state."
+                                helper="Server-side count for the current review state filter."
+                            />
+                            <AdminStatCard
+                                label="Visible On This Page"
+                                value={
+                                    loading
+                                        ? '...'
+                                        : String(filteredRows.length)
+                                }
+                                helper="Local search narrows the current page without losing queue context."
+                            />
+                            <AdminStatCard
+                                label="Pending Review"
+                                value={
+                                    loading ? '...' : String(summary.pending)
+                                }
+                                helper="Useful when you widen the queue beyond the default pending view."
                             />
                             <AdminStatCard
                                 label="Approved"
@@ -263,322 +697,439 @@ export default function AdminProfessionalVerifications() {
                         </AdminStatsGrid>
 
                         <AdminSection
-                            title="Verification queue"
-                            description="Open a request to approve it, reject it, or ask the professional for more information."
+                            title="Triage Guidance"
+                            description="Keep the queue readable, make review actions intentional, and leave raw audit or debugging detail to dedicated logs when you need deep traces."
                         >
-                            <div className="space-y-4">
-                                {error ? (
-                                    <ProductBanner tone="danger">
-                                        {error}
-                                    </ProductBanner>
-                                ) : null}
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                <AdminOverviewCard
+                                    title="Queue snapshot"
+                                    description="This page works best as a review rail: filter the queue, keep one request selected, and move through evidence without losing your place."
+                                >
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Active filters
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {activeFilterCount === 0
+                                                    ? 'Default pending queue'
+                                                    : `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Review state is{' '}
+                                                {status === 'all'
+                                                    ? 'showing every request.'
+                                                    : `${formatStatusLabel(status).toLowerCase()} only.`}
+                                            </div>
+                                        </div>
 
-                                {loading ? (
-                                    <ProductEmptyState
-                                        title="Loading verification requests"
-                                        description="Pulling the current review queue for trainers and nutritionists."
-                                    />
-                                ) : (
-                                    <ProductTable>
-                                        <ProductTableHead>
-                                            <tr>
-                                                <ProductTableHeaderCell>
-                                                    Professional
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    License
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    Status
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    Reviewer
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell className="w-48">
-                                                    Actions
-                                                </ProductTableHeaderCell>
-                                            </tr>
-                                        </ProductTableHead>
-                                        <ProductTableBody>
-                                            {rows.map((row) => (
-                                                <ProductTableRow key={row.id}>
-                                                    <ProductTableCell>
-                                                        <div className="space-y-2">
-                                                            <div className="font-medium text-foreground">
-                                                                {personName(
-                                                                    row.user,
-                                                                )}
-                                                            </div>
-                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="rounded-full px-2.5 py-1 capitalize"
-                                                                >
-                                                                    {row.role ===
-                                                                    'nutritionist'
-                                                                        ? 'Dietitian'
-                                                                        : 'Trainer'}
-                                                                </Badge>
-                                                                <span>
-                                                                    {
-                                                                        row.authority
-                                                                    }
-                                                                </span>
-                                                                <span>
-                                                                    {
-                                                                        row.country_state
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                Expires{' '}
-                                                                {new Date(
-                                                                    row.expiry_date,
-                                                                ).toLocaleDateString()}
-                                                            </div>
-                                                        </div>
-                                                    </ProductTableCell>
-                                                    <ProductTableCell>
-                                                        <div className="space-y-1">
-                                                            <div className="font-medium">
-                                                                {
-                                                                    row.license_number
-                                                                }
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {
-                                                                    row.full_legal_name
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    </ProductTableCell>
-                                                    <ProductTableCell>
-                                                        <div className="space-y-2">
-                                                            <Badge
-                                                                variant={
-                                                                    row.review_status ===
-                                                                    'approved'
-                                                                        ? 'default'
-                                                                        : row.review_status ===
-                                                                            'rejected'
-                                                                          ? 'destructive'
-                                                                          : 'outline'
-                                                                }
-                                                                className="rounded-full px-2.5 py-1 capitalize"
-                                                            >
-                                                                {statusLabel(
-                                                                    row.review_status,
-                                                                )}
-                                                            </Badge>
-                                                            {row.notes ? (
-                                                                <p className="text-xs leading-5 text-muted-foreground">
-                                                                    {row.notes}
-                                                                </p>
-                                                            ) : null}
-                                                        </div>
-                                                    </ProductTableCell>
-                                                    <ProductTableCell className="text-sm text-muted-foreground">
-                                                        <div className="space-y-1">
-                                                            <div>
-                                                                {reviewerName(
-                                                                    row,
-                                                                )}
-                                                            </div>
-                                                            <div className="text-xs">
-                                                                {row.reviewed_at
-                                                                    ? new Date(
-                                                                          row.reviewed_at,
-                                                                      ).toLocaleString()
-                                                                    : 'Not reviewed yet'}
-                                                            </div>
-                                                        </div>
-                                                    </ProductTableCell>
-                                                    <ProductTableCell>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    setReviewDialog(
-                                                                        {
-                                                                            verification:
-                                                                                row,
-                                                                            reviewStatus:
-                                                                                'approved',
-                                                                            notes:
-                                                                                row.notes ??
-                                                                                '',
-                                                                        },
-                                                                    )
-                                                                }
-                                                            >
-                                                                Approve
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                    setReviewDialog(
-                                                                        {
-                                                                            verification:
-                                                                                row,
-                                                                            reviewStatus:
-                                                                                'needs_info',
-                                                                            notes:
-                                                                                row.notes ??
-                                                                                '',
-                                                                        },
-                                                                    )
-                                                                }
-                                                            >
-                                                                Needs info
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={() =>
-                                                                    setReviewDialog(
-                                                                        {
-                                                                            verification:
-                                                                                row,
-                                                                            reviewStatus:
-                                                                                'rejected',
-                                                                            notes:
-                                                                                row.notes ??
-                                                                                '',
-                                                                        },
-                                                                    )
-                                                                }
-                                                            >
-                                                                Reject
-                                                            </Button>
-                                                        </div>
-                                                    </ProductTableCell>
-                                                </ProductTableRow>
-                                            ))}
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Current slice
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {from && to
+                                                    ? `${from}-${to} of ${total}`
+                                                    : 'Waiting for queue data'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Pagination keeps the review queue stable while search refines only the current page.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AdminOverviewCard>
 
-                                            {rows.length === 0 ? (
-                                                <ProductTableEmptyRow
-                                                    colSpan={5}
-                                                    title="No verification requests found"
-                                                    description="Try another status filter or come back when new professional applications arrive."
-                                                />
-                                            ) : null}
-                                        </ProductTableBody>
-                                    </ProductTable>
-                                )}
+                                <AdminOverviewCard
+                                    title="Current review context"
+                                    description="Keep the decision surface human-readable here. Use logs only when you need raw audit history or technical debugging detail."
+                                >
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Selected request
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {selectedVerification
+                                                    ? personName(
+                                                          selectedVerification.user,
+                                                      )
+                                                    : 'No request selected'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                {selectedVerification
+                                                    ? `${selectedVerification.role === 'nutritionist' ? 'Dietitian' : 'Trainer'} review with evidence and account state pinned beside the queue.`
+                                                    : 'Choose a request to keep evidence and decision controls pinned in place.'}
+                                            </div>
+                                        </div>
+
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Decision rail
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {selectedVerification
+                                                    ? formatStatusLabel(
+                                                          reviewStatus,
+                                                      )
+                                                    : 'Pending selection'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Save one clear decision with notes so the next admin can trust the outcome without reopening the whole case.
+                                            </div>
+                                        </div>
+
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 sm:col-span-2">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Credential timing
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {selectedVerification
+                                                    ? selectedExpiryDelta === null
+                                                        ? 'Expiry not available'
+                                                        : selectedExpiryDelta < 0
+                                                          ? 'Credential expired'
+                                                          : selectedExpiryDelta === 0
+                                                            ? 'Expires today'
+                                                            : `${selectedExpiryDelta} day${selectedExpiryDelta === 1 ? '' : 's'} remaining`
+                                                    : 'Open a request to inspect timing'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Near-expiry requests should usually end with either a renewal follow-up note or a deliberate approval rationale.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AdminOverviewCard>
                             </div>
+                        </AdminSection>
+
+                        <AdminSection
+                            title="Verification queue"
+                            description={
+                                from && to
+                                    ? `Showing ${from}-${to} of ${total} requests. Select a row to keep the evidence and decision panel visible.`
+                                    : 'Select a row to keep the evidence and decision panel visible.'
+                            }
+                        >
+                            <AdminToolbar>
+                                <AdminToolbarGroup grow>
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:min-w-[320px] xl:flex-1"
+                                    >
+                                        <AdminSearchInput
+                                            value={query}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
+                                            placeholder="Search professional, license, authority, or email"
+                                        />
+                                    </AdminField>
+
+                                    <AdminField
+                                        label="Review state"
+                                        className="sm:w-52"
+                                    >
+                                        <AdminNativeSelect
+                                            value={status}
+                                            onChange={(event) =>
+                                                setStatus(event.target.value)
+                                            }
+                                        >
+                                            <option value="pending">
+                                                Pending
+                                            </option>
+                                            <option value="needs_info">
+                                                Needs info
+                                            </option>
+                                            <option value="approved">
+                                                Approved
+                                            </option>
+                                            <option value="rejected">
+                                                Rejected
+                                            </option>
+                                            <option value="all">All</option>
+                                        </AdminNativeSelect>
+                                    </AdminField>
+                                </AdminToolbarGroup>
+
+                                <AdminToolbarGroup className="w-full xl:w-auto xl:justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => void load()}
+                                        disabled={loading}
+                                    >
+                                        <RefreshCcw className="h-4 w-4" />
+                                        {loading
+                                            ? 'Refreshing...'
+                                            : 'Refresh queue'}
+                                    </Button>
+                                </AdminToolbarGroup>
+                            </AdminToolbar>
+
+                            {error && !selectedVerification ? (
+                                <AdminNotice tone="danger">{error}</AdminNotice>
+                            ) : null}
+
+                            <AdminSplitView
+                                list={
+                                    <div className="space-y-4">
+                                        {loading &&
+                                        filteredRows.length === 0 ? (
+                                            <AdminEmpty
+                                                title="Loading verification requests"
+                                                description="Pulling the current review queue for trainers and nutritionists."
+                                            />
+                                        ) : (
+                                            <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
+                                                <AdminDataTable>
+                                                    <ProductTableHead>
+                                                        <tr>
+                                                            <ProductTableHeaderCell>
+                                                                Professional
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                License
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Status
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell className="w-40">
+                                                                Actions
+                                                            </ProductTableHeaderCell>
+                                                        </tr>
+                                                    </ProductTableHead>
+                                                    <ProductTableBody>
+                                                        {filteredRows.map((row) => {
+                                                            const isSelected =
+                                                                selectedId ===
+                                                                row.id;
+
+                                                            return (
+                                                                <ProductTableRow
+                                                                    key={
+                                                                        row.id
+                                                                    }
+                                                                    interactive
+                                                                    className={
+                                                                        isSelected
+                                                                            ? 'bg-primary/6'
+                                                                            : undefined
+                                                                    }
+                                                                >
+                                                                    <ProductTableCell>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setSelectedId(
+                                                                                    row.id,
+                                                                                )
+                                                                            }
+                                                                            className="space-y-2 text-left"
+                                                                        >
+                                                                            <div className="font-medium text-foreground">
+                                                                                {personName(
+                                                                                    row.user,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                                <Badge
+                                                                                    variant="outline"
+                                                                                    className="rounded-full px-2.5 py-1 capitalize"
+                                                                                >
+                                                                                    {row.role ===
+                                                                                    'nutritionist'
+                                                                                        ? 'Dietitian'
+                                                                                        : 'Trainer'}
+                                                                                </Badge>
+                                                                                <span>
+                                                                                    {
+                                                                                        row.authority
+                                                                                    }
+                                                                                </span>
+                                                                                <span>
+                                                                                    {
+                                                                                        row.country_state
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        </button>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <div className="space-y-1">
+                                                                            <div className="font-medium text-foreground">
+                                                                                {
+                                                                                    row.license_number
+                                                                                }
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {
+                                                                                    row.full_legal_name
+                                                                                }
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                Expires{' '}
+                                                                                {formatDate(
+                                                                                    row.expiry_date,
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <div className="space-y-2">
+                                                                            <StatusChipSet
+                                                                                items={[
+                                                                                    {
+                                                                                        value: row.review_status,
+                                                                                    },
+                                                                                    {
+                                                                                        value: row
+                                                                                            .user
+                                                                                            ?.verified
+                                                                                            ? 'verified'
+                                                                                            : 'unverified',
+                                                                                    },
+                                                                                ]}
+                                                                            />
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {reviewerName(
+                                                                                    row,
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            <Button
+                                                                                type="button"
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    setSelectedId(
+                                                                                        row.id,
+                                                                                    );
+                                                                                    setDrawerOpen(
+                                                                                        true,
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Review
+                                                                            </Button>
+                                                                        </div>
+                                                                    </ProductTableCell>
+                                                                </ProductTableRow>
+                                                            );
+                                                        })}
+
+                                                        {!loading &&
+                                                        filteredRows.length ===
+                                                            0 ? (
+                                                            <ProductTableEmptyRow
+                                                                colSpan={4}
+                                                                title="No verification requests found"
+                                                                description="Try another status filter or come back when new professional applications arrive."
+                                                            />
+                                                        ) : null}
+                                                    </ProductTableBody>
+                                                </AdminDataTable>
+                                            </AdminScrollArea>
+                                        )}
+
+                                        <AdminPagination
+                                            currentPage={currentPage}
+                                            lastPage={lastPage}
+                                            disabled={loading}
+                                            summary={
+                                                from && to
+                                                    ? `Showing ${from}-${to} of ${total} requests`
+                                                    : 'Pagination stays aligned with the active status filter.'
+                                            }
+                                            onPrevious={() =>
+                                                setCurrentPage((page) =>
+                                                    Math.max(1, page - 1),
+                                                )
+                                            }
+                                            onNext={() =>
+                                                setCurrentPage((page) =>
+                                                    Math.min(
+                                                        lastPage,
+                                                        page + 1,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                }
+                                detail={
+                                    <VerificationDecisionSurface
+                                        verification={selectedVerification}
+                                        reviewStatus={reviewStatus}
+                                        reviewNotes={reviewNotes}
+                                        onReviewStatusChange={setReviewStatus}
+                                        onReviewNotesChange={setReviewNotes}
+                                        onRefresh={() => void load()}
+                                        onSubmit={() => void submitReview()}
+                                        loading={
+                                            loading &&
+                                            filteredRows.length === 0
+                                        }
+                                        saving={saving}
+                                        error={
+                                            selectedVerification ? error : null
+                                        }
+                                    />
+                                }
+                                listClassName="min-w-0"
+                                detailClassName="min-w-0"
+                            />
                         </AdminSection>
                     </div>
                 </AdminShell>
             </RoleGuard>
 
-            <Dialog
-                open={reviewDialog !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setReviewDialog(null);
-                    }
-                }}
-            >
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <ShieldCheck className="h-5 w-5 text-primary" />
-                            Review verification
-                        </DialogTitle>
-                        <DialogDescription>
-                            {reviewDialog
-                                ? `Update ${personName(reviewDialog.verification.user)} to ${statusLabel(reviewDialog.reviewStatus)}.`
-                                : 'Review this professional verification request.'}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {reviewDialog ? (
-                        <div className="space-y-4">
-                            <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-4 text-sm">
-                                <div className="font-medium text-foreground">
-                                    {reviewDialog.verification.full_legal_name}
-                                </div>
-                                <div className="mt-1 text-muted-foreground">
-                                    {reviewDialog.verification.license_number} •{' '}
-                                    {reviewDialog.verification.authority}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="review-status">
-                                    Review status
-                                </Label>
-                                <select
-                                    id="review-status"
-                                    value={reviewDialog.reviewStatus}
-                                    onChange={(event) =>
-                                        setReviewDialog((current) =>
-                                            current
-                                                ? {
-                                                      ...current,
-                                                      reviewStatus: event.target
-                                                          .value as ReviewStatus,
-                                                  }
-                                                : current,
-                                        )
-                                    }
-                                    className="flex h-10 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                >
-                                    <option value="approved">Approved</option>
-                                    <option value="needs_info">
-                                        Needs info
-                                    </option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="review-notes">
-                                    Notes for the record
-                                </Label>
-                                <Textarea
-                                    id="review-notes"
-                                    value={reviewDialog.notes}
-                                    onChange={(event) =>
-                                        setReviewDialog((current) =>
-                                            current
-                                                ? {
-                                                      ...current,
-                                                      notes: event.target.value,
-                                                  }
-                                                : current,
-                                        )
-                                    }
-                                    rows={5}
-                                    placeholder="Add any internal context or a short explanation for the professional."
-                                />
-                            </div>
+            <EntityDetailDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                title={
+                    selectedVerification
+                        ? personName(selectedVerification.user)
+                        : 'Verification review'
+                }
+                description="Mobile review surface for credential decisions."
+                footer={
+                    selectedVerification ? (
+                        <div className="flex w-full flex-wrap justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => void load()}
+                            >
+                                Refresh
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={() => void submitReview()}
+                                disabled={saving}
+                            >
+                                {saving ? 'Saving...' : 'Save review'}
+                            </Button>
                         </div>
-                    ) : null}
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setReviewDialog(null)}
-                            disabled={saving}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={() => void submitReview()}
-                            disabled={saving || !reviewDialog}
-                        >
-                            {saving ? 'Saving...' : 'Save review'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    ) : null
+                }
+            >
+                <VerificationDecisionSurface
+                    verification={selectedVerification}
+                    reviewStatus={reviewStatus}
+                    reviewNotes={reviewNotes}
+                    onReviewStatusChange={setReviewStatus}
+                    onReviewNotesChange={setReviewNotes}
+                    onRefresh={() => void load()}
+                    onSubmit={() => void submitReview()}
+                    loading={loading && filteredRows.length === 0}
+                    saving={saving}
+                    error={selectedVerification ? error : null}
+                />
+            </EntityDetailDrawer>
         </>
     );
 }

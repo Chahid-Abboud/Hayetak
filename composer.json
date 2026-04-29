@@ -82,10 +82,10 @@
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"set PHP_CLI_SERVER_WORKERS=1&& php -d xdebug.mode=off artisan serve --host=127.0.0.1 --port=8000\" \"php -d xdebug.mode=off artisan queue:listen --tries=1\" \"php -d xdebug.mode=off artisan pail --timeout=0\" \"php -d xdebug.mode=off artisan inertia:start-ssr\" --names=server,queue,logs,ssr --kill-others"
         ],
         "test": [
-            "@php -d xdebug.mode=off scripts/pest-win.php"
+            "@php -d xdebug.mode=off vendor/bin/pest"
         ],
         "test:ai": [
-            "@php -d xdebug.mode=off scripts/pest-win.php tests/Feature/Ai"
+            "@php -d xdebug.mode=off vendor/bin/pest tests/Feature/Ai tests/Unit/Ai"
         ]
     },
     "extra": {

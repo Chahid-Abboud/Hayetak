@@ -8,6 +8,7 @@ use App\Models\WorkoutLog;
 use App\Models\WorkoutLogSet;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
+use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,11 +18,16 @@ use Inertia\Response;
 
 class WorkoutLogController extends Controller
 {
+    public function __construct(
+        private readonly UserFacingAiPayloadSanitizer $sanitizer,
+    ) {}
+
     public function index(Request $request): Response
     {
         $userId = Auth::id();
         $today = Carbon::today();
         $weekday = (int) $today->isoWeekday();
+        $isAdmin = (string) ($request->user()?->role ?? '') === 'admin';
 
         $aiPlan = $this->planQuery()
             ->where('user_id', $userId)
@@ -85,8 +91,12 @@ class WorkoutLogController extends Controller
             ->get(['id', 'name', 'primary_muscle', 'equipment', 'demo_url']);
 
         return Inertia::render('workouts/log', [
-            'aiPlan' => $aiPlan,
-            'manualPlan' => $manualPlan,
+            'aiPlan' => $aiPlan
+                ? $this->sanitizer->sanitizePlanResource($aiPlan->toArray(), $isAdmin)
+                : null,
+            'manualPlan' => $manualPlan
+                ? $this->sanitizer->sanitizePlanResource($manualPlan->toArray(), $isAdmin)
+                : null,
             'recommendedAiDayId' => $recommendedAiDay?->id,
             'recommendedManualDayId' => $recommendedManualDay?->id,
             'today' => $today->toDateString(),
@@ -251,7 +261,6 @@ class WorkoutLogController extends Controller
     private function planQuery()
     {
         return WorkoutPlan::query()->with([
-            'aiRequest:id,provider,model,prompt_version,schema_version',
             'days' => fn ($query) => $query->orderBy('day_index'),
             'days.exercises' => fn ($query) => $query
                 ->orderBy('workout_plan_day_exercises.order_index')

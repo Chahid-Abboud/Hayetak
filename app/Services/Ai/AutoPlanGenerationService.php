@@ -2,8 +2,8 @@
 
 namespace App\Services\Ai;
 
-use App\Jobs\GeneratePlansForUser;
-use App\Models\AiRequest;
+use App\Jobs\Ai\GeneratePlansForUser;
+use App\Models\Ai\AiRequest;
 use App\Models\NutritionPlan;
 use App\Models\User;
 use App\Models\WorkoutPlan;
@@ -30,14 +30,18 @@ class AutoPlanGenerationService
                 userId: $user->id,
                 days: $days,
                 regenerate: true,
-                reason: $reason
+                reason: $reason,
+                generateDiet: true,
+                generateWorkout: true,
             );
         } else {
             GeneratePlansForUser::dispatchAfterResponse(
                 userId: $user->id,
                 days: $days,
                 regenerate: true,
-                reason: $reason
+                reason: $reason,
+                generateDiet: true,
+                generateWorkout: true,
             );
         }
 

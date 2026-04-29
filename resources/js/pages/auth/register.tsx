@@ -877,7 +877,8 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Client',
                                             description:
                                                 'Get a personalized AI nutrition and workout plan, track your progress, and receive adaptive coaching.',
-                                            tone: 'from-secondary to-accent',
+                                            toneClass:
+                                                'bg-secondary text-secondary-foreground',
                                         },
                                         {
                                             value: 'trainer' as AccountType,
@@ -886,7 +887,8 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Professional',
                                             description:
                                                 'Manage clients, create custom workout programs, and communicate securely.',
-                                            tone: 'from-blue-500 to-blue-700',
+                                            toneClass:
+                                                'bg-primary text-primary-foreground',
                                         },
                                         {
                                             value: 'nutritionist' as AccountType,
@@ -895,7 +897,8 @@ function RegisterWizard(props: Props) {
                                             subtitle: 'Professional',
                                             description:
                                                 'Build personalized nutrition plans and monitor clients with more context.',
-                                            tone: 'from-emerald-500 to-emerald-700',
+                                            toneClass:
+                                                'bg-primary/80 text-primary-foreground',
                                         },
                                     ].map((option) => {
                                         const active =
@@ -919,9 +922,9 @@ function RegisterWizard(props: Props) {
                                             >
                                                 <div className="flex items-start gap-4">
                                                     <div
-                                                        className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br ${option.tone}`}
+                                                        className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${option.toneClass}`}
                                                     >
-                                                        <option.icon className="size-5 text-white" />
+                                                        <option.icon className="size-5" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="mb-1 flex items-center gap-2">
@@ -1954,8 +1957,8 @@ export default function Register(props: Props) {
                             href="/"
                             className="flex items-center gap-2.5 no-underline"
                         >
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-secondary via-accent to-primary shadow-[0_14px_32px_-20px_rgba(23,38,60,0.55)]">
-                                <AppLogoIcon className="size-3.5 fill-current text-white" />
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 shadow-[0_14px_32px_-20px_rgba(23,38,60,0.55)]">
+                                <AppLogoIcon className="size-3.5" />
                             </div>
                             <span className="font-semibold tracking-tight text-foreground">
                                 Hayetak

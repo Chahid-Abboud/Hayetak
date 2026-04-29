@@ -155,7 +155,7 @@ function ShellSidebar({
     return (
         <div
             className={cn(
-                'flex h-full flex-col overflow-hidden rounded-[32px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl',
+                'flex h-full flex-col overflow-hidden rounded-[32px] border border-[color:var(--sidebar-border)] bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl',
                 mobile
                     ? 'm-3 h-[calc(100svh-1.5rem)]'
                     : 'h-[calc(100svh-2rem)]',
@@ -168,9 +168,7 @@ function ShellSidebar({
                         onClick={onNavigate}
                         className="flex min-w-0 items-center gap-3 no-underline"
                     >
-                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-[20px] bg-gradient-to-br from-[var(--secondary)] via-[var(--accent)] to-[var(--sidebar-foreground)] text-[color:var(--primary)] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)]">
-                            <AppLogoIcon className="h-6 w-6 fill-current" />
-                        </span>
+                        <AppLogoIcon className="h-8 w-8" />
                         <span className="min-w-0">
                             <span
                                 className="block truncate text-xl tracking-tight text-[color:var(--sidebar-foreground)]"
@@ -342,22 +340,11 @@ export function AppProductShell({
                     keywords: ['coach', 'chat', 'assistant'],
                 },
                 {
-                    href: '/admin/users',
-                    label: 'Users',
-                    icon: Users,
-                    keywords: ['users', 'accounts', 'members'],
-                },
-                {
-                    href: '/admin/professionals',
-                    label: 'Professionals',
-                    icon: ShieldCheck,
-                    keywords: ['trainers', 'nutritionists', 'professionals'],
-                },
-                {
-                    href: '/admin/notifications',
-                    label: 'Alerts',
-                    icon: Bell,
-                    keywords: ['alerts', 'notifications', 'broadcasts'],
+                    href: '/ai/planner',
+                    label: 'AI Planner',
+                    icon: Sparkles,
+                    keywords: ['planner', 'audit', 'diet plan', 'workout plan'],
+                    match: ['/planner'],
                 },
             ];
         }
@@ -374,6 +361,13 @@ export function AppProductShell({
                 label: 'AI Coach',
                 icon: Sparkles,
                 keywords: ['coach', 'ai', 'chat'],
+            },
+            {
+                href: '/ai/planner',
+                label: 'AI Planner',
+                icon: Sparkles,
+                keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
+                match: ['/planner'],
             },
             {
                 href: '/track-meals',
@@ -413,23 +407,29 @@ export function AppProductShell({
         if (role === 'admin') {
             return [
                 {
-                    label: 'Moderation',
+                    label: 'Admin Workspace',
                     items: [
+                        {
+                            href: '/admin/users',
+                            label: 'Users',
+                            icon: Users,
+                            keywords: ['users', 'accounts', 'members'],
+                        },
+                        {
+                            href: '/admin/professionals',
+                            label: 'Professionals',
+                            icon: ShieldCheck,
+                            keywords: [
+                                'trainers',
+                                'nutritionists',
+                                'professionals',
+                            ],
+                        },
                         {
                             href: '/admin/professional-verifications',
                             label: 'Verifications',
                             icon: ShieldCheck,
                         },
-                        {
-                            href: '/admin/logs',
-                            label: 'Admin Logs',
-                            icon: Settings2,
-                        },
-                    ],
-                },
-                {
-                    label: 'Data',
-                    items: [
                         {
                             href: '/admin/meals',
                             label: 'Meals',
@@ -445,69 +445,77 @@ export function AppProductShell({
                             label: 'Progress',
                             icon: Dumbbell,
                         },
+                        {
+                            href: '/admin/notifications',
+                            label: 'Alerts',
+                            icon: Bell,
+                            keywords: ['alerts', 'notifications', 'broadcasts'],
+                        },
+                        {
+                            href: '/admin/logs',
+                            label: 'Admin Logs',
+                            icon: Settings2,
+                        },
                     ],
                 },
             ];
         }
 
-        const generalItems: NavItem[] = [
-            {
-                href: '/ai/planner',
-                label: 'AI Planner',
-                icon: Sparkles,
-                keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
-                match: ['/planner'],
-            },
-            {
-                href: '/track-meals',
-                label: 'Meal Tracker',
-                icon: UtensilsCrossed,
-            },
+        const programItems: NavItem[] = [
             {
                 href: '/workouts/plan',
                 label: 'Workout Planner',
                 icon: Dumbbell,
             },
         ];
+        const professionalItems: NavItem[] =
+            role === 'trainer'
+                ? [
+                      {
+                          href: '/trainer/clients',
+                          label: 'My Clients',
+                          icon: Users,
+                      },
+                  ]
+                : role === 'nutritionist'
+                  ? [
+                        {
+                            href: '/dietitian/clients',
+                            label: 'My Clients',
+                            icon: Users,
+                        },
+                    ]
+                  : [];
 
-        if (role === 'trainer') {
-            generalItems.push({
-                href: '/trainer/clients',
-                label: 'My Clients',
-                icon: Users,
+        const groups: NavGroup[] = [];
+        if (professionalItems.length > 0) {
+            groups.push({
+                label: 'Professional',
+                items: professionalItems,
             });
         }
+        groups.push({
+            label: 'Program tools',
+            items: programItems,
+        });
+        groups.push({
+            label: 'Account',
+            items: [
+                {
+                    href: '/settings/profile',
+                    label: 'Profile',
+                    icon: UserRound,
+                },
+                {
+                    href: '/settings/security',
+                    label: 'Security',
+                    icon: ShieldCheck,
+                    match: ['/settings/password', '/settings/two-factor'],
+                },
+            ],
+        });
 
-        if (role === 'nutritionist') {
-            generalItems.push({
-                href: '/dietitian/clients',
-                label: 'My Clients',
-                icon: Users,
-            });
-        }
-
-        return [
-            {
-                label: 'General',
-                items: generalItems,
-            },
-            {
-                label: 'Account',
-                items: [
-                    {
-                        href: '/settings/profile',
-                        label: 'Profile',
-                        icon: UserRound,
-                    },
-                    {
-                        href: '/settings/security',
-                        label: 'Security',
-                        icon: ShieldCheck,
-                        match: ['/settings/password', '/settings/two-factor'],
-                    },
-                ],
-            },
-        ];
+        return groups;
     }, [role]);
 
     const allNavItems = useMemo(
@@ -636,10 +644,26 @@ export function AppProductShell({
     const bottomNav =
         role === 'admin'
             ? [
-                  primaryNav[0],
-                  primaryNav[2],
-                  primaryNav[4],
-                  primaryNav[1],
+                  {
+                      href: '/dashboard',
+                      label: 'Overview',
+                      icon: LayoutDashboard,
+                  },
+                  {
+                      href: '/admin/users',
+                      label: 'Users',
+                      icon: Users,
+                  },
+                  {
+                      href: '/admin/professional-verifications',
+                      label: 'Verify',
+                      icon: ShieldCheck,
+                  },
+                  {
+                      href: '/admin/notifications',
+                      label: 'Alerts',
+                      icon: Bell,
+                  },
                   {
                       href: '/admin/logs',
                       label: 'Logs',

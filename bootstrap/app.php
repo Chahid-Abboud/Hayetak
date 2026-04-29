@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\EnsureVerifiedProfessional;
+use App\Http\Middleware\AiRequestRateLimit;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests; // ⬅️ add this
 use App\Http\Middleware\RequireRole;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa.enforced' => EnsureTwoFactorEnabled::class,
             'professional.verified' => EnsureVerifiedProfessional::class,
             'role' => RequireRole::class,
+            'ai.rate_limit' => AiRequestRateLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -70,7 +72,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     'title' => 'Session Expired (419)',
                     'message' => 'Your session timed out or the CSRF token changed.',
                     'details' => $details,
-                    'showDetails' => (bool) config('app.debug'),
+                    'showDetails' => (bool) config('app.debug')
+                        && (string) ($request->user()?->role ?? '') === 'admin',
                 ])->toResponse($request)->setStatusCode(419);
             }
 

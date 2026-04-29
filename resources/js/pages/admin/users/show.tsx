@@ -1,4 +1,20 @@
 import {
+    AdminCheckboxField,
+    AdminField,
+    AdminInput,
+    AdminNativeSelect,
+    AdminNotice,
+    AdminTextarea,
+    AdminToggleGroup,
+} from '@/components/admin/admin-ui';
+import {
+    ActivityTimeline,
+    ConfirmActionDialogWithReason,
+    MetricChartCard,
+    RiskBannerStack,
+    StatusChipSet,
+} from '@/components/admin/admin-workflows';
+import {
     AdminSection,
     AdminShell,
     AdminStatCard,
@@ -7,9 +23,6 @@ import {
 import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
@@ -23,7 +36,13 @@ import {
     Trash2,
     UserRound,
 } from 'lucide-react';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from 'react';
 
 type Props = { userId: number };
 
@@ -83,6 +102,22 @@ type PrefsDetail = {
     settings?: Record<string, unknown>;
 };
 
+type PlanDiffSummary = {
+    type: 'diet' | 'workout';
+    has_current: boolean;
+    has_previous: boolean;
+    changed: boolean;
+    current_version: number;
+    previous_version?: number | null;
+    current_ai_request_id?: number | null;
+    previous_ai_request_id?: number | null;
+    current_generated_at?: string | null;
+    previous_generated_at?: string | null;
+    current_metrics: Record<string, number>;
+    previous_metrics?: Record<string, number> | null;
+    changes: Record<string, string[]>;
+};
+
 type DetailResponse = {
     user: AdminUserDetail;
     prefs: PrefsDetail;
@@ -126,6 +161,31 @@ type DetailResponse = {
             messages_count?: number | null;
             last_message_at?: string | null;
         }>;
+        planner_feedback: Array<{
+            ai_request_id: number;
+            generated_at?: string | null;
+            provider?: string | null;
+            model?: string | null;
+            horizon_days: number;
+            feedback_period_start_date: string;
+            feedback_period_end_date: string;
+            baseline_weight_kg?: number | null;
+            base_weekly_weight_change_kg?: number | null;
+            adjusted_weekly_weight_change_kg?: number | null;
+            projected_before_feedback_kg?: number | null;
+            projected_after_feedback_kg?: number | null;
+            last_prediction_error_kg_per_week?: number | null;
+            feedback_applied: boolean;
+            feedback_notes?: string | null;
+            confidence?: string | null;
+            inference_source?: string | null;
+            actual_weight_kg?: number | null;
+            actual_weight_date?: string | null;
+        }>;
+        plan_diffs: {
+            diet?: PlanDiffSummary | null;
+            workout?: PlanDiffSummary | null;
+        };
     };
 };
 
@@ -182,6 +242,8 @@ type PrefsForm = {
     notifications_json: string;
     settings_json: string;
 };
+
+type DetailTab = 'access' | 'safety' | 'programs' | 'preferences';
 
 const EMPTY_USER_FORM: UserForm = {
     first_name: '',
@@ -244,8 +306,11 @@ export default function AdminUserShow() {
     const [prefsForm, setPrefsForm] = useState<PrefsForm>(EMPTY_PREFS_FORM);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<DetailTab>('access');
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -308,20 +373,26 @@ export default function AdminUserShow() {
         }
     }
 
-    async function deleteUser() {
-        if (!window.confirm('Delete this user account?')) {
-            return;
-        }
+    async function deleteUser(reason: string) {
+        setDeleting(true);
+        setError(null);
 
-        const res = await fetch(`/api/admin/users/${userId}`, {
-            method: 'DELETE',
-        });
-        if (!res.ok) {
-            setError(await readErrorMessage(res));
-            return;
-        }
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason }),
+            });
+            if (!res.ok) {
+                setError(await readErrorMessage(res));
+                return;
+            }
 
-        router.visit('/admin/users');
+            setDeleteDialogOpen(false);
+            router.visit('/admin/users');
+        } finally {
+            setDeleting(false);
+        }
     }
 
     const displayName =
@@ -331,6 +402,165 @@ export default function AdminUserShow() {
             .join(' ') ||
         detail?.user?.email ||
         `User #${userId}`;
+
+    const riskItems = useMemo(() => {
+        if (!detail) {
+            return [];
+        }
+
+        const items: Array<{
+            severity: 'info' | 'warning' | 'danger' | 'success';
+            title: string;
+            description: string;
+            meta?: string;
+        }> = [];
+
+        if ((detail.user.allergies ?? []).length > 0) {
+            items.push({
+                severity: 'danger',
+                title: 'Allergies recorded',
+                description: detail.user.allergies!.join(', '),
+                meta: 'Planner and coach safety',
+            });
+        }
+
+        if (detail.user.has_medical_history && detail.user.medical_history) {
+            items.push({
+                severity: 'warning',
+                title: 'Medical history on file',
+                description: detail.user.medical_history,
+                meta: 'Review before training or nutrition changes',
+            });
+        }
+
+        if (
+            detail.user.status &&
+            ['suspended', 'rejected'].includes(detail.user.status)
+        ) {
+            items.push({
+                severity: 'danger',
+                title: `Account status is ${detail.user.status}`,
+                description:
+                    'This account already has a high-risk state. Double-check the surrounding activity before making changes.',
+            });
+        } else if (
+            detail.user.status &&
+            ['needs_review', 'needs_info'].includes(detail.user.status)
+        ) {
+            items.push({
+                severity: 'warning',
+                title: `Account status is ${detail.user.status.replace(/_/g, ' ')}`,
+                description:
+                    'There is an open moderation or profile follow-up for this account.',
+            });
+        }
+
+        if (
+            detail.verification?.review_status &&
+            detail.verification.review_status !== 'approved'
+        ) {
+            items.push({
+                severity: 'info',
+                title: 'Professional verification still open',
+                description:
+                    detail.verification.notes ||
+                    'The latest professional verification record is not approved yet.',
+                meta: detail.verification.review_status,
+            });
+        }
+
+        if (!detail.user.email_verified_at) {
+            items.push({
+                severity: 'warning',
+                title: 'Email is not verified',
+                description:
+                    'Access and notification issues may be related to an unverified email address.',
+            });
+        }
+
+        return items;
+    }, [detail]);
+
+    const activityTimelineItems = useMemo(() => {
+        if (!detail) {
+            return [];
+        }
+
+        return [
+            ...(detail.recent.notifications ?? []).map((item) => ({
+                id: `notification-${item.id}`,
+                title: item.title,
+                description: item.body,
+                meta: 'Notification',
+                timestamp: formatDateTime(item.created_at),
+                sortValue: new Date(item.created_at).getTime(),
+                tone: 'info' as const,
+            })),
+            ...(detail.recent.meal_entries ?? []).map((item) => ({
+                id: `meal-${item.id}`,
+                title: item.food?.name || item.meal_type || 'Meal entry',
+                description: `${item.meal_type ?? 'Meal'} - ${item.servings ?? '-'} serving(s)`,
+                meta: 'Meal log',
+                timestamp: formatDateTime(item.eaten_at),
+                sortValue: item.eaten_at
+                    ? new Date(item.eaten_at).getTime()
+                    : 0,
+                tone: 'success' as const,
+            })),
+            ...(detail.recent.workout_logs ?? []).map((item) => ({
+                id: `workout-${item.id}`,
+                title: `${item.sets?.length ?? 0} logged set(s)`,
+                description: item.mood || 'Workout session',
+                meta: 'Workout log',
+                timestamp: formatDateTime(item.performed_at),
+                sortValue: item.performed_at
+                    ? new Date(item.performed_at).getTime()
+                    : 0,
+                tone: 'success' as const,
+            })),
+            ...(detail.recent.appointments ?? []).map((item) => ({
+                id: `appointment-${item.id}`,
+                title: item.professional_role || 'Appointment',
+                description: item.status || 'scheduled',
+                meta: 'Appointment',
+                timestamp: formatDateTime(item.scheduled_at),
+                sortValue: item.scheduled_at
+                    ? new Date(item.scheduled_at).getTime()
+                    : 0,
+                tone: 'warning' as const,
+            })),
+            ...(detail.recent.ai_conversations ?? []).map((item) => ({
+                id: `conversation-${item.id}`,
+                title: item.title || 'Untitled conversation',
+                description: `${item.messages_count ?? 0} messages`,
+                meta: 'AI coach',
+                timestamp: formatDateTime(item.last_message_at),
+                sortValue: item.last_message_at
+                    ? new Date(item.last_message_at).getTime()
+                    : 0,
+                tone: 'default' as const,
+            })),
+        ]
+            .sort((a, b) => b.sortValue - a.sortValue)
+            .slice(0, 10);
+    }, [detail]);
+
+    const plannerTrendPoints = useMemo(() => {
+        const rows = [...(detail?.recent.planner_feedback ?? [])]
+            .reverse()
+            .map(
+                (item) =>
+                    item.projected_after_feedback_kg ??
+                    item.actual_weight_kg ??
+                    item.baseline_weight_kg,
+            )
+            .filter(
+                (value): value is number =>
+                    typeof value === 'number' && Number.isFinite(value),
+            );
+
+        return rows;
+    }, [detail?.recent.planner_feedback]);
 
     return (
         <>
@@ -399,701 +629,972 @@ export default function AdminUserShow() {
                             />
                         </AdminStatsGrid>
 
+                        <div className="dashboard-surface rounded-[28px] px-5 py-5">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                <div className="max-w-2xl">
+                                    <div className="haye-kicker">
+                                        Investigation workspace
+                                    </div>
+                                    <h2
+                                        className="mt-3 text-3xl tracking-tight text-foreground"
+                                        style={{
+                                            fontFamily: 'var(--font-display)',
+                                        }}
+                                    >
+                                        Keep the full editor, but only surface
+                                        the section you are working on.
+                                    </h2>
+                                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                        Account access, safety context, program
+                                        data, and preferences now live in one
+                                        workflow with a fixed context rail for
+                                        the details that should stay visible.
+                                    </p>
+                                </div>
+
+                                <div className="w-full lg:max-w-xl">
+                                    <AdminToggleGroup
+                                        value={activeTab}
+                                        onChange={(value) =>
+                                            setActiveTab(value as DetailTab)
+                                        }
+                                        options={[
+                                            {
+                                                value: 'access',
+                                                label: 'Access',
+                                            },
+                                            {
+                                                value: 'safety',
+                                                label: 'Safety',
+                                            },
+                                            {
+                                                value: 'programs',
+                                                label: 'Programs',
+                                            },
+                                            {
+                                                value: 'preferences',
+                                                label: 'Preferences',
+                                            },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_360px]">
-                            <div className="space-y-6">
-                                <AdminSection
-                                    title="Account Access"
-                                    description="Core identity, permissions, and login settings."
-                                >
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        <TextField
-                                            label="First name"
-                                            value={userForm.first_name}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    first_name: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Last name"
-                                            value={userForm.last_name}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    last_name: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Username"
-                                            value={userForm.username}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    username: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Email"
-                                            type="email"
-                                            value={userForm.email}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    email: value,
-                                                }))
-                                            }
-                                        />
-                                        <SelectField
-                                            label="Role"
-                                            value={userForm.role}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    role: value as UserForm['role'],
-                                                }))
-                                            }
-                                            options={[
-                                                {
-                                                    value: 'admin',
-                                                    label: 'Admin',
-                                                },
-                                                {
-                                                    value: 'client',
-                                                    label: 'Client',
-                                                },
-                                                {
-                                                    value: 'trainer',
-                                                    label: 'Trainer',
-                                                },
-                                                {
-                                                    value: 'nutritionist',
-                                                    label: 'Nutritionist',
-                                                },
-                                            ]}
-                                        />
-                                        <TextField
-                                            label="Status"
-                                            value={userForm.status}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    status: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Temporary password"
-                                            type="password"
-                                            value={userForm.password}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    password: value,
-                                                }))
-                                            }
-                                            placeholder="Leave blank to keep current password"
-                                        />
-                                        <TextField
-                                            label="Confirm password"
-                                            type="password"
-                                            value={
-                                                userForm.password_confirmation
-                                            }
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    password_confirmation:
-                                                        value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                    <div className="mt-4 flex flex-wrap gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4">
-                                        <BooleanField
-                                            label="Professional verified"
-                                            checked={userForm.verified}
-                                            onCheckedChange={(checked) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    verified: checked,
-                                                }))
-                                            }
-                                        />
-                                        <BooleanField
-                                            label="Email verified"
-                                            checked={userForm.email_verified}
-                                            onCheckedChange={(checked) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    email_verified: checked,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                </AdminSection>
-
-                                <AdminSection
-                                    title="Health And Goals"
-                                    description="Physical profile, objectives, and workout cadence."
-                                >
-                                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                        <SelectField
-                                            label="Gender"
-                                            value={userForm.gender}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    gender: value,
-                                                }))
-                                            }
-                                            options={[
-                                                { value: '', label: 'Not set' },
-                                                {
-                                                    value: 'male',
-                                                    label: 'Male',
-                                                },
-                                                {
-                                                    value: 'female',
-                                                    label: 'Female',
-                                                },
-                                                {
-                                                    value: 'other',
-                                                    label: 'Other',
-                                                },
-                                            ]}
-                                        />
-                                        <TextField
-                                            label="Age"
-                                            type="number"
-                                            value={userForm.age}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    age: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Height (cm)"
-                                            type="number"
-                                            value={userForm.height_cm}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    height_cm: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Weight (kg)"
-                                            type="number"
-                                            value={userForm.weight_kg}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    weight_kg: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Dietary goal"
-                                            value={userForm.dietary_goal}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    dietary_goal: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Fitness goal"
-                                            value={userForm.fitness_goal}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    fitness_goal: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Diet type"
-                                            value={userForm.diet_name}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    diet_name: value,
-                                                }))
-                                            }
-                                        />
-                                        <SelectField
-                                            label="Activity level"
-                                            value={userForm.activity_level}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    activity_level: value,
-                                                }))
-                                            }
-                                            options={[
-                                                { value: '', label: 'Not set' },
-                                                {
-                                                    value: 'Sedentary',
-                                                    label: 'Sedentary',
-                                                },
-                                                {
-                                                    value: 'Lightly Active',
-                                                    label: 'Lightly Active',
-                                                },
-                                                {
-                                                    value: 'Moderately Active',
-                                                    label: 'Moderately Active',
-                                                },
-                                                {
-                                                    value: 'Very Active',
-                                                    label: 'Very Active',
-                                                },
-                                                {
-                                                    value: 'Athlete',
-                                                    label: 'Athlete',
-                                                },
-                                            ]}
-                                        />
-                                        <TextField
-                                            label="Workout days per week"
-                                            type="number"
-                                            value={
-                                                userForm.workout_days_per_week
-                                            }
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    workout_days_per_week:
-                                                        value,
-                                                }))
-                                            }
-                                        />
-                                        <SelectField
-                                            label="Workout location"
-                                            value={userForm.workout_location}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    workout_location: value,
-                                                }))
-                                            }
-                                            options={[
-                                                { value: '', label: 'Not set' },
-                                                {
-                                                    value: 'home',
-                                                    label: 'Home',
-                                                },
-                                                { value: 'gym', label: 'Gym' },
-                                                {
-                                                    value: 'both',
-                                                    label: 'Both',
-                                                },
-                                            ]}
-                                        />
-                                    </div>
-                                </AdminSection>
-
-                                <AdminSection
-                                    title="Medical And Restrictions"
-                                    description="Important safety details used by AI and professionals."
-                                >
-                                    <div className="space-y-4">
-                                        <BooleanField
-                                            label="Has medical history"
-                                            checked={
-                                                userForm.has_medical_history
-                                            }
-                                            onCheckedChange={(checked) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    has_medical_history:
-                                                        checked,
-                                                }))
-                                            }
-                                        />
-                                        <TextareaField
-                                            label="Medical history"
-                                            value={userForm.medical_history}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    medical_history: value,
-                                                }))
-                                            }
-                                            rows={4}
-                                        />
-                                        <TextareaField
-                                            label="Allergies"
-                                            value={userForm.allergies_text}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    allergies_text: value,
-                                                }))
-                                            }
-                                            rows={3}
-                                            helper="Comma-separated."
-                                        />
+                            <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+                                {activeTab === 'access' ? (
+                                    <AdminSection
+                                        title="Account Access"
+                                        description="Core identity, permissions, and login settings."
+                                    >
                                         <div className="grid gap-4 md:grid-cols-2">
-                                            <SelectField
-                                                label="Tried diet before"
-                                                value={
-                                                    userForm.tried_diet_before
-                                                }
+                                            <TextField
+                                                label="First name"
+                                                value={userForm.first_name}
                                                 onChange={(value) =>
                                                     setUserForm((current) => ({
                                                         ...current,
-                                                        tried_diet_before:
-                                                            value as UserForm['tried_diet_before'],
+                                                        first_name: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Last name"
+                                                value={userForm.last_name}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        last_name: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Username"
+                                                value={userForm.username}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        username: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Email"
+                                                type="email"
+                                                value={userForm.email}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        email: value,
+                                                    }))
+                                                }
+                                            />
+                                            <SelectField
+                                                label="Role"
+                                                value={userForm.role}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        role: value as UserForm['role'],
                                                     }))
                                                 }
                                                 options={[
                                                     {
-                                                        value: 'unknown',
-                                                        label: 'Unknown',
+                                                        value: 'admin',
+                                                        label: 'Admin',
                                                     },
                                                     {
-                                                        value: 'true',
-                                                        label: 'Yes',
+                                                        value: 'client',
+                                                        label: 'Client',
                                                     },
                                                     {
-                                                        value: 'false',
-                                                        label: 'No',
+                                                        value: 'trainer',
+                                                        label: 'Trainer',
+                                                    },
+                                                    {
+                                                        value: 'nutritionist',
+                                                        label: 'Nutritionist',
                                                     },
                                                 ]}
                                             />
                                             <TextField
-                                                label="Diet failure other"
+                                                label="Status"
+                                                value={userForm.status}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        status: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Temporary password"
+                                                type="password"
+                                                value={userForm.password}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        password: value,
+                                                    }))
+                                                }
+                                                placeholder="Leave blank to keep current password"
+                                            />
+                                            <TextField
+                                                label="Confirm password"
+                                                type="password"
                                                 value={
-                                                    userForm.diet_failure_other
+                                                    userForm.password_confirmation
                                                 }
                                                 onChange={(value) =>
                                                     setUserForm((current) => ({
                                                         ...current,
-                                                        diet_failure_other:
+                                                        password_confirmation:
                                                             value,
                                                     }))
                                                 }
                                             />
                                         </div>
-                                        <TextareaField
-                                            label="Diet failure reasons"
-                                            value={
-                                                userForm.diet_failure_reasons_text
-                                            }
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    diet_failure_reasons_text:
-                                                        value,
-                                                }))
-                                            }
-                                            rows={3}
-                                            helper="Comma-separated."
-                                        />
-                                    </div>
-                                </AdminSection>
+                                        <div className="dashboard-surface-soft mt-4 flex flex-wrap gap-4 rounded-2xl p-4">
+                                            <BooleanField
+                                                label="Professional verified"
+                                                checked={userForm.verified}
+                                                onCheckedChange={(checked) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        verified: checked,
+                                                    }))
+                                                }
+                                            />
+                                            <BooleanField
+                                                label="Email verified"
+                                                checked={
+                                                    userForm.email_verified
+                                                }
+                                                onCheckedChange={(checked) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        email_verified: checked,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
 
-                                <AdminSection
-                                    title="Professional And Contact Profile"
-                                    description="Location, specialties, and public-facing details."
-                                >
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        <TextField
-                                            label="City"
-                                            value={userForm.city}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    city: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Contact display"
-                                            value={userForm.contact_display}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    contact_display: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Availability"
-                                            value={userForm.availability_text}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    availability_text: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextareaField
-                                            label="Specialties"
-                                            value={userForm.specialties_text}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    specialties_text: value,
-                                                }))
-                                            }
-                                            rows={3}
-                                            helper="Comma-separated."
-                                        />
-                                        <TextField
-                                            label="Profile latitude"
-                                            type="number"
-                                            value={userForm.profile_lat}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    profile_lat: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Profile longitude"
-                                            type="number"
-                                            value={userForm.profile_lng}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    profile_lng: value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                    <div className="mt-4">
-                                        <TextareaField
-                                            label="Professional bio"
-                                            value={userForm.professional_bio}
-                                            onChange={(value) =>
-                                                setUserForm((current) => ({
-                                                    ...current,
-                                                    professional_bio: value,
-                                                }))
-                                            }
-                                            rows={6}
-                                        />
-                                    </div>
-                                </AdminSection>
+                                {activeTab === 'safety' ? (
+                                    <AdminSection
+                                        title="Health And Goals"
+                                        description="Physical profile, objectives, and workout cadence."
+                                    >
+                                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                            <SelectField
+                                                label="Gender"
+                                                value={userForm.gender}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        gender: value,
+                                                    }))
+                                                }
+                                                options={[
+                                                    {
+                                                        value: '',
+                                                        label: 'Not set',
+                                                    },
+                                                    {
+                                                        value: 'male',
+                                                        label: 'Male',
+                                                    },
+                                                    {
+                                                        value: 'female',
+                                                        label: 'Female',
+                                                    },
+                                                    {
+                                                        value: 'other',
+                                                        label: 'Other',
+                                                    },
+                                                ]}
+                                            />
+                                            <TextField
+                                                label="Age"
+                                                type="number"
+                                                value={userForm.age}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        age: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Height (cm)"
+                                                type="number"
+                                                value={userForm.height_cm}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        height_cm: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Weight (kg)"
+                                                type="number"
+                                                value={userForm.weight_kg}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        weight_kg: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Dietary goal"
+                                                value={userForm.dietary_goal}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        dietary_goal: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Fitness goal"
+                                                value={userForm.fitness_goal}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        fitness_goal: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Diet type"
+                                                value={userForm.diet_name}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        diet_name: value,
+                                                    }))
+                                                }
+                                            />
+                                            <SelectField
+                                                label="Activity level"
+                                                value={userForm.activity_level}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        activity_level: value,
+                                                    }))
+                                                }
+                                                options={[
+                                                    {
+                                                        value: '',
+                                                        label: 'Not set',
+                                                    },
+                                                    {
+                                                        value: 'Sedentary',
+                                                        label: 'Sedentary',
+                                                    },
+                                                    {
+                                                        value: 'Lightly Active',
+                                                        label: 'Lightly Active',
+                                                    },
+                                                    {
+                                                        value: 'Moderately Active',
+                                                        label: 'Moderately Active',
+                                                    },
+                                                    {
+                                                        value: 'Very Active',
+                                                        label: 'Very Active',
+                                                    },
+                                                    {
+                                                        value: 'Athlete',
+                                                        label: 'Athlete',
+                                                    },
+                                                ]}
+                                            />
+                                            <TextField
+                                                label="Workout days per week"
+                                                type="number"
+                                                value={
+                                                    userForm.workout_days_per_week
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        workout_days_per_week:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <SelectField
+                                                label="Workout location"
+                                                value={
+                                                    userForm.workout_location
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        workout_location: value,
+                                                    }))
+                                                }
+                                                options={[
+                                                    {
+                                                        value: '',
+                                                        label: 'Not set',
+                                                    },
+                                                    {
+                                                        value: 'home',
+                                                        label: 'Home',
+                                                    },
+                                                    {
+                                                        value: 'gym',
+                                                        label: 'Gym',
+                                                    },
+                                                    {
+                                                        value: 'both',
+                                                        label: 'Both',
+                                                    },
+                                                ]}
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
 
-                                <AdminSection
-                                    title="Preferences"
-                                    description="Units, targets, and raw JSON settings."
-                                >
-                                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                        <SelectField
-                                            label="Units"
-                                            value={prefsForm.units}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    units: value as PrefsForm['units'],
-                                                }))
-                                            }
-                                            options={[
-                                                {
-                                                    value: 'metric',
-                                                    label: 'Metric',
-                                                },
-                                                {
-                                                    value: 'imperial',
-                                                    label: 'Imperial',
-                                                },
-                                            ]}
-                                        />
-                                        <SelectField
-                                            label="Theme"
-                                            value={prefsForm.theme}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    theme: value as PrefsForm['theme'],
-                                                }))
-                                            }
-                                            options={[
-                                                {
-                                                    value: 'light',
-                                                    label: 'Light',
-                                                },
-                                                {
-                                                    value: 'dark',
-                                                    label: 'Dark',
-                                                },
-                                                {
-                                                    value: 'system',
-                                                    label: 'System',
-                                                },
-                                            ]}
-                                        />
-                                        <TextField
-                                            label="Home gym"
-                                            value={prefsForm.home_gym}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    home_gym: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="BMR (kcal)"
-                                            type="number"
-                                            value={prefsForm.bmr_kcal}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    bmr_kcal: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="TDEE (kcal)"
-                                            type="number"
-                                            value={prefsForm.tdee_kcal}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    tdee_kcal: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Activity factor"
-                                            type="number"
-                                            value={prefsForm.activity_factor}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    activity_factor: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Daily goal calories"
-                                            type="number"
-                                            value={
-                                                prefsForm.daily_goal_calories
-                                            }
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    daily_goal_calories: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Protein goal (g)"
-                                            type="number"
-                                            value={
-                                                prefsForm.daily_goal_protein_g
-                                            }
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    daily_goal_protein_g: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Carbs goal (g)"
-                                            type="number"
-                                            value={prefsForm.daily_goal_carbs_g}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    daily_goal_carbs_g: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Fat goal (g)"
-                                            type="number"
-                                            value={prefsForm.daily_goal_fat_g}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    daily_goal_fat_g: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Water cups per day"
-                                            type="number"
-                                            value={prefsForm.water_cups_per_day}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    water_cups_per_day: value,
-                                                }))
-                                            }
-                                        />
-                                        <TextField
-                                            label="Workout days target"
-                                            type="number"
-                                            value={
-                                                prefsForm.workout_days_target
-                                            }
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    workout_days_target: value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                    <div className="mt-4 flex flex-wrap gap-4 rounded-2xl border border-border/70 bg-muted/30 p-4">
-                                        <BooleanField
-                                            label="Public profile"
-                                            checked={prefsForm.is_public}
-                                            onCheckedChange={(checked) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    is_public: checked,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-                                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                                        <TextareaField
-                                            label="Notifications JSON"
-                                            value={prefsForm.notifications_json}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    notifications_json: value,
-                                                }))
-                                            }
-                                            rows={8}
-                                        />
-                                        <TextareaField
-                                            label="Settings JSON"
-                                            value={prefsForm.settings_json}
-                                            onChange={(value) =>
-                                                setPrefsForm((current) => ({
-                                                    ...current,
-                                                    settings_json: value,
-                                                }))
-                                            }
-                                            rows={8}
-                                        />
-                                    </div>
-                                </AdminSection>
+                                {activeTab === 'safety' ? (
+                                    <AdminSection
+                                        title="Medical And Restrictions"
+                                        description="Important safety details used by AI and professionals."
+                                    >
+                                        <div className="space-y-4">
+                                            <BooleanField
+                                                label="Has medical history"
+                                                checked={
+                                                    userForm.has_medical_history
+                                                }
+                                                onCheckedChange={(checked) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        has_medical_history:
+                                                            checked,
+                                                    }))
+                                                }
+                                            />
+                                            <TextareaField
+                                                label="Medical history"
+                                                value={userForm.medical_history}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        medical_history: value,
+                                                    }))
+                                                }
+                                                rows={4}
+                                            />
+                                            <TextareaField
+                                                label="Allergies"
+                                                value={userForm.allergies_text}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        allergies_text: value,
+                                                    }))
+                                                }
+                                                rows={3}
+                                                helper="Comma-separated."
+                                            />
+                                            <div className="grid gap-4 md:grid-cols-2">
+                                                <SelectField
+                                                    label="Tried diet before"
+                                                    value={
+                                                        userForm.tried_diet_before
+                                                    }
+                                                    onChange={(value) =>
+                                                        setUserForm(
+                                                            (current) => ({
+                                                                ...current,
+                                                                tried_diet_before:
+                                                                    value as UserForm['tried_diet_before'],
+                                                            }),
+                                                        )
+                                                    }
+                                                    options={[
+                                                        {
+                                                            value: 'unknown',
+                                                            label: 'Unknown',
+                                                        },
+                                                        {
+                                                            value: 'true',
+                                                            label: 'Yes',
+                                                        },
+                                                        {
+                                                            value: 'false',
+                                                            label: 'No',
+                                                        },
+                                                    ]}
+                                                />
+                                                <TextField
+                                                    label="Diet failure other"
+                                                    value={
+                                                        userForm.diet_failure_other
+                                                    }
+                                                    onChange={(value) =>
+                                                        setUserForm(
+                                                            (current) => ({
+                                                                ...current,
+                                                                diet_failure_other:
+                                                                    value,
+                                                            }),
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                            <TextareaField
+                                                label="Diet failure reasons"
+                                                value={
+                                                    userForm.diet_failure_reasons_text
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        diet_failure_reasons_text:
+                                                            value,
+                                                    }))
+                                                }
+                                                rows={3}
+                                                helper="Comma-separated."
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
+
+                                {activeTab === 'programs' ? (
+                                    <AdminSection
+                                        title="Professional And Contact Profile"
+                                        description="Location, specialties, and public-facing details."
+                                    >
+                                        <div className="grid gap-4 md:grid-cols-2">
+                                            <TextField
+                                                label="City"
+                                                value={userForm.city}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        city: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Contact display"
+                                                value={userForm.contact_display}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        contact_display: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Availability"
+                                                value={
+                                                    userForm.availability_text
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        availability_text:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextareaField
+                                                label="Specialties"
+                                                value={
+                                                    userForm.specialties_text
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        specialties_text: value,
+                                                    }))
+                                                }
+                                                rows={3}
+                                                helper="Comma-separated."
+                                            />
+                                            <TextField
+                                                label="Profile latitude"
+                                                type="number"
+                                                value={userForm.profile_lat}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        profile_lat: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Profile longitude"
+                                                type="number"
+                                                value={userForm.profile_lng}
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        profile_lng: value,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+                                        <div className="mt-4">
+                                            <TextareaField
+                                                label="Professional bio"
+                                                value={
+                                                    userForm.professional_bio
+                                                }
+                                                onChange={(value) =>
+                                                    setUserForm((current) => ({
+                                                        ...current,
+                                                        professional_bio: value,
+                                                    }))
+                                                }
+                                                rows={6}
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
+
+                                {activeTab === 'programs' ? (
+                                    <AdminSection
+                                        title="Planner Model Feedback"
+                                        description="Inspect the planner predictor feedback loop for this user, including before and after adjustment plus logged outcomes."
+                                    >
+                                        {(detail?.recent.planner_feedback ?? [])
+                                            .length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                No planner feedback runs
+                                                available yet.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {(
+                                                    detail?.recent
+                                                        .planner_feedback ?? []
+                                                ).map((entry) => (
+                                                    <div
+                                                        key={`planner-feedback-${entry.ai_request_id}`}
+                                                        className="dashboard-surface rounded-[24px] p-4"
+                                                    >
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <div className="text-sm font-semibold text-foreground">
+                                                                Request #
+                                                                {
+                                                                    entry.ai_request_id
+                                                                }
+                                                            </div>
+                                                            <Badge
+                                                                variant={
+                                                                    entry.feedback_applied
+                                                                        ? 'default'
+                                                                        : 'secondary'
+                                                                }
+                                                            >
+                                                                {entry.feedback_applied
+                                                                    ? 'Feedback applied'
+                                                                    : 'No adjustment'}
+                                                            </Badge>
+                                                            {entry.confidence ? (
+                                                                <Badge variant="outline">
+                                                                    {
+                                                                        entry.confidence
+                                                                    }{' '}
+                                                                    confidence
+                                                                </Badge>
+                                                            ) : null}
+                                                            {entry.inference_source ? (
+                                                                <Badge variant="outline">
+                                                                    {
+                                                                        entry.inference_source
+                                                                    }
+                                                                </Badge>
+                                                            ) : null}
+                                                        </div>
+
+                                                        <div className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                                                            <div>
+                                                                Generated:{' '}
+                                                                {formatDateTime(
+                                                                    entry.generated_at,
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                Horizon:{' '}
+                                                                {
+                                                                    entry.horizon_days
+                                                                }{' '}
+                                                                days
+                                                            </div>
+                                                            <div>
+                                                                Period:{' '}
+                                                                {
+                                                                    entry.feedback_period_start_date
+                                                                }{' '}
+                                                                to{' '}
+                                                                {
+                                                                    entry.feedback_period_end_date
+                                                                }
+                                                            </div>
+                                                            <div>
+                                                                Provider/model:{' '}
+                                                                {entry.provider ??
+                                                                    '-'}{' '}
+                                                                /{' '}
+                                                                {entry.model ??
+                                                                    '-'}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
+                                                            <MetricPill
+                                                                label="Baseline"
+                                                                value={`${formatMetricNumber(entry.baseline_weight_kg)} kg`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Before feedback"
+                                                                value={`${formatMetricNumber(entry.projected_before_feedback_kg)} kg`}
+                                                            />
+                                                            <MetricPill
+                                                                label="After feedback"
+                                                                value={`${formatMetricNumber(entry.projected_after_feedback_kg)} kg`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Base weekly"
+                                                                value={`${formatSignedMetric(entry.base_weekly_weight_change_kg)} kg/week`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Adjusted weekly"
+                                                                value={`${formatSignedMetric(entry.adjusted_weekly_weight_change_kg)} kg/week`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Last error"
+                                                                value={`${formatSignedMetric(entry.last_prediction_error_kg_per_week)} kg/week`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Actual logged"
+                                                                value={`${formatMetricNumber(entry.actual_weight_kg)} kg`}
+                                                            />
+                                                            <MetricPill
+                                                                label="Actual date"
+                                                                value={
+                                                                    entry.actual_weight_date ??
+                                                                    '-'
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        {entry.feedback_notes ? (
+                                                            <div className="dashboard-surface-soft mt-3 rounded-xl px-3 py-2 text-xs text-muted-foreground">
+                                                                {
+                                                                    entry.feedback_notes
+                                                                }
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </AdminSection>
+                                ) : null}
+
+                                {activeTab === 'programs' ? (
+                                    <AdminSection
+                                        title="Plan Differences by Request"
+                                        description="Latest versus previous generated plans, so you can see what changed between requests."
+                                    >
+                                        <div className="grid gap-4 lg:grid-cols-2">
+                                            <PlanDiffCard
+                                                title="Meal Plan Diff"
+                                                diff={
+                                                    detail?.recent.plan_diffs
+                                                        ?.diet ?? null
+                                                }
+                                            />
+                                            <PlanDiffCard
+                                                title="Workout Plan Diff"
+                                                diff={
+                                                    detail?.recent.plan_diffs
+                                                        ?.workout ?? null
+                                                }
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
+
+                                {activeTab === 'preferences' ? (
+                                    <AdminSection
+                                        title="Preferences"
+                                        description="Units, targets, and raw JSON settings."
+                                    >
+                                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                            <SelectField
+                                                label="Units"
+                                                value={prefsForm.units}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        units: value as PrefsForm['units'],
+                                                    }))
+                                                }
+                                                options={[
+                                                    {
+                                                        value: 'metric',
+                                                        label: 'Metric',
+                                                    },
+                                                    {
+                                                        value: 'imperial',
+                                                        label: 'Imperial',
+                                                    },
+                                                ]}
+                                            />
+                                            <SelectField
+                                                label="Theme"
+                                                value={prefsForm.theme}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        theme: value as PrefsForm['theme'],
+                                                    }))
+                                                }
+                                                options={[
+                                                    {
+                                                        value: 'light',
+                                                        label: 'Light',
+                                                    },
+                                                    {
+                                                        value: 'dark',
+                                                        label: 'Dark',
+                                                    },
+                                                    {
+                                                        value: 'system',
+                                                        label: 'System',
+                                                    },
+                                                ]}
+                                            />
+                                            <TextField
+                                                label="Home gym"
+                                                value={prefsForm.home_gym}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        home_gym: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="BMR (kcal)"
+                                                type="number"
+                                                value={prefsForm.bmr_kcal}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        bmr_kcal: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="TDEE (kcal)"
+                                                type="number"
+                                                value={prefsForm.tdee_kcal}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        tdee_kcal: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Activity factor"
+                                                type="number"
+                                                value={
+                                                    prefsForm.activity_factor
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        activity_factor: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Daily goal calories"
+                                                type="number"
+                                                value={
+                                                    prefsForm.daily_goal_calories
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        daily_goal_calories:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Protein goal (g)"
+                                                type="number"
+                                                value={
+                                                    prefsForm.daily_goal_protein_g
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        daily_goal_protein_g:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Carbs goal (g)"
+                                                type="number"
+                                                value={
+                                                    prefsForm.daily_goal_carbs_g
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        daily_goal_carbs_g:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Fat goal (g)"
+                                                type="number"
+                                                value={
+                                                    prefsForm.daily_goal_fat_g
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        daily_goal_fat_g: value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Water cups per day"
+                                                type="number"
+                                                value={
+                                                    prefsForm.water_cups_per_day
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        water_cups_per_day:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                            <TextField
+                                                label="Workout days target"
+                                                type="number"
+                                                value={
+                                                    prefsForm.workout_days_target
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        workout_days_target:
+                                                            value,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+                                        <div className="dashboard-surface-soft mt-4 flex flex-wrap gap-4 rounded-2xl p-4">
+                                            <BooleanField
+                                                label="Public profile"
+                                                checked={prefsForm.is_public}
+                                                onCheckedChange={(checked) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        is_public: checked,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+                                        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                                            <TextareaField
+                                                label="Notifications JSON"
+                                                value={
+                                                    prefsForm.notifications_json
+                                                }
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        notifications_json:
+                                                            value,
+                                                    }))
+                                                }
+                                                rows={8}
+                                            />
+                                            <TextareaField
+                                                label="Settings JSON"
+                                                value={prefsForm.settings_json}
+                                                onChange={(value) =>
+                                                    setPrefsForm((current) => ({
+                                                        ...current,
+                                                        settings_json: value,
+                                                    }))
+                                                }
+                                                rows={8}
+                                            />
+                                        </div>
+                                    </AdminSection>
+                                ) : null}
                             </div>
                             <div className="space-y-6">
                                 <AdminSection
                                     title="Record Snapshot"
-                                    description="Quick account context and status badges."
+                                    description="Quick account context, safety posture, and escalation state."
                                 >
                                     <div className="space-y-4">
                                         <div className="flex items-start gap-3">
@@ -1109,31 +1610,37 @@ export default function AdminUserShow() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <Badge className="rounded-full px-2.5 py-1 capitalize">
-                                                {detail?.user.role ?? 'user'}
-                                            </Badge>
-                                            <Badge
-                                                variant={
-                                                    detail?.user.verified
-                                                        ? 'default'
-                                                        : 'outline'
-                                                }
-                                                className="rounded-full px-2.5 py-1"
-                                            >
-                                                {detail?.user.verified
-                                                    ? 'Verified'
-                                                    : 'Needs review'}
-                                            </Badge>
-                                            {detail?.user.status ? (
-                                                <Badge
-                                                    variant="outline"
-                                                    className="rounded-full px-2.5 py-1"
-                                                >
-                                                    {detail.user.status}
-                                                </Badge>
-                                            ) : null}
-                                        </div>
+                                        <StatusChipSet
+                                            items={[
+                                                {
+                                                    value:
+                                                        detail?.user.role ?? '',
+                                                    label:
+                                                        detail?.user.role ??
+                                                        undefined,
+                                                },
+                                                {
+                                                    value: detail?.user.verified
+                                                        ? 'verified'
+                                                        : 'unverified',
+                                                },
+                                                {
+                                                    value:
+                                                        detail?.user.status ||
+                                                        'pending',
+                                                },
+                                                {
+                                                    value:
+                                                        detail?.user
+                                                            .workout_location ||
+                                                        '',
+                                                    label:
+                                                        detail?.user
+                                                            .workout_location ||
+                                                        undefined,
+                                                },
+                                            ]}
+                                        />
                                         <MetaRow
                                             icon={
                                                 <CalendarDays className="h-4 w-4" />
@@ -1170,13 +1677,24 @@ export default function AdminUserShow() {
                                             type="button"
                                             variant="destructive"
                                             className="w-full"
-                                            onClick={() => void deleteUser()}
+                                            onClick={() =>
+                                                setDeleteDialogOpen(true)
+                                            }
                                         >
                                             <Trash2 className="h-4 w-4" />
                                             Delete user
                                         </Button>
                                     </div>
                                 </AdminSection>
+
+                                {riskItems.length > 0 ? (
+                                    <RiskBannerStack items={riskItems} />
+                                ) : (
+                                    <AdminNotice tone="success">
+                                        No active safety or moderation flags are
+                                        surfaced from this quick view.
+                                    </AdminNotice>
+                                )}
 
                                 <AdminSection
                                     title="Verification"
@@ -1227,7 +1745,7 @@ export default function AdminUserShow() {
                                                 }
                                             />
                                             {detail.verification.notes ? (
-                                                <div className="rounded-2xl border border-border/70 bg-muted/30 p-3 text-sm text-muted-foreground">
+                                                <div className="dashboard-surface-soft rounded-2xl p-3 text-sm text-muted-foreground">
                                                     {detail.verification.notes}
                                                 </div>
                                             ) : null}
@@ -1240,111 +1758,146 @@ export default function AdminUserShow() {
                                     )}
                                 </AdminSection>
 
+                                <MetricChartCard
+                                    title="Planner trend"
+                                    value={
+                                        plannerTrendPoints.length > 0
+                                            ? `${plannerTrendPoints.at(-1)?.toFixed(1)} kg`
+                                            : 'No data'
+                                    }
+                                    helper="Latest projected or logged body-weight signal from planner feedback."
+                                    points={plannerTrendPoints}
+                                    summary={
+                                        detail?.recent.planner_feedback?.length
+                                            ? `${detail.recent.planner_feedback.length} planner run(s) available for review.`
+                                            : 'Planner feedback detail moves into the Programs tab once runs exist.'
+                                    }
+                                />
+
                                 <AdminSection
                                     title="Recent Activity"
-                                    description="Fast review cards for the latest user actions."
+                                    description="The latest events across notifications, meals, workouts, appointments, and AI."
                                 >
-                                    <div className="space-y-4">
-                                        <ActivityCard
-                                            icon={
-                                                <BellRing className="h-4 w-4" />
-                                            }
-                                            title="Notifications"
-                                            items={
-                                                detail?.recent.notifications ??
-                                                []
-                                            }
-                                            render={(item) => ({
-                                                title: item.title,
-                                                subtitle: item.body,
-                                                meta: formatDateTime(
-                                                    item.created_at,
-                                                ),
-                                            })}
-                                        />
-                                        <ActivityCard
-                                            icon={
-                                                <Activity className="h-4 w-4" />
-                                            }
-                                            title="Meal entries"
-                                            items={
-                                                detail?.recent.meal_entries ??
-                                                []
-                                            }
-                                            render={(item) => ({
-                                                title:
-                                                    item.food?.name ||
-                                                    item.meal_type ||
-                                                    'Meal',
-                                                subtitle: `${item.meal_type ?? 'meal'} · ${item.servings ?? '-'} serving(s)`,
-                                                meta: formatDateTime(
-                                                    item.eaten_at,
-                                                ),
-                                            })}
-                                        />
-                                        <ActivityCard
-                                            icon={
-                                                <Dumbbell className="h-4 w-4" />
-                                            }
-                                            title="Workout logs"
-                                            items={
-                                                detail?.recent.workout_logs ??
-                                                []
-                                            }
-                                            render={(item) => ({
-                                                title: `${item.sets?.length ?? 0} logged set(s)`,
-                                                subtitle:
-                                                    item.mood ||
-                                                    'Workout session',
-                                                meta: formatDateTime(
-                                                    item.performed_at,
-                                                ),
-                                            })}
-                                        />
-                                        <ActivityCard
-                                            icon={
-                                                <CalendarDays className="h-4 w-4" />
-                                            }
-                                            title="Appointments"
-                                            items={
-                                                detail?.recent.appointments ??
-                                                []
-                                            }
-                                            render={(item) => ({
-                                                title:
-                                                    item.professional_role ||
-                                                    'Appointment',
-                                                subtitle:
-                                                    item.status || 'scheduled',
-                                                meta: formatDateTime(
-                                                    item.scheduled_at,
-                                                ),
-                                            })}
-                                        />
-                                        <ActivityCard
-                                            icon={<Brain className="h-4 w-4" />}
-                                            title="AI conversations"
-                                            items={
-                                                detail?.recent
-                                                    .ai_conversations ?? []
-                                            }
-                                            render={(item) => ({
-                                                title:
-                                                    item.title ||
-                                                    'Untitled conversation',
-                                                subtitle: `${item.messages_count ?? 0} messages`,
-                                                meta: formatDateTime(
-                                                    item.last_message_at,
-                                                ),
-                                            })}
-                                        />
-                                    </div>
+                                    <ActivityTimeline
+                                        items={activityTimelineItems}
+                                        emptyTitle="No recent activity"
+                                        emptyDescription="Recent user events will appear here as meals, workouts, appointments, and conversations are recorded."
+                                    />
+                                    {detail?.summary?.notifications === -1 ? (
+                                        <div className="space-y-4">
+                                            <ActivityCard
+                                                icon={
+                                                    <BellRing className="h-4 w-4" />
+                                                }
+                                                title="Notifications"
+                                                items={
+                                                    detail?.recent
+                                                        .notifications ?? []
+                                                }
+                                                render={(item) => ({
+                                                    title: item.title,
+                                                    subtitle: item.body,
+                                                    meta: formatDateTime(
+                                                        item.created_at,
+                                                    ),
+                                                })}
+                                            />
+                                            <ActivityCard
+                                                icon={
+                                                    <Activity className="h-4 w-4" />
+                                                }
+                                                title="Meal entries"
+                                                items={
+                                                    detail?.recent
+                                                        .meal_entries ?? []
+                                                }
+                                                render={(item) => ({
+                                                    title:
+                                                        item.food?.name ||
+                                                        item.meal_type ||
+                                                        'Meal',
+                                                    subtitle: `${item.meal_type ?? 'meal'} · ${item.servings ?? '-'} serving(s)`,
+                                                    meta: formatDateTime(
+                                                        item.eaten_at,
+                                                    ),
+                                                })}
+                                            />
+                                            <ActivityCard
+                                                icon={
+                                                    <Dumbbell className="h-4 w-4" />
+                                                }
+                                                title="Workout logs"
+                                                items={
+                                                    detail?.recent
+                                                        .workout_logs ?? []
+                                                }
+                                                render={(item) => ({
+                                                    title: `${item.sets?.length ?? 0} logged set(s)`,
+                                                    subtitle:
+                                                        item.mood ||
+                                                        'Workout session',
+                                                    meta: formatDateTime(
+                                                        item.performed_at,
+                                                    ),
+                                                })}
+                                            />
+                                            <ActivityCard
+                                                icon={
+                                                    <CalendarDays className="h-4 w-4" />
+                                                }
+                                                title="Appointments"
+                                                items={
+                                                    detail?.recent
+                                                        .appointments ?? []
+                                                }
+                                                render={(item) => ({
+                                                    title:
+                                                        item.professional_role ||
+                                                        'Appointment',
+                                                    subtitle:
+                                                        item.status ||
+                                                        'scheduled',
+                                                    meta: formatDateTime(
+                                                        item.scheduled_at,
+                                                    ),
+                                                })}
+                                            />
+                                            <ActivityCard
+                                                icon={
+                                                    <Brain className="h-4 w-4" />
+                                                }
+                                                title="AI conversations"
+                                                items={
+                                                    detail?.recent
+                                                        .ai_conversations ?? []
+                                                }
+                                                render={(item) => ({
+                                                    title:
+                                                        item.title ||
+                                                        'Untitled conversation',
+                                                    subtitle: `${item.messages_count ?? 0} messages`,
+                                                    meta: formatDateTime(
+                                                        item.last_message_at,
+                                                    ),
+                                                })}
+                                            />
+                                        </div>
+                                    ) : null}
                                 </AdminSection>
                             </div>
                         </div>
                     </div>
                 </AdminShell>
             </RoleGuard>
+            <ConfirmActionDialogWithReason
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title="Delete user account"
+                description="This will remove the user account and write the reason into the admin audit log."
+                confirmLabel="Delete user"
+                busy={deleting}
+                onConfirm={(reason) => void deleteUser(reason)}
+            />
         </>
     );
 }
@@ -1496,15 +2049,9 @@ function MessageBox({
     tone: 'error' | 'success';
 }) {
     return (
-        <div
-            className={
-                tone === 'error'
-                    ? 'rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground'
-                    : 'rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-100'
-            }
-        >
+        <AdminNotice tone={tone === 'error' ? 'danger' : 'success'}>
             {children}
-        </div>
+        </AdminNotice>
     );
 }
 
@@ -1522,15 +2069,14 @@ function TextField({
     placeholder?: string;
 }) {
     return (
-        <label className="space-y-2">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            <Input
+        <AdminField label={label}>
+            <AdminInput
                 type={type}
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
             />
-        </label>
+        </AdminField>
     );
 }
 
@@ -1546,20 +2092,18 @@ function SelectField({
     options: Array<{ value: string; label: string }>;
 }) {
     return (
-        <label className="space-y-2">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            <select
+        <AdminField label={label}>
+            <AdminNativeSelect
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 {options.map((option) => (
                     <option key={option.value} value={option.value}>
                         {option.label}
                     </option>
                 ))}
-            </select>
-        </label>
+            </AdminNativeSelect>
+        </AdminField>
     );
 }
 
@@ -1577,18 +2121,13 @@ function TextareaField({
     helper?: string;
 }) {
     return (
-        <label className="space-y-2">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            <textarea
+        <AdminField label={label} helper={helper}>
+            <AdminTextarea
                 rows={rows}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
-            {helper ? (
-                <span className="text-xs text-muted-foreground">{helper}</span>
-            ) : null}
-        </label>
+        </AdminField>
     );
 }
 
@@ -1601,17 +2140,12 @@ function BooleanField({
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
 }) {
-    const id = label.toLowerCase().replace(/\s+/g, '-');
-
     return (
-        <div className="flex items-center gap-3">
-            <Checkbox
-                id={id}
-                checked={checked}
-                onCheckedChange={(value) => onCheckedChange(Boolean(value))}
-            />
-            <Label htmlFor={id}>{label}</Label>
-        </div>
+        <AdminCheckboxField
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            label={label}
+        />
     );
 }
 
@@ -1625,7 +2159,7 @@ function MetaRow({
     value: string;
 }) {
     return (
-        <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-muted/30 px-3 py-3">
+        <div className="dashboard-surface-soft flex items-start gap-3 rounded-2xl px-3 py-3">
             <div className="mt-0.5 text-muted-foreground">{icon}</div>
             <div className="min-w-0">
                 <div className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
@@ -1666,7 +2200,7 @@ function ActivityCard<T>({
                         return (
                             <div
                                 key={`${title}-${index}`}
-                                className="rounded-2xl border border-border/70 bg-background/80 px-3 py-3"
+                                className="dashboard-surface-soft rounded-[20px] px-3 py-3"
                             >
                                 <div className="text-sm font-medium text-foreground">
                                     {row.title}
@@ -1682,6 +2216,130 @@ function ActivityCard<T>({
                     })
                 )}
             </div>
+        </div>
+    );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="dashboard-surface-soft rounded-xl px-3 py-2">
+            <div className="text-[11px] font-medium tracking-[0.16em] text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-1 text-sm font-medium text-foreground">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function PlanDiffCard({
+    title,
+    diff,
+}: {
+    title: string;
+    diff: PlanDiffSummary | null;
+}) {
+    if (!diff || !diff.has_current) {
+        return (
+            <div className="dashboard-surface rounded-[24px] p-4">
+                <div className="text-sm font-semibold text-foreground">
+                    {title}
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    No generated plan found yet.
+                </p>
+            </div>
+        );
+    }
+
+    const currentMetrics = diff.current_metrics ?? {};
+    const previousMetrics = diff.previous_metrics ?? {};
+    const metricKeys = Array.from(
+        new Set([
+            ...Object.keys(currentMetrics),
+            ...Object.keys(previousMetrics ?? {}),
+        ]),
+    );
+
+    const changeEntries = Object.entries(diff.changes ?? {}).filter(
+        ([, values]) => Array.isArray(values) && values.length > 0,
+    );
+
+    return (
+        <div className="dashboard-surface rounded-[24px] p-4">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm font-semibold text-foreground">
+                    {title}
+                </div>
+                <Badge variant={diff.changed ? 'default' : 'secondary'}>
+                    {diff.has_previous
+                        ? diff.changed
+                            ? 'Changed'
+                            : 'No changes'
+                        : 'Only one version'}
+                </Badge>
+            </div>
+
+            <div className="mt-2 text-xs text-muted-foreground">
+                Current v{diff.current_version}
+                {diff.has_previous && diff.previous_version
+                    ? ` vs previous v${diff.previous_version}`
+                    : ''}
+            </div>
+
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <div>
+                    Current generated:{' '}
+                    {formatDateTime(diff.current_generated_at)}
+                </div>
+                {diff.has_previous ? (
+                    <div>
+                        Previous generated:{' '}
+                        {formatDateTime(diff.previous_generated_at)}
+                    </div>
+                ) : null}
+            </div>
+
+            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                {metricKeys.map((key) => (
+                    <MetricPill
+                        key={`${title}-${key}`}
+                        label={formatDiffLabel(key)}
+                        value={`${currentMetrics[key] ?? 0} (prev ${previousMetrics?.[key] ?? 0})`}
+                    />
+                ))}
+            </div>
+
+            {changeEntries.length ? (
+                <div className="mt-3 space-y-2">
+                    {changeEntries.map(([key, values]) => (
+                        <div
+                            key={`${title}-${key}`}
+                            className="rounded-xl border border-border/60 bg-muted/25 px-3 py-2"
+                        >
+                            <div className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                                {formatDiffLabel(key)}
+                            </div>
+                            <ul className="mt-2 space-y-1 text-xs text-foreground">
+                                {values.slice(0, 6).map((value) => (
+                                    <li key={`${key}-${value}`}>- {value}</li>
+                                ))}
+                                {values.length > 6 ? (
+                                    <li className="text-muted-foreground">
+                                        - {values.length - 6} more...
+                                    </li>
+                                ) : null}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="mt-3 text-xs text-muted-foreground">
+                    No structural differences detected in the latest two
+                    versions.
+                </p>
+            )}
         </div>
     );
 }
@@ -1739,6 +2397,30 @@ function formatDateTime(value?: string | null) {
         hour: 'numeric',
         minute: '2-digit',
     }).format(date);
+}
+
+function formatMetricNumber(value?: number | null, fractionDigits = 2): string {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-';
+    }
+
+    return value.toFixed(fractionDigits);
+}
+
+function formatSignedMetric(value?: number | null, fractionDigits = 2): string {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-';
+    }
+
+    return value > 0
+        ? `+${value.toFixed(fractionDigits)}`
+        : value.toFixed(fractionDigits);
+}
+
+function formatDiffLabel(value: string): string {
+    return value
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 async function readErrorMessage(response: Response) {

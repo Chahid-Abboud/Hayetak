@@ -59,7 +59,7 @@ return new class extends Migration
                                 ADD CONSTRAINT places_local_google_maps_link_chk
                                 CHECK (
                                     google_maps_link IS NULL
-                                    OR google_maps_link ~* '^https?://((www\\.)?google\\.[^/]+/maps|maps\\.app\\.goo\\.gl/)'
+                                    OR google_maps_link ~* '^https?://((www\.)?google\.[^/]+/maps|maps\.app\.goo\.gl/)'
                                 );
                         END IF;
                     END

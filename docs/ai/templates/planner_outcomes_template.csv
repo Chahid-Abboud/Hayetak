@@ -1,0 +1,2 @@
+outcome_id,plan_run_id,checkpoint_day,checkpoint_date_utc,weight_kg,waist_cm,adherence_workout_pct,adherence_diet_pct,avg_daily_steps,avg_sleep_hours,injury_flareup_flag,medical_issue_flag,strength_metric_name,strength_metric_value,user_feedback_score_1_to_5,user_feedback_text
+O0001,R0001,14,2026-04-22T00:00:00Z,76.9,88,86,81,7800,6.9,0,0,goblet_squat_8rm_kg,34,4,"Plan felt realistic; dinner options were easy to follow."

@@ -27,22 +27,17 @@ it('enforces practical minimum planner ollama timeout and output budget floors',
     expect($settings['max_output_tokens'])->toBe(500);
 });
 
-it('forces planner provider to ollama in ollama-only mode', function () {
-    config()->set('ai.planner.ollama_only', true);
-    config()->set('ai.planner.provider', 'openai');
-
+it('always uses ollama as the planner provider', function () {
     $provider = app(FeatureConfigResolver::class)->provider(FeatureConfigResolver::FEATURE_PLANNER);
 
     expect($provider)->toBe('ollama');
 });
 
-it('disables planner fallbacks in ollama-only mode', function () {
-    config()->set('ai.planner.ollama_only', true);
-    config()->set('ai.planner.fallback.enabled', true);
+it('keeps local planner fallback available when enabled', function () {
     config()->set('ai.planner.local_fallback.enabled', true);
 
     $resolver = app(FeatureConfigResolver::class);
 
     expect($resolver->fallbackEnabled(FeatureConfigResolver::FEATURE_PLANNER))->toBeFalse();
-    expect($resolver->localFallbackEnabled(FeatureConfigResolver::FEATURE_PLANNER))->toBeFalse();
+    expect($resolver->localFallbackEnabled(FeatureConfigResolver::FEATURE_PLANNER))->toBeTrue();
 });

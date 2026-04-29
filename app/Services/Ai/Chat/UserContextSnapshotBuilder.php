@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Chat;
 
-use App\Models\AiPlan;
+use App\Models\Ai\AiPlan;
 use App\Models\Measurement;
 use App\Models\NutritionPlan;
 use App\Models\User;

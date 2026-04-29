@@ -24,7 +24,7 @@ Dataset now includes synthetic markers:
 ## 3) Train On All Labels (Demo / Bootstrap)
 
 ```bash
-python scripts/train_progress_predictor.py \
+python scripts/ai/training/train_progress_predictor.py \
   --data tmp/progress_predictor_dataset_latest.jsonl \
   --out storage/app/ai/models/progress_predictor_v1
 ```
@@ -34,7 +34,7 @@ python scripts/train_progress_predictor.py \
 Single command (PowerShell):
 
 ```powershell
-./scripts/retrain_progress_predictor_real_data.ps1
+./scripts/ai/data/retrain_progress_predictor_real_data.ps1
 ```
 
 This calls the trainer with `--real-only=1`, which excludes:
@@ -47,13 +47,13 @@ This calls the trainer with `--real-only=1`, which excludes:
 Dry run:
 
 ```bash
-php scripts/purge_synthetic_progress_data.php --dry-run
+php scripts/ai/data/purge_synthetic_progress_data.php --dry-run
 ```
 
 Apply:
 
 ```bash
-php scripts/purge_synthetic_progress_data.php
+php scripts/ai/data/purge_synthetic_progress_data.php
 ```
 
 ## 6) Weekly Automation Pipeline
@@ -61,7 +61,7 @@ php scripts/purge_synthetic_progress_data.php
 Run the full retrain/eval/monitor/smoke flow:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/run_progress_predictor_weekly_pipeline.ps1
+powershell -ExecutionPolicy Bypass -File scripts/ai/data/run_progress_predictor_weekly_pipeline.ps1
 ```
 
 This will:

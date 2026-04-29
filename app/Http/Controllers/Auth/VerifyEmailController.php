@@ -3,27 +3,41 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VerifyEmailController extends Controller
 {
     /**
      * Mark the authenticated user's email address as verified.
      */
-    public function __invoke(EmailVerificationRequest $request): RedirectResponse
+    public function __invoke(Request $request): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
+        $user = User::query()->findOrFail($request->route('id'));
+
+        abort_unless(
+            hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification())),
+            403
+        );
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        if ($user->hasVerifiedEmail()) {
             return redirect()->route('dashboard');
         }
 
-        $request->fulfill();
+        $user->markEmailAsVerified();
+        event(new Verified($user));
 
         return redirect()
             ->route('dashboard')
             ->with(
                 'showOptionalTwoFactorPrompt',
-                ! $request->user()->hasEnabledTwoFactorAuthentication(),
+                ! $user->hasEnabledTwoFactorAuthentication(),
             );
     }
 }

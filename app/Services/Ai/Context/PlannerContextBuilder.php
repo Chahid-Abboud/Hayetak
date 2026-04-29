@@ -2,16 +2,22 @@
 
 namespace App\Services\Ai\Context;
 
-use App\Models\AiPlan;
+use App\Models\Ai\AiPlan;
 use App\Models\Exercise;
-use App\Models\Food;
 use App\Models\User;
+use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;
+use App\Services\Ai\FoodCatalog\PlannerFoodModel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PlannerContextBuilder
 {
+    public function __construct(
+        private readonly FoodCatalogAnomalyService $foodCatalogAnomalies,
+        private readonly PlannerFoodModel $plannerFoodModel,
+    ) {}
+
     public function build(User $user, array $profile, int $planHorizonDays = 7): array
     {
         $today = Carbon::today();
@@ -131,73 +137,7 @@ class PlannerContextBuilder
 
     private function foodCatalog(array $profile): array
     {
-        $dietType = strtolower(trim((string) ($profile['diet_type'] ?? '')));
-        $allergies = array_values(array_filter(array_map(
-            static fn (string $item): string => strtolower(trim($item)),
-            is_array($profile['allergies'] ?? null) ? $profile['allergies'] : []
-        )));
-
-        $foods = Food::query()
-            ->select(['name', 'category', 'cuisine', 'meal_types', 'allergens', 'diets_allowed', 'calories', 'protein_g'])
-            ->orderByDesc('protein_g')
-            ->orderBy('name')
-            ->get();
-
-        $byType = [
-            'breakfast' => [],
-            'lunch' => [],
-            'dinner' => [],
-            'snack' => [],
-            'drink' => [],
-        ];
-        $limitPerType = 12;
-
-        foreach ($foods as $food) {
-            $foodAllergens = $this->toLowerList($food->allergens);
-            if ($this->hasAnyOverlap($allergies, $foodAllergens)) {
-                continue;
-            }
-
-            $allowedDiets = $this->toLowerList($food->diets_allowed);
-            if (! $this->isFoodAllowedForDiet($dietType, $allowedDiets)) {
-                continue;
-            }
-
-            $mealTypes = $this->normalizeMealTypes($food->meal_types, $food->category);
-            if ($mealTypes === []) {
-                continue;
-            }
-
-            $entry = [
-                'name' => (string) $food->name,
-                'meal_types' => $mealTypes,
-                'calories' => $food->calories !== null ? (int) $food->calories : null,
-                'protein_g' => $food->protein_g !== null ? (float) $food->protein_g : null,
-                'cuisine' => $this->cleanString($food->cuisine),
-            ];
-
-            foreach ($mealTypes as $mealType) {
-                if (! array_key_exists($mealType, $byType)) {
-                    continue;
-                }
-                if (count($byType[$mealType]) >= $limitPerType) {
-                    continue;
-                }
-                $byType[$mealType][] = $entry;
-            }
-
-            if (
-                count($byType['breakfast']) >= $limitPerType &&
-                count($byType['lunch']) >= $limitPerType &&
-                count($byType['dinner']) >= $limitPerType &&
-                count($byType['snack']) >= $limitPerType &&
-                count($byType['drink']) >= $limitPerType
-            ) {
-                break;
-            }
-        }
-
-        return $byType;
+        return $this->plannerFoodModel->buildMealCatalog($profile, 12);
     }
 
     private function exerciseCatalog(array $profile): array
@@ -295,13 +235,21 @@ class PlannerContextBuilder
 
     private function isFoodAllowedForDiet(string $dietType, array $allowedDiets): bool
     {
-        if ($dietType === '' || $allowedDiets === []) {
+        if ($dietType === '') {
             return true;
         }
 
-        $dietType = str_replace('-', '_', $dietType);
+        if (! $this->isStrictDietType($dietType)) {
+            return true;
+        }
+
+        if ($allowedDiets === []) {
+            return false;
+        }
+
+        $dietType = str_replace(['-', ' '], '_', $dietType);
         foreach ($allowedDiets as $allowedDiet) {
-            $normalized = str_replace('-', '_', strtolower($allowedDiet));
+            $normalized = str_replace(['-', ' '], '_', strtolower($allowedDiet));
             if (
                 $normalized === $dietType
                 || str_contains($normalized, $dietType)
@@ -314,7 +262,11 @@ class PlannerContextBuilder
         return false;
     }
 
-    private function normalizeMealTypes(mixed $value, ?string $fallbackCategory = null): array
+    private function normalizeMealTypes(
+        mixed $value,
+        ?string $fallbackCategory = null,
+        ?string $fallbackName = null
+    ): array
     {
         $types = [];
 
@@ -358,7 +310,40 @@ class PlannerContextBuilder
             }
         }
 
+        if ($normalized === [] && is_string($fallbackName) && trim($fallbackName) !== '') {
+            $normalized = $this->inferMealTypesFromName($fallbackName);
+        }
+
         return array_values(array_unique($normalized));
+    }
+
+    private function inferMealTypesFromName(string $name): array
+    {
+        $text = strtolower(trim($name));
+        if ($text === '') {
+            return [];
+        }
+
+        $types = [];
+
+        if ($this->containsAnyText($text, ['oat', 'egg', 'toast', 'labneh', 'granola', 'breakfast'])) {
+            $types[] = 'breakfast';
+        }
+
+        if ($this->containsAnyText($text, ['yogurt', 'fruit', 'berry', 'apple', 'banana', 'cracker', 'bar', 'wafer', 'nuts', 'seed', 'popcorn', 'smoothie', 'shake', 'pudding', 'snack'])) {
+            $types[] = 'snack';
+        }
+
+        if ($this->containsAnyText($text, ['chicken', 'beef', 'turkey', 'fish', 'salmon', 'tuna', 'shrimp', 'tofu', 'lentil', 'rice', 'pasta', 'quinoa', 'bowl', 'plate', 'stew', 'salad'])) {
+            $types[] = 'lunch';
+            $types[] = 'dinner';
+        }
+
+        if ($types === []) {
+            $types = ['snack'];
+        }
+
+        return array_values(array_unique($types));
     }
 
     private function toLowerList(mixed $value): array
@@ -396,6 +381,109 @@ class PlannerContextBuilder
         $rightSet = array_flip($right);
         foreach ($left as $item) {
             if ($item !== '' && isset($rightSet[$item])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function fillCatalogByMealType(array &$byType, array $entries, int $limitPerType): void
+    {
+        foreach ($entries as $entry) {
+            $mealTypes = is_array($entry['meal_types'] ?? null) ? $entry['meal_types'] : [];
+            foreach ($mealTypes as $mealType) {
+                if (! array_key_exists($mealType, $byType)) {
+                    continue;
+                }
+                if (count($byType[$mealType]) >= $limitPerType) {
+                    continue;
+                }
+
+                $exists = collect($byType[$mealType])->contains(
+                    fn (array $candidate): bool => strtolower((string) ($candidate['name'] ?? '')) === strtolower((string) ($entry['name'] ?? ''))
+                );
+                if ($exists) {
+                    continue;
+                }
+
+                $byType[$mealType][] = $entry;
+            }
+        }
+    }
+
+    private function requiresCatalogBackfill(array $byType): bool
+    {
+        foreach (['breakfast', 'lunch', 'dinner', 'snack'] as $mealType) {
+            if (count($byType[$mealType] ?? []) < 4) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isStrictDietType(string $dietType): bool
+    {
+        $dietType = strtolower(trim($dietType));
+
+        return $this->containsAnyText($dietType, ['vegan', 'vegetarian', 'pescetarian']);
+    }
+
+    private function blockedDietNeedles(string $dietType): array
+    {
+        $dietType = strtolower(trim($dietType));
+
+        return match (true) {
+            str_contains($dietType, 'vegan') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'egg', 'yogurt', 'milk', 'cheese', 'honey', 'whey'],
+            str_contains($dietType, 'vegetarian') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'lamb', 'turkey', 'shrimp'],
+            str_contains($dietType, 'pescetarian') => ['chicken', 'beef', 'pork', 'lamb', 'turkey'],
+            default => [],
+        };
+    }
+
+    private function containsDietBlockedNeedle(Food $food, array $needles): bool
+    {
+        if ($needles === []) {
+            return false;
+        }
+
+        $haystacks = array_filter([
+            strtolower((string) $food->name),
+            strtolower((string) $food->category),
+            strtolower((string) $food->cuisine),
+        ]);
+
+        foreach ($this->toLowerList($food->ingredients) as $ingredient) {
+            $haystacks[] = $ingredient;
+        }
+        foreach ($this->toLowerList($food->tags) as $tag) {
+            $haystacks[] = $tag;
+        }
+
+        foreach ($needles as $needle) {
+            $needle = strtolower(trim((string) $needle));
+            if ($needle === '') {
+                continue;
+            }
+
+            foreach ($haystacks as $haystack) {
+                if ($haystack !== '' && str_contains($haystack, $needle)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function containsAnyText(string $haystack, array $needles): bool
+    {
+        $haystack = strtolower($haystack);
+
+        foreach ($needles as $needle) {
+            $needle = strtolower(trim((string) $needle));
+            if ($needle !== '' && str_contains($haystack, $needle)) {
                 return true;
             }
         }

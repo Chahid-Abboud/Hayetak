@@ -14,35 +14,19 @@ class PlannerHealthService
     {
         $provider = $this->features->provider(FeatureConfigResolver::FEATURE_PLANNER);
         $ollamaOnly = $this->features->ollamaOnly(FeatureConfigResolver::FEATURE_PLANNER);
-        $fallbackEnabled = $this->features->fallbackEnabled(FeatureConfigResolver::FEATURE_PLANNER);
         $localFallbackEnabled = $this->features->localFallbackEnabled(FeatureConfigResolver::FEATURE_PLANNER);
-        $openAiKeyConfigured = trim((string) config('services.openai.api_key', '')) !== '';
-        $openAiSettings = $this->features->openAi(FeatureConfigResolver::FEATURE_PLANNER);
 
         $ollama = $this->checkOllama();
-        $openAi = [
-            'configured' => $openAiKeyConfigured,
-            'model' => $openAiSettings['model'],
-        ];
 
-        $fallbackReady = $fallbackEnabled && $openAiKeyConfigured;
         $localFallbackReady = $provider === 'ollama' && $localFallbackEnabled;
-        $primaryReady = match ($provider) {
-            'ollama' => (bool) ($ollama['reachable'] ?? false),
-            'openai' => $openAiKeyConfigured,
-            default => false,
-        };
+        $primaryReady = (bool) ($ollama['reachable'] ?? false)
+            && (bool) ($ollama['model_loaded'] ?? true);
 
         return [
-            'ready' => $primaryReady || $fallbackReady || $localFallbackReady,
+            'ready' => $primaryReady || $localFallbackReady,
             'primary_provider' => $provider,
             'checks' => [
                 'ollama' => $ollama,
-                'openai' => $openAi,
-                'fallback' => [
-                    'enabled' => $fallbackEnabled,
-                    'ready' => $fallbackReady,
-                ],
                 'local_fallback' => [
                     'enabled' => $localFallbackEnabled,
                     'ready' => $localFallbackReady,
@@ -51,7 +35,7 @@ class PlannerHealthService
                     'enabled' => $ollamaOnly,
                 ],
             ],
-            'recommendation' => $this->recommendation($provider, $ollama, $openAiKeyConfigured, $fallbackEnabled, $localFallbackEnabled, $ollamaOnly),
+            'recommendation' => $this->recommendation($provider, $ollama, $localFallbackEnabled, $ollamaOnly),
         ];
     }
 
@@ -101,15 +85,17 @@ class PlannerHealthService
         return $result;
     }
 
-    private function recommendation(string $provider, array $ollama, bool $openAiKeyConfigured, bool $fallbackEnabled, bool $localFallbackEnabled, bool $ollamaOnly): string
+    private function recommendation(string $provider, array $ollama, bool $localFallbackEnabled, bool $ollamaOnly): string
     {
-        if ($provider === 'ollama' && ! ($ollama['reachable'] ?? false)) {
+        if (
+            $provider === 'ollama'
+            && (
+                ! ($ollama['reachable'] ?? false)
+                || ! ($ollama['model_loaded'] ?? true)
+            )
+        ) {
             if ($ollamaOnly) {
                 return 'Planner is locked to Ollama-only mode. Start Ollama and ensure the planner model is pulled.';
-            }
-
-            if ($fallbackEnabled && $openAiKeyConfigured) {
-                return 'Primary Ollama provider is down; automatic OpenAI fallback is ready.';
             }
 
             if ($localFallbackEnabled) {
@@ -117,10 +103,6 @@ class PlannerHealthService
             }
 
             return 'Start Ollama and make sure the configured model is pulled.';
-        }
-
-        if ($provider === 'openai' && ! $openAiKeyConfigured) {
-            return 'Set OPENAI_API_KEY or switch planner provider to Ollama.';
         }
 
         return 'Planner provider is healthy.';

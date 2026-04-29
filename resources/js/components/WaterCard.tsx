@@ -56,8 +56,7 @@ export default function WaterCard({
         width: `${basePct}%`,
         transition: 'width 350ms ease',
         borderRadius: 999,
-        backgroundImage:
-            'linear-gradient(90deg, var(--primary), color-mix(in oklab, var(--primary) 60%, var(--secondary)))',
+        backgroundColor: 'var(--primary)',
     };
 
     const overStyle: React.CSSProperties | undefined =
@@ -69,8 +68,7 @@ export default function WaterCard({
                   left: 0,
                   width: `${overflowPct}%`,
                   zIndex: 2,
-                  backgroundImage:
-                      'repeating-linear-gradient(135deg, #EF4444, #EF4444 6px, #DC2626 6px, #DC2626 12px)',
+                  backgroundColor: 'var(--destructive)',
                   opacity: 0.8,
                   borderRadius: 999,
                   mixBlendMode: 'multiply',

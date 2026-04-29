@@ -36,10 +36,10 @@ export default function AuthSimpleLayout({
     return (
         <div className="relative isolate min-h-svh overflow-hidden bg-background text-foreground">
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(215,109,79,0.18),transparent_62%)] dark:bg-[radial-gradient(circle_at_top,rgba(241,141,107,0.18),transparent_60%)]" />
+                <div className="absolute inset-x-0 top-0 h-80 bg-primary/8" />
                 <div className="absolute top-24 -left-8 h-56 w-56 rounded-full bg-secondary/10 blur-3xl" />
                 <div className="absolute right-0 bottom-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(247,242,232,0.32)_100%)] dark:bg-[linear-gradient(180deg,transparent_0%,rgba(13,20,32,0.2)_100%)]" />
+                <div className="absolute inset-0 bg-background/25" />
             </div>
 
             <div className="relative mx-auto flex min-h-svh w-full max-w-7xl items-center px-4 py-8 sm:px-6 lg:px-8">
@@ -49,8 +49,8 @@ export default function AuthSimpleLayout({
                             href={home()}
                             className="inline-flex items-center gap-3 rounded-full border border-border/70 bg-card/72 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur"
                         >
-                            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-secondary via-accent to-primary text-primary-foreground shadow-[0_16px_30px_-24px_rgba(23,38,60,0.9)]">
-                                <AppLogoIcon className="size-6 fill-current" />
+                            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-[0_16px_30px_-24px_rgba(23,38,60,0.9)]">
+                                <AppLogoIcon className="size-6" />
                             </span>
                             <span>Hayetak</span>
                         </Link>
@@ -158,8 +158,8 @@ export default function AuthSimpleLayout({
                                     href={home()}
                                     className="inline-flex items-center gap-3 font-medium"
                                 >
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-secondary via-accent to-primary text-primary-foreground shadow-[0_18px_34px_-24px_rgba(23,38,60,0.9)]">
-                                        <AppLogoIcon className="size-6 fill-current" />
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-[0_18px_34px_-24px_rgba(23,38,60,0.9)]">
+                                        <AppLogoIcon className="size-6" />
                                     </span>
                                     <span className="text-base font-semibold tracking-tight">
                                         Hayetak

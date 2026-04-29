@@ -61,7 +61,7 @@ export default function OptionalTwoFactorPrompt({
                 }}
             >
                 <DialogContent className="overflow-hidden border-border/70 bg-card/95 p-0 sm:max-w-lg">
-                    <div className="border-b border-border/70 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,164,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,255,255,0.82))] px-6 py-6 dark:bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.22),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(52,211,153,0.18),_transparent_24%),linear-gradient(180deg,rgba(11,16,32,0.96),rgba(11,16,32,0.9))]">
+                    <div className="border-b border-border/70 bg-card px-6 py-6">
                         <DialogHeader className="items-start text-left">
                             <Badge
                                 variant="outline"

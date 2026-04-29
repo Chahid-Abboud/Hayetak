@@ -73,7 +73,7 @@ class LegacyFullDatabaseImportSeeder extends Seeder
         $candidates = array_filter([
             env('LEGACY_FULL_DUMP_PATH'),
             database_path('seeders/data/Hayetak_14_3_2026_content+structure.sql'),
-            'C:\\Users\\User\\Downloads\\Hayetak_14_3_2026_content+structure.sql',
+            'C:\Users\User\Downloads\Hayetak_14_3_2026_content+structure.sql',
         ]);
 
         foreach ($candidates as $candidate) {

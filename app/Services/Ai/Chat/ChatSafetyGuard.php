@@ -4,15 +4,137 @@ namespace App\Services\Ai\Chat;
 
 class ChatSafetyGuard
 {
+    /**
+     * Block unsafe or out-of-domain requests before any model provider is called.
+     */
     public function preflight(string $question): array
     {
         $text = mb_strtolower($question);
+
+        if ($this->containsAny($text, [
+            'blood pressure medicine',
+            'dose insulin',
+            'dosing insulin',
+            'thyroid medication',
+            'sleeping pills',
+            'antidepressant dose',
+            'ibuprofen should i take',
+            'medication plan',
+            'change my medication',
+            'adjust my medication',
+            'exact amount of caffeine',
+            'how much caffeine',
+            'caffeine should i take',
+        ])) {
+            return $this->boundary(
+                'I cannot tell you how to dose, change, or time medication around training. Please follow your prescriber\'s instructions and ask your doctor or pharmacist before changing anything. I can help with general workout, meal, hydration, and recovery planning that does not alter medication use.',
+                'Medication dosing or treatment adjustment request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'steroid cycle',
+            'sarms',
+            'illegal substances',
+            'banned substances',
+            'fat burner stack',
+            'fat-burner stack',
+            'drug stack',
+            'drug-assisted',
+            'hard to detect',
+            'performance-enhancing drug',
+            'boost testosterone',
+            'testosterone as fast',
+            'testosterone safely',
+        ])) {
+            return $this->boundary(
+                'I cannot help with steroid, banned-substance, drug-stack, or unsafe fat-burner advice. I can help you build a safer plan using training progression, realistic nutrition targets, sleep, and recovery.',
+                'Dangerous supplement, steroid, or drug-use request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'lose 10 kg in 7 days',
+            'lose 10kg in 7 days',
+            'lose 5 kg in 3 days',
+            'lose 5kg in 3 days',
+            'stop drinking water',
+            'avoid food and water',
+            'dehydrate myself',
+            'extreme fasting',
+            'crash diet',
+        ])) {
+            return $this->boundary(
+                'I cannot help with extreme weight-loss, dehydration, or crash-diet tactics. Those can be unsafe and will not create sustainable fat loss. A safer approach is a moderate calorie deficit, normal hydration, adequate protein, and a realistic weekly pace.',
+                'Extreme weight-loss or dehydration request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'fake my food logs',
+            'hide steroid use',
+            'bypass my meal tracking',
+            'manipulate my workout logs',
+            'make my weight-loss results look better',
+            'cheat my calorie target',
+            'hack my friend',
+        ])) {
+            return $this->boundary(
+                'I cannot help with deception, hiding unsafe behavior, bypassing tracking, or illegal activity. I can help you make the plan easier to follow honestly and adjust it if it is not realistic.',
+                'Harmful misuse or deception request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'university essay',
+            'help me with my taxes',
+            'legal advice',
+            'business contract',
+            'cover letter',
+        ])) {
+            return $this->boundary(
+                'I cannot handle that request inside Hayetak. I can help with fitness, nutrition, workouts, meal planning, recovery, and safe habit coaching.',
+                'Non-domain task blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'eat a small amount anyway',
+            'if i’m allergic',
+            'if i\'m allergic',
+            'ignore my allergy',
+            'push through sharp pain',
+            'ignore my doctor',
+            'supplement even if it gave me a rash',
+            'finish the session and deal with it later',
+        ])) {
+            return $this->boundary(
+                'I cannot encourage you to ignore allergies, sharp pain, medical guidance, rashes, or dizziness. Stop the risky action, choose the safer alternative, and get medical advice when symptoms are severe, persistent, or unusual.',
+                'Safety-boundary pushing request blocked.'
+            );
+        }
 
         $urgentSignals = [
             'chest pain',
             'trouble breathing',
             'can not breathe',
+            'short of breath',
+            'dizzy',
+            'dizziness',
+            'lightheaded',
+            'severe headache',
+            'headache that will not go away',
+            'headache that won\'t go away',
+            'sharp stomach pain',
+            'stomach pain after eating',
+            'nauseous during high-intensity',
+            'rash after using',
+            'heart races',
+            'heart is racing',
+            'swollen knee',
+            'severe back pain',
             'fainting',
+            'feel faint',
             'passed out',
             'severe bleeding',
             'sharp severe pain',
@@ -21,7 +143,7 @@ class ChatSafetyGuard
         foreach ($urgentSignals as $signal) {
             if (str_contains($text, $signal)) {
                 return [
-                    'answer' => 'That sounds urgent. Please seek medical care right away or contact local emergency help instead of relying on the chatbot.',
+                    'answer' => 'I cannot diagnose symptoms or tell you it is safe to continue training. Stop the activity now. If the symptom is severe, persistent, sudden, or includes chest pain, trouble breathing, fainting, severe headache, severe abdominal pain, or unusual swelling, seek urgent medical care or local emergency help. For non-urgent but recurring symptoms, speak with a healthcare professional before training again.',
                     'warnings' => ['Possible medical emergency detected.'],
                 ];
             }
@@ -30,6 +152,17 @@ class ChatSafetyGuard
         return ['answer' => null, 'warnings' => []];
     }
 
+    private function boundary(string $answer, string $warning): array
+    {
+        return [
+            'answer' => $answer,
+            'warnings' => [$warning],
+        ];
+    }
+
+    /**
+     * Inspect generated answers and rewrite unsafe food/diet conflicts into safer guidance.
+     */
     public function review(string $answer, array $context, array $options = []): array
     {
         $warnings = [];
@@ -50,17 +183,19 @@ class ChatSafetyGuard
 
         $allergies = array_map('mb_strtolower', $context['restrictions']['allergies'] ?? []);
         $isRestrictionLookup = $this->isRestrictionLookupQuestion($question);
+        $isIngredientHistoryLookup = $this->isIngredientHistoryLookupQuestion($question);
         $looksLikeFoodSuggestion = $this->looksLikeFoodSuggestion($question, $clean, $classification);
 
         foreach ($allergies as $allergy) {
             if (
                 $allergy !== '' &&
                 ! $isRestrictionLookup &&
+                ! $isIngredientHistoryLookup &&
                 $looksLikeFoodSuggestion &&
                 $this->answerContainsUnsafeFoodRecommendation($clean, $allergy)
             ) {
                 $clean = sprintf(
-                    'I removed a food suggestion because it included your saved allergy: %s. Ask me for an alternative and I will keep it clear of that ingredient.',
+                    'I removed one suggested item because it conflicts with your saved allergy (%s). I can suggest a safer alternative that avoids it.',
                     $allergy,
                 );
                 $warnings[] = 'Removed a food suggestion that matched the allergy list.';
@@ -90,7 +225,12 @@ class ChatSafetyGuard
         $haystack = mb_strtolower($answer);
 
         foreach ($needles as $needle) {
-            if ($needle !== '' && str_contains($haystack, $needle)) {
+            $candidate = trim((string) $needle);
+            if ($candidate === '') {
+                continue;
+            }
+
+            if (preg_match('/(^|[^[:alnum:]_])'.preg_quote($candidate, '/').'([^[:alnum:]_]|$)/u', $haystack) === 1) {
                 return true;
             }
         }
@@ -106,10 +246,13 @@ class ChatSafetyGuard
             'what are my allergens',
             'what allergies do i have',
             'what allergens do i have',
+            'what allergies do you have saved for me',
+            'what allergens do you have saved for me',
             'my allergies',
             'my allergens',
             'allergy list',
             'allergen list',
+            'exactly as listed in my profile',
             'what are my restrictions',
             'what are my dietary restrictions',
             'what diet type do i have',
@@ -133,6 +276,14 @@ class ChatSafetyGuard
         $feature = mb_strtolower((string) ($classification['feature'] ?? ''));
         $normalizedQuestion = mb_strtolower($question);
         $normalizedAnswer = mb_strtolower($answer);
+
+        if ($this->isHistoricalAllergyAuditQuestion($normalizedQuestion)) {
+            return false;
+        }
+
+        if ($this->isIngredientHistoryLookupQuestion($normalizedQuestion)) {
+            return false;
+        }
 
         if ($this->isReflectiveNutritionAnalysis($normalizedQuestion, $normalizedAnswer)) {
             return false;
@@ -180,8 +331,74 @@ class ChatSafetyGuard
             return false;
         }
 
-        return $this->containsAny($question, ['today', 'meals today', 'logged today', 'ate today'])
+        return $this->containsAny($question, [
+            'today',
+            'meals today',
+            'logged today',
+            'ate today',
+            'past week',
+            'last week',
+            'last 7 days',
+            'past 7 days',
+            'this week',
+            'past month',
+            'last month',
+            'last 30 days',
+            'past 30 days',
+            '30 days',
+        ])
             && $this->containsAny($answer, ['logged', 'kcal', 'protein', 'carbs', 'fat']);
+    }
+
+    private function isHistoricalAllergyAuditQuestion(string $question): bool
+    {
+        if (! $this->containsAny($question, ['allergy', 'allergies', 'allergic', 'allergen', 'allergens'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['consumed', 'consume', 'ate', 'eaten', 'logged', 'log', 'have i ever', 'did i', 'do i'])) {
+            return false;
+        }
+
+        return $this->containsAny($question, [
+            'past week',
+            'last week',
+            'last 7 days',
+            'past 7 days',
+            'this week',
+            'past month',
+            'last month',
+            '30 days',
+            'today',
+            'yesterday',
+        ]);
+    }
+
+    private function isIngredientHistoryLookupQuestion(string $question): bool
+    {
+        if (! $this->containsAny($question, ['logged', 'log', 'did i', 'have i', 'consumed', 'consume', 'ate', 'eaten'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['meal', 'meals', 'food', 'containing', 'contains', 'ingredient'])) {
+            return false;
+        }
+
+        return $this->containsAny($question, [
+            'today',
+            'yesterday',
+            'past week',
+            'last week',
+            'this week',
+            'last 7 days',
+            'past 7 days',
+            'past month',
+            'last month',
+            'last 30 days',
+            'past 30 days',
+            '30 days',
+            'have i ever',
+        ]);
     }
 
     private function answerContainsUnsafeFoodRecommendation(string $answer, string $allergy): bool
@@ -252,6 +469,9 @@ class ChatSafetyGuard
             'safe alternative',
             'avoid your saved allergy',
             'avoid your allergies',
+            'not safe for you',
+            'conflicts with your saved allergy',
+            'conflicts with your allergies',
         ]);
     }
 

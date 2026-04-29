@@ -4,12 +4,14 @@ namespace App\Services\Ai\Tools;
 
 use App\Models\Food;
 use App\Models\User;
+use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;
 use App\Services\Ai\Profile\UserSafetyProfileResolver;
 
 class SearchRecipesTool implements AiTool
 {
     public function __construct(
         private readonly UserSafetyProfileResolver $safetyProfileResolver,
+        private readonly FoodCatalogAnomalyService $foodCatalogAnomalies,
     ) {}
 
     public function name(): string
@@ -71,6 +73,7 @@ class SearchRecipesTool implements AiTool
                 'carbs_g',
                 'fat_g',
                 'ingredients',
+                'tags',
                 'allergens',
                 'diets_allowed',
             ])
@@ -88,10 +91,16 @@ class SearchRecipesTool implements AiTool
         $rows = $builder->limit(80)->get();
         $results = [];
         $allergyNeedles = $this->allergyNeedles($allergies);
+        $blockedByDiet = $this->blockedByDietType($dietType);
         $queryNeedles = $this->tokenize($query);
 
         foreach ($rows as $food) {
+            if ($this->foodCatalogAnomalies->shouldExcludeFromAiCatalog($food)) {
+                continue;
+            }
+
             $ingredients = $this->normalizeList($food->ingredients);
+            $tags = $this->normalizeList($food->tags);
             $allowedDiets = array_map('mb_strtolower', $this->normalizeList($food->diets_allowed));
             $allergenList = array_map('mb_strtolower', $this->normalizeList($food->allergens));
             $searchText = mb_strtolower(implode(' ', array_filter([
@@ -99,9 +108,28 @@ class SearchRecipesTool implements AiTool
                 (string) $food->category,
                 (string) $food->cuisine,
                 implode(' ', $ingredients),
+                implode(' ', $tags),
             ])));
 
-            if ($dietType !== '' && $allowedDiets !== [] && ! $this->dietIsAllowed($dietType, $allowedDiets)) {
+            if (
+                $dietType !== ''
+                && $allowedDiets !== []
+                && ! $this->dietIsAllowed($dietType, $allowedDiets)
+            ) {
+                continue;
+            }
+
+            // For strict diet types, do not auto-allow uncategorized foods if they
+            // clearly conflict with the user's diet boundaries.
+            if (
+                $dietType !== ''
+                && $allowedDiets === []
+                && $this->isStrictDietType($dietType)
+                && (
+                    $this->containsAny($searchText, $blockedByDiet)
+                    || $this->containsAnyList($tags, $blockedByDiet)
+                )
+            ) {
                 continue;
             }
 
@@ -265,5 +293,20 @@ class SearchRecipesTool implements AiTool
         }
 
         return false;
+    }
+
+    private function isStrictDietType(string $dietType): bool
+    {
+        return $this->containsAny($dietType, ['vegan', 'vegetarian', 'pescetarian']);
+    }
+
+    private function blockedByDietType(string $dietType): array
+    {
+        return match (true) {
+            str_contains($dietType, 'vegan') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'egg', 'yogurt', 'milk', 'cheese', 'honey', 'whey'],
+            str_contains($dietType, 'vegetarian') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'lamb', 'turkey', 'shrimp'],
+            str_contains($dietType, 'pescetarian') => ['chicken', 'beef', 'pork', 'lamb', 'turkey'],
+            default => [],
+        };
     }
 }

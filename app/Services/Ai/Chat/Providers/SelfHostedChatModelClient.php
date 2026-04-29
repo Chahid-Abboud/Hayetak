@@ -12,6 +12,9 @@ class SelfHostedChatModelClient implements ChatModelClient
         private readonly SelfHostedContextAwareChatService $chatService,
     ) {}
 
+    /**
+     * Route chat requests to the self-hosted context-aware service.
+     */
     public function respond(string $question, array $context, array $options = []): array
     {
         $userId = (int) ($options['user_id'] ?? 0);

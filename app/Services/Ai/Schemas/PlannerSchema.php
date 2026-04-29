@@ -55,7 +55,7 @@ class PlannerSchema
         return [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['daily_targets', 'days', 'grocery_list', 'meal_prep_notes', 'adherence_notes'],
+            'required' => ['daily_targets', 'meal_options', 'grocery_list', 'meal_prep_notes', 'adherence_notes'],
             'properties' => [
                 'daily_targets' => [
                     'type' => 'object',
@@ -70,6 +70,17 @@ class PlannerSchema
                         'water_ml' => ['type' => 'integer'],
                     ],
                 ],
+                'meal_options' => [
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'required' => ['breakfast', 'lunch', 'dinner', 'snack'],
+                    'properties' => [
+                        'breakfast' => self::dietMealOptionsSchema(),
+                        'lunch' => self::dietMealOptionsSchema(),
+                        'dinner' => self::dietMealOptionsSchema(),
+                        'snack' => self::dietMealOptionsSchema(),
+                    ],
+                ],
                 'days' => [
                     'type' => 'array',
                     'items' => [
@@ -79,38 +90,7 @@ class PlannerSchema
                         'properties' => [
                             'day_index' => ['type' => 'integer'],
                             'theme' => ['type' => 'string'],
-                            'meals' => [
-                                'type' => 'array',
-                                'items' => [
-                                    'type' => 'object',
-                                    'additionalProperties' => false,
-                                    'required' => ['meal_code', 'title', 'target_kcal', 'items'],
-                                    'properties' => [
-                                        'meal_code' => ['type' => 'string'],
-                                        'title' => ['type' => 'string'],
-                                        'target_kcal' => ['type' => 'integer'],
-                                        'items' => [
-                                            'type' => 'array',
-                                            'items' => [
-                                                'type' => 'object',
-                                                'additionalProperties' => false,
-                                                'required' => ['name', 'portion', 'calories_kcal', 'protein_g', 'carbs_g', 'fat_g'],
-                                                'properties' => [
-                                                    'name' => ['type' => 'string'],
-                                                    'portion' => ['type' => 'string'],
-                                                    'calories_kcal' => ['type' => 'integer'],
-                                                    'protein_g' => ['type' => 'integer'],
-                                                    'carbs_g' => ['type' => 'integer'],
-                                                    'fat_g' => ['type' => 'integer'],
-                                                    'recipe_note' => ['type' => 'string'],
-                                                    'search_terms' => self::stringArraySchema(),
-                                                    'alternatives' => self::stringArraySchema(),
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                ],
-                            ],
+                            'meals' => self::dietMealsSchema(true),
                             'coaching_notes' => self::stringArraySchema(),
                         ],
                     ],
@@ -130,6 +110,69 @@ class PlannerSchema
                 ],
                 'meal_prep_notes' => self::stringArraySchema(),
                 'adherence_notes' => self::stringArraySchema(),
+            ],
+        ];
+    }
+
+    private static function dietMealOptionsSchema(): array
+    {
+        return [
+            'type' => 'array',
+            'minItems' => 3,
+            'maxItems' => 7,
+            'items' => self::dietMealSchema(false),
+        ];
+    }
+
+    private static function dietMealsSchema(bool $includeMealCode): array
+    {
+        return [
+            'type' => 'array',
+            'items' => self::dietMealSchema($includeMealCode),
+        ];
+    }
+
+    private static function dietMealSchema(bool $includeMealCode): array
+    {
+        $required = ['title', 'target_kcal', 'items'];
+        $properties = [
+            'title' => ['type' => 'string'],
+            'target_kcal' => ['type' => 'integer'],
+            'items' => [
+                'type' => 'array',
+                'items' => self::dietMealItemSchema(),
+            ],
+        ];
+
+        if ($includeMealCode) {
+            array_unshift($required, 'meal_code');
+            $properties = ['meal_code' => ['type' => 'string']] + $properties;
+        }
+
+        return [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => $required,
+            'properties' => $properties,
+        ];
+    }
+
+    private static function dietMealItemSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => ['name', 'portion', 'calories_kcal', 'protein_g', 'carbs_g', 'fat_g'],
+            'properties' => [
+                'name' => ['type' => 'string'],
+                'portion' => ['type' => 'string'],
+                'calories_kcal' => ['type' => 'integer'],
+                'protein_g' => ['type' => 'integer'],
+                'carbs_g' => ['type' => 'integer'],
+                'fat_g' => ['type' => 'integer'],
+                'recipe_note' => ['type' => 'string'],
+                'search_terms' => self::stringArraySchema(),
+                'alternatives' => self::stringArraySchema(),
             ],
         ];
     }
