@@ -4,14 +4,26 @@ import type { ReactNode } from 'react';
 export function ProductTable({
     children,
     className,
+    tableClassName,
 }: {
     children: ReactNode;
     className?: string;
+    tableClassName?: string;
 }) {
     return (
-        <div className="overflow-hidden rounded-[26px] border border-border/70 bg-card/95 shadow-[0_24px_60px_-48px_rgba(17,24,39,0.75)]">
-            <div className="overflow-x-auto">
-                <table className={cn('min-w-full text-sm', className)}>
+        <div
+            className={cn(
+                'overflow-hidden rounded-[30px] border border-border/70 bg-card shadow-[0_28px_80px_-58px_rgba(9,18,33,0.48)]',
+                className,
+            )}
+        >
+            <div className="max-w-full overflow-x-auto [scrollbar-width:thin]">
+                <table
+                    className={cn(
+                        'w-full min-w-[720px] border-separate border-spacing-0 text-sm',
+                        tableClassName,
+                    )}
+                >
                     {children}
                 </table>
             </div>
@@ -21,14 +33,18 @@ export function ProductTable({
 
 export function ProductTableHead({ children }: { children: ReactNode }) {
     return (
-        <thead className="bg-muted/45 text-left text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+        <thead className="bg-muted/70 text-left text-[10px] tracking-[0.22em] text-muted-foreground uppercase">
             {children}
         </thead>
     );
 }
 
 export function ProductTableBody({ children }: { children: ReactNode }) {
-    return <tbody>{children}</tbody>;
+    return (
+        <tbody className="[&_tr:not(:first-child)_td]:border-t [&_tr:not(:first-child)_td]:border-border/60 [&_tr:nth-child(even)]:bg-background/26">
+            {children}
+        </tbody>
+    );
 }
 
 export function ProductTableRow({
@@ -43,9 +59,9 @@ export function ProductTableRow({
     return (
         <tr
             className={cn(
-                'border-t border-border/70 align-top',
+                'align-top transition-colors',
                 interactive &&
-                    'cursor-pointer transition focus-within:bg-muted/28 hover:bg-muted/28',
+                    'cursor-pointer focus-within:bg-primary/6 hover:bg-primary/6',
                 className,
             )}
         >
@@ -62,7 +78,14 @@ export function ProductTableHeaderCell({
     className?: string;
 }) {
     return (
-        <th className={cn('px-4 py-3.5 font-medium', className)}>{children}</th>
+        <th
+            className={cn(
+                'px-4 py-4 font-medium whitespace-nowrap first:pl-5 last:pr-5',
+                className,
+            )}
+        >
+            {children}
+        </th>
     );
 }
 
@@ -74,7 +97,12 @@ export function ProductTableCell({
     className?: string;
 }) {
     return (
-        <td className={cn('px-4 py-3.5 align-top text-foreground', className)}>
+        <td
+            className={cn(
+                'px-4 py-4 align-top text-foreground first:pl-5 last:pr-5',
+                className,
+            )}
+        >
             {children}
         </td>
     );

@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Persistence;
 
-use App\Models\AiPlan;
+use App\Models\Ai\AiPlan;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;
@@ -14,62 +14,88 @@ use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
 use App\Models\WorkoutPlanExercise;
 use Carbon\Carbon;
+use App\Services\Ai\Exercises\PlannerExerciseCatalogSyncService;
+use App\Services\Ai\Seed\SeededPlanCleanupService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PlannerPersistenceService
 {
+    public function __construct(
+        private readonly PlannerExerciseCatalogSyncService $exerciseCatalogSync,
+        private readonly SeededPlanCleanupService $planCleanup,
+    ) {}
+
     public function persist(
         User $user,
         array $validatedOutput,
         string $generationId,
         int $aiRequestId,
         ?string $notes = null,
-        ?int $createdBy = null
+        ?int $createdBy = null,
+        array $scope = ['diet' => true, 'workout' => true]
     ): array {
-        return DB::transaction(function () use ($user, $validatedOutput, $generationId, $aiRequestId, $notes, $createdBy) {
+        return DB::transaction(function () use ($user, $validatedOutput, $generationId, $aiRequestId, $notes, $createdBy, $scope) {
+            $persistDiet = (bool) ($scope['diet'] ?? true);
+            $persistWorkout = (bool) ($scope['workout'] ?? true);
+
+            if (! $persistDiet && ! $persistWorkout) {
+                throw new \InvalidArgumentException('At least one planner section must be persisted.');
+            }
+
             $version = $this->nextVersion($user->id);
 
-            $dietPlan = AiPlan::query()->create([
-                'user_id' => $user->id,
-                'ai_request_id' => $aiRequestId,
-                'type' => 'diet',
-                'plan_json' => $validatedOutput['diet'],
-                'version' => $version,
-                'notes' => $notes,
-                'created_by' => $createdBy ?? $user->id,
-                'generation_id' => $generationId,
-            ]);
+            $dietPlan = null;
+            if ($persistDiet) {
+                $dietPlan = AiPlan::query()->create([
+                    'user_id' => $user->id,
+                    'ai_request_id' => $aiRequestId,
+                    'type' => 'diet',
+                    'plan_json' => $validatedOutput['diet'],
+                    'version' => $version,
+                    'notes' => $notes,
+                    'created_by' => $createdBy ?? $user->id,
+                    'generation_id' => $generationId,
+                ]);
+            }
 
-            $workoutPlan = AiPlan::query()->create([
-                'user_id' => $user->id,
-                'ai_request_id' => $aiRequestId,
-                'type' => 'workout',
-                'plan_json' => $validatedOutput['workout'],
-                'version' => $version,
-                'notes' => $notes,
-                'created_by' => $createdBy ?? $user->id,
-                'generation_id' => $generationId,
-            ]);
+            $workoutPlan = null;
+            if ($persistWorkout) {
+                $workoutPlan = AiPlan::query()->create([
+                    'user_id' => $user->id,
+                    'ai_request_id' => $aiRequestId,
+                    'type' => 'workout',
+                    'plan_json' => $validatedOutput['workout'],
+                    'version' => $version,
+                    'notes' => $notes,
+                    'created_by' => $createdBy ?? $user->id,
+                    'generation_id' => $generationId,
+                ]);
+            }
 
-            $nutritionPlan = $this->syncNutritionPlan($user, $validatedOutput, $dietPlan->id, $aiRequestId, $version, $generationId);
-            $normalizedWorkoutPlan = $this->syncWorkoutPlan($user, $validatedOutput, $workoutPlan->id, $aiRequestId, $version, $generationId);
+            $nutritionPlan = $persistDiet
+                ? $this->syncNutritionPlan($user, $validatedOutput, $dietPlan->id, $aiRequestId, $version, $generationId)
+                : null;
+            $normalizedWorkoutPlan = $persistWorkout
+                ? $this->syncWorkoutPlan($user, $validatedOutput, $workoutPlan->id, $aiRequestId, $version, $generationId)
+                : null;
+            $this->planCleanup->cleanupForUser($user);
 
             return [
                 'version' => $version,
                 'generation_id' => $generationId,
                 'plans' => [
-                    'diet' => $dietPlan->plan_json,
-                    'workout' => $workoutPlan->plan_json,
+                    'diet' => $dietPlan?->plan_json,
+                    'workout' => $workoutPlan?->plan_json,
                 ],
                 'persisted' => [
                     'ai_plan_ids' => [
-                        'diet' => $dietPlan->id,
-                        'workout' => $workoutPlan->id,
+                        'diet' => $dietPlan?->id,
+                        'workout' => $workoutPlan?->id,
                     ],
-                    'nutrition_plan_id' => $nutritionPlan->id,
-                    'workout_plan_id' => $normalizedWorkoutPlan->id,
+                    'nutrition_plan_id' => $nutritionPlan?->id,
+                    'workout_plan_id' => $normalizedWorkoutPlan?->id,
                 ],
             ];
         });
@@ -201,6 +227,8 @@ class PlannerPersistenceService
         int $version,
         string $generationId
     ): WorkoutPlan {
+        $this->exerciseCatalogSync->sync();
+
         WorkoutPlan::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
@@ -209,6 +237,11 @@ class PlannerPersistenceService
         $workout = $fullPlan['workout'];
         $schedule = is_array($workout['weekly_schedule'] ?? null) ? $workout['weekly_schedule'] : [];
         $start = Carbon::today();
+        $durationDays = max(
+            7,
+            (int) data_get($fullPlan, 'adaptive_review.review_after_days', 0),
+            is_array(data_get($fullPlan, 'diet.days')) ? count(data_get($fullPlan, 'diet.days')) : 0
+        );
         $exercises = Exercise::query()->select(['id', 'name'])->orderBy('name')->get();
         $exerciseMap = $exercises->mapWithKeys(fn (Exercise $exercise) => [$this->normalizeKey($exercise->name) => $exercise->id])->all();
 
@@ -218,7 +251,7 @@ class PlannerPersistenceService
             'name' => 'AI Workout Plan v'.$version,
             'goal' => $user->fitness_goal ?: null,
             'start_date' => $start->toDateString(),
-            'duration_days' => 7,
+            'duration_days' => $durationDays,
             'notes' => null,
             'is_active' => true,
             'is_public' => false,
@@ -234,6 +267,7 @@ class PlannerPersistenceService
                 'progression_rules' => $workout['progression_rules'] ?? [],
                 'recovery_rules' => $workout['recovery_rules'] ?? [],
                 'coach_notes' => $workout['coach_notes'] ?? [],
+                'plan_horizon_days' => $durationDays,
             ],
         ]);
 
@@ -377,25 +411,132 @@ class PlannerPersistenceService
                 min(strlen($candidate), strlen($normalized)) >= 4;
         });
 
+        if (! $matched && $normalized !== '') {
+            $tokens = array_values(array_filter(preg_split('/\s+/', $normalized) ?: [], static function (string $token): bool {
+                return strlen($token) >= 4;
+            }));
+
+            $tokenVariants = [];
+            foreach ($tokens as $token) {
+                $tokenVariants[] = $token;
+                if (str_ends_with($token, 's') && strlen($token) > 4) {
+                    $tokenVariants[] = rtrim($token, 's');
+                }
+            }
+            $tokenVariants = array_values(array_unique($tokenVariants));
+
+            foreach ($tokenVariants as $token) {
+                $matched = $foods->first(function (Food $food) use ($token): bool {
+                    $candidate = $this->normalizeKey($food->name);
+
+                    return $candidate !== '' && str_contains($candidate, $token);
+                });
+
+                if ($matched) {
+                    break;
+                }
+            }
+        }
+
         return $matched?->id !== null ? (int) $matched->id : null;
     }
 
     private function matchExerciseId(string $name, Collection $exercises, array $exerciseMap): ?int
     {
-        $normalized = $this->normalizeKey($name);
-        if (isset($exerciseMap[$normalized])) {
-            return (int) $exerciseMap[$normalized];
+        $variants = $this->exerciseNameVariants($name);
+        foreach ($variants as $variant) {
+            if (isset($exerciseMap[$variant])) {
+                return (int) $exerciseMap[$variant];
+            }
         }
 
-        $matched = $exercises->first(function (Exercise $exercise) use ($normalized): bool {
-            $candidate = $this->normalizeKey($exercise->name);
+        $matched = $exercises->first(function (Exercise $exercise) use ($variants): bool {
+            $candidateVariants = $this->exerciseNameVariants($exercise->name);
+            if (array_intersect($variants, $candidateVariants) !== []) {
+                return true;
+            }
 
-            return $candidate !== '' &&
-                (str_contains($candidate, $normalized) || str_contains($normalized, $candidate)) &&
-                min(strlen($candidate), strlen($normalized)) >= 4;
+            $candidate = $candidateVariants[0] ?? '';
+
+            foreach ($variants as $variant) {
+                if (
+                    $candidate !== ''
+                    && $variant !== ''
+                    && (str_contains($candidate, $variant) || str_contains($variant, $candidate))
+                    && min(strlen($candidate), strlen($variant)) >= 4
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
         });
 
         return $matched?->id !== null ? (int) $matched->id : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function exerciseNameVariants(string $name): array
+    {
+        $variants = [];
+        $queue = [$this->normalizeKey($name)];
+        $seen = [];
+
+        while ($queue !== []) {
+            $variant = array_shift($queue);
+            if (! is_string($variant)) {
+                continue;
+            }
+
+            $variant = $this->normalizeKey($variant);
+            if ($variant === '' || isset($seen[$variant])) {
+                continue;
+            }
+
+            $seen[$variant] = true;
+            $variants[] = $variant;
+
+            foreach ($this->exerciseAliasVariants($variant) as $alias) {
+                if ($alias !== '' && ! isset($seen[$alias])) {
+                    $queue[] = $alias;
+                }
+            }
+        }
+
+        return $variants;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function exerciseAliasVariants(string $normalized): array
+    {
+        $variants = [];
+        $aliases = [
+            'machine lateral raise' => ['lateral raise machine'],
+            'lateral raise machine' => ['machine lateral raise'],
+            'leg curl machine' => ['lying leg curl', 'leg curl'],
+            'lying leg curl' => ['leg curl machine', 'leg curl'],
+            'chest supported row machine' => ['chest supported row'],
+            'chest supported row' => ['chest supported row machine'],
+        ];
+
+        foreach ($aliases[$normalized] ?? [] as $alias) {
+            $variants[] = $this->normalizeKey($alias);
+        }
+
+        if (str_starts_with($normalized, 'machine ')) {
+            $variants[] = $this->normalizeKey(substr($normalized, strlen('machine ')).' machine');
+        }
+
+        if (str_ends_with($normalized, ' machine')) {
+            $base = trim(substr($normalized, 0, -strlen(' machine')));
+            $variants[] = $this->normalizeKey('machine '.$base);
+        }
+
+        return array_values(array_unique(array_filter($variants)));
     }
 
     private function normalizeKey(?string $value): string

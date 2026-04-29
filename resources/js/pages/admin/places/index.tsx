@@ -1,13 +1,22 @@
 import {
+    AdminDataTable,
+    AdminEmpty,
+    AdminField,
+    AdminInput,
+    AdminNotice,
+    AdminOverviewCard,
+    AdminSplitLayout,
+    AdminStickyBar,
+    AdminToggleGroup,
+} from '@/components/admin/admin-ui';
+import {
     AdminSection,
     AdminShell,
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
 import NearbyMap from '@/components/NearbyMap';
-import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import {
-    ProductTable,
     ProductTableBody,
     ProductTableCell,
     ProductTableEmptyRow,
@@ -17,7 +26,6 @@ import {
 } from '@/components/product/table';
 import RoleGuard from '@/components/RoleGuard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { jsonRequestInit } from '@/lib/http';
 import { Head } from '@inertiajs/react';
@@ -210,13 +218,13 @@ export default function AdminPlacesPage() {
                     description="Manage local places used by discovery flows so trainers, dietitians, and locations all feel curated instead of forgotten."
                     actions={
                         <div className="flex flex-wrap items-center gap-2">
-                            <Input
+                            <AdminInput
                                 value={query}
                                 onChange={(event) =>
                                     setQuery(event.target.value)
                                 }
                                 placeholder="Search places"
-                                className="h-10 w-56 rounded-full"
+                                className="w-56 rounded-full"
                             />
                             <Button
                                 type="button"
@@ -238,30 +246,17 @@ export default function AdminPlacesPage() {
                                 <Plus className="h-4 w-4" />
                                 Add place
                             </Button>
-                            <div className="inline-flex rounded-full border border-border/70 bg-background p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode('list')}
-                                    className={`rounded-full px-3 py-1.5 text-xs transition ${
-                                        viewMode === 'list'
-                                            ? 'bg-primary/10 text-foreground'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                >
-                                    List
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode('map')}
-                                    className={`rounded-full px-3 py-1.5 text-xs transition ${
-                                        viewMode === 'map'
-                                            ? 'bg-primary/10 text-foreground'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                >
-                                    Map
-                                </button>
-                            </div>
+                            <AdminToggleGroup
+                                value={viewMode}
+                                onChange={(value) =>
+                                    setViewMode(value as 'list' | 'map')
+                                }
+                                options={[
+                                    { value: 'list', label: 'List' },
+                                    { value: 'map', label: 'Map' },
+                                ]}
+                                className="w-[172px]"
+                            />
                         </div>
                     }
                 >
@@ -282,22 +277,44 @@ export default function AdminPlacesPage() {
                             />
                         </AdminStatsGrid>
 
+                        <AdminSection
+                            title="Triage guidance"
+                            description="Default to list/detail editing for accuracy. Use map mode for spatial verification."
+                        >
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                <AdminOverviewCard
+                                    title="List-first editing"
+                                    description="Most updates should happen in list mode where fields are easiest to compare and fix."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        Keep map mode optional so the editor and list stay readable.
+                                    </div>
+                                </AdminOverviewCard>
+                                <AdminOverviewCard
+                                    title="Map verification"
+                                    description="Switch to map mode after edits to verify coordinate quality and location placement."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        The map is for spatial checks, while record edits remain in the detail panel.
+                                    </div>
+                                </AdminOverviewCard>
+                            </div>
+                        </AdminSection>
+
                         {error ? (
-                            <ProductBanner tone="danger">{error}</ProductBanner>
+                            <AdminNotice tone="danger">{error}</AdminNotice>
                         ) : null}
                         {success ? (
-                            <ProductBanner tone="success">
-                                {success}
-                            </ProductBanner>
+                            <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
 
-                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
+                        <AdminSplitLayout className="xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
                             <AdminSection
-                                title="Saved places"
+                                title="Places workspace"
                                 description="Select a place to edit its basic discovery details."
                             >
                                 {loading ? (
-                                    <ProductEmptyState
+                                    <AdminEmpty
                                         title="Loading places"
                                         description="Fetching the current discovery catalog."
                                     />
@@ -324,13 +341,13 @@ export default function AdminPlacesPage() {
                                             </p>
                                         </div>
                                     ) : (
-                                        <ProductEmptyState
+                                        <AdminEmpty
                                             title="Map token required"
                                             description="Set VITE_MAPBOX_TOKEN (or mapbox-token meta) to enable map moderation."
                                         />
                                     )
                                 ) : (
-                                    <ProductTable>
+                                    <AdminDataTable>
                                         <ProductTableHead>
                                             <tr>
                                                 <ProductTableHeaderCell>
@@ -386,7 +403,7 @@ export default function AdminPlacesPage() {
                                                 />
                                             ) : null}
                                         </ProductTableBody>
-                                    </ProductTable>
+                                    </AdminDataTable>
                                 )}
                             </AdminSection>
 
@@ -399,7 +416,7 @@ export default function AdminPlacesPage() {
                                 description="Keep the fields small, accurate, and map-friendly."
                             >
                                 {!selected ? (
-                                    <ProductEmptyState
+                                    <AdminEmpty
                                         title="Select or create a place"
                                         description="Choose a row from the list or start a new place entry."
                                     />
@@ -458,7 +475,13 @@ export default function AdminPlacesPage() {
                                             />
                                         </div>
 
-                                        <div className="flex flex-wrap gap-3">
+                                        <AdminStickyBar
+                                            summary={
+                                                selected.id
+                                                    ? `Editing place #${selected.id}`
+                                                    : 'Creating a new discovery place'
+                                            }
+                                        >
                                             <Button
                                                 type="button"
                                                 onClick={() => void save()}
@@ -481,11 +504,11 @@ export default function AdminPlacesPage() {
                                                     Delete
                                                 </Button>
                                             ) : null}
-                                        </div>
+                                        </AdminStickyBar>
                                     </div>
                                 )}
                             </AdminSection>
-                        </div>
+                        </AdminSplitLayout>
                     </div>
                 </AdminShell>
             </RoleGuard>
@@ -503,12 +526,11 @@ function Field({
     onChange: (value: string) => void;
 }) {
     return (
-        <label className="space-y-2">
-            <Label>{label}</Label>
-            <Input
+        <AdminField label={<Label>{label}</Label>}>
+            <AdminInput
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
             />
-        </label>
+        </AdminField>
     );
 }

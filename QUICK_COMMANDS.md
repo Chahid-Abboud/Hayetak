@@ -6,7 +6,7 @@ This is the shortest command reference for daily use.
 
 ```powershell
 cd c:\Users\User\hayetaravel
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 Open:
@@ -21,7 +21,7 @@ Run this once on a new machine or after clearing Docker volumes. It starts local
 
 ```powershell
 cd c:\Users\User\hayetaravel
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-selfhosted-ai.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\setup-selfhosted-ai.ps1
 ```
 
 ## 2. Check Which Branch You Are On
@@ -109,7 +109,7 @@ After that, you usually do not need to reinstall dependencies every time you mov
 From inside that worktree folder:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 ## 8. If You Prefer Simple Branch Switching In One Folder

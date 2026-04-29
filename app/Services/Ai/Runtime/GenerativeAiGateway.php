@@ -2,87 +2,32 @@
 
 namespace App\Services\Ai\Runtime;
 
-use App\Services\Ai\ExternalResponsesClient;
-use Illuminate\Support\Facades\Log;
 use RuntimeException;
-use Throwable;
 
 class GenerativeAiGateway
 {
     public function __construct(
         private readonly FeatureConfigResolver $features,
-        private readonly ExternalResponsesClient $openAi,
         private readonly OllamaClient $ollama,
     ) {}
 
+    /**
+     * Generate schema-constrained JSON output for a feature using the configured provider.
+     */
     public function generateStructured(string $feature, array $messages, array $schema): array
     {
         $provider = $this->features->provider($feature);
 
-        return match ($provider) {
-            'openai' => $this->generateWithOpenAi($feature, $messages, $schema),
-            'ollama' => $this->generateWithOllamaFallback($feature, $messages, $schema),
-            default => throw new RuntimeException("Structured generation is not supported for provider [{$provider}] on feature [{$feature}]."),
-        };
-    }
-
-    private function generateWithOpenAi(string $feature, array $messages, array $schema): array
-    {
-        $settings = $this->features->openAi($feature);
-
-        $response = $this->openAi->respond([
-            'model' => $settings['model'],
-            'input' => $messages,
-            'text' => [
-                'format' => [
-                    'type' => 'json_schema',
-                    'name' => 'hayetak_'.str_replace('-', '_', $feature),
-                    'schema' => $schema,
-                    'strict' => true,
-                ],
-            ],
-            'max_output_tokens' => $settings['max_output_tokens'],
-        ]);
-
-        return [
-            'provider' => 'openai',
-            'provider_request_id' => $response['id'] ?? null,
-            'model' => $response['model'] ?? $settings['model'],
-            'json' => $response['json'] ?? null,
-            'usage' => $response['usage'] ?? [],
-            'latency_ms' => $response['latency_ms'] ?? null,
-            'raw' => $response['raw'] ?? [],
-        ];
-    }
-
-    private function generateWithOllamaFallback(string $feature, array $messages, array $schema): array
-    {
-        try {
-            return $this->generateWithOllama($feature, $messages, $schema);
-        } catch (Throwable $primaryError) {
-            if (! $this->shouldFallbackToOpenAi($feature)) {
-                throw $primaryError;
-            }
-
-            Log::warning('AI primary provider failed; attempting OpenAI fallback.', [
-                'feature' => $feature,
-                'primary_provider' => 'ollama',
-                'fallback_provider' => 'openai',
-                'error' => $primaryError->getMessage(),
-            ]);
-
-            $fallback = $this->generateWithOpenAi($feature, $messages, $schema);
-            $fallback['fallback'] = [
-                'used' => true,
-                'from' => 'ollama',
-                'to' => 'openai',
-                'error' => $primaryError->getMessage(),
-            ];
-
-            return $fallback;
+        if ($provider !== 'ollama') {
+            throw new RuntimeException("Structured generation is not supported for provider [{$provider}] on feature [{$feature}].");
         }
+
+        return $this->generateWithOllama($feature, $messages, $schema);
     }
 
+    /**
+     * Run a structured generation request against Ollama and parse JSON safely.
+     */
     private function generateWithOllama(string $feature, array $messages, array $schema): array
     {
         $settings = $this->features->ollamaChat($feature);
@@ -113,6 +58,9 @@ class GenerativeAiGateway
         ];
     }
 
+    /**
+     * Retry once with stricter JSON-only instructions when the initial payload is malformed.
+     */
     private function retryOllamaForJson(string $feature, array $messages, array $schema, array $settings, array $initialResponse): array
     {
         $baseBudget = max(900, (int) ($settings['max_output_tokens'] ?? 1400));
@@ -150,6 +98,9 @@ class GenerativeAiGateway
         ]);
     }
 
+    /**
+     * Best-effort JSON extraction from plain text, fenced blocks, or wrapped responses.
+     */
     private function decodeJsonPayload(string $answer): ?array
     {
         $trimmed = trim($answer);
@@ -181,14 +132,5 @@ class GenerativeAiGateway
         }
 
         return null;
-    }
-
-    private function shouldFallbackToOpenAi(string $feature): bool
-    {
-        if (! $this->features->fallbackEnabled($feature)) {
-            return false;
-        }
-
-        return trim((string) config('services.openai.api_key', '')) !== '';
     }
 }

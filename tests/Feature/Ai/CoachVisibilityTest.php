@@ -21,7 +21,7 @@ it('keeps coach entry points visible in the shared nav, admin shell, and dashboa
         ->toContain("{ href: '/coach', label: 'Coach' }");
 
     expect(file_get_contents(resource_path('js/components/admin/AdminShell.tsx')))
-        ->toContain("{ href: '/coach', label: 'AI Coach' }");
+        ->toContain("href: '/coach', label: 'AI Coach'");
 
     expect(file_get_contents(resource_path('js/pages/dashboard.tsx')))
         ->toContain("router.visit('/coach')")

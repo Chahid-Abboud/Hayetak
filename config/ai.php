@@ -30,23 +30,33 @@ return [
                 'limit' => (int) env('AI_SELF_HOSTED_CONTEXT_LIMIT', 4),
                 'max_context_characters' => (int) env('AI_SELF_HOSTED_MAX_CONTEXT_CHARS', 2200),
             ],
+            'context_sync' => [
+                'debounce_seconds' => (int) env('AI_SELF_HOSTED_CONTEXT_SYNC_DEBOUNCE_SECONDS', 8),
+                'unique_for_seconds' => (int) env('AI_SELF_HOSTED_CONTEXT_SYNC_UNIQUE_FOR_SECONDS', 120),
+                'queue' => env('AI_SELF_HOSTED_CONTEXT_SYNC_QUEUE', 'ai-context-sync'),
+            ],
             'sync_during_tests' => (bool) env('AI_SELF_HOSTED_SYNC_DURING_TESTS', false),
         ],
     ], 
 
     'planner' => [
-        'ollama_only' => (bool) env('AI_PLANNER_OLLAMA_ONLY', true),
-        'provider' => env(
-            'AI_PLANNER_PROVIDER',
-            'ollama',
-        ),
+        'ollama_only' => true,
         'prompt_version' => env('AI_PLANNER_PROMPT_VERSION', 'hayetak_planner_v2'),
         'schema_version' => env('AI_PLANNER_SCHEMA_VERSION', 'hayetak_plan_v2'),
         'default_horizon_days' => (int) env('AI_PLANNER_DEFAULT_HORIZON_DAYS', 14),
         'request_timeout_seconds' => (int) env('AI_PLANNER_REQUEST_TIMEOUT', 300),
-        'openai' => [
-            'model' => env('OPENAI_MODEL_PLANNER', env('AI_PLANNER_OLLAMA_MODEL', env('AI_SELF_HOSTED_LLM_MODEL', 'llama3.1:8b'))),
-            'max_output_tokens' => (int) env('AI_PLANNER_MAX_OUTPUT_TOKENS', 3200),
+        'feedback_cycle' => [
+            'enabled' => (bool) env('AI_PLANNER_FEEDBACK_CYCLE_ENABLED', true),
+            'start_date' => env('AI_PLANNER_FEEDBACK_CYCLE_START_DATE', '2026-01-01'),
+            'anchor_date' => env('AI_PLANNER_FEEDBACK_CYCLE_ANCHOR_DATE', '2026-01-01'),
+            'interval_days' => (int) env('AI_PLANNER_FEEDBACK_CYCLE_INTERVAL_DAYS', 21),
+            'day_19_to_23_checkin_reminder_enabled' => (bool) env('AI_PLANNER_FEEDBACK_CHECKIN_REMINDER_ENABLED', true),
+        ],
+        'adaptation' => [
+            'enabled' => (bool) env('AI_PLANNER_ADAPTATION_ENABLED', true),
+            'enforce_when_abs_error_weekly_gte' => (float) env('AI_PLANNER_ADAPTATION_ABS_ERROR_THRESHOLD', 0.12),
+            'calorie_step_kcal' => (int) env('AI_PLANNER_ADAPTATION_CALORIE_STEP_KCAL', 120),
+            'workout_duration_step_min' => (int) env('AI_PLANNER_ADAPTATION_WORKOUT_DURATION_STEP_MIN', 5),
         ],
         'ollama' => [
             'base_url' => rtrim((string) env('AI_PLANNER_OLLAMA_URL', env('AI_SELF_HOSTED_OLLAMA_URL', 'http://127.0.0.1:11434')), '/'),
@@ -55,9 +65,6 @@ return [
             'timeout' => (int) env('AI_PLANNER_OLLAMA_TIMEOUT', 120),
             'temperature' => (float) env('AI_PLANNER_OLLAMA_TEMPERATURE', 0.1),
             'max_output_tokens' => (int) env('AI_PLANNER_OLLAMA_MAX_OUTPUT_TOKENS', 900),
-        ],
-        'fallback' => [
-            'enabled' => (bool) env('AI_PLANNER_FALLBACK_TO_OPENAI', false),
         ],
         'local_fallback' => [
             'enabled' => (bool) env('AI_PLANNER_LOCAL_FALLBACK_ENABLED', true),
@@ -70,7 +77,7 @@ return [
     ],
 
     'timeouts' => [
-        'request_seconds' => (int) env('OPENAI_TIMEOUT', 60),
+        'request_seconds' => (int) env('AI_CHAT_REQUEST_TIMEOUT', 60),
     ],
 
     'tokens' => [
@@ -96,8 +103,10 @@ return [
         'inference' => [
             'enabled' => (bool) env('AI_PROGRESS_PREDICTOR_INFERENCE_ENABLED', true),
             'python_bin' => env('AI_PROGRESS_PREDICTOR_PYTHON_BIN', 'python'),
-            'script' => env('AI_PROGRESS_PREDICTOR_SCRIPT', 'scripts/predict_progress_from_features.py'),
-            'model_dir' => env('AI_PROGRESS_PREDICTOR_MODEL_DIR', 'storage/app/ai/models/progress_predictor_v1_real_only'),
+            'script' => env('AI_PROGRESS_PREDICTOR_SCRIPT', 'scripts/ai/training/predict_progress_from_features.py'),
+            'model_dir' => env('AI_PROGRESS_PREDICTOR_MODEL_DIR', 'storage/app/ai/models/progress_predictor_v1_uploaded_weight_only'),
+            'fallback_model_dir' => env('AI_PROGRESS_PREDICTOR_FALLBACK_MODEL_DIR', 'storage/app/ai/models/progress_predictor_v1'),
+            'min_weight_rows_for_primary' => (int) env('AI_PROGRESS_PREDICTOR_MIN_WEIGHT_ROWS_FOR_PRIMARY', 60),
             'timeout_seconds' => (float) env('AI_PROGRESS_PREDICTOR_TIMEOUT', 8),
             'guardrails' => [
                 'enabled' => (bool) env('AI_PROGRESS_PREDICTOR_GUARDRAILS_ENABLED', true),
@@ -107,7 +116,27 @@ return [
                 'min_workout_sessions' => (int) env('AI_PROGRESS_PREDICTOR_MIN_WORKOUT_SESSIONS', 0),
                 'max_ml_vs_heuristic_weekly_delta_kg' => (float) env('AI_PROGRESS_PREDICTOR_MAX_WEEKLY_DELTA_GAP_KG', 0.8),
                 'max_abs_ml_weekly_rate_kg' => (float) env('AI_PROGRESS_PREDICTOR_MAX_ABS_WEEKLY_RATE_KG', 1.2),
+                'require_manifest_quality' => (bool) env('AI_PROGRESS_PREDICTOR_REQUIRE_MANIFEST_QUALITY', true),
+                'allow_weight_only_ml' => (bool) env('AI_PROGRESS_PREDICTOR_ALLOW_WEIGHT_ONLY_ML', true),
+                'min_manifest_test_users' => (int) env('AI_PROGRESS_PREDICTOR_MIN_MANIFEST_TEST_USERS', 5),
+                'min_weight_r2_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MIN_WEIGHT_R2_FOR_ML', 0.05),
+                'min_strength_r2_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MIN_STRENGTH_R2_FOR_ML', 0.05),
+                'max_weight_mae_kg_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MAX_WEIGHT_MAE_KG_FOR_ML', 0.4),
+                'max_strength_mae_pct_for_ml' => (float) env('AI_PROGRESS_PREDICTOR_MAX_STRENGTH_MAE_PCT_FOR_ML', 1.2),
             ],
-        ],
+        ],              
+    ],
+
+    'seed_measurements' => [
+        'start_date' => env('AI_SEED_MEASUREMENT_START_DATE', '2025-12-18'),
+        'end_date' => env('AI_SEED_MEASUREMENT_END_DATE', '2026-05-18'),
+        'min_gap_days' => (int) env('AI_SEED_MEASUREMENT_MIN_GAP_DAYS', 4),
+        'max_gap_days' => (int) env('AI_SEED_MEASUREMENT_MAX_GAP_DAYS', 7),
+    ],
+
+    'seed_activity_history' => [
+        'start_date' => env('AI_SEED_ACTIVITY_HISTORY_START_DATE', '2025-12-18'),
+        'end_date' => env('AI_SEED_ACTIVITY_HISTORY_END_DATE', '2026-05-18'),
     ],
 ];
+                             

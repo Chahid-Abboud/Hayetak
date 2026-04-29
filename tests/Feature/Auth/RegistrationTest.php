@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\GeneratePlansForUser;
+use App\Jobs\Ai\GeneratePlansForUser;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;

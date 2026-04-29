@@ -23,8 +23,8 @@ it('respects explicit self-hosted chat provider when configured', function () {
     expect($provider)->toBe('self_hosted');
 });
 
-it('rejects explicit openai chat provider and falls back to stub', function () {
-    config()->set('ai.chat.provider', 'openai');
+it('rejects unsupported chat providers and falls back to stub', function () {
+    config()->set('ai.chat.provider', 'unsupported_provider');
 
     $provider = app(FeatureConfigResolver::class)->provider(FeatureConfigResolver::FEATURE_CHAT);
 

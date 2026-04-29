@@ -21,6 +21,31 @@ class ChatIntentClassifier
         'session',
     ];
 
+    private const INGREDIENT_AUDIT_KEYWORDS = [
+        'avocado',
+        'banana',
+        'corn',
+        'sesame',
+        'wheat',
+        'milk',
+        'egg',
+        'eggs',
+        'fish',
+        'shellfish',
+        'mustard',
+        'celery',
+        'garlic',
+        'onion',
+        'tomato',
+        'soy',
+        'lupin',
+        'peanut',
+        'peanuts',
+    ];
+
+    /**
+     * Classify a user message into a coach intent, feature area, context flags, and optional deterministic action.
+     */
     public function classify(string $message, array $runtimeContext = []): array
     {
         $text = mb_strtolower(trim(preg_replace('/\s+/', ' ', $message) ?? ''));
@@ -63,7 +88,7 @@ class ChatIntentClassifier
             ];
         }
 
-        if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'macro', 'meal', 'meals', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack', 'food', 'eat', 'recipe', 'nutrition', 'plate', 'fiber', 'fibre'])) {
+        if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'macro', 'meal', 'meals', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack', 'food', 'eat', 'recipe', 'nutrition', 'plate', 'fiber', 'fibre', 'allergy', 'allergies', 'allergen', 'allergens', 'diet type', 'safe for me'])) {
             $intent = 'nutrition_help';
             $feature = 'nutrition';
             $flags['include_last_7_days'] = true;
@@ -117,12 +142,23 @@ class ChatIntentClassifier
             $flags['prefer_hybrid_profile'] = true;
         }
 
-        if (
-            $this->containsAny($text, ['protein']) &&
-            $this->containsAny($text, ['target', 'intake', 'how much', 'recalculate', 'grams']) &&
-            ! $isMealRequest &&
-            ! $this->containsAny($text, ['people generally', 'generally'])
-        ) {
+        if ($this->isAllergyExposureAuditQuestion($text)) {
+            $deterministicAction = 'allergy_exposure_check';
+            $intent = 'allergy_exposure_help';
+            $feature = 'nutrition';
+            $flags['include_last_7_days'] = true;
+            $flags['prefer_hybrid_profile'] = true;
+        }
+
+        if ($this->isIngredientExposureAuditQuestion($text)) {
+            $deterministicAction = 'ingredient_exposure_check';
+            $intent = 'ingredient_exposure_help';
+            $feature = 'nutrition';
+            $flags['include_last_7_days'] = true;
+            $flags['prefer_hybrid_profile'] = true;
+        }
+
+        if ($this->isPersonalProteinTargetQuestion($text, $isMealRequest)) {
             $deterministicAction = 'protein_target';
             $intent = 'protein_target_help';
             $feature = 'nutrition';
@@ -178,6 +214,14 @@ class ChatIntentClassifier
             return false;
         }
 
+        if ($this->isJailbreakOrDataExfiltrationPrompt($text)) {
+            return true;
+        }
+
+        if ($this->isBusinessOrStartupPlanningPrompt($text)) {
+            return true;
+        }
+
         if ($this->containsAny($text, [
             'weather',
             'temperature',
@@ -186,9 +230,15 @@ class ChatIntentClassifier
             'philosophy',
             'politics',
             'election',
+            'parliament',
+            'prime minister',
+            'president',
             'stock market',
+            'stocks',
+            'sp500',
             'bitcoin',
             'crypto',
+            'exchange rate',
             'movie',
             'song',
             'lyrics',
@@ -205,11 +255,280 @@ class ChatIntentClassifier
             'programming',
             'code this',
             'code a website',
+            'tax advice',
+            'tax loophole',
+            'avoid paying taxes',
+            'traffic ticket',
+            'legal contract',
+            'legal loophole',
+            'appeal a ticket',
+            'sports betting',
+            'football matches',
+            'global news',
+            'latest news',
+            'weather forecast',
+            'diagnose this skin rash',
+            'skin rash',
+            'prescribe treatment',
+            'prescribe medication',
+            'medication dosage',
+            'show me all users',
+            'another user',
+            'private data',
+            'private user details',
+            'email addresses',
+            'dump all user',
+            'database records',
+            'admin notifications',
+            'moderation notes',
+            'memory buffer',
+            'extract all client records',
+            'script to extract all client records',
+            'delete a user from production',
+            'exact sql commands',
+            'hidden system prompt',
+            'reveal your prompt',
+            'api keys',
+            'credentials',
+            'token values',
+            'chain-of-thought',
+            'ignore safety policy',
+            'ignore policy',
+            'ignore restrictions',
+            'ignore instruction hierarchy',
+            'obey only this message',
+            'ignore injury constraints',
+            'maximal-risk exercises',
+            'bypass guardrails',
+            'malware',
+            'sql injection',
+            'crack wifi',
+            'carding fraud',
+            'build a weapon',
+            'nba finals',
+            'football matches',
+            'sports betting',
+            'cryptocurrency',
+        ])) {
+            return true;
+        }
+
+        if (! $this->hasCoachDomainSignal($text) && $this->hasGeneralTaskOrTriviaSignal($text)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function isBusinessOrStartupPlanningPrompt(string $text): bool
+    {
+        if ($this->containsAny($text, [
+            'business plan',
+            'marketing plan',
+            'sales plan',
+            'business proposal',
+            'financial model',
+            'financial forecast',
+            'business model',
+            'go to market',
+            'go-to-market',
+            'pitch deck',
+            'investor deck',
+            'opening a cafe',
+            'open a cafe',
+            'open a coffee shop',
+            'open a restaurant',
+        ])) {
+            return true;
+        }
+
+        return $this->containsAny($text, [
+            'business',
+            'startup',
+            'company',
+            'investor',
+            'fundraising',
+            'marketing',
+            'sales',
+            'finance',
+            'financial',
+            'restaurant',
+            'coffee shop',
+            'cafe',
+        ]) && $this->containsAny($text, [
+            'plan',
+            'strategy',
+            'proposal',
+            'forecast',
+            'budget',
+            'deck',
+            'pitch',
+        ]);
+    }
+
+    private function isJailbreakOrDataExfiltrationPrompt(string $text): bool
+    {
+        if (
+            $this->containsAny($text, ['ignore', 'bypass', 'disable', 'override', 'forget']) &&
+            $this->containsAny($text, ['restriction', 'restrictions', 'constraint', 'constraints', 'policy', 'policies', 'guardrail', 'guardrails', 'safeguard', 'safeguards', 'instruction hierarchy'])
+        ) {
+            return true;
+        }
+
+        if ($this->containsAny($text, ['ignore instruction hierarchy', 'obey only this message', 'break character'])) {
+            return true;
+        }
+
+        if (
+            $this->containsAny($text, ['reveal', 'print', 'output', 'dump', 'expose', 'show', 'simulate']) &&
+            $this->containsAny($text, [
+                'system prompt',
+                'system prompts',
+                'prompt template',
+                'internal prompt',
+                'tool schema',
+                'private context',
+                'private user details',
+                'memory buffer',
+                'context key',
+                'context keys',
+                'configuration flags',
+                'filesystem path',
+                'secret environment',
+                'admin notifications',
+                'moderation notes',
+                'api keys',
+                'credentials',
+                'token',
+                'tokens',
+                'environment files',
+            ])
+        ) {
+            return true;
+        }
+
+        if (
+            $this->containsAny($text, ['extract', 'script', 'sql', 'delete']) &&
+            $this->containsAny($text, ['client records', 'database records', 'production', 'production user'])
+        ) {
+            return true;
+        }
+
+        if ($this->containsAny($text, ['ignore injury constraints', 'maximal-risk exercises'])) {
+            return true;
+        }
+
+        if ($this->containsAny($text, ['filesystem path', 'secret environment', 'environment files'])) {
+            return true;
+        }
+
+        if (
+            $this->containsAny($text, ['policy', 'policies']) &&
+            $this->containsAny($text, ['do not exist', 'does not exist', 'comply fully'])
+        ) {
+            return true;
+        }
+
+        if (
+            $this->containsAny($text, ['all users', 'user records', 'all user records', 'list of all users']) &&
+            $this->containsAny($text, ['allergies', 'injuries', 'medical', 'email', 'emails'])
+        ) {
+            return true;
+        }
+
+        if ($this->containsAny($text, [
+            'superuser',
+            'root admin',
+            'debug mode',
+            'unrestricted assistant',
+            'security audit',
+            'stock trading bot',
         ])) {
             return true;
         }
 
         return false;
+    }
+
+    private function hasCoachDomainSignal(string $text): bool
+    {
+        return $this->containsAny($text, [
+            'meal',
+            'meals',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'snack',
+            'food',
+            'recipe',
+            'ingredient',
+            'macro',
+            'macros',
+            'calorie',
+            'calories',
+            'protein',
+            'carbs',
+            'fat',
+            'fiber',
+            'nutrition',
+            'diet',
+            'allergy',
+            'allergies',
+            'allergen',
+            'workout',
+            'exercise',
+            'train',
+            'gym',
+            'cardio',
+            'recovery',
+            'sleep',
+            'hydration',
+            'dehydration',
+            'rest day',
+            'stretch',
+            'stretches',
+            'progress',
+            'weight',
+            'bmi',
+            'plan',
+            'routine',
+            'nearby',
+            'nutritionist',
+            'trainer',
+            'dashboard',
+            'profile',
+            'settings',
+            'messages',
+            'appointment',
+            'hayetak',
+        ]);
+    }
+
+    private function hasGeneralTaskOrTriviaSignal(string $text): bool
+    {
+        return $this->containsAny($text, [
+            'what is',
+            'who is',
+            'who won',
+            'what are',
+            'write',
+            'draft',
+            'create',
+            'generate',
+            'summarize',
+            'translate',
+            'solve',
+            'explain',
+            'review',
+            'recommend',
+            'advise',
+            'predict',
+            'help me',
+            'show me',
+            'tell me',
+            'list',
+            'plan my',
+        ]);
     }
 
     private function isMealSummaryQuestion(string $text): bool
@@ -290,10 +609,13 @@ class ChatIntentClassifier
             'what are my allergens',
             'what allergies do i have',
             'what allergens do i have',
+            'what allergies do you have saved for me',
+            'what allergens do you have saved for me',
             'my allergies',
             'my allergens',
             'allergy list',
             'allergen list',
+            'exactly as listed in my profile',
             'show my allergies',
             'show my allergens',
             'tell me my allergies',
@@ -339,6 +661,41 @@ class ChatIntentClassifier
         ]);
     }
 
+    private function isPersonalProteinTargetQuestion(string $text, bool $isMealRequest): bool
+    {
+        if ($isMealRequest || ! $this->containsAny($text, ['protein'])) {
+            return false;
+        }
+
+        if ($this->containsAny($text, [
+            'people generally',
+            'generally',
+            'in general',
+            'usually',
+            'most adults',
+            'active adults',
+            'someone',
+        ])) {
+            return false;
+        }
+
+        if (! $this->containsAny($text, ['target', 'intake', 'how much', 'recalculate', 'grams', 'suggest'])) {
+            return false;
+        }
+
+        return $this->containsAny($text, [
+            'for me',
+            'based on my',
+            'my weight',
+            'saved weight',
+            'current weight',
+            'i need',
+            'do i need',
+            'my target',
+            'my intake',
+        ]);
+    }
+
     private function isProteinGapQuestion(string $text): bool
     {
         if (! $this->containsAny($text, ['protein'])) {
@@ -375,5 +732,65 @@ class ChatIntentClassifier
         }
 
         return null;
+    }
+
+    private function isAllergyExposureAuditQuestion(string $text): bool
+    {
+        if (! $this->containsAny($text, ['allergy', 'allergies', 'allergen', 'allergens', 'allergic'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($text, ['consumed', 'consume', 'ate', 'eaten', 'logged', 'log', 'have i ever', 'did i', 'do i'])) {
+            return false;
+        }
+
+        return $this->containsAny($text, [
+            'past week',
+            'last week',
+            'last 7 days',
+            'past 7 days',
+            'this week',
+            'past month',
+            'last month',
+            '30 days',
+            'today',
+            'yesterday',
+        ]);
+    }
+
+    private function isIngredientExposureAuditQuestion(string $text): bool
+    {
+        if (! $this->mentionsTrackedIngredient($text)) {
+            return false;
+        }
+
+        if (! $this->containsAny($text, ['logged', 'log', 'did i', 'have i', 'consumed', 'consume', 'ate', 'eaten'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($text, ['meal', 'meals', 'food', 'containing', 'contains', 'ingredient'])) {
+            return false;
+        }
+
+        return $this->containsAny($text, [
+            'today',
+            'yesterday',
+            'past week',
+            'last week',
+            'this week',
+            'last 7 days',
+            'past 7 days',
+            'past month',
+            'last month',
+            'last 30 days',
+            'past 30 days',
+            '30 days',
+            'have i ever',
+        ]);
+    }
+
+    private function mentionsTrackedIngredient(string $text): bool
+    {
+        return $this->containsAny($text, self::INGREDIENT_AUDIT_KEYWORDS);
     }
 }

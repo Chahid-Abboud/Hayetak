@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\AiPlan;
-use App\Models\AiRequest;
+use App\Models\Ai\AiPlan;
+use App\Models\Ai\AiRequest;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\MealEntry;
@@ -16,7 +16,7 @@ use App\Models\WorkoutPlanDay;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
 
-it('shows the latest ai planner generation and source metadata on the ai planner page and dashboard', function () {
+it('hides technical planner metadata on non-admin ai planner and dashboard payloads', function () {
     $user = User::factory()->create();
     $request = AiRequest::query()->create([
         'user_id' => $user->id,
@@ -100,10 +100,20 @@ it('shows the latest ai planner generation and source metadata on the ai planner
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('ai/planner')
-            ->where('generation.provider', 'ollama')
-            ->where('generation.model', 'llama3.1:8b')
-            ->where('nutritionPlan.ai_request.provider', 'ollama')
-            ->where('workoutPlan.ai_request.model', 'llama3.1:8b')
+            ->where('generation.plan.overview.summary', 'Generated from the structured planner flow.')
+            ->missing('generation.ai_request_id')
+            ->missing('generation.provider')
+            ->missing('generation.model')
+            ->missing('generation.prompt_version')
+            ->missing('generation.schema_version')
+            ->missing('generation.plan.progress_prediction.model_name')
+            ->missing('generation.plan.progress_prediction.inference_source')
+            ->missing('nutritionPlan.ai_request')
+            ->missing('workoutPlan.ai_request')
+            ->missing('defaults.provider')
+            ->missing('defaults.model')
+            ->missing('defaults.prompt_version')
+            ->missing('defaults.schema_version')
         );
 
     $this->actingAs($user)
@@ -111,8 +121,12 @@ it('shows the latest ai planner generation and source metadata on the ai planner
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->where('nutritionPlan.ai_request.provider', 'ollama')
-            ->where('workoutPlan.ai_request.model', 'llama3.1:8b')
+            ->where('nutritionPlan.id', $nutritionPlan->id)
+            ->where('workoutPlan.id', $workoutPlan->id)
+            ->missing('nutritionPlan.ai_request')
+            ->missing('workoutPlan.ai_request')
+            ->where('coachSnapshot', null)
+            ->has('predictionTrend')
         );
 });
 
@@ -188,6 +202,8 @@ it('returns active ai and manual workout plans separately for planner and log pa
             ->where('activeAiPlan.id', $aiPlan->id)
             ->where('manualPlan.id', $manualPlan->id)
             ->where('recommendedAiDayId', $aiDay->id)
+            ->missing('activeAiPlan.ai_request')
+            ->missing('manualPlan.ai_request')
         );
 
     $this->actingAs($user)
@@ -199,6 +215,8 @@ it('returns active ai and manual workout plans separately for planner and log pa
             ->where('manualPlan.id', $manualPlan->id)
             ->where('recommendedAiDayId', $aiDay->id)
             ->where('recommendedManualDayId', $manualDay->id)
+            ->missing('aiPlan.ai_request')
+            ->missing('manualPlan.ai_request')
         );
 });
 
@@ -325,6 +343,7 @@ it('logs planned meal substitutions and reports their status through the meal tr
         ->assertOk()
         ->assertJson(fn (AssertableJson $json) => $json
             ->where('planModeAvailable', true)
+            ->missing('plannedDay.plan.source')
             ->where('plannedDay.meals.0.items.0.status', 'logged_substitute')
             ->where('entries.0.plan_tracking.status', 'logged_substitute')
             ->etc()

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workout;
 use App\Http\Controllers\Controller;
 use App\Models\Exercise;
 use App\Models\WorkoutPlan;
+use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,10 +14,15 @@ use Inertia\Response;
 
 class WorkoutPlanController extends Controller
 {
+    public function __construct(
+        private readonly UserFacingAiPayloadSanitizer $sanitizer,
+    ) {}
+
     public function index(Request $request): Response
     {
         $userId = Auth::id();
         $sort = $request->query('sort', 'muscle');
+        $isAdmin = (string) ($request->user()?->role ?? '') === 'admin';
 
         $activeAiPlan = $this->planQuery($sort)
             ->where('user_id', $userId)
@@ -62,14 +68,20 @@ class WorkoutPlanController extends Controller
             });
 
         return Inertia::render('workouts/planner', [
-            'activeAiPlan' => $activeAiPlan,
-            'manualPlan' => $manualPlan,
+            'activeAiPlan' => $activeAiPlan
+                ? $this->sanitizer->sanitizePlanResource($activeAiPlan->toArray(), $isAdmin)
+                : null,
+            'manualPlan' => $manualPlan
+                ? $this->sanitizer->sanitizePlanResource($manualPlan->toArray(), $isAdmin)
+                : null,
             'recommendedAiDayId' => $recommendedAiDay?->id,
             'recommendedManualDayId' => $recommendedManualDay?->id,
             'today' => now()->toDateString(),
             'exercises' => $exercises,
             'sort' => $sort,
-            'premadePlans' => $premadePlans,
+            'premadePlans' => $premadePlans->map(
+                fn (WorkoutPlan $plan) => $this->sanitizer->sanitizePlanResource($plan->toArray(), $isAdmin)
+            )->values()->all(),
         ]);
     }
 
@@ -165,7 +177,6 @@ class WorkoutPlanController extends Controller
     private function planQuery(string $sort)
     {
         return WorkoutPlan::query()->with([
-            'aiRequest:id,provider,model,prompt_version,schema_version',
             'days' => fn ($query) => $query->orderBy('day_index'),
             'days.exercises' => function ($query) use ($sort) {
                 $query->select([

@@ -2,8 +2,8 @@
 
 namespace App\Services\Ai\Chat;
 
-use App\Models\AiConversation;
-use App\Models\AiMessage;
+use App\Models\Ai\AiConversation;
+use App\Models\Ai\AiMessage;
 use App\Models\User;
 use App\Services\Ai\AiUsageLogger;
 use App\Services\Ai\Evaluation\ChatResponseQualityScorer;
@@ -26,6 +26,9 @@ class ChatOrchestrator
         private readonly FeatureConfigResolver $features,
     ) {}
 
+    /**
+     * Run the complete coach pipeline: classify, gather context, call tools/model/fallbacks, review safety, and persist messages.
+     */
     public function handle(
         User $user,
         string $message,
@@ -149,8 +152,8 @@ class ChatOrchestrator
                             : ($chatPath === 'general' ? 'General guidance' : null),
                     ], fn ($value) => $value !== null && $value !== []);
                 } catch (\Throwable $e) {
-                    $answer = 'The AI coach is not fully connected yet, so I could not reach the model right now. You can still ask again later, or use Dashboard, Meal Tracker, Workouts, Nearby, Messages, and Settings directly.';
-                    $warnings[] = 'Model request failed, so a built-in fallback message was returned.';
+                    $answer = 'AI Coach is temporarily unavailable right now. Please try again shortly, or continue with Dashboard, Meal Tracker, Workouts, Nearby, Messages, and Settings.';
+                    $warnings[] = 'Primary coach request failed, so a built-in fallback message was returned.';
                     $model = 'chat-fallback';
                     $chatMetadata = [];
                 }

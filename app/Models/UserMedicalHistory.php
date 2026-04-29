@@ -23,6 +23,9 @@ class UserMedicalHistory extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * User whose normalized medical/injury history this row belongs to.
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

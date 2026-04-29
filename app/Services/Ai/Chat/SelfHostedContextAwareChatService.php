@@ -81,6 +81,16 @@ class SelfHostedContextAwareChatService
 
         foreach ($matches as $match) {
             $payload = is_array($match['payload'] ?? null) ? $match['payload'] : [];
+            $score = (float) ($match['score'] ?? 0.0);
+            if ($score < $threshold) {
+                continue;
+            }
+
+            $payloadUserId = (int) ($payload['user_id'] ?? 0);
+            if ($payloadUserId > 0 && $payloadUserId !== $userId) {
+                continue;
+            }
+
             $text = trim((string) ($payload['text'] ?? ''));
 
             if ($text === '') {
@@ -90,7 +100,7 @@ class SelfHostedContextAwareChatService
             $block = sprintf(
                 "[%s | score %.3f]\n%s",
                 (string) ($payload['doc_type'] ?? 'context'),
-                (float) ($match['score'] ?? 0.0),
+                $score,
                 $text,
             );
 
@@ -102,7 +112,7 @@ class SelfHostedContextAwareChatService
             $serializedMatches[] = [
                 'doc_key' => $payload['doc_key'] ?? null,
                 'doc_type' => $payload['doc_type'] ?? null,
-                'score' => (float) ($match['score'] ?? 0.0),
+                'score' => $score,
                 'text' => $text,
             ];
         }

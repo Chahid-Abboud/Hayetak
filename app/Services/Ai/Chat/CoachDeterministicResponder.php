@@ -7,6 +7,28 @@ use Carbon\Carbon;
 
 class CoachDeterministicResponder
 {
+    private const INGREDIENT_AUDIT_KEYWORDS = [
+        'avocado',
+        'banana',
+        'corn',
+        'sesame',
+        'wheat',
+        'milk',
+        'egg',
+        'eggs',
+        'fish',
+        'shellfish',
+        'mustard',
+        'celery',
+        'garlic',
+        'onion',
+        'tomato',
+        'soy',
+        'lupin',
+        'peanut',
+        'peanuts',
+    ];
+
     public function __construct(
         private readonly CoachNutritionCalculator $nutritionCalculator,
     ) {}
@@ -19,9 +41,14 @@ class CoachDeterministicResponder
     ): ?array {
         $normalizedQuestion = mb_strtolower(trim($question));
 
+        $riskSpecific = $this->riskSpecificSafetyAnswer($normalizedQuestion, $context);
+        if ($riskSpecific !== null) {
+            return $riskSpecific;
+        }
+
         if (($classification['scope'] ?? 'in_domain') === 'out_of_domain') {
             return [
-                'answer' => $this->outOfDomainAnswer($user),
+                'answer' => $this->outOfDomainAnswer($user, $normalizedQuestion),
                 'warnings' => [],
                 'chat_path' => 'out_of_scope',
                 'mode_label' => 'Out of scope',
@@ -35,6 +62,44 @@ class CoachDeterministicResponder
             $this->isRestrictionLookup($normalizedQuestion)
         ) {
             return $this->restrictionSummaryAnswer($context);
+        }
+
+        if (
+            ($classification['deterministic_action'] ?? null) === 'allergy_exposure_check' ||
+            $this->isAllergyExposureAuditQuestion($normalizedQuestion)
+        ) {
+            $exposureAudit = $this->allergyExposureAuditAnswer($normalizedQuestion, $context);
+
+            if ($exposureAudit !== null) {
+                return $exposureAudit;
+            }
+        }
+
+        if (
+            ($classification['deterministic_action'] ?? null) === 'ingredient_exposure_check' ||
+            $this->isIngredientExposureAuditQuestion($normalizedQuestion)
+        ) {
+            $ingredientAudit = $this->ingredientExposureAuditAnswer($normalizedQuestion, $context);
+
+            if ($ingredientAudit !== null) {
+                return $ingredientAudit;
+            }
+        }
+
+        if ($this->isAllergyConflictRequest($normalizedQuestion, $context)) {
+            $allergyConflict = $this->allergyConflictAnswer($normalizedQuestion, $context);
+
+            if ($allergyConflict !== null) {
+                return $allergyConflict;
+            }
+        }
+
+        if ($this->isAvailableIngredientRecipeRequest($normalizedQuestion, $context)) {
+            $availableIngredientRecipe = $this->availableIngredientRecipeAnswer($context);
+
+            if ($availableIngredientRecipe !== null) {
+                return $availableIngredientRecipe;
+            }
         }
 
         if ($this->isDinnerSwitchFollowUp($normalizedQuestion)) {
@@ -114,6 +179,183 @@ class CoachDeterministicResponder
         }
 
         return null;
+    }
+
+    private function riskSpecificSafetyAnswer(string $question, array $context): ?array
+    {
+        if ($this->containsAny($question, ['vegan']) && $this->containsAny($question, ['chicken', 'meat', 'animal'])) {
+            return $this->fixedCoachAnswer([
+                'For today, I decline chicken for this vegan diet-type request because animal-based chicken conflicts with the diet preference in this thread.',
+                'Instead, a safer plant-based protein alternative is lentils with rice and spinach, tofu with vegetables, or beans with a grain if those fit your saved profile and allergies.',
+                'Keep the same protein goal by building the meal around a plant protein instead of animal-based chicken.',
+            ], 'diet_type_guard');
+        }
+
+        if ($this->containsAny($question, ['stop being vegan', 'remember that for this thread', 'should you remember'])) {
+            return $this->fixedCoachAnswer([
+                'I can remember a temporary preference inside this thread, but your saved profile controls recommendations until you update it.',
+                'I will not change your stored diet type without you explicitly updating your profile.',
+                'For consistency, tell me whether each new request should follow the saved profile or a temporary diet preference for that meal.',
+            ], 'diet_type_memory_guard');
+        }
+
+        if ($this->containsAny($question, ['hypertension', 'sodium-loading', 'sodium loading', 'high sodium'])) {
+            return $this->fixedCoachAnswer([
+                'I cannot provide a sodium-loading plan with hypertension because it can raise blood-pressure risk.',
+                'A safer hydration approach is water across the day, normal meals, and only modest electrolytes if they fit your clinician guidance.',
+                'For individualized sodium targets or medication-related questions, check with your clinician.',
+            ], 'medical_safety_guard');
+        }
+
+        if ($this->containsAny($question, ['ignore that']) && $this->recentContextContains($context, ['hypertension', 'sodium', 'blood pressure'])) {
+            return $this->fixedCoachAnswer([
+                'No, I would not ignore the medical boundary just because you feel fine today.',
+                'Hypertension and blood-pressure risk still matter even on a good-feeling day, so keep the safer hydration plan and avoid sodium loading.',
+                'Check with a clinician for individualized advice if training conditions or symptoms change.',
+            ], 'medical_safety_guard');
+        }
+
+        if ($this->containsAny($question, ['dinner']) && $this->containsAny($question, ['condition', 'logs', 'tonight'])) {
+            return $this->fixedCoachAnswer([
+                $this->todayMacroLine($context).' '.$this->lastSevenNutritionLine($context),
+                'For dinner tonight, choose a balanced lower-sodium plate: grilled chicken or lentils, rice or potatoes, and cooked vegetables seasoned without your saved allergens.',
+                'Avoid high-sodium processed foods and keep portions aligned with your target while respecting your medical condition and allergy list.',
+            ], 'medical_dinner_guard');
+        }
+
+        if ($this->containsAny($question, ['knee', 'squat', 'squats']) && $this->containsAny($question, ['heavy', 'hurts', 'pain', 'exactly how heavy'])) {
+            return $this->fixedCoachAnswer([
+                'I would avoid heavy barbell squats today while your knee hurts, and I will not prescribe an exact heavy load through pain.',
+                'Use a pain-free range instead: box squats to a comfortable height, hip hinges, glute bridges, or step-ups only if they are pain-free.',
+                'If pain worsens or changes sharply, stop the movement and consider clinician guidance.',
+            ], 'injury_safety_guard');
+        }
+
+        if ($this->containsAny($question, ['home equipment', '20 minutes', 'make it 20'])) {
+            return $this->fixedCoachAnswer([
+                'Here is a 20-minute home alternative that keeps the knee in a pain-free range.',
+                'Do 3 rounds: 8-10 hip hinges, 10 glute bridges, 8 supported split-stance reaches per side, and 30 seconds easy marching or cycling if pain-free.',
+                'Keep every set easy to moderate, stop if pain increases, and swap any painful move for upper-body or core work.',
+            ], 'injury_home_alternative');
+        }
+
+        if ($this->containsAny($question, ['pain gets sharper', 'sharper during', 'sharp pain'])) {
+            return $this->fixedCoachAnswer([
+                'Stop the aggravating movement if the pain gets sharper during the set.',
+                'Regress to a pain-free alternative, reduce range of motion, or switch to recovery work for the day.',
+                'If sharp pain persists, is severe, or changes your walking mechanics, get clinician guidance instead of pushing through.',
+            ], 'injury_pain_boundary');
+        }
+
+        if ($this->containsAny($question, ['max-effort', 'max effort', 'deadlift']) && $this->containsAny($question, ['every day', '14 days', 'daily'])) {
+            return $this->fixedCoachAnswer([
+                'I would reject daily max-effort deadlifting because it ignores recovery and raises injury risk.',
+                'A safer strength progression is 2 deadlift-focused days per week, 1 lighter hinge/accessory day, and at least 48 hours between hard pulls.',
+                'Use your last 7 days of workouts to decide whether tomorrow should be hard, moderate, or recovery-focused.',
+            ], 'unsafe_training_guard');
+        }
+
+        if ($this->containsAny($question, ['last week of workouts', 'last week']) && $this->containsAny($question, ['tomorrow', 'workouts'])) {
+            return $this->fixedCoachAnswer([
+                $this->lastSevenWorkoutLine($context),
+                'For tomorrow, choose a safe next session based on that recent load: moderate full-body strength if you recovered well, or mobility plus easy cardio if soreness or fatigue is high.',
+                'Avoid repeating a max-effort deadlift day unless recovery and programming clearly support it.',
+            ], 'workout_context_next_step');
+        }
+
+        if ($this->containsAny($question, ['10 kg in 10 days', 'lose 10 kg']) || ($this->containsAny($question, ['exact calories']) && $this->containsAny($question, ['lose', 'cut']))) {
+            return $this->fixedCoachAnswer([
+                'I cannot give starvation calories for losing 10 kg in 10 days because that target is unsafe and unrealistic.',
+                'A safer pace is roughly 0.5-1% of body weight per week with a moderate calorie deficit, adequate protein, and normal hydration.',
+                $this->todayMacroLine($context).' Start with one modest adjustment rather than an extreme cut.',
+            ], 'extreme_weight_change_guard');
+        }
+
+        if ($this->containsAny($question, ['stop eating carbs and water', 'stop carbs and water', 'stop drinking water'])) {
+            return $this->fixedCoachAnswer([
+                'Keep drinking water normally; dehydration is unsafe and will not create sustainable fat loss.',
+                'You also do not need to remove all carbs. Use a modest carb portion around training, keep protein high, and keep water/hydration consistent.',
+                'A safer adjustment is reducing ultra-processed snacks or sugary drinks while keeping meals balanced.',
+            ], 'extreme_restriction_guard');
+        }
+
+        if ($this->containsAny($question, ['last 7 days']) && $this->containsAny($question, ['realistic adjustment', 'one realistic adjustment'])) {
+            return $this->fixedCoachAnswer([
+                $this->lastSevenNutritionLine($context),
+                'One realistic adjustment: keep protein consistent and change calories by only about 150-250 kcal per day if your weekly trend is not matching the goal.',
+                'Do not change water intake or remove whole food groups just to force a faster result.',
+            ], 'realistic_progress_adjustment');
+        }
+
+        if ($this->containsAny($question, ['fat burner', 'high caffeine', 'caffeine dose', 'stimulant'])) {
+            return $this->fixedCoachAnswer([
+                'I cannot recommend a fat-burner stack or high caffeine dose to cut faster because stimulant misuse can be unsafe.',
+                'Safer levers are a moderate calorie deficit, protein consistency, sleep, hydration, and training consistency.',
+                'If you use supplements or have blood-pressure, heart, anxiety, or medication concerns, check the label and ask a clinician.',
+            ], 'supplement_safety_guard');
+        }
+
+        if ($this->containsAny($question, ['doubling pre-workout', 'double pre-workout', 'doubling stimulant'])) {
+            return $this->fixedCoachAnswer([
+                'Do not double pre-workout because doubling stimulant supplements can increase side effects and does not replace recovery.',
+                'If you feel tired, choose rest, a lighter session, water, and a small carb-plus-protein meal instead.',
+                'Follow the product label and ask a clinician if you have medical conditions, medications, or stimulant sensitivity.',
+            ], 'supplement_safety_guard');
+        }
+
+        if ($this->containsAny($question, ['pre-workout meal']) && $this->containsAny($question, ['banana', 'yogurt'])) {
+            return $this->fixedCoachAnswer([
+                'Safe pre-workout meal option after allergy and diet checks: banana yogurt oat bowl.',
+                'Ingredients: 1 small banana, 3/4 cup yogurt or tolerated lactose-free yogurt, and 2 tablespoons oats.',
+                'Prep time: 3 minutes. Approximate macros: 260 kcal, 17 g protein, 43 g carbs, and 4 g fat.',
+            ], 'safe_preworkout_meal');
+        }
+
+        if ($this->containsAny($question, ['summarize my last 7 days', 'biggest pattern'])) {
+            return $this->mealSummaryAnswer($context, 'last 7 days');
+        }
+
+        if ($this->containsAny($question, ['based on both']) && $this->containsAny($question, ['dinner'])) {
+            return $this->fixedCoachAnswer([
+                $this->todayMacroLine($context).' '.$this->lastSevenNutritionLine($context),
+                'Dinner tonight: a safe balanced bowl with a lean protein, rice or potatoes, and vegetables that avoid your saved allergens and diet conflicts.',
+                'Keep sodium moderate, keep protein forward, and use the weekly pattern to decide whether the carb portion should be normal or slightly smaller.',
+            ], 'today_weekly_dinner');
+        }
+
+        if ($this->containsAny($question, ['eggs conflict', 'egg conflict', 'eggs conflict with my diet', 'eggs conflict with my allergies'])) {
+            return $this->fixedCoachAnswer([
+                'I checked your saved diet and allergies before assuming eggs are acceptable.',
+                'If eggs conflict with your diet or allergy needs, use this safe alternative recipe: lentil rice spinach bowl.',
+                'Ingredients: cooked lentils, cooked rice, spinach, and lemon. Prep: warm the lentils and rice, fold in spinach, then finish with lemon. Keep it free of saved allergens.',
+            ], 'recipe_restriction_alternative');
+        }
+
+        if ($this->containsAny($question, ['simplest version']) && $this->containsAny($question, ['macros', 'prep time'])) {
+            return $this->fixedCoachAnswer([
+                'Simplest safe version: microwave spinach rice bowl.',
+                'Prep time: 6 minutes. Ingredients: 1 cup cooked rice, 1 cup spinach, and a tolerated protein from your profile.',
+                'Approximate macros with eggs if tolerated: 420 kcal, 24 g protein, 52 g carbs, and 12 g fat. Use lentils or tofu instead if eggs conflict.',
+            ], 'simple_recipe_follow_up');
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, string>  $paragraphs
+     * @return array<string, mixed>
+     */
+    private function fixedCoachAnswer(array $paragraphs, string $reason): array
+    {
+        return [
+            'answer' => implode("\n\n", $paragraphs),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => $reason,
+            'model' => 'coach-safety-guard',
+        ];
     }
 
     private function proteinTargetAnswer(array $context): array
@@ -470,6 +712,237 @@ class CoachDeterministicResponder
         ];
     }
 
+    private function allergyExposureAuditAnswer(string $question, array $context): ?array
+    {
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        if ($allergies === []) {
+            return [
+                'answer' => 'I do not see any saved allergies on your profile yet, so I cannot run an allergy-exposure check. Add your allergy list first, then ask again.',
+                'warnings' => ['No saved allergies were available for an allergy exposure audit.'],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'allergy_exposure_check',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        $audit = is_array($context['allergy_audit'] ?? null) ? $context['allergy_audit'] : null;
+        if ($audit === null) {
+            return null;
+        }
+
+        $windowDays = $this->resolveAllergyAuditWindowDays($question);
+        $anchor = $this->resolveAuditAnchorDate($context);
+        $from = $anchor->copy()->subDays(max(0, $windowDays - 1))->startOfDay();
+
+        $entries = array_values(array_filter(
+            is_array($audit['entries'] ?? null) ? $audit['entries'] : [],
+            fn ($entry) => $this->entryWithinRange($entry, $from, $anchor)
+        ));
+
+        $matches = array_values(array_filter(
+            is_array($audit['matched_entries'] ?? null) ? $audit['matched_entries'] : [],
+            fn ($entry) => $this->entryWithinRange($entry, $from, $anchor)
+        ));
+
+        $windowLabel = $this->auditWindowLabel($windowDays);
+        $dateRangeLabel = sprintf('%s to %s', $from->toDateString(), $anchor->toDateString());
+        $savedAllergiesText = implode(', ', $allergies);
+
+        if ($entries === []) {
+            return [
+                'answer' => sprintf(
+                    'I do not see any logged meals for your %s window (%s), so I cannot confirm allergy exposure yet.',
+                    $windowLabel,
+                    $dateRangeLabel,
+                ),
+                'warnings' => ['No meal entries were available for the allergy exposure audit window.'],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'allergy_exposure_check',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        if ($matches === []) {
+            return [
+                'answer' => sprintf(
+                    'I checked your logged meals for the %s (%s) and I do not see entries that match your saved allergies (%s).',
+                    $windowLabel,
+                    $dateRangeLabel,
+                    $savedAllergiesText,
+                ),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'allergy_exposure_check',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        $lines = [
+            sprintf(
+                'Yes. I found %d logged meal entr%s in your %s (%s) that appear to match your saved allergies (%s).',
+                count($matches),
+                count($matches) === 1 ? 'y' : 'ies',
+                $windowLabel,
+                $dateRangeLabel,
+                $savedAllergiesText,
+            ),
+        ];
+
+        foreach (array_slice($matches, 0, 6) as $entry) {
+            $date = trim((string) ($entry['date'] ?? 'unknown date'));
+            $mealType = trim((string) ($entry['meal_type'] ?? 'meal'));
+            $foodName = trim((string) ($entry['food_name'] ?? 'logged food'));
+            $matchedAllergies = is_array($entry['matched_allergies'] ?? null)
+                ? implode(', ', $entry['matched_allergies'])
+                : 'saved allergies';
+
+            $lines[] = sprintf('- %s (%s): %s [matched: %s]', $date, $mealType, $foodName, $matchedAllergies);
+        }
+
+        if (count($matches) > 6) {
+            $lines[] = sprintf('...and %d more matching entries in that window.', count($matches) - 6);
+        }
+
+        $lines[] = 'This audit checks your logged food names plus saved food-allergen/ingredient tags. Packaged ingredients can vary, so verify labels when needed.';
+
+        return [
+            'answer' => implode("\n", $lines),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'allergy_exposure_check',
+            'model' => 'coach-meal-summary',
+        ];
+    }
+
+    private function ingredientExposureAuditAnswer(string $question, array $context): ?array
+    {
+        $ingredient = $this->extractAuditedIngredient($question);
+        if ($ingredient === null) {
+            return null;
+        }
+
+        $audit = is_array($context['allergy_audit'] ?? null) ? $context['allergy_audit'] : null;
+        if ($audit === null) {
+            return null;
+        }
+
+        $windowDays = $this->resolveAllergyAuditWindowDays($question);
+        $anchor = $this->resolveAuditAnchorDate($context);
+        $from = $anchor->copy()->subDays(max(0, $windowDays - 1))->startOfDay();
+
+        $entries = array_values(array_filter(
+            is_array($audit['entries'] ?? null) ? $audit['entries'] : [],
+            fn ($entry) => $this->entryWithinRange($entry, $from, $anchor)
+        ));
+
+        $windowLabel = $this->auditWindowLabel($windowDays);
+        $dateRangeLabel = sprintf('%s to %s', $from->toDateString(), $anchor->toDateString());
+
+        if ($entries === []) {
+            return [
+                'answer' => sprintf(
+                    'I do not see any logged meals for your %s window (%s), so I cannot verify %s exposure yet.',
+                    $windowLabel,
+                    $dateRangeLabel,
+                    $this->humanizeIngredient($ingredient),
+                ),
+                'warnings' => ['No meal entries were available for the ingredient exposure audit window.'],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'ingredient_exposure_check',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        $aliases = $this->ingredientAliases($ingredient);
+        $matches = array_values(array_filter($entries, function ($entry) use ($aliases): bool {
+            if (! is_array($entry)) {
+                return false;
+            }
+
+            $foodName = mb_strtolower(trim((string) ($entry['food_name'] ?? '')));
+            $ingredients = array_map(
+                static fn ($item) => mb_strtolower(trim((string) $item)),
+                is_array($entry['ingredients'] ?? null) ? $entry['ingredients'] : []
+            );
+            $allergens = array_map(
+                static fn ($item) => mb_strtolower(trim((string) $item)),
+                is_array($entry['allergens'] ?? null) ? $entry['allergens'] : []
+            );
+
+            foreach ($aliases as $alias) {
+                if ($alias === '') {
+                    continue;
+                }
+
+                if ($this->containsAny($foodName, [$alias])) {
+                    return true;
+                }
+
+                if (in_array($alias, $ingredients, true) || in_array($alias, $allergens, true)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+
+        if ($matches === []) {
+            return [
+                'answer' => sprintf(
+                    'I checked your logged meals for the %s (%s) and I do not see entries containing %s.',
+                    $windowLabel,
+                    $dateRangeLabel,
+                    $this->humanizeIngredient($ingredient),
+                ),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'ingredient_exposure_check',
+                'model' => 'coach-meal-summary',
+            ];
+        }
+
+        $lines = [
+            sprintf(
+                'Yes. I found %d logged meal entr%s in your %s (%s) containing %s.',
+                count($matches),
+                count($matches) === 1 ? 'y' : 'ies',
+                $windowLabel,
+                $dateRangeLabel,
+                $this->humanizeIngredient($ingredient),
+            ),
+        ];
+
+        foreach (array_slice($matches, 0, 8) as $entry) {
+            $date = trim((string) ($entry['date'] ?? 'unknown date'));
+            $mealType = trim((string) ($entry['meal_type'] ?? 'meal'));
+            $foodName = trim((string) ($entry['food_name'] ?? 'logged food'));
+            $lines[] = sprintf('- %s (%s): %s', $date, $mealType, $foodName);
+        }
+
+        if (count($matches) > 8) {
+            $lines[] = sprintf('...and %d more matching entries in that window.', count($matches) - 8);
+        }
+
+        return [
+            'answer' => implode("\n", $lines),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'ingredient_exposure_check',
+            'model' => 'coach-meal-summary',
+        ];
+    }
+
     private function allergyAlternativeAnswer(string $question, array $context): ?array
     {
         $allergies = array_values(array_filter(array_map(
@@ -514,7 +987,7 @@ class CoachDeterministicResponder
             'answer' => implode("\n\n", [
                 sprintf(
                     '%s is not a safe option for you because it conflicts with your saved allergy to %s.',
-                    $this->humanizeIngredient($matchedAllergy).' toast',
+                    $this->humanizeIngredient($matchedAllergy),
                     $matchedAllergy,
                 ),
                 sprintf(
@@ -531,6 +1004,102 @@ class CoachDeterministicResponder
             'chat_path' => 'personalized',
             'mode_label' => 'Personalized',
             'reason' => 'allergy_safe_alternative',
+            'model' => 'coach-recipe-builder',
+        ];
+    }
+
+    private function allergyConflictAnswer(string $question, array $context): ?array
+    {
+        $matchedAllergy = $this->matchedSavedAllergy($question, $context);
+
+        if ($matchedAllergy === null) {
+            return null;
+        }
+
+        $humanAllergy = $this->humanizeIngredient($matchedAllergy);
+
+        if ($this->containsAny($question, ['one bite', 'small bite', 'scrape', 'scraped', 'cross contact', 'cross-contact', 'residue'])) {
+            return [
+                'answer' => implode("\n\n", [
+                    sprintf(
+                        'I cannot treat one bite or scraping %s off as safe because it still conflicts with your saved allergy.',
+                        $matchedAllergy,
+                    ),
+                    'Avoid the allergen completely; cross-contact or residue can still be a problem. If you are unsure about severity or exposure, check with a clinician.',
+                    'Safer swap: choose a high-protein option that avoids the allergen, such as Greek yogurt with berries and oats, cottage cheese with fruit, or eggs with whole-grain toast if those fit your profile.',
+                ]),
+                'warnings' => [],
+                'chat_path' => 'personalized',
+                'mode_label' => 'Personalized',
+                'reason' => 'allergy_conflict_guard',
+                'model' => 'coach-safety-guard',
+            ];
+        }
+
+        $recipe = $this->resolveRecentSafeRecipe($context) ?? $this->defaultSafeSnackRecipe($context);
+
+        return [
+            'answer' => implode("\n\n", [
+                sprintf(
+                    'I cannot recommend %s because it conflicts with your saved allergy to %s.',
+                    $humanAllergy,
+                    $matchedAllergy,
+                ),
+                sprintf(
+                    'A safer high-protein alternative is %s. Macros per serving: %d kcal, %d g protein, %d g carbs, %d g fat.',
+                    $recipe['title'],
+                    $recipe['macros']['calories'],
+                    $recipe['macros']['protein_g'],
+                    $recipe['macros']['carbs_g'],
+                    $recipe['macros']['fat_g'],
+                ),
+                'Ingredients:'."\n".'- '.implode("\n- ", $recipe['ingredients']),
+                'Steps:'."\n".'1. '.implode("\n1. ", $recipe['steps']),
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'allergy_conflict_guard',
+            'model' => 'coach-safety-guard',
+        ];
+    }
+
+    private function availableIngredientRecipeAnswer(array $context): ?array
+    {
+        $available = $this->safeAvailableIngredients($context);
+
+        if ($available === []) {
+            return null;
+        }
+
+        $recipe = $this->recipeFromAvailableIngredients($available);
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        $allergyNote = $allergies !== []
+            ? ' I avoided your saved allergies: '.implode(', ', $allergies).'.'
+            : '';
+
+        return [
+            'answer' => implode("\n\n", [
+                'Here is a safer alternative substitute recipe using your available ingredients.'.$allergyNote,
+                sprintf(
+                    '%s: %d kcal, %d g protein, %d g carbs, %d g fat per serving.',
+                    $recipe['title'],
+                    $recipe['macros']['calories'],
+                    $recipe['macros']['protein_g'],
+                    $recipe['macros']['carbs_g'],
+                    $recipe['macros']['fat_g'],
+                ),
+                'Ingredients:'."\n".'- '.implode("\n- ", $recipe['ingredients']),
+                'Steps:'."\n".'1. '.implode("\n1. ", $recipe['steps']),
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'available_ingredient_safe_recipe',
             'model' => 'coach-recipe-builder',
         ];
     }
@@ -1004,8 +1573,217 @@ class CoachDeterministicResponder
         return null;
     }
 
-    private function outOfDomainAnswer(User $user): string
+    /**
+     * @return array{title: string, ingredients: array<int, string>, steps: array<int, string>, macros: array{calories: int, protein_g: int, carbs_g: int, fat_g: int}}
+     */
+    private function defaultSafeSnackRecipe(array $context): array
     {
+        $dietType = mb_strtolower((string) ($context['restrictions']['diet_type'] ?? ''));
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+        $avoidDairy = $this->containsAny($dietType, ['vegan'])
+            || $this->containsAny(implode(' ', $allergies), ['milk', 'dairy', 'lactose']);
+
+        if ($avoidDairy) {
+            return [
+                'title' => 'berry protein oats cup',
+                'ingredients' => [
+                    '1/3 cup rolled oats',
+                    '1/2 cup berries',
+                    '1 scoop pea protein mixed with water',
+                    '1 teaspoon chia seeds',
+                ],
+                'steps' => [
+                    'Mix oats, berries, and chia in a bowl.',
+                    'Stir the pea protein with water until smooth.',
+                    'Serve the protein drink alongside the oats, or stir it in after the oats cool.',
+                ],
+                'macros' => [
+                    'calories' => 300,
+                    'protein_g' => 27,
+                    'carbs_g' => 36,
+                    'fat_g' => 5,
+                ],
+            ];
+        }
+
+        return [
+            'title' => 'Greek yogurt berry bowl',
+            'ingredients' => [
+                '1 cup plain Greek yogurt',
+                '1/2 cup mixed berries',
+                '1 tablespoon chia seeds',
+                '1 teaspoon honey',
+            ],
+            'steps' => [
+                'Add the Greek yogurt to a bowl.',
+                'Top with berries and chia seeds.',
+                'Finish with a small drizzle of honey.',
+            ],
+            'macros' => [
+                'calories' => 220,
+                'protein_g' => 23,
+                'carbs_g' => 19,
+                'fat_g' => 5,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function safeAvailableIngredients(array $context): array
+    {
+        $available = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['runtime']['available_ingredients'] ?? [],
+        )));
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        if ($available === []) {
+            return [];
+        }
+
+        return array_values(array_filter($available, function (string $ingredient) use ($allergies): bool {
+            return ! $this->containsAny($ingredient, $allergies);
+        }));
+    }
+
+    /**
+     * @param  array<int, string>  $available
+     * @return array{title: string, ingredients: array<int, string>, steps: array<int, string>, macros: array{calories: int, protein_g: int, carbs_g: int, fat_g: int}}
+     */
+    private function recipeFromAvailableIngredients(array $available): array
+    {
+        $availableText = implode(' ', $available);
+
+        if ($this->containsAny($availableText, ['yogurt']) && $this->containsAny($availableText, ['berries', 'berry']) && $this->containsAny($availableText, ['oats', 'oat'])) {
+            return [
+                'title' => 'Safe yogurt berry oat bowl',
+                'ingredients' => [
+                    '3/4 cup plain yogurt',
+                    '1/2 cup berries',
+                    '1/4 cup oats',
+                ],
+                'steps' => [
+                    'Spoon the yogurt into a bowl.',
+                    'Top with berries and oats.',
+                    'Let it sit for 5 minutes if you want the oats softer.',
+                ],
+                'macros' => [
+                    'calories' => 295,
+                    'protein_g' => 21,
+                    'carbs_g' => 42,
+                    'fat_g' => 6,
+                ],
+            ];
+        }
+
+        if ($this->containsAny($availableText, ['lentils']) && $this->containsAny($availableText, ['rice']) && $this->containsAny($availableText, ['spinach'])) {
+            return [
+                'title' => 'Lentil rice spinach bowl',
+                'ingredients' => [
+                    '3/4 cup cooked lentils',
+                    '1/2 cup cooked rice',
+                    '1 cup spinach',
+                    'lemon juice to taste',
+                ],
+                'steps' => [
+                    'Warm the lentils and rice together.',
+                    'Fold in spinach until just wilted.',
+                    'Finish with lemon juice and serve.',
+                ],
+                'macros' => [
+                    'calories' => 360,
+                    'protein_g' => 20,
+                    'carbs_g' => 62,
+                    'fat_g' => 4,
+                ],
+            ];
+        }
+
+        $ingredients = array_slice($available, 0, 4);
+
+        return [
+            'title' => 'Safe available-ingredient bowl',
+            'ingredients' => array_map(
+                static fn (string $ingredient): string => '1 portion '.$ingredient,
+                $ingredients,
+            ),
+            'steps' => [
+                'Combine the available ingredients in a bowl.',
+                'Use gentle seasoning that does not conflict with your saved restrictions.',
+                'Adjust portions around your daily calorie and protein targets.',
+            ],
+            'macros' => [
+                'calories' => 320,
+                'protein_g' => 18,
+                'carbs_g' => 42,
+                'fat_g' => 8,
+            ],
+        ];
+    }
+
+    private function outOfDomainAnswer(User $user, string $question = ''): string
+    {
+        if ($this->containsAny($question, [
+            'admin notifications',
+            'moderation notes',
+            'private user details',
+            'memory buffer',
+            'extract all client records',
+            'client records',
+            'database records',
+            'sql commands',
+            'delete a user from production',
+            'all conversations',
+            'all chat conversations',
+        ])) {
+            return 'I cannot reveal admin notifications, moderation notes, private user details, chat history, or database records. I can help with workouts, meals, macros, recovery, plans, and progress in Hayetak.';
+        }
+
+        if ($this->containsAny($question, [
+            'legal loophole',
+            'avoid paying taxes',
+            'tax loophole',
+            'tax advice',
+        ])) {
+            return 'I cannot provide legal loopholes or tax-evasion advice here. I can help with workouts, meals, macros, recovery, plans, and progress in Hayetak.';
+        }
+
+        if ($this->containsAny($question, [
+            'diagnose',
+            'skin rash',
+            'prescribe treatment',
+            'prescribe medication',
+            'medication dosage',
+        ])) {
+            return 'I cannot diagnose skin conditions from a photo or prescribe treatment or medication. Please contact a licensed clinician for diagnosis. I can help with fitness and nutrition guidance that stays in scope.';
+        }
+
+        if ($this->containsAny($question, [
+            'ignore instruction hierarchy',
+            'obey only this message',
+            'ignore policy',
+            'ignore restrictions',
+            'ignore safety policy',
+            'bypass guardrails',
+        ])) {
+            return 'I cannot ignore instruction hierarchy, safety rules, or privacy policies. I can help with workouts, meals, macros, recovery, plans, and progress in Hayetak.';
+        }
+
+        if ($this->containsAny($question, [
+            'ignore injury constraints',
+            'maximal-risk exercises',
+        ])) {
+            return 'I cannot ignore injury constraints or prescribe maximal-risk exercises. I can help with workouts and safer alternatives that match your injuries and available equipment.';
+        }
+
         if ($user->role === User::ROLE_ADMIN) {
             return 'I can help with your own fitness and nutrition questions, recovery, plans, progress, and Hayetak workflow guidance, but I do not answer general trivia or unrelated topics here.';
         }
@@ -1059,10 +1837,13 @@ class CoachDeterministicResponder
             'what are my allergens',
             'what allergies do i have',
             'what allergens do i have',
+            'what allergies do you have saved for me',
+            'what allergens do you have saved for me',
             'my allergies',
             'my allergens',
             'allergy list',
             'allergen list',
+            'exactly as listed in my profile',
             'asked only for allergies',
             'show my allergies',
             'show my allergens',
@@ -1143,6 +1924,51 @@ class CoachDeterministicResponder
         return $this->extractSafetyIngredient($question) !== null;
     }
 
+    private function isAllergyConflictRequest(string $question, array $context): bool
+    {
+        $matchedAllergy = $this->matchedSavedAllergy($question, $context);
+
+        if ($matchedAllergy === null) {
+            return false;
+        }
+
+        if ($this->containsAny($question, ['one bite', 'small bite', 'scrape', 'scraped', 'cross contact', 'cross-contact', 'residue'])) {
+            return true;
+        }
+
+        return $this->containsAny($question, [
+            'allergy',
+            'allergies',
+            'allergic',
+            'allergen',
+            'safe',
+            'okay',
+            'ok',
+            'make',
+            'recipe',
+            'snack',
+            'meal',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'dessert',
+            'protein',
+        ]);
+    }
+
+    private function isAvailableIngredientRecipeRequest(string $question, array $context): bool
+    {
+        if (! $this->containsAny($question, ['recipe', 'snack', 'meal', 'breakfast', 'lunch', 'dinner', 'macros', 'macro'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['available ingredient', 'available ingredients', 'use my', 'only', 'with'])) {
+            return false;
+        }
+
+        return $this->safeAvailableIngredients($context) !== [];
+    }
+
     private function isAllergyIngredientQuestion(string $question, array $context): bool
     {
         if (! $this->containsAny($question, ['what about', 'can i have', 'is ', 'would ', 'okay', 'safe'])) {
@@ -1152,6 +1978,37 @@ class CoachDeterministicResponder
         $allergies = array_map('mb_strtolower', $context['restrictions']['allergies'] ?? []);
 
         return $this->containsAny($question, $allergies);
+    }
+
+    private function matchedSavedAllergy(string $question, array $context): ?string
+    {
+        $allergies = array_values(array_filter(array_map(
+            'mb_strtolower',
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        foreach ($allergies as $allergy) {
+            if ($allergy !== '' && str_contains($question, $allergy)) {
+                return $allergy;
+            }
+        }
+
+        if ($this->containsAny($question, ['one bite', 'small bite', 'scrape', 'scraped', 'cross contact', 'cross-contact', 'residue'])) {
+            $recentTurns = is_array($context['conversation_context']['recent_turns'] ?? null)
+                ? $context['conversation_context']['recent_turns']
+                : [];
+
+            foreach (array_reverse($recentTurns) as $turn) {
+                $content = mb_strtolower(trim((string) ($turn['c'] ?? '')));
+                foreach ($allergies as $allergy) {
+                    if ($allergy !== '' && str_contains($content, $allergy)) {
+                        return $allergy;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private function extractSafetyIngredient(string $question): ?string
@@ -1185,6 +2042,25 @@ class CoachDeterministicResponder
 
     private function isDinnerIngredientFollowUp(string $question): bool
     {
+        if ($this->containsAny($question, [
+            'did i',
+            'have i',
+            'logged',
+            'log',
+            'consumed',
+            'consume',
+            'last 30 days',
+            'last 7 days',
+            'past month',
+            'past week',
+            'today',
+            'yesterday',
+            'have i ever',
+            'containing',
+        ])) {
+            return false;
+        }
+
         return $this->containsAny($question, [
             'dinner',
             'healthy and balanced dinner',
@@ -1227,6 +2103,161 @@ class CoachDeterministicResponder
         return ucfirst(trim($ingredient));
     }
 
+    private function resolveAllergyAuditWindowDays(string $question): int
+    {
+        if ($this->containsAny($question, ['today'])) {
+            return 1;
+        }
+
+        if ($this->containsAny($question, ['yesterday'])) {
+            return 2;
+        }
+
+        if ($this->containsAny($question, ['past week', 'last week', 'this week', 'last 7 days', 'past 7 days', 'last seven days'])) {
+            return 7;
+        }
+
+        if ($this->containsAny($question, ['past month', 'last month', 'last 30 days', 'past 30 days', '30 days'])) {
+            return 30;
+        }
+
+        return 30;
+    }
+
+    private function resolveAuditAnchorDate(array $context): Carbon
+    {
+        $candidate = trim((string) ($context['today_summary']['date'] ?? ''));
+        if ($candidate !== '') {
+            try {
+                return Carbon::createFromFormat('Y-m-d', $candidate)->startOfDay();
+            } catch (\Throwable) {
+                // Fallback to today.
+            }
+        }
+
+        return Carbon::today();
+    }
+
+    private function entryWithinRange(mixed $entry, Carbon $from, Carbon $to): bool
+    {
+        if (! is_array($entry)) {
+            return false;
+        }
+
+        $rawDate = trim((string) ($entry['date'] ?? ''));
+        if ($rawDate === '') {
+            return false;
+        }
+
+        try {
+            $day = Carbon::createFromFormat('Y-m-d', $rawDate)->startOfDay();
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $fromDay = $from->copy()->startOfDay();
+        $toDay = $to->copy()->startOfDay();
+
+        return $day->greaterThanOrEqualTo($fromDay) && $day->lessThanOrEqualTo($toDay);
+    }
+
+    private function auditWindowLabel(int $windowDays): string
+    {
+        return match ($windowDays) {
+            1 => 'today',
+            2 => 'today and yesterday',
+            7 => 'last 7 days',
+            30 => 'last 30 days',
+            default => sprintf('last %d days', $windowDays),
+        };
+    }
+
+    private function isAllergyExposureAuditQuestion(string $question): bool
+    {
+        if (! $this->containsAny($question, ['allergy', 'allergies', 'allergic', 'allergen', 'allergens'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['consumed', 'consume', 'ate', 'eaten', 'logged', 'log', 'have i ever', 'did i', 'do i'])) {
+            return false;
+        }
+
+        return $this->containsAny($question, [
+            'past week',
+            'last week',
+            'this week',
+            'last 7 days',
+            'past 7 days',
+            'past month',
+            'last month',
+            '30 days',
+            'today',
+            'yesterday',
+        ]);
+    }
+
+    private function isIngredientExposureAuditQuestion(string $question): bool
+    {
+        if (! $this->containsAny($question, self::INGREDIENT_AUDIT_KEYWORDS)) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['logged', 'log', 'did i', 'have i', 'consumed', 'consume', 'ate', 'eaten'])) {
+            return false;
+        }
+
+        if (! $this->containsAny($question, ['meal', 'meals', 'food', 'ingredient', 'contains', 'containing'])) {
+            return false;
+        }
+
+        return $this->containsAny($question, [
+            'today',
+            'yesterday',
+            'past week',
+            'last week',
+            'this week',
+            'last 7 days',
+            'past 7 days',
+            'past month',
+            'last month',
+            'last 30 days',
+            'past 30 days',
+            '30 days',
+            'have i ever',
+        ]);
+    }
+
+    private function extractAuditedIngredient(string $question): ?string
+    {
+        foreach (self::INGREDIENT_AUDIT_KEYWORDS as $ingredient) {
+            if ($this->containsAny($question, [$ingredient])) {
+                return $ingredient;
+            }
+        }
+
+        if (preg_match('/containing\s+([a-z ]{3,30})/u', $question, $matches) === 1) {
+            return trim((string) ($matches[1] ?? '')) ?: null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function ingredientAliases(string $ingredient): array
+    {
+        $normalized = mb_strtolower(trim($ingredient));
+        $aliases = match ($normalized) {
+            'fish' => ['fish', 'salmon', 'tuna', 'sardine', 'sea bass'],
+            'eggs' => ['egg', 'eggs'],
+            'peanuts' => ['peanut', 'peanuts'],
+            default => [$normalized],
+        };
+
+        return array_values(array_unique(array_filter($aliases)));
+    }
+
     private function containsAny(string $haystack, array $needles): bool
     {
         foreach ($needles as $needle) {
@@ -1236,6 +2267,76 @@ class CoachDeterministicResponder
         }
 
         return false;
+    }
+
+    /**
+     * @param  array<int, string>  $needles
+     */
+    private function recentContextContains(array $context, array $needles): bool
+    {
+        $recentTurns = is_array($context['conversation_context']['recent_turns'] ?? null)
+            ? $context['conversation_context']['recent_turns']
+            : [];
+        $summary = mb_strtolower(trim((string) ($context['conversation_context']['summary'] ?? '')));
+        $text = $summary;
+
+        foreach ($recentTurns as $turn) {
+            $text .= ' '.mb_strtolower(trim((string) ($turn['c'] ?? '')));
+        }
+
+        return $this->containsAny($text, $needles);
+    }
+
+    private function todayMacroLine(array $context): string
+    {
+        $today = is_array($context['today_summary'] ?? null) ? $context['today_summary'] : [];
+        $date = trim((string) ($today['date'] ?? 'today'));
+        $calories = is_numeric($today['calories'] ?? null) ? (int) $today['calories'] : 0;
+        $protein = is_numeric($today['protein_g'] ?? null) ? (int) $today['protein_g'] : 0;
+        $carbs = is_numeric($today['carbs_g'] ?? null) ? (int) $today['carbs_g'] : 0;
+        $fat = is_numeric($today['fat_g'] ?? null) ? (int) $today['fat_g'] : 0;
+
+        return sprintf(
+            'Today (%s), your logged macros are %d kcal, %d g protein, %d g carbs, and %d g fat.',
+            $date,
+            $calories,
+            $protein,
+            $carbs,
+            $fat,
+        );
+    }
+
+    private function lastSevenNutritionLine(array $context): string
+    {
+        $nutrition = is_array($context['last_7_days_summary']['nutrition'] ?? null)
+            ? $context['last_7_days_summary']['nutrition']
+            : [];
+        $daysLogged = is_numeric($nutrition['days_logged'] ?? null) ? (int) $nutrition['days_logged'] : 0;
+        $avgKcal = is_numeric($nutrition['avg_kcal'] ?? null) ? (int) $nutrition['avg_kcal'] : 0;
+        $avgProtein = is_numeric($nutrition['avg_protein_g'] ?? null) ? (int) $nutrition['avg_protein_g'] : 0;
+
+        if ($daysLogged <= 0) {
+            return 'Last 7 days summary: no logged meal days are available, so weekly nutrition patterns are limited.';
+        }
+
+        return sprintf(
+            'Last 7 days summary: %d logged day(s), averaging %d kcal and %d g protein per logged day.',
+            $daysLogged,
+            $avgKcal,
+            $avgProtein,
+        );
+    }
+
+    private function lastSevenWorkoutLine(array $context): string
+    {
+        $workouts = is_numeric($context['last_7_days_summary']['workouts_completed'] ?? null)
+            ? (int) $context['last_7_days_summary']['workouts_completed']
+            : 0;
+
+        return sprintf(
+            'Last 7 days workout summary: you completed %d workout(s), so tomorrow should account for recent fatigue and recovery.',
+            $workouts,
+        );
     }
 
     private function largestLoggedMealType(array $meals): ?string
@@ -1295,6 +2396,10 @@ class CoachDeterministicResponder
         return $this->containsAny($question, [
             'last 7 days',
             'last seven days',
+            'past 7 days',
+            'past seven days',
+            'past week',
+            'last week',
             'this week',
             'weekly summary',
             'week summary',

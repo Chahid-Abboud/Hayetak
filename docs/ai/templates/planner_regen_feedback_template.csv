@@ -1,0 +1,2 @@
+regen_event_id,profile_id,previous_plan_run_id,new_plan_run_id,requested_at_utc,requested_reason,changed_sections_json,change_summary_text,post_regen_adherence_workout_pct,post_regen_adherence_diet_pct,post_regen_feedback_score_1_to_5,post_regen_feedback_text
+G0001,P0001,R0001,R0002,2026-04-25T00:00:00Z,meals_too_repetitive,"[""meal_rotation"",""snack_options""]","Added alternatives and simplified prep steps.",90,87,5,"Regenerated version was much easier to sustain."

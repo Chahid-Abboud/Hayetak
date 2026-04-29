@@ -23,6 +23,9 @@ class UserDietaryRestriction extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * User whose normalized dietary restriction record this row represents.
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -88,7 +88,21 @@ class CoachToolExecutor
         $feature = mb_strtolower((string) ($classification['feature'] ?? ''));
         $calls = [];
 
-        if ($this->containsAny($text, ['recipe', 'recipes', 'snack', 'dinner', 'breakfast', 'lunch', 'meal', 'ingredients'])) {
+        if ($this->containsAny($text, [
+            'recipe',
+            'recipes',
+            'snack',
+            'dinner',
+            'breakfast',
+            'lunch',
+            'meal',
+            'ingredients',
+            'suggest chicken',
+            'banana and yogurt',
+            'eggs conflict',
+            'egg conflict',
+            'safe alternative',
+        ])) {
             $calls[] = [
                 'name' => 'search_recipes',
                 'arguments' => [
@@ -102,7 +116,7 @@ class CoachToolExecutor
             ];
         }
 
-        if ($this->containsAny($text, ['calories', 'calorie', 'protein', 'carbs', 'fat', 'macros', 'macro'])) {
+        if ($this->containsAny($text, ['calories', 'calorie', 'protein', 'carbs', 'fat', 'macros', 'macro', 'logs', 'based on both'])) {
             $calls[] = [
                 'name' => 'get_day_macros',
                 'arguments' => [
@@ -111,7 +125,7 @@ class CoachToolExecutor
             ];
         }
 
-        if ($this->containsAny($text, ['last 7', 'last seven', 'this week', 'weekly', 'week summary'])) {
+        if ($this->containsAny($text, ['last 7', 'last seven', 'last week', 'this week', 'weekly', 'week summary', 'logs', 'based on both', 'every day for the next 14 days', 'next 14 days'])) {
             $calls[] = [
                 'name' => 'summarize_last_7_days',
                 'arguments' => [
@@ -122,13 +136,13 @@ class CoachToolExecutor
 
         if (
             $feature === 'workout'
-            || $this->containsAny($text, ['exercise alternative', 'alternative exercise', 'instead of', 'injury', 'pain', 'knee', 'shoulder', 'back'])
+            || $this->containsAny($text, ['exercise alternative', 'alternative exercise', 'instead of', 'injury', 'pain', 'knee', 'shoulder', 'back', 'home equipment', '20 minutes', 'deadlift', 'squat'])
         ) {
             $calls[] = [
                 'name' => 'suggest_exercise_alternatives',
                 'arguments' => [
                     'target' => $question,
-                    'equipment' => $this->normalizeList($runtimeContext['available_equipment'] ?? $runtimeContext['available_ingredients'] ?? []),
+                    'equipment' => $this->normalizeList($runtimeContext['available_equipment'] ?? []),
                     'injuries' => $this->normalizeList($runtimeContext['injuries'] ?? []),
                     'workout_location' => $runtimeContext['workout_location'] ?? null,
                     'limit' => 4,

@@ -56,7 +56,7 @@ class LegacyCatalogSeeder extends Seeder
 
                 // Fix MySQL-style escaping that breaks Postgres when standard_conforming_strings=on
                 // Example: Farmer\'s Walk  ->  Farmer''s Walk
-                $fixed = str_replace("\\'", "''", $lineTrim);
+                $fixed = str_replace("\'", "''", $lineTrim);
 
                 // Execute the INSERT
                 try {

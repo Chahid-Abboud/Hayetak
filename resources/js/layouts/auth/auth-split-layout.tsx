@@ -19,19 +19,19 @@ export default function AuthSplitLayout({
     return (
         <div className="relative grid min-h-svh bg-background px-4 py-6 sm:px-6 lg:max-w-none lg:grid-cols-2 lg:px-0 lg:py-0">
             <div className="relative hidden h-full flex-col overflow-hidden border-r border-border/60 p-10 text-white lg:flex">
-                <div className="absolute inset-0 bg-[linear-gradient(160deg,#0f172a_0%,#162033_42%,#13263a_100%)]" />
-                <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,rgba(250,204,21,0.18),transparent_60%)]" />
-                <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-teal-400/10 blur-3xl" />
+                <div className="absolute inset-0 bg-sidebar" />
+                <div className="absolute inset-x-0 top-0 h-64 bg-primary/10" />
+                <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
                 <Link
                     href={home()}
                     className="relative z-20 inline-flex items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-lg font-medium backdrop-blur"
                 >
-                    <AppLogoIcon className="mr-2 size-8 fill-current text-white" />
+                    <AppLogoIcon className="mr-2 size-8" />
                     {name}
                 </Link>
 
                 <div className="relative z-20 mt-10 max-w-lg space-y-4">
-                    <p className="text-sm font-semibold tracking-[0.24em] text-amber-100/80 uppercase">
+                    <p className="text-sm font-semibold tracking-[0.24em] text-primary uppercase">
                         Hayetak access
                     </p>
                     <h2 className="text-4xl font-semibold tracking-tight">
@@ -57,7 +57,7 @@ export default function AuthSplitLayout({
                     )}
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-[24px] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur">
-                            <p className="text-[11px] font-semibold tracking-[0.2em] text-amber-100 uppercase">
+                            <p className="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
                                 Planner
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white/70">
@@ -66,7 +66,7 @@ export default function AuthSplitLayout({
                             </p>
                         </div>
                         <div className="rounded-[24px] border border-white/10 bg-white/6 px-4 py-4 backdrop-blur">
-                            <p className="text-[11px] font-semibold tracking-[0.2em] text-amber-100 uppercase">
+                            <p className="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
                                 Coach
                             </p>
                             <p className="mt-2 text-sm leading-6 text-white/70">
@@ -84,7 +84,7 @@ export default function AuthSplitLayout({
                         href={home()}
                         className="relative z-20 inline-flex items-center justify-center rounded-full border border-border/70 bg-card/72 px-4 py-2 shadow-sm backdrop-blur lg:hidden"
                     >
-                        <AppLogoIcon className="mr-2 h-8 fill-current text-primary sm:h-9" />
+                        <AppLogoIcon className="mr-2 h-8 sm:h-9" />
                         <span className="font-semibold tracking-tight text-foreground">
                             {name}
                         </span>

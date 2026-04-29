@@ -1,7 +1,7 @@
 <?php
 
-use App\Jobs\GeneratePlansForUser;
-use App\Models\AiRequest;
+use App\Jobs\Ai\GeneratePlansForUser;
+use App\Models\Ai\AiRequest;
 use App\Models\NutritionPlan;
 use App\Models\User;
 use App\Models\WorkoutPlan;

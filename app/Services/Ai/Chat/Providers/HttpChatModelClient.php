@@ -8,6 +8,9 @@ use RuntimeException;
 
 class HttpChatModelClient implements ChatModelClient
 {
+    /**
+     * Forward chat calls to an external HTTP endpoint and normalize the provider payload.
+     */
     public function respond(string $question, array $context, array $options = []): array
     {
         $endpoint = trim((string) config('ai.chat.http.endpoint'));

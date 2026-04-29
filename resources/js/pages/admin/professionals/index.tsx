@@ -1,12 +1,33 @@
 import {
+    AdminCheckboxField,
+    AdminDataTable,
+    AdminEmpty,
+    AdminField,
+    AdminInput,
+    AdminNativeSelect,
+    AdminNotice,
+    AdminOverviewCard,
+    AdminPagination,
+    AdminPanel,
+    AdminScrollArea,
+    AdminSearchInput,
+    AdminStickyBar,
+    AdminTextarea,
+    AdminToolbar,
+    AdminToolbarGroup,
+} from '@/components/admin/admin-ui';
+import {
+    AdminSplitView,
+    EntityDetailDrawer,
+    StatusChipSet,
+} from '@/components/admin/admin-workflows';
+import {
     AdminSection,
     AdminShell,
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
-import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import {
-    ProductTable,
     ProductTableBody,
     ProductTableCell,
     ProductTableEmptyRow,
@@ -17,13 +38,17 @@ import {
 import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { jsonRequestInit } from '@/lib/http';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { RefreshCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
+type ProfessionalVerificationSummary = {
+    review_status?: string | null;
+    notes?: string | null;
+    authority?: string | null;
+    expiry_date?: string | null;
+};
 
 type Pro = {
     id: number;
@@ -38,37 +63,422 @@ type Pro = {
     specialties?: string[] | null;
     availability_text?: string | null;
     contact_display?: string | null;
+    latest_professional_verification?: ProfessionalVerificationSummary | null;
 };
+
+type ProfessionalResponse = {
+    data?: Pro[];
+    total?: number;
+    current_page?: number;
+    last_page?: number;
+    from?: number | null;
+    to?: number | null;
+};
+
+function professionalName(professional?: Pro | null) {
+    return (
+        [professional?.first_name, professional?.last_name]
+            .filter(Boolean)
+            .join(' ') ||
+        professional?.email ||
+        'Professional'
+    );
+}
+
+function formatRoleLabel(role?: Pro['role'] | null) {
+    return role === 'nutritionist' ? 'Dietitian' : 'Trainer';
+}
+
+function formatStatusLabel(value?: string | null) {
+    if (!value) {
+        return 'Pending';
+    }
+
+    return value
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatDate(value?: string | null) {
+    if (!value) {
+        return 'Not available';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(date);
+}
+
+function normalizeText(value?: string | null) {
+    const normalized = value?.trim();
+    return normalized ? normalized : null;
+}
+
+function directoryGaps(professional?: Pro | null) {
+    if (!professional) {
+        return [];
+    }
+
+    const gaps: string[] = [];
+
+    if (!normalizeText(professional.city)) {
+        gaps.push('City');
+    }
+
+    if (!normalizeText(professional.contact_display)) {
+        gaps.push('Contact display');
+    }
+
+    if (!normalizeText(professional.availability_text)) {
+        gaps.push('Availability');
+    }
+
+    if (!normalizeText(professional.professional_bio)) {
+        gaps.push('Bio');
+    }
+
+    if ((professional.specialties ?? []).length === 0) {
+        gaps.push('Specialties');
+    }
+
+    return gaps;
+}
+
+function isDirectoryReady(professional?: Pro | null) {
+    return Boolean(professional?.verified) && directoryGaps(professional).length === 0;
+}
+
+function buildProfessionalPayload(professional: Pro) {
+    return {
+        first_name: normalizeText(professional.first_name),
+        last_name: normalizeText(professional.last_name),
+        city: normalizeText(professional.city),
+        contact_display: normalizeText(professional.contact_display),
+        professional_bio: normalizeText(professional.professional_bio),
+        availability_text: normalizeText(professional.availability_text),
+        specialties: (professional.specialties ?? [])
+            .map((item) => item.trim())
+            .filter(Boolean),
+        verified: professional.verified,
+        status: normalizeText(professional.status),
+    };
+}
+
+function ProfessionalEditorSurface({
+    professional,
+    onChange,
+    onSave,
+    onRefresh,
+    loading,
+    saving,
+}: {
+    professional: Pro | null;
+    onChange: (next: Pro) => void;
+    onSave: () => void;
+    onRefresh: () => void;
+    loading: boolean;
+    saving: boolean;
+}) {
+    if (loading && !professional) {
+        return (
+            <AdminEmpty
+                title="Loading professional context"
+                description="Pulling the selected profile, public fields, and verification snapshot."
+            />
+        );
+    }
+
+    if (!professional) {
+        return (
+            <AdminEmpty
+                title="Select a professional"
+                description="Choose someone from the directory to edit their public profile without losing your place in the queue."
+            />
+        );
+    }
+
+    const gaps = directoryGaps(professional);
+    const reviewStatus =
+        professional.latest_professional_verification?.review_status ??
+        (professional.verified ? 'approved' : 'pending');
+
+    return (
+        <div className="space-y-4">
+            <AdminPanel
+                title={professionalName(professional)}
+                description="Edit the public discovery profile here, while keeping heavier credential decisions in the dedicated verification queue."
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                            variant="outline"
+                            className="rounded-full px-2.5 py-1 capitalize"
+                        >
+                            {formatRoleLabel(professional.role)}
+                        </Badge>
+                        <StatusChipSet
+                            items={[
+                                {
+                                    value: professional.verified
+                                        ? 'verified'
+                                        : 'unverified',
+                                },
+                                {
+                                    value: professional.status || 'pending',
+                                },
+                                {
+                                    value: reviewStatus,
+                                    label: `Review ${formatStatusLabel(reviewStatus)}`,
+                                },
+                            ]}
+                        />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                Directory readiness
+                            </div>
+                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                {isDirectoryReady(professional)
+                                    ? 'Ready for discovery'
+                                    : `${gaps.length} gap${gaps.length === 1 ? '' : 's'} to clean up`}
+                            </div>
+                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                Public discovery works best when city, contact, availability, bio, and specialties are all present.
+                            </div>
+                        </div>
+
+                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                Verification snapshot
+                            </div>
+                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                {formatStatusLabel(reviewStatus)}
+                            </div>
+                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                {professional.latest_professional_verification
+                                    ? `${professional.latest_professional_verification.authority || 'Authority not recorded'} - expires ${formatDate(professional.latest_professional_verification.expiry_date)}.`
+                                    : 'No verification record is attached to this professional yet.'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {gaps.length > 0 ? (
+                        <AdminNotice tone="warning">
+                            Missing directory fields: {gaps.join(', ')}.
+                        </AdminNotice>
+                    ) : (
+                        <AdminNotice tone="success">
+                            This profile has the core discovery fields clients expect.
+                        </AdminNotice>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/professional-verifications">
+                                Open verification queue
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </AdminPanel>
+
+            <AdminPanel
+                title="Public profile fields"
+                description="Keep public-facing profile information clean, consistent, and useful before clients see it."
+            >
+                <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminField label="First name">
+                            <AdminInput
+                                value={professional.first_name ?? ''}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...professional,
+                                        first_name: event.target.value,
+                                    })
+                                }
+                            />
+                        </AdminField>
+
+                        <AdminField label="Last name">
+                            <AdminInput
+                                value={professional.last_name ?? ''}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...professional,
+                                        last_name: event.target.value,
+                                    })
+                                }
+                            />
+                        </AdminField>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <AdminField label="City or area">
+                            <AdminInput
+                                value={professional.city ?? ''}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...professional,
+                                        city: event.target.value,
+                                    })
+                                }
+                            />
+                        </AdminField>
+
+                        <AdminField label="Contact display">
+                            <AdminInput
+                                value={professional.contact_display ?? ''}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...professional,
+                                        contact_display: event.target.value,
+                                    })
+                                }
+                            />
+                        </AdminField>
+                    </div>
+
+                    <AdminField label="Availability">
+                        <AdminInput
+                            value={professional.availability_text ?? ''}
+                            onChange={(event) =>
+                                onChange({
+                                    ...professional,
+                                    availability_text: event.target.value,
+                                })
+                            }
+                        />
+                    </AdminField>
+
+                    <AdminField label="Bio">
+                        <AdminTextarea
+                            rows={5}
+                            value={professional.professional_bio ?? ''}
+                            onChange={(event) =>
+                                onChange({
+                                    ...professional,
+                                    professional_bio: event.target.value,
+                                })
+                            }
+                        />
+                    </AdminField>
+
+                    <AdminField
+                        label="Specialties"
+                        helper="Separate specialties with commas so discovery pages and assignments stay readable."
+                    >
+                        <AdminInput
+                            value={(professional.specialties ?? []).join(', ')}
+                            onChange={(event) =>
+                                onChange({
+                                    ...professional,
+                                    specialties: event.target.value
+                                        .split(',')
+                                        .map((item) => item.trim())
+                                        .filter(Boolean),
+                                })
+                            }
+                            placeholder="Weight loss, sports nutrition"
+                        />
+                    </AdminField>
+
+                    <AdminCheckboxField
+                        checked={professional.verified}
+                        onCheckedChange={(checked) =>
+                            onChange({
+                                ...professional,
+                                verified: checked,
+                                status: checked
+                                    ? 'active'
+                                    : 'pending_verification',
+                            })
+                        }
+                        label="Verified profile"
+                        description="This is an admin-only approval control for client-facing visibility and trust."
+                    />
+                </div>
+            </AdminPanel>
+
+            <AdminStickyBar summary={`Editing ${professionalName(professional)}`}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onRefresh}
+                    disabled={saving}
+                >
+                    Refresh
+                </Button>
+                <Button type="button" onClick={onSave} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save changes'}
+                </Button>
+            </AdminStickyBar>
+        </div>
+    );
+}
 
 export default function AdminProfessionalsPage() {
     const [role, setRole] = useState<'trainer' | 'nutritionist'>('trainer');
+    const [readiness, setReadiness] = useState<
+        'all' | 'ready' | 'needs_cleanup' | 'verified'
+    >('all');
+    const [query, setQuery] = useState('');
     const [rows, setRows] = useState<Pro[]>([]);
     const [selected, setSelected] = useState<Pro | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [from, setFrom] = useState<number | null>(null);
+    const [to, setTo] = useState<number | null>(null);
+    const [total, setTotal] = useState(0);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const res = await fetch(`/api/admin/professionals?role=${role}`, {
-                headers: { Accept: 'application/json' },
+            const params = new URLSearchParams({
+                role,
+                page: String(currentPage),
+                per_page: '20',
             });
+
+            const res = await fetch(
+                `/api/admin/professionals?${params.toString()}`,
+                {
+                    headers: { Accept: 'application/json' },
+                },
+            );
 
             if (!res.ok) {
                 throw new Error('Could not load professionals.');
             }
 
-            const json = await res.json();
+            const json = (await res.json()) as ProfessionalResponse;
             const nextRows = Array.isArray(json?.data) ? json.data : [];
+
             setRows(nextRows);
+            setTotal(Number(json?.total ?? 0));
+            setCurrentPage(Number(json?.current_page ?? 1));
+            setLastPage(Number(json?.last_page ?? 1));
+            setFrom(json?.from ?? null);
+            setTo(json?.to ?? null);
             setSelected((current) =>
-                current && nextRows.some((row: Pro) => row.id === current.id)
-                    ? (nextRows.find((row: Pro) => row.id === current.id) ??
-                      null)
+                current && nextRows.some((row) => row.id === current.id)
+                    ? (nextRows.find((row) => row.id === current.id) ?? null)
                     : (nextRows[0] ?? null),
             );
         } catch (loadError) {
@@ -82,14 +492,97 @@ export default function AdminProfessionalsPage() {
         } finally {
             setLoading(false);
         }
-    }, [role]);
+    }, [currentPage, role]);
 
     useEffect(() => {
         void load();
     }, [load]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [role]);
+
+    const filteredRows = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+        return rows.filter((row) => {
+            const matchesQuery =
+                normalizedQuery === '' ||
+                [
+                    row.first_name,
+                    row.last_name,
+                    row.email,
+                    row.city,
+                    row.status,
+                    row.contact_display,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(normalizedQuery);
+
+            if (!matchesQuery) {
+                return false;
+            }
+
+            if (readiness === 'ready') {
+                return isDirectoryReady(row);
+            }
+
+            if (readiness === 'needs_cleanup') {
+                return directoryGaps(row).length > 0;
+            }
+
+            if (readiness === 'verified') {
+                return row.verified;
+            }
+
+            return true;
+        });
+    }, [query, readiness, rows]);
+
+    useEffect(() => {
+        if (filteredRows.length === 0) {
+            setSelected(null);
+            return;
+        }
+
+        if (
+            !selected ||
+            !filteredRows.some((row) => row.id === selected.id)
+        ) {
+            setSelected(filteredRows[0]);
+        }
+    }, [filteredRows, selected]);
+
+    const summary = useMemo(
+        () => ({
+            verified: filteredRows.filter((row) => row.verified).length,
+            ready: filteredRows.filter((row) => isDirectoryReady(row)).length,
+            needsCleanup: filteredRows.filter(
+                (row) => directoryGaps(row).length > 0,
+            ).length,
+        }),
+        [filteredRows],
+    );
+
+    const activeFilterCount = useMemo(
+        () =>
+            (role !== 'trainer' ? 1 : 0) +
+            (readiness !== 'all' ? 1 : 0) +
+            (query.trim() ? 1 : 0),
+        [query, readiness, role],
+    );
+
+    const selectedGapCount = useMemo(
+        () => directoryGaps(selected).length,
+        [selected],
+    );
+
     async function save() {
-        if (!selected) return;
+        if (!selected) {
+            return;
+        }
+
         setSaving(true);
         setError(null);
         setSuccess(null);
@@ -97,7 +590,7 @@ export default function AdminProfessionalsPage() {
         try {
             const response = await fetch(
                 `/api/admin/professionals/${selected.id}`,
-                jsonRequestInit('PUT', selected),
+                jsonRequestInit('PUT', buildProfessionalPayload(selected)),
             );
 
             if (!response.ok) {
@@ -122,16 +615,6 @@ export default function AdminProfessionalsPage() {
         }
     }
 
-    const summary = useMemo(
-        () => ({
-            verified: rows.filter((row) => row.verified).length,
-            withCity: rows.filter((row) => row.city).length,
-            withAvailability: rows.filter((row) => row.availability_text)
-                .length,
-        }),
-        [rows],
-    );
-
     return (
         <>
             <Head title="Admin Professionals" />
@@ -139,348 +622,454 @@ export default function AdminProfessionalsPage() {
             <RoleGuard roles={['admin']}>
                 <AdminShell
                     title="Professionals"
-                    description="Review trainer and nutritionist profiles, tidy their public information, and keep verification state aligned with what clients can see."
-                    actions={
-                        <div className="flex flex-wrap items-center gap-2">
-                            <select
-                                value={role}
-                                onChange={(event) =>
-                                    setRole(
-                                        event.target.value as
-                                            | 'trainer'
-                                            | 'nutritionist',
-                                    )
-                                }
-                                className="flex h-10 rounded-full border border-input bg-background px-4 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            >
-                                <option value="trainer">Trainers</option>
-                                <option value="nutritionist">Dietitians</option>
-                            </select>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void load()}
-                                disabled={loading}
-                            >
-                                <RefreshCcw className="h-4 w-4" />
-                                {loading ? 'Refreshing...' : 'Refresh'}
-                            </Button>
-                        </div>
-                    }
+                    description="Curate trainer and dietitian discovery profiles without turning this workspace into a full credential-review queue."
                 >
                     <div className="space-y-6">
                         <AdminStatsGrid>
                             <AdminStatCard
-                                label="Visible profiles"
-                                value={loading ? '...' : String(rows.length)}
+                                label="Profiles Matching Role"
+                                value={loading ? '...' : String(total)}
                                 tone="accent"
-                                helper="Current role filter applied."
+                                helper="Server-side count for the selected professional role."
+                            />
+                            <AdminStatCard
+                                label="Visible On This Page"
+                                value={
+                                    loading ? '...' : String(filteredRows.length)
+                                }
+                                helper="Local search narrows the current page without losing role context."
                             />
                             <AdminStatCard
                                 label="Verified"
-                                value={
-                                    loading ? '...' : String(summary.verified)
-                                }
-                                helper="Profiles already approved for client actions."
+                                value={loading ? '...' : String(summary.verified)}
+                                helper="Profiles already approved for client-facing trust."
                             />
                             <AdminStatCard
-                                label="With city"
-                                value={
-                                    loading ? '...' : String(summary.withCity)
-                                }
-                                helper="Helpful for map and discovery pages."
+                                label="Directory Ready"
+                                value={loading ? '...' : String(summary.ready)}
+                                helper="Profiles with the core public discovery fields in place."
                             />
                             <AdminStatCard
-                                label="With availability"
+                                label="Needs Cleanup"
                                 value={
                                     loading
                                         ? '...'
-                                        : String(summary.withAvailability)
+                                        : String(summary.needsCleanup)
                                 }
-                                helper="Profiles that already explain scheduling."
+                                helper="Useful when public discovery quality starts drifting."
                             />
                         </AdminStatsGrid>
 
-                        {error ? (
-                            <ProductBanner tone="danger">{error}</ProductBanner>
+                        {error && !selected ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
                         ) : null}
                         {success ? (
-                            <ProductBanner tone="success">
-                                {success}
-                            </ProductBanner>
+                            <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
 
-                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-                            <AdminSection
-                                title="Professional directory"
-                                description="Select a profile to review it in the editor panel."
-                            >
-                                {loading ? (
-                                    <ProductEmptyState
-                                        title="Loading professionals"
-                                        description="Pulling the current list for the selected role."
-                                    />
-                                ) : (
-                                    <ProductTable>
-                                        <ProductTableHead>
-                                            <tr>
-                                                <ProductTableHeaderCell>
-                                                    Professional
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    City
-                                                </ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>
-                                                    Status
-                                                </ProductTableHeaderCell>
-                                            </tr>
-                                        </ProductTableHead>
-                                        <ProductTableBody>
-                                            {rows.map((row) => (
-                                                <ProductTableRow
-                                                    key={row.id}
-                                                    interactive
-                                                    className={
-                                                        row.id === selected?.id
-                                                            ? 'bg-primary/5'
-                                                            : undefined
-                                                    }
-                                                >
-                                                    <ProductTableCell>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setSelected({
-                                                                    ...row,
-                                                                })
-                                                            }
-                                                            className="w-full space-y-2 text-left"
-                                                        >
-                                                            <div className="font-medium text-foreground">
-                                                                {[
-                                                                    row.first_name,
-                                                                    row.last_name,
-                                                                ]
-                                                                    .filter(
-                                                                        Boolean,
-                                                                    )
-                                                                    .join(
-                                                                        ' ',
-                                                                    ) ||
-                                                                    row.email}
-                                                            </div>
-                                                            <div className="text-sm text-muted-foreground">
-                                                                {row.email}
-                                                            </div>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="rounded-full px-2.5 py-1 capitalize"
-                                                            >
-                                                                {row.role ===
-                                                                'nutritionist'
-                                                                    ? 'Dietitian'
-                                                                    : 'Trainer'}
-                                                            </Badge>
-                                                        </button>
-                                                    </ProductTableCell>
-                                                    <ProductTableCell className="text-sm text-muted-foreground">
-                                                        {row.city || 'Not set'}
-                                                    </ProductTableCell>
-                                                    <ProductTableCell>
-                                                        <Badge
-                                                            variant={
-                                                                row.verified
-                                                                    ? 'default'
-                                                                    : 'outline'
-                                                            }
-                                                            className="rounded-full px-2.5 py-1 capitalize"
-                                                        >
-                                                            {row.verified
-                                                                ? 'Verified'
-                                                                : row.status ||
-                                                                  'pending'}
-                                                        </Badge>
-                                                    </ProductTableCell>
-                                                </ProductTableRow>
-                                            ))}
-                                            {rows.length === 0 ? (
-                                                <ProductTableEmptyRow
-                                                    colSpan={3}
-                                                    title="No professionals found"
-                                                    description="Switch roles or return once new professional profiles exist."
-                                                />
-                                            ) : null}
-                                        </ProductTableBody>
-                                    </ProductTable>
-                                )}
-                            </AdminSection>
-
-                            <AdminSection
-                                title="Profile editor"
-                                description="Update the fields clients rely on when deciding who to contact."
-                            >
-                                {!selected ? (
-                                    <ProductEmptyState
-                                        title="Select a professional"
-                                        description="Choose someone from the directory to edit their profile."
-                                    />
-                                ) : (
-                                    <div className="space-y-4 text-sm">
-                                        <label className="space-y-2">
-                                            <Label>First name</Label>
-                                            <Input
-                                                value={
-                                                    selected.first_name ?? ''
-                                                }
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        first_name:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>Last name</Label>
-                                            <Input
-                                                value={selected.last_name ?? ''}
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        last_name:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>City or area</Label>
-                                            <Input
-                                                value={selected.city ?? ''}
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        city: event.target
-                                                            .value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>Contact display</Label>
-                                            <Input
-                                                value={
-                                                    selected.contact_display ??
-                                                    ''
-                                                }
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        contact_display:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>Availability</Label>
-                                            <Input
-                                                value={
-                                                    selected.availability_text ??
-                                                    ''
-                                                }
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        availability_text:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>Bio</Label>
-                                            <Textarea
-                                                rows={4}
-                                                value={
-                                                    selected.professional_bio ??
-                                                    ''
-                                                }
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        professional_bio:
-                                                            event.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className="space-y-2">
-                                            <Label>Specialties</Label>
-                                            <Input
-                                                value={(
-                                                    selected.specialties ?? []
-                                                ).join(', ')}
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        specialties:
-                                                            event.target.value
-                                                                .split(',')
-                                                                .map((item) =>
-                                                                    item.trim(),
-                                                                )
-                                                                .filter(
-                                                                    Boolean,
-                                                                ),
-                                                    })
-                                                }
-                                                placeholder="Weight loss, sports nutrition"
-                                            />
-                                        </label>
-                                        <label className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-                                            <input
-                                                type="checkbox"
-                                                checked={selected.verified}
-                                                onChange={(event) =>
-                                                    setSelected({
-                                                        ...selected,
-                                                        verified:
-                                                            event.target
-                                                                .checked,
-                                                        status: event.target
-                                                            .checked
-                                                            ? 'active'
-                                                            : 'pending_verification',
-                                                    })
-                                                }
-                                                className="h-4 w-4 rounded border-input"
-                                            />
-                                            <div>
-                                                <div className="font-medium text-foreground">
-                                                    Verified profile
-                                                </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Allow client-facing
-                                                    interactions when approved.
-                                                </div>
-                                            </div>
-                                        </label>
-                                        <Button
-                                            type="button"
-                                            onClick={() => void save()}
-                                            disabled={saving}
-                                        >
-                                            {saving ? 'Saving...' : 'Save'}
+                        <AdminSection
+                            title="Triage Guidance"
+                            description="Use this page for public profile quality and discovery readiness. Move to the verification queue when the task becomes credential review or compliance."
+                        >
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                <AdminOverviewCard
+                                    title="Directory snapshot"
+                                    description="Keep the list narrow, keep one profile selected, and treat this as a tidy-up workspace for what clients actually see."
+                                    action={
+                                        <Button asChild variant="outline">
+                                            <Link href="/admin/professional-verifications">
+                                                Verification queue
+                                            </Link>
                                         </Button>
+                                    }
+                                >
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Active filters
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {activeFilterCount === 0
+                                                    ? 'Default trainer view'
+                                                    : `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Role focus is{' '}
+                                                {formatRoleLabel(role).toLowerCase()}
+                                                {query.trim()
+                                                    ? ' with local search applied.'
+                                                    : ' with no extra search narrowing.'}
+                                            </div>
+                                        </div>
+
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Current slice
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {from && to
+                                                    ? `${from}-${to} of ${total}`
+                                                    : 'Waiting for directory data'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                Pagination keeps the professional directory stable while search only refines the current page.
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                            </AdminSection>
-                        </div>
+                                </AdminOverviewCard>
+
+                                <AdminOverviewCard
+                                    title="Current profile context"
+                                    description="Keep public readiness visible here, while raw logs or credential history stay in their own admin surfaces."
+                                >
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Selected profile
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {selected
+                                                    ? professionalName(selected)
+                                                    : 'No profile selected'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                {selected
+                                                    ? `${formatRoleLabel(selected.role)} profile is pinned beside the queue so you can edit without losing context.`
+                                                    : 'Choose a professional from the directory to start editing public profile fields.'}
+                                            </div>
+                                        </div>
+
+                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                                Public readiness
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                                {selected
+                                                    ? selectedGapCount === 0
+                                                        ? 'Ready for discovery'
+                                                        : `${selectedGapCount} visible gap${selectedGapCount === 1 ? '' : 's'}`
+                                                    : 'Pending selection'}
+                                            </div>
+                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
+                                                City, contact, availability, bio, and specialties should stay coherent before client discovery surfaces rely on them.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AdminOverviewCard>
+                            </div>
+                        </AdminSection>
+
+                        <AdminSection
+                            title="Filter & actions toolbar"
+                            description={
+                                from && to
+                                    ? `Showing ${from}-${to} of ${total} profiles. Select a row to keep the editor pinned beside the directory.`
+                                    : 'Select a row to keep the editor pinned beside the directory.'
+                            }
+                        >
+                            <AdminToolbar>
+                                <AdminToolbarGroup grow>
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:min-w-[320px] xl:flex-1"
+                                    >
+                                        <AdminSearchInput
+                                            value={query}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
+                                            placeholder="Search by name, email, city, or contact display"
+                                        />
+                                    </AdminField>
+
+                                    <AdminField
+                                        label="Role focus"
+                                        className="sm:w-52"
+                                    >
+                                        <AdminNativeSelect
+                                            value={role}
+                                            onChange={(event) =>
+                                                setRole(
+                                                    event.target.value as
+                                                        | 'trainer'
+                                                        | 'nutritionist',
+                                                )
+                                            }
+                                        >
+                                            <option value="trainer">
+                                                Trainers
+                                            </option>
+                                            <option value="nutritionist">
+                                                Dietitians
+                                            </option>
+                                        </AdminNativeSelect>
+                                    </AdminField>
+                                    <AdminField
+                                        label="Readiness"
+                                        className="sm:w-52"
+                                    >
+                                        <AdminNativeSelect
+                                            value={readiness}
+                                            onChange={(event) =>
+                                                setReadiness(
+                                                    event.target.value as
+                                                        | 'all'
+                                                        | 'ready'
+                                                        | 'needs_cleanup'
+                                                        | 'verified',
+                                                )
+                                            }
+                                        >
+                                            <option value="all">All</option>
+                                            <option value="ready">
+                                                Directory ready
+                                            </option>
+                                            <option value="needs_cleanup">
+                                                Needs cleanup
+                                            </option>
+                                            <option value="verified">
+                                                Verified only
+                                            </option>
+                                        </AdminNativeSelect>
+                                    </AdminField>
+                                </AdminToolbarGroup>
+
+                                <AdminToolbarGroup className="w-full xl:w-auto xl:justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => void load()}
+                                        disabled={loading}
+                                    >
+                                        <RefreshCcw className="h-4 w-4" />
+                                        {loading
+                                            ? 'Refreshing...'
+                                            : 'Refresh directory'}
+                                    </Button>
+                                </AdminToolbarGroup>
+                            </AdminToolbar>
+
+                            {error && selected ? (
+                                <AdminNotice tone="danger">{error}</AdminNotice>
+                            ) : null}
+
+                            <AdminSplitView
+                                list={
+                                    <div className="space-y-4">
+                                        {loading && filteredRows.length === 0 ? (
+                                            <AdminEmpty
+                                                title="Loading professionals"
+                                                description="Pulling the current directory for the selected role."
+                                            />
+                                        ) : (
+                                            <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
+                                                <AdminDataTable tableClassName="min-w-[780px]">
+                                                    <ProductTableHead>
+                                                        <tr>
+                                                            <ProductTableHeaderCell>
+                                                                Professional
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Directory
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Verification
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell className="w-36">
+                                                                Actions
+                                                            </ProductTableHeaderCell>
+                                                        </tr>
+                                                    </ProductTableHead>
+                                                    <ProductTableBody>
+                                                        {filteredRows.map((row) => {
+                                                            const gaps =
+                                                                directoryGaps(
+                                                                    row,
+                                                                );
+
+                                                            return (
+                                                                <ProductTableRow
+                                                                    key={
+                                                                        row.id
+                                                                    }
+                                                                    interactive
+                                                                    className={
+                                                                        row.id ===
+                                                                        selected?.id
+                                                                            ? 'bg-primary/5'
+                                                                            : undefined
+                                                                    }
+                                                                >
+                                                                    <ProductTableCell>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                setSelected(
+                                                                                    row,
+                                                                                )
+                                                                            }
+                                                                            className="w-full space-y-2 text-left"
+                                                                        >
+                                                                            <div className="font-medium text-foreground">
+                                                                                {professionalName(
+                                                                                    row,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-sm text-muted-foreground">
+                                                                                {row.email}
+                                                                            </div>
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="rounded-full px-2.5 py-1 capitalize"
+                                                                            >
+                                                                                {formatRoleLabel(
+                                                                                    row.role,
+                                                                                )}
+                                                                            </Badge>
+                                                                        </button>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <div className="space-y-1">
+                                                                            <div className="font-medium text-foreground">
+                                                                                {row.city ||
+                                                                                    'City not set'}
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {row.contact_display ||
+                                                                                    'Contact display missing'}
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {gaps.length ===
+                                                                                0
+                                                                                    ? 'Discovery fields look complete.'
+                                                                                    : `${gaps.length} field gap${gaps.length === 1 ? '' : 's'} remaining`}
+                                                                            </div>
+                                                                        </div>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <div className="space-y-2">
+                                                                            <StatusChipSet
+                                                                                items={[
+                                                                                    {
+                                                                                        value: row.verified
+                                                                                            ? 'verified'
+                                                                                            : 'unverified',
+                                                                                    },
+                                                                                    {
+                                                                                        value:
+                                                                                            row.latest_professional_verification?.review_status ||
+                                                                                            'pending',
+                                                                                        label: `Review ${formatStatusLabel(
+                                                                                            row.latest_professional_verification?.review_status ||
+                                                                                                'pending',
+                                                                                        )}`,
+                                                                                    },
+                                                                                ]}
+                                                                            />
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {row.latest_professional_verification
+                                                                                    ?.authority ||
+                                                                                    'No verification authority recorded'}
+                                                                            </div>
+                                                                        </div>
+                                                                    </ProductTableCell>
+                                                                    <ProductTableCell>
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() => {
+                                                                                setSelected(
+                                                                                    row,
+                                                                                );
+                                                                                setDrawerOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            Edit
+                                                                        </Button>
+                                                                    </ProductTableCell>
+                                                                </ProductTableRow>
+                                                            );
+                                                        })}
+
+                                                        {!loading &&
+                                                        filteredRows.length ===
+                                                            0 ? (
+                                                            <ProductTableEmptyRow
+                                                                colSpan={4}
+                                                                title="No professionals found"
+                                                                description="Switch roles, adjust search, or return once new professional profiles exist."
+                                                            />
+                                                        ) : null}
+                                                    </ProductTableBody>
+                                                </AdminDataTable>
+                                            </AdminScrollArea>
+                                        )}
+
+                                        <AdminPagination
+                                            currentPage={currentPage}
+                                            lastPage={lastPage}
+                                            disabled={loading}
+                                            summary={
+                                                from && to
+                                                    ? `Showing ${from}-${to} of ${total} profiles`
+                                                    : 'Pagination stays aligned with the active role focus.'
+                                            }
+                                            onPrevious={() =>
+                                                setCurrentPage((page) =>
+                                                    Math.max(1, page - 1),
+                                                )
+                                            }
+                                            onNext={() =>
+                                                setCurrentPage((page) =>
+                                                    Math.min(
+                                                        lastPage,
+                                                        page + 1,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                }
+                                detail={
+                                    <ProfessionalEditorSurface
+                                        professional={selected}
+                                        onChange={setSelected}
+                                        onSave={() => void save()}
+                                        onRefresh={() => void load()}
+                                        loading={loading}
+                                        saving={saving}
+                                    />
+                                }
+                                listClassName="min-w-0"
+                                detailClassName="min-w-0"
+                            />
+                        </AdminSection>
                     </div>
                 </AdminShell>
             </RoleGuard>
+
+            <EntityDetailDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                title={
+                    selected
+                        ? professionalName(selected)
+                        : 'Professional editor'
+                }
+                description="Mobile editing surface for public professional profile details."
+            >
+                <ProfessionalEditorSurface
+                    professional={selected}
+                    onChange={setSelected}
+                    onSave={() => void save()}
+                    onRefresh={() => void load()}
+                    loading={loading}
+                    saving={saving}
+                />
+            </EntityDetailDrawer>
         </>
     );
 }

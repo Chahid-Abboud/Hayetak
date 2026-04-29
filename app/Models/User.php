@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Ai\AiConversation;
+use App\Models\Ai\AiMessage;
+use App\Models\Ai\AiPlan;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

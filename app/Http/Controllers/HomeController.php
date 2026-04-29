@@ -2,25 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ai\AiConversation;
 use Carbon\CarbonImmutable;
 use App\Models\MealLog;
 use App\Models\Measurement;
 use App\Models\NutritionPlan;
-use App\Models\AiRequest;
+use App\Models\Ai\AiRequest;
 use App\Models\WaterIntake;
 use App\Models\WorkoutPlan;
+use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 // ✅ Add these
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class HomeController extends Controller
 {
+    public function __construct(
+        private readonly UserFacingAiPayloadSanitizer $sanitizer,
+    ) {}
+
     public function index()
     {
         $user = Auth::user();
         $today = now()->toDateString();
+        $isAdmin = $user && (string) ($user->role ?? '') === 'admin';
 
         // ---- User profile (for BMI) ----
         $profile = $user ? [
@@ -57,8 +65,7 @@ class HomeController extends Controller
 
                 $rows = Measurement::query()
                     ->where('user_id', $user->id)
-                    ->orderByDesc('measured_at')
-                    ->limit(90)
+                    ->orderBy('measured_at')
                     ->get($columns);
 
                 $weightHistory = $rows
@@ -220,71 +227,71 @@ class HomeController extends Controller
         // ✅ NEW: Load active generated plans for showing on the dashboard
         $nutritionPlan = null;
         $workoutPlan = null;
-        $plannerModelMeta = null;
+        $coachSnapshot = null;
         $progressPrediction = null;
         $predictionTrend = [];
 
         if ($user) {
             // Latest ACTIVE nutrition plan (load nested relations + food names)
-            $nutritionPlan = NutritionPlan::query()
+            $nutritionPlanQuery = NutritionPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
                 ->whereNotNull('ai_request_id')
-                ->latest('id')
-                ->with([
+                ->latest('id');
+
+            // Internal provider/model metadata is admin-only.
+            if ($isAdmin) {
+                $nutritionPlanQuery->with([
                     'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
-                ])
-                ->first();
+                ]);
+            } else {
+                $nutritionPlanQuery->with([
+                    'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
+                ]);
+            }
+            $nutritionPlan = $nutritionPlanQuery->first();
 
             // Latest ACTIVE workout plan (load nested relations + exercise names)
-            $workoutPlan = WorkoutPlan::query()
+            $workoutPlanQuery = WorkoutPlan::query()
                 ->where('user_id', $user->id)
                 ->where('is_active', true)
                 ->whereNotNull('ai_request_id')
-                ->latest('id')
-                ->with([
+                ->latest('id');
+
+            if ($isAdmin) {
+                $workoutPlanQuery->with([
                     'aiRequest:id,provider,model,prompt_version,schema_version',
                     'days.exercises:id,name,primary_muscle,equipment,difficulty',
-                ])
+                ]);
+            } else {
+                $workoutPlanQuery->with([
+                    'days.exercises:id,name,primary_muscle,equipment,difficulty',
+                ]);
+            }
+            $workoutPlan = $workoutPlanQuery->first();
+
+            $latestCoachConversation = AiConversation::query()
+                ->where('user_id', $user->id)
+                ->with(['messages' => fn ($query) => $query->latest('id')->limit(1)])
+                ->orderByDesc('last_message_at')
+                ->orderByDesc('updated_at')
                 ->first();
 
-            $latestPlannerRequest = AiRequest::query()
-                ->where('user_id', $user->id)
-                ->where('type', 'plan_generator')
-                ->where('status', 'completed')
-                ->whereNotNull('output_json')
-                ->latest('id')
-                ->first([
-                    'id',
-                    'created_at',
-                    'provider',
-                    'model',
-                    'prompt_version',
-                    'schema_version',
-                    'output_json',
-                ]);
+            if ($latestCoachConversation) {
+                $latestCoachMessage = $latestCoachConversation->messages->first();
 
-            if ($latestPlannerRequest) {
-                $plannerModelMeta = [
-                    'ai_request_id' => (int) $latestPlannerRequest->id,
-                    'generated_at' => optional($latestPlannerRequest->created_at)?->toDateTimeString(),
-                    'provider' => $latestPlannerRequest->provider,
-                    'model' => $latestPlannerRequest->model,
-                    'prompt_version' => $latestPlannerRequest->prompt_version,
-                    'schema_version' => $latestPlannerRequest->schema_version,
+                $coachSnapshot = [
+                    'title' => (string) ($latestCoachConversation->title ?: 'AI Coach'),
+                    'last_message_excerpt' => $latestCoachMessage
+                        ? Str::limit((string) $latestCoachMessage->content, 140)
+                        : null,
+                    'last_message_at' => optional($latestCoachConversation->last_message_at ?? $latestCoachMessage?->created_at)?->toISOString(),
                 ];
-
-                $prediction = is_array($latestPlannerRequest->output_json)
-                    ? data_get($latestPlannerRequest->output_json, 'progress_prediction')
-                    : null;
-
-                if (is_array($prediction)) {
-                    $progressPrediction = $prediction;
-                }
             }
 
             $predictionTrend = $this->recentPredictionTrend((int) $user->id, 10);
+            $progressPrediction = $this->latestProgressPrediction((int) $user->id);
         }
 
         return Inertia::render('dashboard', [
@@ -310,22 +317,145 @@ class HomeController extends Controller
             'heightHistory' => $heightHistory,
 
             // ✅ NEW PROPS (safe arrays for TSX)
-            'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,
-            'workoutPlan' => $workoutPlan ? $workoutPlan->toArray() : null,
-            'plannerModelMeta' => $plannerModelMeta,
-            'progressPrediction' => $progressPrediction,
+            'nutritionPlan' => $nutritionPlan
+                ? $this->sanitizer->sanitizePlanResource($nutritionPlan->toArray(), $isAdmin)
+                : null,
+            'workoutPlan' => $workoutPlan
+                ? $this->sanitizer->sanitizePlanResource($workoutPlan->toArray(), $isAdmin)
+                : null,
+            'coachSnapshot' => $coachSnapshot,
+            'progressPrediction' => $this->sanitizer->sanitizeProgressPredictionPayload($progressPrediction, $isAdmin),
             'predictionTrend' => $predictionTrend,
         ]);
     }
 
     /**
+     * @return array{
+     *   ai_request_id:int,
+     *   generated_at:string,
+     *   horizon_days:int,
+     *   baseline_weight_kg:float,
+     *   projected_body_weight_kg:float|null,
+     *   projected_before_feedback_kg:float|null,
+     *   projected_after_feedback_kg:float|null,
+     *   expected_weight_change_kg:float|null,
+     *   actual_weight_kg:float|null,
+     *   actual_weight_date:string|null,
+     *   feedback_applied:bool,
+     *   strength_projection:array{upper_body_compound_pct:float|null,lower_body_compound_pct:float|null},
+     *   feedback_adjustment:array{
+     *     base_weekly_weight_change_kg:float|null,
+     *     adjusted_weekly_weight_change_kg:float|null,
+     *     notes:string|null
+     *   }
+     * }|null
+     */
+    private function latestProgressPrediction(int $userId): ?array
+    {
+        $request = AiRequest::query()
+            ->where('user_id', $userId)
+            ->where('type', 'plan_generator')
+            ->where('status', 'completed')
+            ->whereNotNull('output_json')
+            ->latest('id')
+            ->first(['id', 'created_at', 'output_json']);
+
+        if (! $request) {
+            return null;
+        }
+
+        $output = is_array($request->output_json) ? $request->output_json : [];
+        $prediction = is_array($output['progress_prediction'] ?? null)
+            ? $output['progress_prediction']
+            : null;
+
+        if (! is_array($prediction)) {
+            return null;
+        }
+
+        $measurements = Measurement::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('weight_kg')
+            ->orderBy('measured_at')
+            ->get(['measured_at', 'weight_kg']);
+
+        $generatedAt = CarbonImmutable::parse((string) $request->created_at)->startOfDay();
+        $horizonDays = $this->normalizePlanHorizonDays(
+            (int) ($prediction['horizon_days'] ?? 14)
+        );
+        $periodEnd = $generatedAt->addDays(max(1, $horizonDays) - 1);
+        $weeks = max(1.0, $horizonDays / 7.0);
+
+        $feedback = is_array($prediction['feedback_adjustment'] ?? null)
+            ? $prediction['feedback_adjustment']
+            : [];
+
+        $baselineWeight = $this->toFloatOrNull($prediction['baseline_weight_kg'] ?? null)
+            ?? $this->weightOnOrBeforeFromRows($measurements, $generatedAt);
+
+        if ($baselineWeight === null) {
+            return null;
+        }
+
+        $baseWeeklyRate = $this->toFloatOrNull($feedback['base_weekly_weight_change_kg'] ?? null);
+        $adjustedWeeklyRate = $this->toFloatOrNull($feedback['adjusted_weekly_weight_change_kg'] ?? null);
+
+        $projectedAfter = $this->toFloatOrNull($prediction['projected_body_weight_kg'] ?? null);
+        if ($projectedAfter === null) {
+            $expectedChange = $this->toFloatOrNull($prediction['expected_weight_change_kg'] ?? null);
+            if ($expectedChange !== null) {
+                $projectedAfter = $baselineWeight + $expectedChange;
+            } elseif ($adjustedWeeklyRate !== null) {
+                $projectedAfter = $baselineWeight + ($adjustedWeeklyRate * $weeks);
+            }
+        }
+
+        $projectedBefore = null;
+        if ($baseWeeklyRate !== null) {
+            $projectedBefore = $baselineWeight + ($baseWeeklyRate * $weeks);
+        }
+
+        $actualWeightMatch = $this->weightNearTargetDateFromRows($measurements, $periodEnd);
+
+        return [
+            'ai_request_id' => (int) $request->id,
+            'generated_at' => $generatedAt->toDateString(),
+            'horizon_days' => $horizonDays,
+            'baseline_weight_kg' => round($baselineWeight, 2),
+            'projected_body_weight_kg' => $projectedAfter !== null ? round($projectedAfter, 2) : null,
+            'projected_before_feedback_kg' => $projectedBefore !== null ? round($projectedBefore, 2) : null,
+            'projected_after_feedback_kg' => $projectedAfter !== null ? round($projectedAfter, 2) : null,
+            'expected_weight_change_kg' => $this->toFloatOrNull($prediction['expected_weight_change_kg'] ?? null),
+            'actual_weight_kg' => $actualWeightMatch !== null ? round((float) $actualWeightMatch['weight_kg'], 2) : null,
+            'actual_weight_date' => $actualWeightMatch['measured_at'] ?? null,
+            'feedback_applied' => $projectedBefore !== null
+                && $projectedAfter !== null
+                && abs($projectedAfter - $projectedBefore) >= 0.01,
+            'strength_projection' => [
+                'upper_body_compound_pct' => $this->toFloatOrNull($prediction['strength_projection']['upper_body_compound_pct'] ?? null),
+                'lower_body_compound_pct' => $this->toFloatOrNull($prediction['strength_projection']['lower_body_compound_pct'] ?? null),
+            ],
+            'feedback_adjustment' => [
+                'base_weekly_weight_change_kg' => $baseWeeklyRate,
+                'adjusted_weekly_weight_change_kg' => $adjustedWeeklyRate,
+                'notes' => is_string($feedback['notes'] ?? null) ? (string) $feedback['notes'] : null,
+            ],
+        ];
+    }
+
+    /**
      * @return array<int, array{
      *   plan_date:string,
+     *   feedback_period_start_date:string,
+     *   feedback_period_end_date:string,
      *   horizon_days:int,
+     *   baseline_weight_kg:float,
+     *   projected_before_feedback_kg:float,
+     *   projected_after_feedback_kg:float,
      *   projected_weight_kg:float,
+     *   feedback_applied:bool,
      *   actual_weight_kg:float|null,
-     *   model_name:string|null,
-     *   inference_source:string|null
+     *   actual_weight_date:string|null
      * }>
      */
     private function recentPredictionTrend(int $userId, int $limit = 10): array
@@ -366,28 +496,56 @@ class HomeController extends Controller
 
             $planDate = CarbonImmutable::parse((string) $request->created_at)->startOfDay();
             $expectedEndDate = $planDate->addDays(max(1, $horizonDays) - 1);
+            $weeks = max(1.0, $horizonDays / 7.0);
+
+            $feedback = is_array($prediction['feedback_adjustment'] ?? null)
+                ? $prediction['feedback_adjustment']
+                : [];
+
+            $baselineWeight = $this->toFloatOrNull($prediction['baseline_weight_kg'] ?? null)
+                ?? $this->weightOnOrBeforeFromRows($measurements, $planDate);
+            if ($baselineWeight === null) {
+                continue;
+            }
+
+            $baseWeeklyRate = $this->toFloatOrNull($feedback['base_weekly_weight_change_kg'] ?? null);
+            $adjustedWeeklyRate = $this->toFloatOrNull($feedback['adjusted_weekly_weight_change_kg'] ?? null);
 
             $projectedWeight = $this->toFloatOrNull($prediction['projected_body_weight_kg'] ?? null);
             if ($projectedWeight === null) {
-                $baseline = $this->toFloatOrNull($prediction['baseline_weight_kg'] ?? null);
                 $expectedChange = $this->toFloatOrNull($prediction['expected_weight_change_kg'] ?? null);
-                if ($baseline !== null && $expectedChange !== null) {
-                    $projectedWeight = $baseline + $expectedChange;
+                if ($expectedChange !== null) {
+                    $projectedWeight = $baselineWeight + $expectedChange;
+                } elseif ($adjustedWeeklyRate !== null) {
+                    $projectedWeight = $baselineWeight + ($adjustedWeeklyRate * $weeks);
                 }
             }
             if ($projectedWeight === null) {
                 continue;
             }
 
-            $actualWeight = $this->weightNearTargetDateFromRows($measurements, $expectedEndDate);
+            $projectedBeforeFeedback = $baseWeeklyRate !== null
+                ? $baselineWeight + ($baseWeeklyRate * $weeks)
+                : $projectedWeight;
+
+            $actualWeightMatch = $this->weightNearTargetDateFromRows($measurements, $expectedEndDate);
+            $actualWeight = $actualWeightMatch['weight_kg'] ?? null;
+            $actualWeightDate = $actualWeightMatch['measured_at'] ?? null;
+
+            $feedbackApplied = abs($projectedWeight - $projectedBeforeFeedback) >= 0.01;
 
             $rows[] = [
                 'plan_date' => $planDate->toDateString(),
+                'feedback_period_start_date' => $planDate->toDateString(),
+                'feedback_period_end_date' => $expectedEndDate->toDateString(),
                 'horizon_days' => $horizonDays,
+                'baseline_weight_kg' => round((float) $baselineWeight, 3),
+                'projected_before_feedback_kg' => round((float) $projectedBeforeFeedback, 3),
+                'projected_after_feedback_kg' => round((float) $projectedWeight, 3),
                 'projected_weight_kg' => round((float) $projectedWeight, 3),
+                'feedback_applied' => $feedbackApplied,
                 'actual_weight_kg' => $actualWeight !== null ? round((float) $actualWeight, 3) : null,
-                'model_name' => is_string($prediction['model_name'] ?? null) ? $prediction['model_name'] : null,
-                'inference_source' => is_string($prediction['inference_source'] ?? null) ? $prediction['inference_source'] : null,
+                'actual_weight_date' => $actualWeightDate,
             ];
         }
 
@@ -411,7 +569,24 @@ class HomeController extends Controller
         return is_numeric($value) ? (float) $value : null;
     }
 
-    private function weightNearTargetDateFromRows(iterable $rows, CarbonImmutable $targetDate): ?float
+    private function weightOnOrBeforeFromRows(iterable $rows, CarbonImmutable $targetDate): ?float
+    {
+        $best = null;
+        foreach ($rows as $row) {
+            $rowDate = CarbonImmutable::parse((string) $row->measured_at)->startOfDay();
+            if ($rowDate->greaterThan($targetDate)) {
+                break;
+            }
+            $best = (float) $row->weight_kg;
+        }
+
+        return $best;
+    }
+
+    /**
+     * @return array{weight_kg:float,measured_at:string}|null
+     */
+    private function weightNearTargetDateFromRows(iterable $rows, CarbonImmutable $targetDate): ?array
     {
         $targetTs = $targetDate->startOfDay()->getTimestamp();
         $best = null;
@@ -428,7 +603,10 @@ class HomeController extends Controller
             $distance = abs($deltaDays);
             if ($bestDistance === null || $distance < $bestDistance) {
                 $bestDistance = $distance;
-                $best = (float) $row->weight_kg;
+                $best = [
+                    'weight_kg' => (float) $row->weight_kg,
+                    'measured_at' => $rowDate->toDateString(),
+                ];
             }
         }
 

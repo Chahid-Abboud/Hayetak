@@ -7,7 +7,7 @@ This project now includes a real supervised-data pipeline for progress predictio
 - New export command:
   - `php artisan ai:export-progress-prediction-data`
 - New training script:
-  - `python scripts/train_progress_predictor.py`
+  - `python scripts/ai/training/train_progress_predictor.py`
 - Runtime predictor improvement:
   - `ProgressPredictionModel` now prefers latest `measurements.weight_kg` and adjusts projections using measured historical error when available.
 
@@ -51,7 +51,7 @@ pip install pandas numpy scikit-learn joblib
 Train:
 
 ```bash
-python scripts/train_progress_predictor.py \
+python scripts/ai/training/train_progress_predictor.py \
   --data storage/app/ai/training/progress_predictor_dataset.jsonl \
   --out storage/app/ai/models/progress_predictor_v1
 ```
