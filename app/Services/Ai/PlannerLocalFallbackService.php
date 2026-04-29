@@ -161,8 +161,7 @@ class PlannerLocalFallbackService
         array $mealCatalog,
         array $profile,
         int $seed = 0
-    ): array
-    {
+    ): array {
         $mealCodes = ['breakfast', 'lunch', 'dinner', 'snack'];
         $ratios = ['breakfast' => 0.28, 'lunch' => 0.34, 'dinner' => 0.30, 'snack' => 0.08];
         $themes = ['High-protein momentum day', 'Balanced recovery nutrition day', 'Fiber and hydration focus day', 'Consistency and adherence day'];
@@ -487,6 +486,7 @@ class PlannerLocalFallbackService
             if ($lastUsed !== null && strtolower($candidate) === strtolower($lastUsed)) {
                 continue;
             }
+
             return $candidate;
         }
 
@@ -813,8 +813,7 @@ class PlannerLocalFallbackService
         array $availableEquipment,
         string $goalText,
         int $seed = 0
-    ): array
-    {
+    ): array {
         $trainingDays = max(2, min(6, (int) ($profile['workout_days_per_week'] ?? 4)));
         $trainIndexes = $this->trainingDayIndexes($trainingDays, is_array($profile['preferred_workout_days'] ?? null) ? $profile['preferred_workout_days'] : []);
 
@@ -840,6 +839,7 @@ class PlannerLocalFallbackService
                     'cooldown' => $isRecovery ? ['Breathing and gentle stretching'] : [],
                     'safety_notes' => ['Keep intensity low and stay pain-free.'],
                 ];
+
                 continue;
             }
 
@@ -919,8 +919,7 @@ class PlannerLocalFallbackService
         array $sequence,
         string $goalText,
         int $seed = 0
-    ): array
-    {
+    ): array {
         $count = count($pool);
         if ($count === 0) {
             return [];
@@ -1116,6 +1115,7 @@ class PlannerLocalFallbackService
             if ($name === '' || str_contains(strtolower($name), 'debug')) {
                 return null;
             }
+
             return [
                 'name' => $name,
                 'primary_muscle' => (string) ($exercise['primary_muscle'] ?? ''),
@@ -1283,6 +1283,7 @@ class PlannerLocalFallbackService
     private function gymEquipmentScore(string $equipment): int
     {
         $text = strtolower($equipment);
+
         return match (true) {
             str_contains($text, 'machine') => 0,
             str_contains($text, 'cable') => 1,
@@ -1310,6 +1311,7 @@ class PlannerLocalFallbackService
                 }
             }
             sort($indexes);
+
             return $indexes;
         }
 
@@ -1332,6 +1334,7 @@ class PlannerLocalFallbackService
         }
 
         sort($indexes);
+
         return $indexes;
     }
 

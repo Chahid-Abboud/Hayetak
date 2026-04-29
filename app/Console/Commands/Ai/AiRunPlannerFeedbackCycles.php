@@ -103,6 +103,7 @@ class AiRunPlannerFeedbackCycles extends Command
             }
             if ($hasPending) {
                 $skippedPending++;
+
                 continue;
             }
 
@@ -220,4 +221,3 @@ class AiRunPlannerFeedbackCycles extends Command
         return (int) floor($days / $intervalDays);
     }
 }
-

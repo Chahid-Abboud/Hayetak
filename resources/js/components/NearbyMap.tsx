@@ -684,11 +684,9 @@ function addSourcesAndLayers(map: Map) {
 
 function addMarkerImages(map: Map) {
     if (!map.hasImage('marker-gym-logo')) {
-        map.addImage(
-            'marker-gym-logo',
-            createLogoMarkerImage('gym'),
-            { pixelRatio: 2 },
-        );
+        map.addImage('marker-gym-logo', createLogoMarkerImage('gym'), {
+            pixelRatio: 2,
+        });
     }
 
     if (!map.hasImage('marker-nutrition-logo')) {
@@ -700,15 +698,15 @@ function addMarkerImages(map: Map) {
     }
 
     if (!map.hasImage('marker-other-logo')) {
-        map.addImage(
-            'marker-other-logo',
-            createLogoMarkerImage('other'),
-            { pixelRatio: 2 },
-        );
+        map.addImage('marker-other-logo', createLogoMarkerImage('other'), {
+            pixelRatio: 2,
+        });
     }
 }
 
-function createLogoMarkerImage(kind: 'gym' | 'nutritionist' | 'other'): ImageData {
+function createLogoMarkerImage(
+    kind: 'gym' | 'nutritionist' | 'other',
+): ImageData {
     const size = 64;
     const canvas = document.createElement('canvas');
     canvas.width = size;

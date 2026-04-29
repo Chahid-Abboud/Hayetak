@@ -25,11 +25,7 @@ export function ProductPageShell({
     withNav?: boolean;
 }) {
     const mainClassName = cn('mx-auto w-full', WIDTH_CLASS[width]);
-    const contentClassName = cn(
-        'mt-5',
-        DEFAULT_SECTION_STACK,
-        className,
-    );
+    const contentClassName = cn('mt-5', DEFAULT_SECTION_STACK, className);
 
     if (!withNav) {
         return (

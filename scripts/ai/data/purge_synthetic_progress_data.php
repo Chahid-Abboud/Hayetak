@@ -43,4 +43,3 @@ echo json_encode([
     'dry_run' => $dryRun,
     'would_delete_or_deleted' => $counts,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), PHP_EOL;
-

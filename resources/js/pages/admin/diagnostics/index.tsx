@@ -59,7 +59,8 @@ export default function AdminDiagnosticsPage() {
                                     description="Filter by date, severity, source, and request ID before opening payload detail."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Keep compact rows for scanning; avoid dense raw JSON in the default list.
+                                        Keep compact rows for scanning; avoid
+                                        dense raw JSON in the default list.
                                     </div>
                                 </AdminOverviewCard>
                                 <AdminOverviewCard
@@ -67,7 +68,8 @@ export default function AdminDiagnosticsPage() {
                                     description="Inspect stack traces, prompts, and retry data in the detail drawer."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Link back to affected user, planner run, or coach thread for resolution context.
+                                        Link back to affected user, planner run,
+                                        or coach thread for resolution context.
                                     </div>
                                 </AdminOverviewCard>
                             </div>
@@ -89,14 +91,24 @@ export default function AdminDiagnosticsPage() {
                                 </AdminScrollArea>
                             </AdminPanel>
                             <AdminStickyBar summary="Investigation actions">
-                                <Button type="button" variant="outline" disabled>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled
+                                >
                                     Copy request ID
                                 </Button>
-                                <Button type="button" variant="outline" disabled>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled
+                                >
                                     Retry safe job
                                 </Button>
                                 <Button asChild variant="outline">
-                                    <Link href="/admin/logs">Open audit logs</Link>
+                                    <Link href="/admin/logs">
+                                        Open audit logs
+                                    </Link>
                                 </Button>
                             </AdminStickyBar>
                         </AdminSection>

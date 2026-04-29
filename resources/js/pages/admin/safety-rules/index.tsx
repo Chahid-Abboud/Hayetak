@@ -58,7 +58,8 @@ export default function AdminSafetyRulesPage() {
                                     description="Keep plain-English rule intent, conditions, and version history explicit."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Tabs: Allergy, Diet, Medical Escalation, Injury, Unsafe Claims, Fallbacks.
+                                        Tabs: Allergy, Diet, Medical Escalation,
+                                        Injury, Unsafe Claims, Fallbacks.
                                     </div>
                                 </AdminOverviewCard>
                                 <AdminOverviewCard
@@ -66,7 +67,9 @@ export default function AdminSafetyRulesPage() {
                                     description="Run simulation before publish to prevent unsafe policy drift."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Simulation panel should stay full-width below the editor, not compressed beside it.
+                                        Simulation panel should stay full-width
+                                        below the editor, not compressed beside
+                                        it.
                                     </div>
                                 </AdminOverviewCard>
                             </div>
@@ -86,16 +89,28 @@ export default function AdminSafetyRulesPage() {
                                 />
                             </AdminPanel>
                             <AdminStickyBar summary="Policy actions">
-                                <Button type="button" variant="outline" disabled>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled
+                                >
                                     Save draft
                                 </Button>
-                                <Button type="button" variant="outline" disabled>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled
+                                >
                                     Simulate
                                 </Button>
                                 <Button type="button" disabled>
                                     Publish
                                 </Button>
-                                <Button type="button" variant="destructive" disabled>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    disabled
+                                >
                                     Rollback
                                 </Button>
                             </AdminStickyBar>

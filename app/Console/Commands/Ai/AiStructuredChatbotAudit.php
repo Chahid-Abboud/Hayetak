@@ -255,6 +255,7 @@ class AiStructuredChatbotAudit extends Command
         foreach ($payload as $key => $value) {
             if (is_string($value)) {
                 $payload[$key] = strtr($value, $replacements);
+
                 continue;
             }
 

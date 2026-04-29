@@ -819,6 +819,7 @@ class ProgressPredictionModel
             $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : null;
             if (! is_array($prediction)) {
                 $index++;
+
                 continue;
             }
 
@@ -836,6 +837,7 @@ class ProgressPredictionModel
 
             if ($baseline === null || $endWeight === null || $baseline <= 0) {
                 $index++;
+
                 continue;
             }
 

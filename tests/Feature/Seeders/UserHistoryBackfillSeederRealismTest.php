@@ -7,7 +7,6 @@ use App\Services\Ai\Seed\SeedUserProfileTargetsService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\UserHistoryBackfillSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
@@ -20,7 +19,7 @@ it('backdates seeded demo accounts and clamps seeded history to non-future dates
         'updated_at' => CarbonImmutable::parse('2026-04-21 12:00:00'),
     ]);
 
-    $seeder = new UserHistoryBackfillSeeder();
+    $seeder = new UserHistoryBackfillSeeder;
 
     $today = CarbonImmutable::parse('2026-04-22')->startOfDay();
     $mealFloor = CarbonImmutable::parse('2026-01-01')->startOfDay();
@@ -77,7 +76,7 @@ it('keeps one seven-day historical follow-plan template per user', function () {
         'ingredients' => [],
     ]));
 
-    $seeder = new UserHistoryBackfillSeeder();
+    $seeder = new UserHistoryBackfillSeeder;
     $today = CarbonImmutable::parse('2026-04-22')->startOfDay();
     $start = CarbonImmutable::parse('2026-03-01')->startOfDay();
 
@@ -136,7 +135,7 @@ it('seeds water intake rows across the configured activity history window', func
         'workout_days_per_week' => 3,
     ]);
 
-    $seeder = new UserHistoryBackfillSeeder();
+    $seeder = new UserHistoryBackfillSeeder;
     $today = CarbonImmutable::parse('2026-04-22')->startOfDay();
     $start = CarbonImmutable::parse('2025-12-18')->startOfDay();
     $end = CarbonImmutable::parse('2026-05-18')->startOfDay();

@@ -131,6 +131,7 @@ class AiPlannerDatasetIngestBatch extends Command
             if (! File::exists($incomingPath)) {
                 $summary['status'] = 'failed';
                 $summary['errors'][] = "Missing incoming file: {$incomingPath}";
+
                 continue;
             }
 
@@ -146,6 +147,7 @@ class AiPlannerDatasetIngestBatch extends Command
                     $name,
                     implode(', ', $missingRequired)
                 );
+
                 continue;
             }
 
@@ -173,12 +175,14 @@ class AiPlannerDatasetIngestBatch extends Command
                 $id = trim((string) ($row[$key] ?? ''));
                 if ($id === '') {
                     $skippedMissingId++;
+
                     continue;
                 }
 
                 if (! isset($masterById[$id])) {
                     $added++;
                     $masterById[$id] = $this->alignRowToHeaders($row, $master['headers']);
+
                     continue;
                 }
 
@@ -360,4 +364,3 @@ class AiPlannerDatasetIngestBatch extends Command
         fclose($handle);
     }
 }
-

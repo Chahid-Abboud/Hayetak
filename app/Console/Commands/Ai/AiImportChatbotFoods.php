@@ -118,6 +118,7 @@ class AiImportChatbotFoods extends Command
                 $result = $orchestrator->handle($user, $question, $runtimeContext, $conversation);
             } catch (\Throwable $e) {
                 $this->warn("  attempt {$attempt}: chat error ({$e->getMessage()})");
+
                 continue;
             }
 
@@ -128,18 +129,21 @@ class AiImportChatbotFoods extends Command
             if ($items === []) {
                 $stats['skipped'] += $count;
                 $this->warn("  attempt {$attempt}: chatbot response not parseable JSON");
+
                 continue;
             }
 
             foreach ($items as $row) {
                 if (! is_array($row)) {
                     $stats['skipped']++;
+
                     continue;
                 }
 
                 $normalized = $this->normalizeFood($row, $mealType);
                 if ($normalized === null) {
                     $stats['skipped']++;
+
                     continue;
                 }
 

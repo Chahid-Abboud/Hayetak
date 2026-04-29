@@ -101,4 +101,3 @@ class AiRequestRateLimit
         return max(60, (int) $now->diffInSeconds($now->copy()->endOfDay()) + 1);
     }
 }
-

@@ -195,4 +195,3 @@ class AiListProgressLabelReadiness extends Command
         return is_numeric($value) ? (float) $value : null;
     }
 }
-

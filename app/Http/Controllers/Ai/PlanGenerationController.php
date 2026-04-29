@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Ai;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ReleasesSessionLock;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Ai\StorePlanRequest;
 use App\Jobs\Ai\GeneratePlansForUser;
 use App\Services\Ai\PlannerService;
@@ -24,8 +24,7 @@ class PlanGenerationController extends Controller
         StorePlanRequest $request,
         PlannerService $planner,
         UserFacingAiPayloadSanitizer $sanitizer
-    ): JsonResponse
-    {
+    ): JsonResponse {
         if (function_exists('set_time_limit')) {
             @set_time_limit((int) config('ai.planner.request_timeout_seconds', 300));
         }

@@ -2,10 +2,10 @@
 
 namespace App\Services\Ai\Chat;
 
+use App\Models\User;
 use App\Services\Ai\Prompts\CoachPrompt;
 use App\Services\Ai\Runtime\FeatureConfigResolver;
 use App\Services\Ai\Runtime\OllamaClient;
-use App\Models\User;
 use RuntimeException;
 
 class SelfHostedContextAwareChatService

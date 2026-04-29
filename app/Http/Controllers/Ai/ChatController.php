@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Ai;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\ReleasesSessionLock;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Ai\StoreChatMessageRequest;
 use App\Http\Resources\Ai\AiConversationResource;
 use App\Http\Resources\Ai\AiMessageResource;

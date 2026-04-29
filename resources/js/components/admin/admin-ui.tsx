@@ -4,11 +4,8 @@ import {
     ProductFilterRow,
     ProductStickyActions,
 } from '@/components/product/page';
+import { ProductInput, ProductTextarea } from '@/components/product/product-ui';
 import { ProductTable } from '@/components/product/table';
-import {
-    ProductInput,
-    ProductTextarea,
-} from '@/components/product/product-ui';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -314,12 +311,7 @@ export function AdminPanel({
     className?: string;
 }) {
     return (
-        <div
-            className={cn(
-                'dashboard-surface rounded-[24px] p-4',
-                className,
-            )}
-        >
+        <div className={cn('dashboard-surface rounded-[24px] p-4', className)}>
             <div className="space-y-1.5">
                 {eyebrow ? <div className="haye-kicker">{eyebrow}</div> : null}
                 <h3 className="text-base font-semibold tracking-tight text-foreground">
@@ -350,12 +342,7 @@ export function AdminOverviewCard({
     className?: string;
 }) {
     return (
-        <div
-            className={cn(
-                'dashboard-surface rounded-[24px] p-4',
-                className,
-            )}
-        >
+        <div className={cn('dashboard-surface rounded-[24px] p-4', className)}>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                     <h3 className="text-base font-semibold tracking-tight text-foreground">
@@ -386,7 +373,7 @@ export function AdminDataTable({
     return (
         <ProductTable
             className={cn(
-                'rounded-[24px] border-border/55 bg-background/88 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.42)] [&_thead_th]:py-2.5 [&_thead_th]:text-[10px] [&_tbody_td]:py-2.5',
+                'rounded-[24px] border-border/55 bg-background/88 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.42)] [&_tbody_td]:py-2.5 [&_thead_th]:py-2.5 [&_thead_th]:text-[10px]',
                 className,
             )}
             tableClassName={cn('min-w-[680px]', tableClassName)}

@@ -94,4 +94,3 @@ class AdminProfessionalController extends Controller
         ]);
     }
 }
-

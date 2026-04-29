@@ -363,7 +363,8 @@ export default function AiChatPage() {
                                 Conversation safety first
                             </div>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Keep transcript review readable and escalate only flagged or unsafe patterns.
+                                Keep transcript review readable and escalate
+                                only flagged or unsafe patterns.
                             </p>
                         </div>
                         <div className="rounded-3xl border bg-card p-4">
@@ -374,7 +375,8 @@ export default function AiChatPage() {
                                 Use profile constraints
                             </div>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Review replies against allergies, injuries, and recent logs before marking issues resolved.
+                                Review replies against allergies, injuries, and
+                                recent logs before marking issues resolved.
                             </p>
                         </div>
                         <div className="rounded-3xl border bg-card p-4">
@@ -683,4 +685,3 @@ export default function AiChatPage() {
         </>
     );
 }
-

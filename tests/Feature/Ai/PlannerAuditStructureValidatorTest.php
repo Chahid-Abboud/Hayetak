@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Ai\AiRequest;
+use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
@@ -10,7 +11,6 @@ use App\Models\User;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
 use App\Models\WorkoutPlanExercise;
-use App\Models\Exercise;
 use App\Services\Ai\Audit\PlannerAuditStructureValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

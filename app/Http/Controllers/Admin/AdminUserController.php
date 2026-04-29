@@ -239,6 +239,7 @@ class AdminUserController extends Controller
                         'updated' => false,
                         'reason' => 'missing_user',
                     ]);
+
                     continue;
                 }
 
@@ -268,6 +269,7 @@ class AdminUserController extends Controller
                         'before' => $before,
                         'after' => $after,
                     ]);
+
                     continue;
                 }
 

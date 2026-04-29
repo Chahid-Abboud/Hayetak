@@ -110,4 +110,3 @@ it('reports ready and pending planner rows for progress labels', function () {
         ->expectsOutputToContain('Pending by reason - missing_end: 1')
         ->assertExitCode(0);
 });
-

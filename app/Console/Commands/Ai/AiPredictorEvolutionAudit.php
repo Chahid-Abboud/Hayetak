@@ -621,6 +621,7 @@ class AiPredictorEvolutionAudit extends Command
                     'status' => 'no_data',
                     'last_message_at' => null,
                 ];
+
                 continue;
             }
 

@@ -117,7 +117,9 @@ function PreviewPanel({
             <p className="mt-2 text-sm font-semibold">{title}</p>
             <div
                 className={`mt-3 text-sm leading-6 ${
-                    accent ? 'text-primary-foreground/84' : 'text-muted-foreground'
+                    accent
+                        ? 'text-primary-foreground/84'
+                        : 'text-muted-foreground'
                 }`}
             >
                 {children}
@@ -909,32 +911,32 @@ export default function Landing() {
                         className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
                     >
                         <div className="mx-auto w-full max-w-[80%] space-y-6 pt-4 text-center">
-                                <h1
-                                    className="mx-auto w-full max-w-full text-[2.7rem] leading-[0.98] tracking-[-0.02em] text-foreground sm:text-[3.45rem] lg:text-[4rem]"
-                                    style={{
-                                        fontFamily: 'var(--font-display)',
-                                    }}
-                                >
-                                    Create your profile, generate a safer plan,
-                                    track the day, and get coaching that adapts.
-                                </h1>
+                            <h1
+                                className="mx-auto w-full max-w-full text-[2.7rem] leading-[0.98] tracking-[-0.02em] text-foreground sm:text-[3.45rem] lg:text-[4rem]"
+                                style={{
+                                    fontFamily: 'var(--font-display)',
+                                }}
+                            >
+                                Create your profile, generate a safer plan,
+                                track the day, and get coaching that adapts.
+                            </h1>
 
-                                <div className="flex flex-wrap justify-center gap-3">
-                                    <Cta
-                                        href="/register"
-                                        className="px-7 py-3.5 text-base"
-                                    >
-                                        Start your plan
-                                        <ArrowRight className="size-5" />
-                                    </Cta>
-                                    <Cta
-                                        href="/login"
-                                        variant="secondary"
-                                        className="px-7 py-3.5 text-base"
-                                    >
-                                        Sign in
-                                    </Cta>
-                                </div>
+                            <div className="flex flex-wrap justify-center gap-3">
+                                <Cta
+                                    href="/register"
+                                    className="px-7 py-3.5 text-base"
+                                >
+                                    Start your plan
+                                    <ArrowRight className="size-5" />
+                                </Cta>
+                                <Cta
+                                    href="/login"
+                                    variant="secondary"
+                                    className="px-7 py-3.5 text-base"
+                                >
+                                    Sign in
+                                </Cta>
+                            </div>
                         </div>
                     </section>
 

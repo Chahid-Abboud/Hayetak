@@ -203,4 +203,3 @@ class ConversationContextBuilder
         return $total;
     }
 }
-

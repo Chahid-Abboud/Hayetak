@@ -1,7 +1,7 @@
 import EmailVerificationNotificationController from '@/actions/App/Http/Controllers/Auth/EmailVerificationNotificationController';
-import AuthCardLayout from '@/layouts/auth/auth-card-layout';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import AuthCardLayout from '@/layouts/auth/auth-card-layout';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle, MailCheck, Sparkles } from 'lucide-react';
 

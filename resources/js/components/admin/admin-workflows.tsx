@@ -68,10 +68,8 @@ const statusPalette: Record<
 const toneClassNames: Record<StatusTone, string> = {
     default:
         'border-border/60 bg-background/72 text-foreground/80 dark:bg-card/82',
-    success:
-        'border-success/35 bg-success/12 text-foreground',
-    warning:
-        'border-warning/35 bg-warning/12 text-foreground',
+    success: 'border-success/35 bg-success/12 text-foreground',
+    warning: 'border-warning/35 bg-warning/12 text-foreground',
     danger: 'border-destructive/35 bg-destructive/12 text-foreground',
     info: 'border-info/35 bg-info/12 text-foreground',
 };
@@ -257,7 +255,7 @@ export function AdminSplitView({
                 className={cn(
                     'hidden xl:block',
                     stickyDetail &&
-                        'xl:sticky xl:top-6 xl:self-start xl:max-h-[calc(100svh-2.5rem)] xl:overflow-y-auto xl:pr-1 [scrollbar-width:thin]',
+                        '[scrollbar-width:thin] xl:sticky xl:top-6 xl:max-h-[calc(100svh-2.5rem)] xl:self-start xl:overflow-y-auto xl:pr-1',
                     detailClassName,
                 )}
             >

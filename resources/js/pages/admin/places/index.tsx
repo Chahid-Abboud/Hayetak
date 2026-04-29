@@ -287,7 +287,8 @@ export default function AdminPlacesPage() {
                                     description="Most updates should happen in list mode where fields are easiest to compare and fix."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Keep map mode optional so the editor and list stay readable.
+                                        Keep map mode optional so the editor and
+                                        list stay readable.
                                     </div>
                                 </AdminOverviewCard>
                                 <AdminOverviewCard
@@ -295,7 +296,8 @@ export default function AdminPlacesPage() {
                                     description="Switch to map mode after edits to verify coordinate quality and location placement."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        The map is for spatial checks, while record edits remain in the detail panel.
+                                        The map is for spatial checks, while
+                                        record edits remain in the detail panel.
                                     </div>
                                 </AdminOverviewCard>
                             </div>

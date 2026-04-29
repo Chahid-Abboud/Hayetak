@@ -4,14 +4,14 @@ namespace App\Jobs\Ai;
 
 use App\Models\User;
 use App\Services\Ai\Chat\SelfHostedContextAwareChatService;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Bus\Queueable;
 
-class SyncUserAiContext implements ShouldQueue, ShouldBeUnique
+class SyncUserAiContext implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

@@ -18,7 +18,7 @@ it('builds gain-phase targets with realistic maintenance margins and workout set
     ]);
     $user->id = 101;
 
-    $targets = (new SeedUserProfileTargetsService())->build($user, [
+    $targets = (new SeedUserProfileTargetsService)->build($user, [
         ['kind' => 'injury', 'label' => 'Wrist Strain'],
     ]);
 
@@ -45,7 +45,7 @@ it('builds loss-phase targets without pushing calories beyond sane maintenance b
     ]);
     $user->id = 102;
 
-    $targets = (new SeedUserProfileTargetsService())->build($user, [
+    $targets = (new SeedUserProfileTargetsService)->build($user, [
         ['kind' => 'medical_condition', 'label' => 'Hypertension'],
     ]);
 
@@ -71,7 +71,7 @@ it('polishes edge-case heavy gain personas into more realistic seeded goals', fu
     ]);
     $user->id = 103;
 
-    $adjustments = (new SeedUserProfileTargetsService())->personaAdjustments($user);
+    $adjustments = (new SeedUserProfileTargetsService)->personaAdjustments($user);
 
     expect($adjustments)->toMatchArray([
         'dietary_goal' => 'Calorie Deficit',

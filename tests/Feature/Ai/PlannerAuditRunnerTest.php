@@ -74,7 +74,7 @@ it('fails live planner audits before generation when the ollama provider is not 
         ->and((string) $result->last_error)->toContain('Planner audit provider preflight failed')
         ->and(data_get($result->summary_json, 'provider_preflight.ok'))->toBeFalse()
         ->and(implode(' | ', (array) data_get($result->summary_json, 'provider_preflight.issues', [])))
-            ->toContain('Live planner audit requires Ollama to be reachable');
+        ->toContain('Live planner audit requires Ollama to be reachable');
 });
 
 it('re-reads the latest gpu load from the database while an audit is in progress', function () {

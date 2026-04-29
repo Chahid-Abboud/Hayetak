@@ -15,11 +15,7 @@ import {
 } from '@/components/product/product-ui';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import {
-    CalendarDays,
-    Play,
-    Search,
-} from 'lucide-react';
+import { CalendarDays, Play, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type Exercise = {
@@ -223,7 +219,9 @@ export default function WorkoutLogPage() {
 
     const addSet = (exerciseId: number) => {
         if (!activeLogId) {
-            setStatus('Start a session first so the set has somewhere to save.');
+            setStatus(
+                'Start a session first so the set has somewhere to save.',
+            );
             return;
         }
 
@@ -239,7 +237,8 @@ export default function WorkoutLogPage() {
         const existingSets =
             activeLog?.sets
                 ?.filter((set) => set.exercise?.id === exerciseId)
-                .sort((left, right) => left.set_number - right.set_number) ?? [];
+                .sort((left, right) => left.set_number - right.set_number) ??
+            [];
 
         router.post(
             `/workouts/log/${activeLogId}/add-set`,
@@ -312,9 +311,10 @@ export default function WorkoutLogPage() {
                                 </div>
                                 <div className="mt-2 text-base text-muted-foreground">
                                     {mode === 'follow-ai'
-                                        ? aiPlan?.name ?? 'AI workout plan'
+                                        ? (aiPlan?.name ?? 'AI workout plan')
                                         : mode === 'my-plan'
-                                          ? manualPlan?.name ?? 'My workout draft'
+                                          ? (manualPlan?.name ??
+                                            'My workout draft')
                                           : 'Freestyle logging'}
                                 </div>
                             </div>
@@ -343,9 +343,7 @@ export default function WorkoutLogPage() {
                             <ProductModeButton
                                 active={mode === 'my-plan'}
                                 disabled={!manualPlan}
-                                onClick={() =>
-                                    manualPlan && setMode('my-plan')
-                                }
+                                onClick={() => manualPlan && setMode('my-plan')}
                             >
                                 My draft
                             </ProductModeButton>
@@ -410,7 +408,9 @@ export default function WorkoutLogPage() {
                         action={
                             <div className="flex flex-wrap justify-center gap-3">
                                 <ProductButton asChild>
-                                    <Link href="/ai/planner">Open AI planner</Link>
+                                    <Link href="/ai/planner">
+                                        Open AI planner
+                                    </Link>
                                 </ProductButton>
                                 <ProductButton
                                     emphasis="secondary"
@@ -430,7 +430,9 @@ export default function WorkoutLogPage() {
                         action={
                             <div className="flex flex-wrap justify-center gap-3">
                                 <ProductButton asChild>
-                                    <Link href="/workouts/plan">Open planner</Link>
+                                    <Link href="/workouts/plan">
+                                        Open planner
+                                    </Link>
                                 </ProductButton>
                                 <ProductButton
                                     emphasis="secondary"
@@ -529,7 +531,9 @@ export default function WorkoutLogPage() {
                                     />
                                     <SessionMetric
                                         label="Saved sets"
-                                        value={String(activeLog?.sets.length ?? 0)}
+                                        value={String(
+                                            activeLog?.sets.length ?? 0,
+                                        )}
                                     />
                                     <SessionMetric
                                         label="Current focus"
@@ -554,60 +558,71 @@ export default function WorkoutLogPage() {
                                             <ProductInput
                                                 value={search}
                                                 onChange={(event) =>
-                                                    setSearch(event.target.value)
+                                                    setSearch(
+                                                        event.target.value,
+                                                    )
                                                 }
                                                 placeholder="Search by name, muscle, or equipment"
                                                 className="h-12 w-full pl-11 text-base"
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            {filteredExercises.map((exercise) => {
-                                                const added = freestyleIds.includes(
-                                                    exercise.id,
-                                                );
+                                            {filteredExercises.map(
+                                                (exercise) => {
+                                                    const added =
+                                                        freestyleIds.includes(
+                                                            exercise.id,
+                                                        );
 
-                                                return (
-                                                    <div
-                                                        key={exercise.id}
-                                                        className="rounded-[20px] border border-border/70 bg-card/80 p-4"
-                                                    >
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div>
-                                                                <div className="text-base font-semibold text-foreground">
-                                                                    {exercise.name}
+                                                    return (
+                                                        <div
+                                                            key={exercise.id}
+                                                            className="rounded-[20px] border border-border/70 bg-card/80 p-4"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <div className="text-base font-semibold text-foreground">
+                                                                        {
+                                                                            exercise.name
+                                                                        }
+                                                                    </div>
+                                                                    <div className="mt-1 text-sm text-muted-foreground">
+                                                                        {
+                                                                            exercise.primary_muscle
+                                                                        }
+                                                                        {exercise.equipment
+                                                                            ? ` - ${exercise.equipment}`
+                                                                            : ''}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="mt-1 text-sm text-muted-foreground">
-                                                                    {
-                                                                        exercise.primary_muscle
+                                                                <ProductButton
+                                                                    emphasis="secondary"
+                                                                    disabled={
+                                                                        added
                                                                     }
-                                                                    {exercise.equipment
-                                                                        ? ` - ${exercise.equipment}`
-                                                                        : ''}
-                                                                </div>
+                                                                    onClick={() =>
+                                                                        setFreestyleIds(
+                                                                            (
+                                                                                current,
+                                                                            ) =>
+                                                                                added
+                                                                                    ? current
+                                                                                    : [
+                                                                                          ...current,
+                                                                                          exercise.id,
+                                                                                      ],
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {added
+                                                                        ? 'Added'
+                                                                        : 'Add'}
+                                                                </ProductButton>
                                                             </div>
-                                                            <ProductButton
-                                                                emphasis="secondary"
-                                                                disabled={added}
-                                                                onClick={() =>
-                                                                    setFreestyleIds(
-                                                                        (current) =>
-                                                                            added
-                                                                                ? current
-                                                                                : [
-                                                                                      ...current,
-                                                                                      exercise.id,
-                                                                                  ],
-                                                                    )
-                                                                }
-                                                            >
-                                                                {added
-                                                                    ? 'Added'
-                                                                    : 'Add'}
-                                                            </ProductButton>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                },
+                                            )}
                                         </div>
                                     </div>
                                 </SidePanelCard>
@@ -617,12 +632,18 @@ export default function WorkoutLogPage() {
                                     description="Jump between the planner, the AI flow, and your logging screen without breaking rhythm."
                                 >
                                     <div className="grid gap-3">
-                                        <ProductButton asChild emphasis="secondary">
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
                                             <Link href="/workouts/plan">
                                                 Open workout planner
                                             </Link>
                                         </ProductButton>
-                                        <ProductButton asChild emphasis="secondary">
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
                                             <Link href="/ai/planner">
                                                 Open AI planner
                                             </Link>

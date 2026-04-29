@@ -23,8 +23,7 @@ class PlannerProfileDatasetUserImporter
         bool $dryRun = false,
         string $source = 'planner_dataset_import',
         ?string $sharedPassword = null
-    ): array
-    {
+    ): array {
         $dir = $this->resolvePath($inputDir);
 
         if (! File::isDirectory($dir)) {
@@ -102,12 +101,12 @@ class PlannerProfileDatasetUserImporter
                 } else {
                     $summary['created_users']++;
                 }
+
                 continue;
             }
 
             DB::transaction(function () use (
                 $profile,
-                $profileId,
                 $source,
                 $latestRun,
                 $outcomesByRun,
@@ -244,7 +243,7 @@ class PlannerProfileDatasetUserImporter
             $payload['password'] = Hash::make((string) Str::uuid());
         }
 
-        $user = $existing ?? new User();
+        $user = $existing ?? new User;
         if ($existing && $existing->trashed()) {
             $payload['deleted_at'] = null;
         }

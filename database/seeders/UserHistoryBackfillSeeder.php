@@ -20,8 +20,8 @@ use App\Models\WorkoutLogSet;
 use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;
 use App\Services\Ai\Seed\SeededPlanCleanupService;
 use App\Services\Ai\Seed\SeedUserProfileTargetsService;
-use Database\Seeders\Ai\Data\ExerciseDataQualitySeeder;
 use Carbon\CarbonImmutable;
+use Database\Seeders\Ai\Data\ExerciseDataQualitySeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -1046,8 +1046,7 @@ class UserHistoryBackfillSeeder extends Seeder
         string $mealType,
         CarbonImmutable $date,
         array $behavior,
-    ): int
-    {
+    ): int {
         $dailyCalories = max(1200, (int) ($behavior['daily_calories'] ?? data_get($profile, 'targets.daily_goal_calories', 1800)));
 
         if ($mealType === 'snack') {
@@ -1205,7 +1204,7 @@ class UserHistoryBackfillSeeder extends Seeder
                 'gain' => 40,
                 default => 55,
             }
-            : 0;
+        : 0;
 
         return $this->clampDailyCalories(
             $goal + $scenarioOffset + $modeOffset + $weekendOffset,
@@ -1228,8 +1227,7 @@ class UserHistoryBackfillSeeder extends Seeder
         array $behavior,
         int $slotIndex = 0,
         int $slotCount = 1,
-    ): int
-    {
+    ): int {
         $ratios = $this->mealRatiosForDay($profile, $behavior);
         $ratio = (float) ($ratios[$mealType] ?? 0.0);
         $dailyCalories = max(1200, (int) ($behavior['daily_calories'] ?? data_get($profile, 'targets.daily_goal_calories', 1800)));
@@ -1498,8 +1496,7 @@ class UserHistoryBackfillSeeder extends Seeder
         array $excludedFoodIds = [],
         array $behavior = [],
         int $slotCount = 1,
-    ): ?Food
-    {
+    ): ?Food {
         $targetCalories = $this->mealCalorieTarget($profile, $mealType, $behavior, $slotIndex, $slotCount);
         $foodNames = $this->mealPoolNames($profile['diet_key'], $mealType);
         $foods = collect($foodNames)
@@ -1878,8 +1875,7 @@ class UserHistoryBackfillSeeder extends Seeder
         string $loggingMode,
         int $slotIndex = 0,
         int $slotCount = 1,
-    ): float
-    {
+    ): float {
         $targetCalories = $this->mealCalorieTarget($profile, $mealType, $behavior, $slotIndex, $slotCount);
         $foodCalories = max(
             $mealType === 'drink' ? 110 : 80,
@@ -2069,6 +2065,7 @@ class UserHistoryBackfillSeeder extends Seeder
 
             if ($existingDates->count() >= min($desiredSessions, $profile['workout_days'])) {
                 $weekStart = $weekStart->addWeek();
+
                 continue;
             }
 

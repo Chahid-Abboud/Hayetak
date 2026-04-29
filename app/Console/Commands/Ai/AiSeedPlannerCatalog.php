@@ -177,23 +177,27 @@ class AiSeedPlannerCatalog extends Command
                 if ($retryDelayMs > 0 && $attempt < $maxAttempts) {
                     usleep($retryDelayMs * 1000);
                 }
+
                 continue;
             }
 
             if ($items === []) {
                 $this->warn("  attempt {$attempt}: no usable {$mealType} items");
+
                 continue;
             }
 
             foreach ($items as $row) {
                 if (! is_array($row)) {
                     $stats['skipped']++;
+
                     continue;
                 }
 
                 $normalized = $this->normalizeFood($row, $mealType);
                 if ($normalized === null) {
                     $stats['skipped']++;
+
                     continue;
                 }
 
@@ -263,23 +267,27 @@ class AiSeedPlannerCatalog extends Command
                 if ($retryDelayMs > 0 && $attempt < $maxAttempts) {
                     usleep($retryDelayMs * 1000);
                 }
+
                 continue;
             }
 
             if ($items === []) {
                 $this->warn("  attempt {$attempt}: no usable {$location} exercises");
+
                 continue;
             }
 
             foreach ($items as $row) {
                 if (! is_array($row)) {
                     $stats['skipped']++;
+
                     continue;
                 }
 
                 $normalized = $this->normalizeExercise($row, $location);
                 if ($normalized === null) {
                     $stats['skipped']++;
+
                     continue;
                 }
 
@@ -317,10 +325,12 @@ class AiSeedPlannerCatalog extends Command
             $models = collect((array) ($json['models'] ?? []))->pluck('name')->filter()->values()->all();
             if (! in_array($model, $models, true)) {
                 $this->error("Model {$model} was not found in /api/tags.");
+
                 return false;
             }
         } catch (\Throwable $e) {
             $this->error('Could not connect to Ollama: '.$e->getMessage());
+
             return false;
         }
 
@@ -363,8 +373,7 @@ class AiSeedPlannerCatalog extends Command
         int $connectTimeout,
         int $numPredict,
         string $keepAlive
-    ): array
-    {
+    ): array {
         $json = Http::baseUrl($baseUrl)
             ->acceptJson()
             ->connectTimeout($connectTimeout)
@@ -575,6 +584,7 @@ PROMPT;
         $existing = DB::table('foods')->where('name', $incoming['name'])->first();
         if (! $existing) {
             DB::table('foods')->insert($incoming);
+
             return 'inserted';
         }
 
@@ -625,6 +635,7 @@ PROMPT;
 
         if (! $existing) {
             DB::table('exercises')->insert($incoming);
+
             return 'inserted';
         }
 
@@ -719,12 +730,14 @@ PROMPT;
     private function clean(mixed $value): ?string
     {
         $v = trim((string) $value);
+
         return $v !== '' ? $v : null;
     }
 
     private function num(mixed $value, float $min, float $max): float
     {
         $n = is_numeric($value) ? (float) $value : $min;
+
         return max($min, min($max, round($n, 2)));
     }
 

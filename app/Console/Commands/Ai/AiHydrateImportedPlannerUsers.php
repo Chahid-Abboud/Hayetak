@@ -171,7 +171,7 @@ class AiHydrateImportedPlannerUsers extends Command
         CarbonImmutable $measurementStart,
         CarbonImmutable $measurementEnd
     ): void {
-        $this->seeder = new UserHistoryBackfillSeeder();
+        $this->seeder = new UserHistoryBackfillSeeder;
         $this->seederReflection = new \ReflectionClass($this->seeder);
 
         $this->setSeederProperty('today', $today);

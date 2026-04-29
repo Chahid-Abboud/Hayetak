@@ -231,7 +231,10 @@ export default function AdminNotificationsIndex() {
                                     description="Select recipients first, then draft and send. Keep sends intentional and targeted."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        Selected recipients: {selectedUsers.length}. Sending remains disabled until title, message, and at least one recipient are set.
+                                        Selected recipients:{' '}
+                                        {selectedUsers.length}. Sending remains
+                                        disabled until title, message, and at
+                                        least one recipient are set.
                                     </div>
                                 </AdminOverviewCard>
                                 <AdminOverviewCard
@@ -239,7 +242,8 @@ export default function AdminNotificationsIndex() {
                                     description="Use status filtering to confirm what was unread, read, or dismissed."
                                 >
                                     <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
-                                        History is readable by default; raw logs stay in dedicated audit surfaces.
+                                        History is readable by default; raw logs
+                                        stay in dedicated audit surfaces.
                                     </div>
                                 </AdminOverviewCard>
                             </div>

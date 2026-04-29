@@ -24,7 +24,7 @@ class PostgresTextArrayCast implements CastsAttributes
 
         if ($driver === 'pgsql') {
             $escaped = array_map(
-                static fn (string $item): string => '"'.addcslashes($item, "\\\"").'"',
+                static fn (string $item): string => '"'.addcslashes($item, '\\"').'"',
                 $items
             );
 

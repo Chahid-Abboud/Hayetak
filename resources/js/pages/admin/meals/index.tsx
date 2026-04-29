@@ -650,263 +650,281 @@ export default function AdminMealsPage() {
                                 title="Food catalog workspace"
                                 description="Search the food catalog, review macro completeness, and update entries without leaving the admin flow."
                             >
-                            <AdminFilterToolbar
-                                search={foodQ}
-                                onSearchChange={setFoodQ}
-                                searchPlaceholder="Search foods by name"
-                            />
+                                <AdminFilterToolbar
+                                    search={foodQ}
+                                    onSearchChange={setFoodQ}
+                                    searchPlaceholder="Search foods by name"
+                                />
 
-                            <AdminSplitView
-                                list={
-                                    loadingFoods ? (
-                                        <AdminEmpty
-                                            title="Loading foods"
-                                            description="Fetching the latest food catalog."
-                                        />
-                                    ) : (
-                                        <AdminDataTable>
-                                            <ProductTableHead>
-                                                <tr>
-                                                    <ProductTableHeaderCell>
-                                                        Food
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>
-                                                        Category
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>
-                                                        Macros
-                                                    </ProductTableHeaderCell>
-                                                </tr>
-                                            </ProductTableHead>
-                                            <ProductTableBody>
-                                                {foods.map((food) => (
-                                                    <ProductTableRow
-                                                        key={
-                                                            food.id ?? food.name
-                                                        }
-                                                        interactive
-                                                        className={
-                                                            food.id ===
-                                                            selectedFood?.id
-                                                                ? 'bg-primary/6'
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <ProductTableCell>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setSelectedFood(
-                                                                        {
-                                                                            ...food,
-                                                                        },
-                                                                    )
-                                                                }
-                                                                className="w-full text-left font-medium"
-                                                            >
-                                                                {food.name}
-                                                            </button>
-                                                        </ProductTableCell>
-                                                        <ProductTableCell className="text-sm text-muted-foreground">
-                                                            {food.category ||
-                                                                'Uncategorized'}
-                                                        </ProductTableCell>
-                                                        <ProductTableCell className="text-sm text-muted-foreground">
-                                                            {food.calories ?? 0}{' '}
-                                                            kcal • P{' '}
-                                                            {food.protein_g ??
-                                                                0}{' '}
-                                                            • C{' '}
-                                                            {food.carbs_g ?? 0}{' '}
-                                                            • F{' '}
-                                                            {food.fat_g ?? 0}
-                                                        </ProductTableCell>
-                                                    </ProductTableRow>
-                                                ))}
-                                                {foods.length === 0 ? (
-                                                    <ProductTableEmptyRow
-                                                        colSpan={3}
-                                                        title="No foods found"
-                                                        description="Try another search term or add a new food to the catalog."
-                                                    />
-                                                ) : null}
-                                            </ProductTableBody>
-                                        </AdminDataTable>
-                                    )
-                                }
-                                detail={
-                                    !selectedFood ? (
-                                        <AdminEmpty
-                                            title="Select or create a food"
-                                            description="Choose a row from the catalog or add a new food entry."
-                                        />
-                                    ) : (
-                                        <AdminPanel
-                                            title={
-                                                selectedFood.id === null
-                                                    ? 'Create food'
-                                                    : 'Edit food'
-                                            }
-                                            description="Keep catalog entries clean so planner and tracking experiences stay trustworthy."
-                                        >
-                                            <div className="space-y-4">
-                                                <Field
-                                                    label="Food name"
-                                                    value={selectedFood.name}
-                                                    onChange={(value) =>
-                                                        setSelectedFood({
-                                                            ...selectedFood,
-                                                            name: value,
-                                                        })
-                                                    }
-                                                />
-                                                <Field
-                                                    label="Category"
-                                                    value={
-                                                        selectedFood.category ??
-                                                        ''
-                                                    }
-                                                    onChange={(value) =>
-                                                        setSelectedFood({
-                                                            ...selectedFood,
-                                                            category: value,
-                                                        })
-                                                    }
-                                                />
-                                                <div className="grid gap-4 sm:grid-cols-2">
-                                                    <Field
-                                                        label="Calories"
-                                                        value={
-                                                            selectedFood.calories ==
-                                                            null
-                                                                ? ''
-                                                                : String(
-                                                                      selectedFood.calories,
-                                                                  )
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                calories:
-                                                                    value === ''
-                                                                        ? null
-                                                                        : Number(
-                                                                              value,
-                                                                          ),
-                                                            })
-                                                        }
-                                                    />
-                                                    <Field
-                                                        label="Protein (g)"
-                                                        value={
-                                                            selectedFood.protein_g ==
-                                                            null
-                                                                ? ''
-                                                                : String(
-                                                                      selectedFood.protein_g,
-                                                                  )
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                protein_g:
-                                                                    value === ''
-                                                                        ? null
-                                                                        : Number(
-                                                                              value,
-                                                                          ),
-                                                            })
-                                                        }
-                                                    />
-                                                    <Field
-                                                        label="Carbs (g)"
-                                                        value={
-                                                            selectedFood.carbs_g ==
-                                                            null
-                                                                ? ''
-                                                                : String(
-                                                                      selectedFood.carbs_g,
-                                                                  )
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                carbs_g:
-                                                                    value === ''
-                                                                        ? null
-                                                                        : Number(
-                                                                              value,
-                                                                          ),
-                                                            })
-                                                        }
-                                                    />
-                                                    <Field
-                                                        label="Fat (g)"
-                                                        value={
-                                                            selectedFood.fat_g ==
-                                                            null
-                                                                ? ''
-                                                                : String(
-                                                                      selectedFood.fat_g,
-                                                                  )
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                fat_g:
-                                                                    value === ''
-                                                                        ? null
-                                                                        : Number(
-                                                                              value,
-                                                                          ),
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-                                                <AdminStickyBar
-                                                    summary={
-                                                        selectedFood.id
-                                                            ? `Editing food #${selectedFood.id}`
-                                                            : 'Creating a new catalog food'
-                                                    }
-                                                >
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            void saveFood()
-                                                        }
-                                                        disabled={
-                                                            savingFood ||
-                                                            !selectedFood.name
-                                                        }
-                                                    >
-                                                        {savingFood
-                                                            ? 'Saving...'
-                                                            : 'Save food'}
-                                                    </Button>
-                                                    {selectedFood.id ? (
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            onClick={() =>
-                                                                setFoodDeleteOpen(
-                                                                    true,
-                                                                )
+                                <AdminSplitView
+                                    list={
+                                        loadingFoods ? (
+                                            <AdminEmpty
+                                                title="Loading foods"
+                                                description="Fetching the latest food catalog."
+                                            />
+                                        ) : (
+                                            <AdminDataTable>
+                                                <ProductTableHead>
+                                                    <tr>
+                                                        <ProductTableHeaderCell>
+                                                            Food
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Category
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Macros
+                                                        </ProductTableHeaderCell>
+                                                    </tr>
+                                                </ProductTableHead>
+                                                <ProductTableBody>
+                                                    {foods.map((food) => (
+                                                        <ProductTableRow
+                                                            key={
+                                                                food.id ??
+                                                                food.name
                                                             }
-                                                            disabled={
-                                                                savingFood
+                                                            interactive
+                                                            className={
+                                                                food.id ===
+                                                                selectedFood?.id
+                                                                    ? 'bg-primary/6'
+                                                                    : undefined
                                                             }
                                                         >
-                                                            <Trash2 className="h-4 w-4" />
-                                                            Delete
-                                                        </Button>
+                                                            <ProductTableCell>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setSelectedFood(
+                                                                            {
+                                                                                ...food,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    className="w-full text-left font-medium"
+                                                                >
+                                                                    {food.name}
+                                                                </button>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell className="text-sm text-muted-foreground">
+                                                                {food.category ||
+                                                                    'Uncategorized'}
+                                                            </ProductTableCell>
+                                                            <ProductTableCell className="text-sm text-muted-foreground">
+                                                                {food.calories ??
+                                                                    0}{' '}
+                                                                kcal • P{' '}
+                                                                {food.protein_g ??
+                                                                    0}{' '}
+                                                                • C{' '}
+                                                                {food.carbs_g ??
+                                                                    0}{' '}
+                                                                • F{' '}
+                                                                {food.fat_g ??
+                                                                    0}
+                                                            </ProductTableCell>
+                                                        </ProductTableRow>
+                                                    ))}
+                                                    {foods.length === 0 ? (
+                                                        <ProductTableEmptyRow
+                                                            colSpan={3}
+                                                            title="No foods found"
+                                                            description="Try another search term or add a new food to the catalog."
+                                                        />
                                                     ) : null}
-                                                </AdminStickyBar>
-                                            </div>
-                                        </AdminPanel>
-                                    )
-                                }
-                            />
+                                                </ProductTableBody>
+                                            </AdminDataTable>
+                                        )
+                                    }
+                                    detail={
+                                        !selectedFood ? (
+                                            <AdminEmpty
+                                                title="Select or create a food"
+                                                description="Choose a row from the catalog or add a new food entry."
+                                            />
+                                        ) : (
+                                            <AdminPanel
+                                                title={
+                                                    selectedFood.id === null
+                                                        ? 'Create food'
+                                                        : 'Edit food'
+                                                }
+                                                description="Keep catalog entries clean so planner and tracking experiences stay trustworthy."
+                                            >
+                                                <div className="space-y-4">
+                                                    <Field
+                                                        label="Food name"
+                                                        value={
+                                                            selectedFood.name
+                                                        }
+                                                        onChange={(value) =>
+                                                            setSelectedFood({
+                                                                ...selectedFood,
+                                                                name: value,
+                                                            })
+                                                        }
+                                                    />
+                                                    <Field
+                                                        label="Category"
+                                                        value={
+                                                            selectedFood.category ??
+                                                            ''
+                                                        }
+                                                        onChange={(value) =>
+                                                            setSelectedFood({
+                                                                ...selectedFood,
+                                                                category: value,
+                                                            })
+                                                        }
+                                                    />
+                                                    <div className="grid gap-4 sm:grid-cols-2">
+                                                        <Field
+                                                            label="Calories"
+                                                            value={
+                                                                selectedFood.calories ==
+                                                                null
+                                                                    ? ''
+                                                                    : String(
+                                                                          selectedFood.calories,
+                                                                      )
+                                                            }
+                                                            onChange={(value) =>
+                                                                setSelectedFood(
+                                                                    {
+                                                                        ...selectedFood,
+                                                                        calories:
+                                                                            value ===
+                                                                            ''
+                                                                                ? null
+                                                                                : Number(
+                                                                                      value,
+                                                                                  ),
+                                                                    },
+                                                                )
+                                                            }
+                                                        />
+                                                        <Field
+                                                            label="Protein (g)"
+                                                            value={
+                                                                selectedFood.protein_g ==
+                                                                null
+                                                                    ? ''
+                                                                    : String(
+                                                                          selectedFood.protein_g,
+                                                                      )
+                                                            }
+                                                            onChange={(value) =>
+                                                                setSelectedFood(
+                                                                    {
+                                                                        ...selectedFood,
+                                                                        protein_g:
+                                                                            value ===
+                                                                            ''
+                                                                                ? null
+                                                                                : Number(
+                                                                                      value,
+                                                                                  ),
+                                                                    },
+                                                                )
+                                                            }
+                                                        />
+                                                        <Field
+                                                            label="Carbs (g)"
+                                                            value={
+                                                                selectedFood.carbs_g ==
+                                                                null
+                                                                    ? ''
+                                                                    : String(
+                                                                          selectedFood.carbs_g,
+                                                                      )
+                                                            }
+                                                            onChange={(value) =>
+                                                                setSelectedFood(
+                                                                    {
+                                                                        ...selectedFood,
+                                                                        carbs_g:
+                                                                            value ===
+                                                                            ''
+                                                                                ? null
+                                                                                : Number(
+                                                                                      value,
+                                                                                  ),
+                                                                    },
+                                                                )
+                                                            }
+                                                        />
+                                                        <Field
+                                                            label="Fat (g)"
+                                                            value={
+                                                                selectedFood.fat_g ==
+                                                                null
+                                                                    ? ''
+                                                                    : String(
+                                                                          selectedFood.fat_g,
+                                                                      )
+                                                            }
+                                                            onChange={(value) =>
+                                                                setSelectedFood(
+                                                                    {
+                                                                        ...selectedFood,
+                                                                        fat_g:
+                                                                            value ===
+                                                                            ''
+                                                                                ? null
+                                                                                : Number(
+                                                                                      value,
+                                                                                  ),
+                                                                    },
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <AdminStickyBar
+                                                        summary={
+                                                            selectedFood.id
+                                                                ? `Editing food #${selectedFood.id}`
+                                                                : 'Creating a new catalog food'
+                                                        }
+                                                    >
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                void saveFood()
+                                                            }
+                                                            disabled={
+                                                                savingFood ||
+                                                                !selectedFood.name
+                                                            }
+                                                        >
+                                                            {savingFood
+                                                                ? 'Saving...'
+                                                                : 'Save food'}
+                                                        </Button>
+                                                        {selectedFood.id ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    setFoodDeleteOpen(
+                                                                        true,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    savingFood
+                                                                }
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                Delete
+                                                            </Button>
+                                                        ) : null}
+                                                    </AdminStickyBar>
+                                                </div>
+                                            </AdminPanel>
+                                        )
+                                    }
+                                />
                             </AdminSection>
                         ) : null}
 
@@ -919,142 +937,161 @@ export default function AdminMealsPage() {
                                         : 'Open a row to edit or delete it.'
                                 }
                             >
-                            <AdminFilterToolbar
-                                search={entrySearch}
-                                onSearchChange={setEntrySearch}
-                                searchPlaceholder="Search user or food name"
-                                filters={[
-                                    {
-                                        label: 'Meal type',
-                                        value: mealTypeFilter,
-                                        onChange: setMealTypeFilter,
-                                        options: [
-                                            {
-                                                value: 'all',
-                                                label: 'All meals',
-                                            },
-                                            {
-                                                value: 'breakfast',
-                                                label: 'Breakfast',
-                                            },
-                                            { value: 'lunch', label: 'Lunch' },
-                                            {
-                                                value: 'dinner',
-                                                label: 'Dinner',
-                                            },
-                                            { value: 'snack', label: 'Snack' },
-                                            { value: 'drink', label: 'Drink' },
-                                        ],
-                                    },
-                                ]}
-                            />
+                                <AdminFilterToolbar
+                                    search={entrySearch}
+                                    onSearchChange={setEntrySearch}
+                                    searchPlaceholder="Search user or food name"
+                                    filters={[
+                                        {
+                                            label: 'Meal type',
+                                            value: mealTypeFilter,
+                                            onChange: setMealTypeFilter,
+                                            options: [
+                                                {
+                                                    value: 'all',
+                                                    label: 'All meals',
+                                                },
+                                                {
+                                                    value: 'breakfast',
+                                                    label: 'Breakfast',
+                                                },
+                                                {
+                                                    value: 'lunch',
+                                                    label: 'Lunch',
+                                                },
+                                                {
+                                                    value: 'dinner',
+                                                    label: 'Dinner',
+                                                },
+                                                {
+                                                    value: 'snack',
+                                                    label: 'Snack',
+                                                },
+                                                {
+                                                    value: 'drink',
+                                                    label: 'Drink',
+                                                },
+                                            ],
+                                        },
+                                    ]}
+                                />
 
-                            <AdminSplitView
-                                list={
-                                    <div className="space-y-4">
-                                        {loadingEntries ? (
-                                            <AdminEmpty
-                                                title="Loading meal logs"
-                                                description="Fetching the latest tracked entries."
-                                            />
-                                        ) : (
-                                            <ActivityTimeline
-                                                items={entries.map((entry) => ({
-                                                    id: entry.id,
-                                                    title:
-                                                        entry.food?.name ||
-                                                        `Food #${entry.food_id}`,
-                                                    description:
-                                                        personName(entry),
-                                                    meta: `${entry.meal_type} • ${entry.servings} serving(s)`,
-                                                    timestamp: formatDateTime(
-                                                        entry.eaten_at,
-                                                    ),
-                                                    tone: 'success',
-                                                    chips: [
-                                                        {
-                                                            value: entry.meal_type,
-                                                            label: entry.meal_type,
-                                                        },
-                                                    ],
-                                                }))}
-                                                selectedId={selectedEntryId}
-                                                onSelect={(id) =>
-                                                    setSelectedEntryId(
-                                                        Number(id),
-                                                    )
+                                <AdminSplitView
+                                    list={
+                                        <div className="space-y-4">
+                                            {loadingEntries ? (
+                                                <AdminEmpty
+                                                    title="Loading meal logs"
+                                                    description="Fetching the latest tracked entries."
+                                                />
+                                            ) : (
+                                                <ActivityTimeline
+                                                    items={entries.map(
+                                                        (entry) => ({
+                                                            id: entry.id,
+                                                            title:
+                                                                entry.food
+                                                                    ?.name ||
+                                                                `Food #${entry.food_id}`,
+                                                            description:
+                                                                personName(
+                                                                    entry,
+                                                                ),
+                                                            meta: `${entry.meal_type} • ${entry.servings} serving(s)`,
+                                                            timestamp:
+                                                                formatDateTime(
+                                                                    entry.eaten_at,
+                                                                ),
+                                                            tone: 'success',
+                                                            chips: [
+                                                                {
+                                                                    value: entry.meal_type,
+                                                                    label: entry.meal_type,
+                                                                },
+                                                            ],
+                                                        }),
+                                                    )}
+                                                    selectedId={selectedEntryId}
+                                                    onSelect={(id) =>
+                                                        setSelectedEntryId(
+                                                            Number(id),
+                                                        )
+                                                    }
+                                                    emptyTitle="No recent meal logs"
+                                                    emptyDescription="Meal activity will appear here once users continue tracking."
+                                                />
+                                            )}
+
+                                            <AdminStickyBar
+                                                summary={
+                                                    entryFrom && entryTo
+                                                        ? `Showing ${entryFrom}-${entryTo} of ${entryTotal} logs`
+                                                        : 'Pagination stays aligned with the active meal filters.'
                                                 }
-                                                emptyTitle="No recent meal logs"
-                                                emptyDescription="Meal activity will appear here once users continue tracking."
-                                            />
-                                        )}
-
-                                        <AdminStickyBar
-                                            summary={
-                                                entryFrom && entryTo
-                                                    ? `Showing ${entryFrom}-${entryTo} of ${entryTotal} logs`
-                                                    : 'Pagination stays aligned with the active meal filters.'
+                                            >
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        setEntryPage((page) =>
+                                                            Math.max(
+                                                                1,
+                                                                page - 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        loadingEntries ||
+                                                        entryPage <= 1
+                                                    }
+                                                >
+                                                    Previous
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        setEntryPage((page) =>
+                                                            Math.min(
+                                                                entryLastPage,
+                                                                page + 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        loadingEntries ||
+                                                        entryPage >=
+                                                            entryLastPage
+                                                    }
+                                                >
+                                                    Next
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        setEntryDrawerOpen(true)
+                                                    }
+                                                    disabled={!selectedEntry}
+                                                    className="xl:hidden"
+                                                >
+                                                    Inspect
+                                                </Button>
+                                            </AdminStickyBar>
+                                        </div>
+                                    }
+                                    detail={
+                                        <EntryDetailPanel
+                                            entry={editingEntry}
+                                            onEntryChange={setEditingEntry}
+                                            onSave={() => void saveEntry()}
+                                            onDelete={() =>
+                                                setEntryDeleteOpen(true)
                                             }
-                                        >
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setEntryPage((page) =>
-                                                        Math.max(1, page - 1),
-                                                    )
-                                                }
-                                                disabled={
-                                                    loadingEntries ||
-                                                    entryPage <= 1
-                                                }
-                                            >
-                                                Previous
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setEntryPage((page) =>
-                                                        Math.min(
-                                                            entryLastPage,
-                                                            page + 1,
-                                                        ),
-                                                    )
-                                                }
-                                                disabled={
-                                                    loadingEntries ||
-                                                    entryPage >= entryLastPage
-                                                }
-                                            >
-                                                Next
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setEntryDrawerOpen(true)
-                                                }
-                                                disabled={!selectedEntry}
-                                                className="xl:hidden"
-                                            >
-                                                Inspect
-                                            </Button>
-                                        </AdminStickyBar>
-                                    </div>
-                                }
-                                detail={
-                                    <EntryDetailPanel
-                                        entry={editingEntry}
-                                        onEntryChange={setEditingEntry}
-                                        onSave={() => void saveEntry()}
-                                        onDelete={() =>
-                                            setEntryDeleteOpen(true)
-                                        }
-                                        saving={savingEntry}
-                                    />
-                                }
-                            />
+                                            saving={savingEntry}
+                                        />
+                                    }
+                                />
                             </AdminSection>
                         ) : null}
                     </div>

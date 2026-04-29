@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\File;
 uses(RefreshDatabase::class);
 
 it('spaces seeded measurement dates roughly every 4 to 7 days', function () {
-    $seeder = new UserHistoryBackfillSeeder();
+    $seeder = new UserHistoryBackfillSeeder;
 
     $todayProperty = new ReflectionProperty($seeder, 'today');
     $todayProperty->setAccessible(true);

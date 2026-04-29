@@ -108,14 +108,17 @@ class AiExportProgressPredictionData extends Command
 
                 if (($result['reason'] ?? null) === 'missing_profile') {
                     $skippedNoProfile++;
+
                     continue;
                 }
                 if (($result['reason'] ?? null) === 'missing_baseline_weight') {
                     $skippedNoBaseline++;
+
                     continue;
                 }
                 if (($result['reason'] ?? null) === 'missing_end_weight_label') {
                     $skippedNoLabel++;
+
                     continue;
                 }
 
@@ -126,10 +129,12 @@ class AiExportProgressPredictionData extends Command
                 $isSynthetic = (int) ($row['is_synthetic_row'] ?? 0) === 1;
                 if ($excludeSynthetic && $isSynthetic) {
                     $skippedSyntheticFilter++;
+
                     continue;
                 }
                 if ($onlySynthetic && ! $isSynthetic) {
                     $skippedSyntheticFilter++;
+
                     continue;
                 }
 

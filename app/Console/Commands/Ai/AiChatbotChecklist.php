@@ -4,8 +4,8 @@ namespace App\Console\Commands\Ai;
 
 use App\Models\Ai\AiConversation;
 use App\Models\User;
-use App\Services\Ai\Evaluation\ChatChecklistQualityScorer;
 use App\Services\Ai\Chat\ChatOrchestrator;
+use App\Services\Ai\Evaluation\ChatChecklistQualityScorer;
 use App\Services\Ai\Runtime\FeatureConfigResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -219,7 +219,7 @@ class AiChatbotChecklist extends Command
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function renderMarkdown(array $payload): string
     {

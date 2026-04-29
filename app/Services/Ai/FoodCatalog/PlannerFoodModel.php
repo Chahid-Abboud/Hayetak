@@ -542,6 +542,7 @@ class PlannerFoodModel
                 foreach ($priority as $macro) {
                     if ($macro === 'fat' && $delta >= 9) {
                         $fat++;
+
                         continue 2;
                     }
                     if ($delta >= 4) {
@@ -561,17 +562,20 @@ class PlannerFoodModel
             foreach ($priority as $macro) {
                 if ($macro === 'fat' && $fat > 0 && abs($delta) >= 9) {
                     $fat--;
+
                     continue 2;
                 }
 
                 if (abs($delta) >= 4) {
                     if ($macro === 'protein' && $protein > 0) {
                         $protein--;
+
                         continue 2;
                     }
 
                     if ($macro === 'carbs' && $carbs > 0) {
                         $carbs--;
+
                         continue 2;
                     }
                 }

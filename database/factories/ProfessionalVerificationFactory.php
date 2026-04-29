@@ -33,4 +33,3 @@ class ProfessionalVerificationFactory extends Factory
         ];
     }
 }
-

@@ -152,7 +152,10 @@ function directoryGaps(professional?: Pro | null) {
 }
 
 function isDirectoryReady(professional?: Pro | null) {
-    return Boolean(professional?.verified) && directoryGaps(professional).length === 0;
+    return (
+        Boolean(professional?.verified) &&
+        directoryGaps(professional).length === 0
+    );
 }
 
 function buildProfessionalPayload(professional: Pro) {
@@ -252,7 +255,9 @@ function ProfessionalEditorSurface({
                                     : `${gaps.length} gap${gaps.length === 1 ? '' : 's'} to clean up`}
                             </div>
                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                Public discovery works best when city, contact, availability, bio, and specialties are all present.
+                                Public discovery works best when city, contact,
+                                availability, bio, and specialties are all
+                                present.
                             </div>
                         </div>
 
@@ -277,7 +282,8 @@ function ProfessionalEditorSurface({
                         </AdminNotice>
                     ) : (
                         <AdminNotice tone="success">
-                            This profile has the core discovery fields clients expect.
+                            This profile has the core discovery fields clients
+                            expect.
                         </AdminNotice>
                     )}
 
@@ -409,7 +415,9 @@ function ProfessionalEditorSurface({
                 </div>
             </AdminPanel>
 
-            <AdminStickyBar summary={`Editing ${professionalName(professional)}`}>
+            <AdminStickyBar
+                summary={`Editing ${professionalName(professional)}`}
+            >
                 <Button
                     type="button"
                     variant="outline"
@@ -546,10 +554,7 @@ export default function AdminProfessionalsPage() {
             return;
         }
 
-        if (
-            !selected ||
-            !filteredRows.some((row) => row.id === selected.id)
-        ) {
+        if (!selected || !filteredRows.some((row) => row.id === selected.id)) {
             setSelected(filteredRows[0]);
         }
     }, [filteredRows, selected]);
@@ -635,13 +640,17 @@ export default function AdminProfessionalsPage() {
                             <AdminStatCard
                                 label="Visible On This Page"
                                 value={
-                                    loading ? '...' : String(filteredRows.length)
+                                    loading
+                                        ? '...'
+                                        : String(filteredRows.length)
                                 }
                                 helper="Local search narrows the current page without losing role context."
                             />
                             <AdminStatCard
                                 label="Verified"
-                                value={loading ? '...' : String(summary.verified)}
+                                value={
+                                    loading ? '...' : String(summary.verified)
+                                }
                                 helper="Profiles already approved for client-facing trust."
                             />
                             <AdminStatCard
@@ -695,7 +704,9 @@ export default function AdminProfessionalsPage() {
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
                                                 Role focus is{' '}
-                                                {formatRoleLabel(role).toLowerCase()}
+                                                {formatRoleLabel(
+                                                    role,
+                                                ).toLowerCase()}
                                                 {query.trim()
                                                     ? ' with local search applied.'
                                                     : ' with no extra search narrowing.'}
@@ -712,7 +723,10 @@ export default function AdminProfessionalsPage() {
                                                     : 'Waiting for directory data'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Pagination keeps the professional directory stable while search only refines the current page.
+                                                Pagination keeps the
+                                                professional directory stable
+                                                while search only refines the
+                                                current page.
                                             </div>
                                         </div>
                                     </div>
@@ -751,7 +765,10 @@ export default function AdminProfessionalsPage() {
                                                     : 'Pending selection'}
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                City, contact, availability, bio, and specialties should stay coherent before client discovery surfaces rely on them.
+                                                City, contact, availability,
+                                                bio, and specialties should stay
+                                                coherent before client discovery
+                                                surfaces rely on them.
                                             </div>
                                         </div>
                                     </div>
@@ -856,7 +873,8 @@ export default function AdminProfessionalsPage() {
                             <AdminSplitView
                                 list={
                                     <div className="space-y-4">
-                                        {loading && filteredRows.length === 0 ? (
+                                        {loading &&
+                                        filteredRows.length === 0 ? (
                                             <AdminEmpty
                                                 title="Loading professionals"
                                                 description="Pulling the current directory for the selected role."
@@ -881,118 +899,127 @@ export default function AdminProfessionalsPage() {
                                                         </tr>
                                                     </ProductTableHead>
                                                     <ProductTableBody>
-                                                        {filteredRows.map((row) => {
-                                                            const gaps =
-                                                                directoryGaps(
-                                                                    row,
-                                                                );
+                                                        {filteredRows.map(
+                                                            (row) => {
+                                                                const gaps =
+                                                                    directoryGaps(
+                                                                        row,
+                                                                    );
 
-                                                            return (
-                                                                <ProductTableRow
-                                                                    key={
-                                                                        row.id
-                                                                    }
-                                                                    interactive
-                                                                    className={
-                                                                        row.id ===
-                                                                        selected?.id
-                                                                            ? 'bg-primary/5'
-                                                                            : undefined
-                                                                    }
-                                                                >
-                                                                    <ProductTableCell>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                setSelected(
-                                                                                    row,
-                                                                                )
-                                                                            }
-                                                                            className="w-full space-y-2 text-left"
-                                                                        >
-                                                                            <div className="font-medium text-foreground">
-                                                                                {professionalName(
-                                                                                    row,
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="text-sm text-muted-foreground">
-                                                                                {row.email}
-                                                                            </div>
-                                                                            <Badge
-                                                                                variant="outline"
-                                                                                className="rounded-full px-2.5 py-1 capitalize"
+                                                                return (
+                                                                    <ProductTableRow
+                                                                        key={
+                                                                            row.id
+                                                                        }
+                                                                        interactive
+                                                                        className={
+                                                                            row.id ===
+                                                                            selected?.id
+                                                                                ? 'bg-primary/5'
+                                                                                : undefined
+                                                                        }
+                                                                    >
+                                                                        <ProductTableCell>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    setSelected(
+                                                                                        row,
+                                                                                    )
+                                                                                }
+                                                                                className="w-full space-y-2 text-left"
                                                                             >
-                                                                                {formatRoleLabel(
-                                                                                    row.role,
-                                                                                )}
-                                                                            </Badge>
-                                                                        </button>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <div className="space-y-1">
-                                                                            <div className="font-medium text-foreground">
-                                                                                {row.city ||
-                                                                                    'City not set'}
-                                                                            </div>
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {row.contact_display ||
-                                                                                    'Contact display missing'}
-                                                                            </div>
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {gaps.length ===
-                                                                                0
-                                                                                    ? 'Discovery fields look complete.'
-                                                                                    : `${gaps.length} field gap${gaps.length === 1 ? '' : 's'} remaining`}
-                                                                            </div>
-                                                                        </div>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <div className="space-y-2">
-                                                                            <StatusChipSet
-                                                                                items={[
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {professionalName(
+                                                                                        row,
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-sm text-muted-foreground">
                                                                                     {
-                                                                                        value: row.verified
-                                                                                            ? 'verified'
-                                                                                            : 'unverified',
-                                                                                    },
-                                                                                    {
-                                                                                        value:
-                                                                                            row.latest_professional_verification?.review_status ||
-                                                                                            'pending',
-                                                                                        label: `Review ${formatStatusLabel(
-                                                                                            row.latest_professional_verification?.review_status ||
+                                                                                        row.email
+                                                                                    }
+                                                                                </div>
+                                                                                <Badge
+                                                                                    variant="outline"
+                                                                                    className="rounded-full px-2.5 py-1 capitalize"
+                                                                                >
+                                                                                    {formatRoleLabel(
+                                                                                        row.role,
+                                                                                    )}
+                                                                                </Badge>
+                                                                            </button>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-1">
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {row.city ||
+                                                                                        'City not set'}
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {row.contact_display ||
+                                                                                        'Contact display missing'}
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {gaps.length ===
+                                                                                    0
+                                                                                        ? 'Discovery fields look complete.'
+                                                                                        : `${gaps.length} field gap${gaps.length === 1 ? '' : 's'} remaining`}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-2">
+                                                                                <StatusChipSet
+                                                                                    items={[
+                                                                                        {
+                                                                                            value: row.verified
+                                                                                                ? 'verified'
+                                                                                                : 'unverified',
+                                                                                        },
+                                                                                        {
+                                                                                            value:
+                                                                                                row
+                                                                                                    .latest_professional_verification
+                                                                                                    ?.review_status ||
                                                                                                 'pending',
-                                                                                        )}`,
-                                                                                    },
-                                                                                ]}
-                                                                            />
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {row.latest_professional_verification
-                                                                                    ?.authority ||
-                                                                                    'No verification authority recorded'}
+                                                                                            label: `Review ${formatStatusLabel(
+                                                                                                row
+                                                                                                    .latest_professional_verification
+                                                                                                    ?.review_status ||
+                                                                                                    'pending',
+                                                                                            )}`,
+                                                                                        },
+                                                                                    ]}
+                                                                                />
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {row
+                                                                                        .latest_professional_verification
+                                                                                        ?.authority ||
+                                                                                        'No verification authority recorded'}
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                    </ProductTableCell>
-                                                                    <ProductTableCell>
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() => {
-                                                                                setSelected(
-                                                                                    row,
-                                                                                );
-                                                                                setDrawerOpen(
-                                                                                    true,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            Edit
-                                                                        </Button>
-                                                                    </ProductTableCell>
-                                                                </ProductTableRow>
-                                                            );
-                                                        })}
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <Button
+                                                                                type="button"
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    setSelected(
+                                                                                        row,
+                                                                                    );
+                                                                                    setDrawerOpen(
+                                                                                        true,
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Edit
+                                                                            </Button>
+                                                                        </ProductTableCell>
+                                                                    </ProductTableRow>
+                                                                );
+                                                            },
+                                                        )}
 
                                                         {!loading &&
                                                         filteredRows.length ===

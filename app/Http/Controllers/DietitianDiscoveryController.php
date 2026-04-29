@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class DietitianDiscoveryController extends Controller
 {
@@ -51,23 +51,23 @@ class DietitianDiscoveryController extends Controller
         }
 
         $rows = $query->get()->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: $u->name,
-                'email' => $u->email,
-                'role' => $u->role,
-                'verified' => (bool) $u->verified,
-                'status' => $u->status,
-                'bio' => $u->professional_bio,
-                'specialties' => $u->specialties ?? [],
-                'city' => $u->city,
-                'contact_display' => $u->contact_display,
-                'lat' => $u->profile_lat,
-                'lng' => $u->profile_lng,
-                'area' => $u->area,
-                'authority' => $u->authority,
-                'distance_m' => $this->distanceForViewer($viewerLat, $viewerLng, $u->profile_lat, $u->profile_lng),
-                'canInteract' => $viewer ? $this->access->canInteract($viewer, $u) : false,
-            ]);
+            'id' => $u->id,
+            'name' => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: $u->name,
+            'email' => $u->email,
+            'role' => $u->role,
+            'verified' => (bool) $u->verified,
+            'status' => $u->status,
+            'bio' => $u->professional_bio,
+            'specialties' => $u->specialties ?? [],
+            'city' => $u->city,
+            'contact_display' => $u->contact_display,
+            'lat' => $u->profile_lat,
+            'lng' => $u->profile_lng,
+            'area' => $u->area,
+            'authority' => $u->authority,
+            'distance_m' => $this->distanceForViewer($viewerLat, $viewerLng, $u->profile_lat, $u->profile_lng),
+            'canInteract' => $viewer ? $this->access->canInteract($viewer, $u) : false,
+        ]);
 
         if ($viewerLat !== null && $viewerLng !== null) {
             $rows = $rows

@@ -40,6 +40,7 @@ foreach ($rows as $row) {
     $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : null;
     if (! is_array($prediction)) {
         $missingProgressPrediction++;
+
         continue;
     }
 
@@ -121,4 +122,3 @@ function decodeArray(mixed $value): array
 
     return [];
 }
-
