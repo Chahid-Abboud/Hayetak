@@ -1,0 +1,2 @@
+plan_run_id,profile_id,generated_at_utc,horizon_days,provider,model,prompt_version,plan_version,calorie_target,protein_target_g,carbs_target_g,fat_target_g,workout_split,plan_json_path,grocery_list_json_path,safety_flags_json
+R0001,P0001,2026-04-08T00:05:00Z,21,ollama,llama3.1:8b,v3,1,1850,130,170,60,upper_lower_plus_cardio,storage/app/ai/plans/R0001.json,storage/app/ai/plans/R0001_grocery.json,"{""allergy_safe"":true,""injury_safe"":true}"

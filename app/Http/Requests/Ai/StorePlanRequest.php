@@ -19,6 +19,8 @@ class StorePlanRequest extends FormRequest
             'reason' => ['nullable', 'string', 'max:160'],
             'persist_profile_overrides' => ['nullable', 'boolean'],
             'plan_horizon_days' => ['nullable', 'integer', Rule::in([14, 21, 28])],
+            'generate_diet' => ['nullable', 'boolean'],
+            'generate_workout' => ['nullable', 'boolean'],
 
             'profile' => ['nullable', 'array'],
             'profile.dietary_goal' => ['nullable', 'string', 'max:120'],
@@ -40,5 +42,31 @@ class StorePlanRequest extends FormRequest
             'profile.past_diet_failures.*' => ['string', 'max:120'],
             'profile.past_diet_failures_other' => ['nullable', 'string', 'max:160'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if (! $this->generateDiet() && ! $this->generateWorkout()) {
+                $validator->errors()->add(
+                    'generate_diet',
+                    'Select at least one plan type to generate.'
+                );
+            }
+        });
+    }
+
+    public function generateDiet(): bool
+    {
+        return $this->has('generate_diet')
+            ? $this->boolean('generate_diet')
+            : true;
+    }
+
+    public function generateWorkout(): bool
+    {
+        return $this->has('generate_workout')
+            ? $this->boolean('generate_workout')
+            : true;
     }
 }

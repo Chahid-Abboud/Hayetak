@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Ai;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ai\Audit\PlannerAuditRun;
 use App\Models\NutritionPlan;
 use App\Models\WorkoutPlan;
+use App\Services\Ai\Audit\PlannerAuditExecutionMode;
+use App\Services\Ai\Audit\PlannerAuditGpuLoad;
 use App\Services\Ai\PlannerService;
-use App\Services\Ai\Runtime\FeatureConfigResolver;
-use Illuminate\Support\Str;
+use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,54 +19,89 @@ class PlannerPageController extends Controller
 {
     public function __construct(
         private readonly PlannerService $planner,
-        private readonly FeatureConfigResolver $features,
+        private readonly UserFacingAiPayloadSanitizer $sanitizer,
     ) {}
 
     public function show(Request $request): Response
     {
         $user = $request->user();
+        $isAdmin = (string) ($user->role ?? '') === 'admin';
         $user->loadMissing(['prefs', 'medicalHistories']);
 
-        $nutritionPlan = NutritionPlan::query()
+        $nutritionPlanQuery = NutritionPlan::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
             ->whereNotNull('ai_request_id')
-            ->latest('id')
-            ->with([
+            ->latest('id');
+
+        if ($isAdmin) {
+            $nutritionPlanQuery->with([
                 'aiRequest:id,provider,model,prompt_version,schema_version',
                 'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
-            ])
-            ->first();
+            ]);
+        } else {
+            $nutritionPlanQuery->with([
+                'days.meals.items.food:id,name,category,serving_size,serving_unit,calories,protein_g,carbs_g,fat_g',
+            ]);
+        }
+        $nutritionPlan = $nutritionPlanQuery->first();
 
-        $workoutPlan = WorkoutPlan::query()
+        $workoutPlanQuery = WorkoutPlan::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
             ->whereNotNull('ai_request_id')
-            ->latest('id')
-            ->with([
+            ->latest('id');
+
+        if ($isAdmin) {
+            $workoutPlanQuery->with([
                 'aiRequest:id,provider,model,prompt_version,schema_version',
                 'days.exercises:id,name,primary_muscle,equipment,difficulty',
-            ])
-            ->first();
+            ]);
+        } else {
+            $workoutPlanQuery->with([
+                'days.exercises:id,name,primary_muscle,equipment,difficulty',
+            ]);
+        }
+        $workoutPlan = $workoutPlanQuery->first();
 
         $generation = $this->planner->latestPair($user);
-        $provider = $this->features->provider(FeatureConfigResolver::FEATURE_PLANNER);
-        $defaultModel = $provider === 'ollama'
-            ? $this->features->ollamaChat(FeatureConfigResolver::FEATURE_PLANNER)['model']
-            : $this->features->openAi(FeatureConfigResolver::FEATURE_PLANNER)['model'];
+        if (is_array($generation)) {
+            $generation = $this->sanitizer->sanitizePlannerResponse($generation, false);
+        }
+
+        if (! $isAdmin && is_array($generation)) {
+            $generation = [
+                'ok' => (bool) ($generation['ok'] ?? true),
+                'generation_id' => $generation['generation_id'] ?? null,
+                'version' => $generation['version'] ?? null,
+                'plan' => is_array($generation['plan'] ?? null) ? $generation['plan'] : null,
+            ];
+        }
+
+        $defaults = [
+            'plan_horizon_days' => $this->normalizePlanHorizonDays((int) config('ai.planner.default_horizon_days', 14)),
+        ];
+
+        $latestAuditRun = null;
+        if ($isAdmin) {
+            $latestAuditRun = PlannerAuditRun::query()
+                ->where('requested_by', $user->id)
+                ->latest('id')
+                ->first();
+        }
 
         return Inertia::render('ai/planner', [
             'generation' => $generation,
-            'nutritionPlan' => $nutritionPlan ? $nutritionPlan->toArray() : null,
-            'workoutPlan' => $workoutPlan ? $workoutPlan->toArray() : null,
+            'nutritionPlan' => $nutritionPlan
+                ? $this->sanitizer->sanitizePlanResource($nutritionPlan->toArray(), $isAdmin)
+                : null,
+            'workoutPlan' => $workoutPlan
+                ? $this->sanitizer->sanitizePlanResource($workoutPlan->toArray(), $isAdmin)
+                : null,
             'profileConstraints' => $this->profileConstraints($user),
-            'defaults' => [
-                'provider' => $provider,
-                'model' => $defaultModel,
-                'plan_horizon_days' => $this->normalizePlanHorizonDays((int) config('ai.planner.default_horizon_days', 14)),
-                'prompt_version' => $this->features->promptVersion(FeatureConfigResolver::FEATURE_PLANNER),
-                'schema_version' => $this->features->schemaVersion(FeatureConfigResolver::FEATURE_PLANNER),
-            ],
+            'defaults' => $defaults,
+            'isAdmin' => $isAdmin,
+            'latestAuditRun' => $latestAuditRun ? $this->presentAuditRun($latestAuditRun) : null,
         ]);
     }
 
@@ -173,5 +211,37 @@ class PlannerPageController extends Controller
     private function uniqueStrings(array $values): array
     {
         return array_values(array_unique(array_filter($values, static fn ($value): bool => trim((string) $value) !== '')));
+    }
+
+    private function presentAuditRun(PlannerAuditRun $run): array
+    {
+        $completedRuns = (int) $run->completed_runs;
+        $totalRuns = max(1, (int) $run->total_runs);
+
+        return [
+            'id' => (int) $run->id,
+            'status' => (string) $run->status,
+            'gpu_load' => PlannerAuditGpuLoad::normalize((string) $run->gpu_load),
+            'execution_mode' => PlannerAuditExecutionMode::normalize((string) data_get($run->summary_json ?? [], 'execution_mode')),
+            'horizon_days' => array_values($run->horizon_days ?? []),
+            'total_users' => (int) $run->total_users,
+            'total_runs' => (int) $run->total_runs,
+            'completed_runs' => $completedRuns,
+            'success_runs' => (int) $run->success_runs,
+            'failed_runs' => (int) $run->failed_runs,
+            'percent_complete' => round(($completedRuns / $totalRuns) * 100, 2),
+            'current_user_id' => $run->current_user_id !== null ? (int) $run->current_user_id : null,
+            'current_user_email' => $run->current_user_email,
+            'current_horizon_days' => $run->current_horizon_days !== null ? (int) $run->current_horizon_days : null,
+            'average_run_ms' => $run->average_run_ms !== null ? (int) $run->average_run_ms : null,
+            'eta_seconds' => $run->eta_seconds !== null ? (int) $run->eta_seconds : null,
+            'eta_updated_at' => $run->eta_updated_at?->toIso8601String(),
+            'next_eta_update_at' => $run->eta_updated_at?->copy()->addMinutes(5)->toIso8601String(),
+            'started_at' => $run->started_at?->toIso8601String(),
+            'finished_at' => $run->finished_at?->toIso8601String(),
+            'report_paths' => $run->report_paths ?? [],
+            'summary' => $run->summary_json ?? [],
+            'last_error' => $run->last_error,
+        ];
     }
 }

@@ -1,0 +1,2 @@
+profile_id,user_id_hash,created_at_utc,age,sex,height_cm,start_weight_kg,goal_primary,goal_secondary,diet_type,allergies_json,medical_history_json,injury_history_json,workout_days_target_per_week,workout_location,equipment_json,past_diet_failures_text,sleep_hours_baseline,stress_level_baseline
+P0001,UHASH_EXAMPLE,2026-04-08T00:00:00Z,32,F,165,78.4,fat_loss,recomposition,mediterranean,"[""sesame""]","[""prediabetes""]","[""knee pain history""]",4,gym,"[""dumbbells"",""treadmill""]","late-night snacking; very low-carb rebound",6.5,7

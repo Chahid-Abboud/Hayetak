@@ -1,7 +1,9 @@
 <?php
 
-use App\Models\AiPlan;
-use App\Models\AiRequest;
+use App\Jobs\Ai\RunPlannerAudit;
+use App\Models\Ai\AiPlan;
+use App\Models\Ai\AiRequest;
+use App\Models\Ai\Audit\PlannerAuditRun;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;
@@ -9,18 +11,49 @@ use App\Models\User;
 use App\Models\UserDietaryRestriction;
 use App\Models\UserMedicalHistory;
 use App\Models\WorkoutPlan;
+use App\Services\Ai\PlannerService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     config()->set('ai.chat.provider', 'stub');
     config()->set('ai.usage_logging.enabled', false);
 });
 
-it('generates and persists a structured planner response through the openai provider', function () {
-    config()->set('ai.planner.ollama_only', false);
-    config()->set('ai.planner.provider', 'openai');
-    config()->set('services.openai.api_key', 'test-key');
-    config()->set('services.openai.base_url', 'https://api.openai.com/v1');
+it('allows unverified users to generate plans during onboarding', function () {
+    $user = User::factory()->unverified()->create();
+
+    $this->mock(PlannerService::class, function ($mock) {
+        $mock->shouldReceive('generate')->once()->andReturn([
+            'ok' => true,
+            'ai_request_id' => 1,
+            'generation_id' => 'onboarding-unverified',
+            'version' => 1,
+            'plan' => ['overview' => ['summary' => 'stub plan']],
+            'plans' => ['diet' => [], 'workout' => []],
+            'persisted' => ['persisted' => false],
+            'provider' => 'ollama',
+            'model' => 'llama3.1:8b',
+            'prompt_version' => 'test',
+            'schema_version' => 'test',
+            'usage' => [
+                'input_tokens' => 0,
+                'output_tokens' => 0,
+                'total_tokens' => 0,
+            ],
+        ]);
+    });
+
+    $this->actingAs($user)
+        ->postJson('/api/ai/plan', ['reason' => 'onboarding'])
+        ->assertCreated()
+        ->assertJsonPath('ok', true);
+});
+
+it('generates and persists a structured planner response through the ollama provider', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
     createPlannerCatalog();
 
@@ -46,18 +79,16 @@ it('generates and persists a structured planner response through the openai prov
     ]);
 
     Http::fake([
-        'https://api.openai.com/v1/responses' => Http::response([
-            'id' => 'resp_plan_123',
-            'model' => 'gpt-4.1-mini',
-            'output_text' => json_encode(buildPlannerPayload([
-                'allergies' => ['Peanuts'],
-                'equipment' => 'Resistance Band',
-            ])),
-            'usage' => [
-                'input_tokens' => 410,
-                'output_tokens' => 690,
-                'total_tokens' => 1100,
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode(buildPlannerPayload([
+                    'allergies' => ['Peanuts'],
+                    'equipment' => 'Resistance Band',
+                ])),
             ],
+            'prompt_eval_count' => 220,
+            'eval_count' => 480,
         ], 200),
     ]);
 
@@ -70,13 +101,19 @@ it('generates and persists a structured planner response through the openai prov
     $response
         ->assertCreated()
         ->assertJsonPath('ok', true)
-        ->assertJsonPath('provider', 'openai')
+        ->assertJsonMissingPath('provider')
+        ->assertJsonMissingPath('model')
+        ->assertJsonMissingPath('prompt_version')
+        ->assertJsonMissingPath('schema_version')
+        ->assertJsonMissingPath('usage')
+        ->assertJsonMissingPath('fallback')
+        ->assertJsonMissingPath('quality')
         ->assertJsonPath('plan.diet.daily_targets.calories_kcal', 1850)
         ->assertJsonPath('plan.workout.weekly_schedule.0.session_type', 'train');
 
     $aiRequest = AiRequest::query()->firstOrFail();
     expect($aiRequest->status)->toBe('completed')
-        ->and($aiRequest->provider)->toBe('openai')
+        ->and($aiRequest->provider)->toBe('ollama')
         ->and($aiRequest->output_json)->toBeArray();
 
     expect(AiPlan::query()->where('user_id', $user->id)->count())->toBe(2);
@@ -86,11 +123,10 @@ it('generates and persists a structured planner response through the openai prov
     expect(UserMedicalHistory::query()->where('user_id', $user->id)->where('kind', 'injury')->where('value', 'shoulder pain')->exists())->toBeTrue();
 });
 
-it('rejects planner output that violates an allergy rule and marks the ai request as failed', function () {
-    config()->set('ai.planner.ollama_only', false);
-    config()->set('ai.planner.provider', 'openai');
-    config()->set('services.openai.api_key', 'test-key');
-    config()->set('services.openai.base_url', 'https://api.openai.com/v1');
+it('sanitizes planner output that violates an allergy rule before persisting it', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
     createPlannerCatalog();
 
@@ -102,34 +138,33 @@ it('rejects planner output that violates an allergy rule and marks the ai reques
     ]);
 
     Http::fake([
-        'https://api.openai.com/v1/responses' => Http::response([
-            'id' => 'resp_bad_456',
-            'model' => 'gpt-4.1-mini',
-            'output_text' => json_encode(buildPlannerPayload([
-                'meal_item_name' => 'Peanut Butter',
-                'allergies' => ['Peanuts'],
-            ])),
-            'usage' => [
-                'input_tokens' => 300,
-                'output_tokens' => 500,
-                'total_tokens' => 800,
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode(buildPlannerPayload([
+                    'meal_item_name' => 'Peanut Butter',
+                    'allergies' => ['Peanuts'],
+                ])),
             ],
+            'prompt_eval_count' => 180,
+            'eval_count' => 360,
         ], 200),
     ]);
 
-    $this->actingAs($user)
+    $response = $this->actingAs($user)
         ->postJson('/api/ai/plan', [
             'reason' => 'unsafe_test_plan',
         ])
-        ->assertStatus(422)
-        ->assertJsonPath('ok', false);
+        ->assertCreated()
+        ->assertJsonPath('ok', true);
 
-    expect(AiRequest::query()->firstOrFail()->status)->toBe('failed');
-    expect(AiPlan::query()->count())->toBe(0);
+    $dietJson = json_encode($response->json('plan.diet') ?? [], JSON_UNESCAPED_SLASHES);
+    expect(strtolower($dietJson ?: ''))->not->toContain('peanut');
+    expect(AiRequest::query()->firstOrFail()->status)->toBe('completed');
+    expect(AiPlan::query()->count())->toBe(2);
 });
 
 it('supports the ollama planner provider and can persist profile overrides into normalized tables', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
@@ -174,7 +209,7 @@ it('supports the ollama planner provider and can persist profile overrides into 
 
     $response
         ->assertCreated()
-        ->assertJsonPath('provider', 'ollama')
+        ->assertJsonMissingPath('provider')
         ->assertJsonPath('plan.overview.summary', 'A practical weekly plan built around your goal, schedule, and safety boundaries.');
 
     $user->refresh();
@@ -192,7 +227,6 @@ it('supports the ollama planner provider and can persist profile overrides into 
 });
 
 it('expands compact ollama planner templates into full diet and workout week outputs', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama_only', true);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
@@ -219,16 +253,204 @@ it('expands compact ollama planner templates into full diet and workout week out
     $response = $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'compact_templates_test'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'ollama')
+        ->assertJsonMissingPath('provider')
         ->assertJsonPath('plan.adaptive_review.review_after_days', 14);
+
+    $plan = $response->json('plan');
 
     $response->assertJsonCount(14, 'plan.diet.days');
     $response->assertJsonCount(7, 'plan.workout.weekly_schedule');
     $response->assertJsonPath('plan.workout.weekly_schedule.0.day_label', 'Monday');
+    expect(count($plan['diet']['meal_options']['breakfast'] ?? []))->toBeGreaterThanOrEqual(3)
+        ->and(count($plan['diet']['meal_options']['breakfast'] ?? []))->toBeLessThanOrEqual(7)
+        ->and(count($plan['diet']['meal_options']['lunch'] ?? []))->toBeGreaterThanOrEqual(3)
+        ->and(count($plan['diet']['meal_options']['dinner'] ?? []))->toBeGreaterThanOrEqual(3)
+        ->and(count($plan['diet']['meal_options']['snack'] ?? []))->toBeGreaterThanOrEqual(3);
+});
+
+it('persists the requested planner horizon on generated workout plans', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
+
+    createPlannerCatalog();
+
+    $user = User::factory()->create([
+        'diet_name' => 'Balanced',
+        'workout_days_per_week' => 4,
+        'workout_location' => 'gym',
+    ]);
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode(buildPlannerPayload()),
+            ],
+            'prompt_eval_count' => 200,
+            'eval_count' => 420,
+        ], 200),
+    ]);
+
+    $this->actingAs($user)
+        ->postJson('/api/ai/plan', [
+            'reason' => 'workout_duration_persist_test',
+            'plan_horizon_days' => 21,
+        ])
+        ->assertCreated();
+
+    $workoutPlan = WorkoutPlan::query()
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($workoutPlan->duration_days)->toBe(21);
+});
+
+it('normalizes unrealistic meal calories and oversized serving text before returning the generated plan', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
+
+    createPlannerCatalog();
+
+    $user = User::factory()->create([
+        'diet_name' => 'Balanced',
+        'workout_days_per_week' => 3,
+        'workout_location' => 'home',
+    ]);
+
+    $payload = buildPlannerPayload();
+    $payload['diet']['days'][0]['meals'][0]['target_kcal'] = 340;
+    $payload['diet']['days'][0]['meals'][0]['items'][0]['portion'] = '8 servings';
+    $payload['diet']['days'][0]['meals'][0]['items'][0]['calories_kcal'] = 980;
+    $payload['diet']['days'][0]['meals'][0]['items'][1]['portion'] = '6 servings';
+    $payload['diet']['days'][0]['meals'][0]['items'][1]['calories_kcal'] = 760;
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode($payload),
+            ],
+            'prompt_eval_count' => 200,
+            'eval_count' => 420,
+        ], 200),
+    ]);
+
+    $plan = $this->actingAs($user)
+        ->postJson('/api/ai/plan', ['reason' => 'normalize_meal_guardrails'])
+        ->assertCreated()
+        ->json('plan');
+
+    $breakfast = collect($plan['diet']['days'][0]['meals'] ?? [])
+        ->firstWhere('meal_code', 'breakfast');
+
+    expect($breakfast)->toBeArray();
+
+    $target = (int) ($breakfast['target_kcal'] ?? 0);
+    $items = collect($breakfast['items'] ?? []);
+    $sumCalories = (int) $items->sum(fn (array $item): int => (int) ($item['calories_kcal'] ?? 0));
+    $portions = $items
+        ->map(fn (array $item): string => strtolower(trim((string) ($item['portion'] ?? ''))))
+        ->values()
+        ->all();
+
+    expect($target)->toBeGreaterThan(0)
+        ->and(abs($sumCalories - $target))->toBeLessThanOrEqual(2)
+        ->and(collect($portions)->every(fn (string $portion): bool => ! str_contains($portion, '8 serving') && ! str_contains($portion, '6 serving')))->toBeTrue();
+});
+
+it('cleans breakfast and lunch meal mismatches, fixes portions and macros, and repairs workout structure during normalization', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
+
+    createPlannerCatalog();
+
+    $user = User::factory()->create([
+        'diet_name' => 'Balanced',
+        'workout_days_per_week' => 3,
+        'workout_location' => 'home',
+    ]);
+
+    $payload = buildPlannerPayload();
+    $payload['diet']['days'][0]['meals'][0]['items'][0]['name'] = 'Roasted chickpeas and fruit cup';
+    $payload['diet']['days'][0]['meals'][] = [
+        'meal_code' => 'lunch',
+        'title' => 'Lunch',
+        'target_kcal' => 560,
+        'items' => [[
+            'name' => 'Gandour Rice Pops',
+            'portion' => '2 slices',
+            'calories_kcal' => 560,
+            'protein_g' => 2,
+            'carbs_g' => 95,
+            'fat_g' => 1,
+        ]],
+    ];
+    $payload['workout']['weekly_schedule'][0]['exercises'][0]['name'] = 'Debug Chest Press';
+    $payload['workout']['weekly_schedule'][0]['exercises'][0]['equipment'] = 'Machine';
+    $payload['workout']['weekly_schedule'][0]['exercises'][1]['name'] = 'Shoulder Mobility Flow';
+    $payload['workout']['weekly_schedule'][0]['day_label'] = 'Monday';
+    $payload['workout']['weekly_schedule'][1]['day_label'] = 'Tuesday';
+    $payload['workout']['weekly_schedule'][2]['day_label'] = 'Wednesday';
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode($payload),
+            ],
+            'prompt_eval_count' => 200,
+            'eval_count' => 420,
+        ], 200),
+    ]);
+
+    $plan = $this->actingAs($user)
+        ->postJson('/api/ai/plan', ['reason' => 'normalize_meal_and_exercise_quality'])
+        ->assertCreated()
+        ->json('plan');
+
+    $breakfast = collect($plan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'breakfast');
+    expect($breakfast)->toBeArray();
+
+    $breakfastName = strtolower((string) ($breakfast['items'][0]['name'] ?? ''));
+    expect($breakfastName)->not->toContain('roasted chickpea')
+        ->and($breakfastName)->not->toContain('crackers')
+        ->and($breakfastName)->not->toContain('rice cake');
+
+    $lunch = collect($plan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'lunch');
+    expect($lunch)->toBeArray();
+
+    $lunchItem = $lunch['items'][0] ?? [];
+    $lunchName = strtolower((string) ($lunchItem['name'] ?? ''));
+    $lunchCalories = (int) ($lunchItem['calories_kcal'] ?? 0);
+    $lunchMacroCalories = ((int) ($lunchItem['protein_g'] ?? 0) * 4)
+        + ((int) ($lunchItem['carbs_g'] ?? 0) * 4)
+        + ((int) ($lunchItem['fat_g'] ?? 0) * 9);
+
+    expect($lunchName)->not->toContain('gandour')
+        ->and($lunchName)->not->toContain('rice pops')
+        ->and(strtolower((string) ($lunchItem['portion'] ?? '')))->not->toContain('slice')
+        ->and($lunchMacroCalories)->toBeGreaterThan((int) round($lunchCalories * 0.60))
+        ->and($lunchMacroCalories)->toBeLessThan((int) round($lunchCalories * 1.30));
+
+    $firstExercise = $plan['workout']['weekly_schedule'][0]['exercises'][0] ?? [];
+    expect(strtolower((string) ($firstExercise['name'] ?? '')))->not->toContain('debug')
+        ->and(strtolower((string) ($firstExercise['equipment'] ?? '')))->not->toContain('machine');
+
+    $trainExerciseNames = collect($plan['workout']['weekly_schedule'] ?? [])
+        ->where('session_type', 'train')
+        ->flatMap(fn (array $day) => collect($day['exercises'] ?? [])->pluck('name'))
+        ->map(fn ($name): string => strtolower((string) $name));
+
+    expect($trainExerciseNames->contains(fn (string $name): bool => str_contains($name, 'mobility') || str_contains($name, 'stretch')))->toBeFalse()
+        ->and(($plan['workout']['weekly_schedule'][3]['day_label'] ?? null))->toBe('Thursday');
 });
 
 it('normalizes workout location both to gym and prefers gym equipment with compact templates', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama_only', true);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
@@ -286,8 +508,7 @@ it('normalizes workout location both to gym and prefers gym equipment with compa
     expect($breakfastNames->count())->toBeGreaterThan(1);
 });
 
-it('enforces unique daily snacks, practical grocery items, and 5-exercise split training days in compact planner mode', function () {
-    config()->set('ai.planner.provider', 'ollama');
+it('enforces meal option caps, practical grocery items, and 5-exercise split training days in compact planner mode', function () {
     config()->set('ai.planner.ollama_only', true);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
@@ -316,19 +537,13 @@ it('enforces unique daily snacks, practical grocery items, and 5-exercise split 
         ->assertCreated()
         ->json('plan');
 
-    $snackNames = collect($plan['diet']['days'] ?? [])
-        ->map(function (array $day): ?string {
-            $snack = collect($day['meals'] ?? [])->firstWhere('meal_code', 'snack');
-            if (! is_array($snack)) {
-                return null;
-            }
-
-            return $snack['items'][0]['name'] ?? null;
-        })
+    $snackNames = collect($plan['diet']['meal_options']['snack'] ?? [])
+        ->map(fn (array $meal): ?string => $meal['items'][0]['name'] ?? null)
         ->filter();
 
-    expect($snackNames->count())->toBe(14)
-        ->and($snackNames->unique()->count())->toBe(14);
+    expect($snackNames->count())->toBeGreaterThanOrEqual(3)
+        ->and($snackNames->count())->toBeLessThanOrEqual(7)
+        ->and($snackNames->unique()->count())->toBe($snackNames->count());
 
     $groceryList = collect($plan['diet']['grocery_list'] ?? []);
     expect($groceryList->count())->toBeGreaterThan(3)
@@ -352,7 +567,6 @@ it('enforces unique daily snacks, practical grocery items, and 5-exercise split 
 });
 
 it('accepts planner json from ollama even when the model wraps it in a json code fence', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
@@ -378,12 +592,11 @@ it('accepts planner json from ollama even when the model wraps it in a json code
     $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'ollama_code_fence_json'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'ollama')
+        ->assertJsonMissingPath('provider')
         ->assertJsonPath('plan.adaptive_review.review_after_days', 14);
 });
 
 it('accepts planner json from ollama even when extra text surrounds the object', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
@@ -409,12 +622,11 @@ it('accepts planner json from ollama even when extra text surrounds the object',
     $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'ollama_wrapped_json'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'ollama')
+        ->assertJsonMissingPath('provider')
         ->assertJsonPath('plan.overview.summary', 'A practical weekly plan built around your goal, schedule, and safety boundaries.');
 });
 
 it('retries the ollama planner once with a larger budget when the first reply is not valid json', function () {
-    config()->set('ai.planner.provider', 'ollama');
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
     config()->set('ai.planner.ollama.max_output_tokens', 2200);
@@ -450,60 +662,13 @@ it('retries the ollama planner once with a larger budget when the first reply is
     $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'ollama_retry_for_json'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'ollama')
+        ->assertJsonMissingPath('provider')
         ->assertJsonPath('plan.workout.weekly_schedule.0.session_type', 'train');
 });
 
-it('falls back to openai when ollama planner is unavailable and fallback is enabled', function () {
-    config()->set('ai.planner.ollama_only', false);
-    config()->set('ai.planner.provider', 'ollama');
-    config()->set('ai.planner.fallback.enabled', true);
-    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
-    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
-    config()->set('services.openai.api_key', 'test-key');
-    config()->set('services.openai.base_url', 'https://api.openai.com/v1');
-
-    createPlannerCatalog();
-
-    $user = User::factory()->create([
-        'diet_name' => 'Balanced',
-        'workout_days_per_week' => 3,
-        'workout_location' => 'home',
-    ]);
-
-    Http::fake([
-        'http://127.0.0.1:11434/api/chat' => Http::response(['error' => 'ollama unavailable'], 500),
-        'https://api.openai.com/v1/responses' => Http::response([
-            'id' => 'resp_fallback_001',
-            'model' => 'gpt-4.1-mini',
-            'output_text' => json_encode(buildPlannerPayload()),
-            'usage' => [
-                'input_tokens' => 320,
-                'output_tokens' => 640,
-                'total_tokens' => 960,
-            ],
-        ], 200),
-    ]);
-
-    $this->actingAs($user)
-        ->postJson('/api/ai/plan', ['reason' => 'fallback_test'])
-        ->assertCreated()
-        ->assertJsonPath('provider', 'openai')
-        ->assertJsonPath('fallback.used', true)
-        ->assertJsonPath('fallback.from', 'ollama')
-        ->assertJsonPath('fallback.to', 'openai');
-
-    $aiRequest = AiRequest::query()->latest('id')->firstOrFail();
-    expect($aiRequest->status)->toBe('completed')
-        ->and($aiRequest->provider)->toBe('openai');
-});
-
-it('falls back to the local deterministic planner when ollama fails and openai is unavailable', function () {
-    config()->set('ai.planner.ollama_only', false);
-    config()->set('ai.planner.provider', 'ollama');
-    config()->set('ai.planner.fallback.enabled', false);
+it('falls back to the local deterministic planner when ollama fails', function () {
+    config()->set('ai.planner.ollama_only', true);
     config()->set('ai.planner.local_fallback.enabled', true);
-    config()->set('services.openai.api_key', null);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
@@ -523,13 +688,41 @@ it('falls back to the local deterministic planner when ollama fails and openai i
     $response = $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'local_fallback_test'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'local_fallback')
-        ->assertJsonPath('fallback.used', true)
-        ->assertJsonPath('fallback.to', 'local_fallback')
+        ->assertJsonMissingPath('provider')
+        ->assertJsonMissingPath('fallback')
         ->assertJsonPath('plan.adaptive_review.review_after_days', 14);
 
+    $plan = $response->json('plan');
     $dietJson = json_encode($response->json('plan.diet') ?? [], JSON_UNESCAPED_SLASHES);
     expect(strtolower($dietJson ?: ''))->not->toContain('peanut');
+
+    $snackPortions = collect($plan['diet']['days'] ?? [])
+        ->map(function (array $day): ?string {
+            $snack = collect($day['meals'] ?? [])->firstWhere('meal_code', 'snack');
+            if (! is_array($snack)) {
+                return null;
+            }
+
+            return strtolower(trim((string) ($snack['items'][0]['portion'] ?? '')));
+        })
+        ->filter();
+
+    expect($snackPortions->count())->toBe(14)
+        ->and($snackPortions->every(fn (string $portion): bool => (bool) preg_match('/serving|g|ml|piece|pcs|slice|wrap|sandwich|bowl/', $portion)))->toBeTrue();
+
+    $activeNutritionPlan = NutritionPlan::query()
+        ->with('days.meals.items')
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->first();
+
+    $persistedSnackItemCount = $activeNutritionPlan?->days
+        ?->flatMap(fn ($day) => $day->meals)
+        ?->filter(fn ($meal) => $meal->meal_type === 'snack')
+        ?->sum(fn ($meal) => $meal->items->count()) ?? 0;
+
+    expect($persistedSnackItemCount)->toBeGreaterThan(0);
 
     $aiRequest = AiRequest::query()->latest('id')->firstOrFail();
     expect($aiRequest->status)->toBe('completed')
@@ -537,11 +730,8 @@ it('falls back to the local deterministic planner when ollama fails and openai i
 });
 
 it('builds a gym-focused varied plan in local fallback mode', function () {
-    config()->set('ai.planner.ollama_only', false);
-    config()->set('ai.planner.provider', 'ollama');
-    config()->set('ai.planner.fallback.enabled', false);
+    config()->set('ai.planner.ollama_only', true);
     config()->set('ai.planner.local_fallback.enabled', true);
-    config()->set('services.openai.api_key', null);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
@@ -560,7 +750,7 @@ it('builds a gym-focused varied plan in local fallback mode', function () {
     $plan = $this->actingAs($user)
         ->postJson('/api/ai/plan', ['reason' => 'local_fallback_gym_variety_test'])
         ->assertCreated()
-        ->assertJsonPath('provider', 'local_fallback')
+        ->assertJsonMissingPath('provider')
         ->json('plan');
 
     $trainingDays = collect($plan['workout']['weekly_schedule'] ?? [])
@@ -594,32 +784,76 @@ it('builds a gym-focused varied plan in local fallback mode', function () {
 
     expect($breakfastNames->count())->toBeGreaterThan(1);
 
-    $snackNames = collect($plan['diet']['days'] ?? [])
-        ->map(function (array $day): ?string {
-            $snack = collect($day['meals'] ?? [])->firstWhere('meal_code', 'snack');
-            if (! is_array($snack)) {
-                return null;
-            }
-
-            return $snack['items'][0]['name'] ?? null;
-        })
+    $snackNames = collect($plan['diet']['meal_options']['snack'] ?? [])
+        ->map(fn (array $meal): ?string => $meal['items'][0]['name'] ?? null)
         ->filter();
 
-    expect($snackNames->count())->toBe(14)
-        ->and($snackNames->unique()->count())->toBe(14);
+    expect($snackNames->count())->toBeGreaterThanOrEqual(3)
+        ->and($snackNames->count())->toBeLessThanOrEqual(7)
+        ->and($snackNames->unique()->count())->toBe($snackNames->count());
 
     $groceryList = collect($plan['diet']['grocery_list'] ?? []);
     expect($groceryList->count())->toBeGreaterThan(3)
         ->and($groceryList->every(fn (array $item): bool => trim((string) ($item['name'] ?? '')) !== '' && trim((string) ($item['quantity'] ?? '')) !== ''))->toBeTrue();
 });
 
-it('returns planner health status including provider checks', function () {
-    config()->set('ai.planner.provider', 'ollama');
+it('produces distinct local fallback plans for different users instead of copy-paste outputs', function () {
     config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.local_fallback.enabled', true);
     config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
     config()->set('ai.planner.ollama.model', 'llama3.1:8b');
-    config()->set('ai.planner.fallback.enabled', true);
-    config()->set('services.openai.api_key', 'test-key');
+
+    createPlannerCatalog();
+
+    $firstUser = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'workout_days_per_week' => 4,
+        'workout_location' => 'home',
+        'allergies' => ['Peanuts'],
+    ]);
+    $secondUser = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'workout_days_per_week' => 4,
+        'workout_location' => 'home',
+        'allergies' => ['Peanuts'],
+    ]);
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response(['error' => 'upstream failed'], 500),
+    ]);
+
+    $firstPlan = $this->actingAs($firstUser)
+        ->postJson('/api/ai/plan', ['reason' => 'local_fallback_user_a'])
+        ->assertCreated()
+        ->assertJsonMissingPath('provider')
+        ->json('plan');
+
+    $secondPlan = $this->actingAs($secondUser)
+        ->postJson('/api/ai/plan', ['reason' => 'local_fallback_user_b'])
+        ->assertCreated()
+        ->assertJsonMissingPath('provider')
+        ->json('plan');
+
+    $firstSignature = json_encode([
+        'breakfast_day_1' => collect($firstPlan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'breakfast')['items'][0]['name'] ?? null,
+        'snack_day_1' => collect($firstPlan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'snack')['items'][0]['name'] ?? null,
+        'workout_day_1' => collect($firstPlan['workout']['weekly_schedule'][0]['exercises'] ?? [])->pluck('name')->take(3)->values()->all(),
+    ], JSON_UNESCAPED_SLASHES);
+
+    $secondSignature = json_encode([
+        'breakfast_day_1' => collect($secondPlan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'breakfast')['items'][0]['name'] ?? null,
+        'snack_day_1' => collect($secondPlan['diet']['days'][0]['meals'] ?? [])->firstWhere('meal_code', 'snack')['items'][0]['name'] ?? null,
+        'workout_day_1' => collect($secondPlan['workout']['weekly_schedule'][0]['exercises'] ?? [])->pluck('name')->take(3)->values()->all(),
+    ], JSON_UNESCAPED_SLASHES);
+
+    expect($firstSignature)->not->toBe($secondSignature);
+});
+
+it('returns planner health status including provider checks', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.local_fallback.enabled', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
 
     $user = User::factory()->create();
 
@@ -638,7 +872,263 @@ it('returns planner health status including provider checks', function () {
         ->assertJsonPath('health.primary_provider', 'ollama')
         ->assertJsonPath('health.checks.ollama.reachable', true)
         ->assertJsonPath('health.checks.ollama_only.enabled', true)
-        ->assertJsonPath('health.checks.fallback.ready', false);
+        ->assertJsonPath('health.checks.local_fallback.enabled', true);
+});
+
+it('flags planner health as not ready when the configured ollama model is missing and local fallback is disabled', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.local_fallback.enabled', false);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
+
+    $user = User::factory()->create();
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/tags' => Http::response([
+            'models' => [
+                ['name' => 'mistral:7b'],
+            ],
+        ], 200),
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/ai/plan/health')
+        ->assertOk()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('health.ready', false)
+        ->assertJsonPath('health.primary_provider', 'ollama')
+        ->assertJsonPath('health.checks.ollama.reachable', true)
+        ->assertJsonPath('health.checks.ollama.model_loaded', false)
+        ->assertJsonPath('health.checks.local_fallback.enabled', false)
+        ->assertJsonPath('health.recommendation', 'Planner is locked to Ollama-only mode. Start Ollama and ensure the planner model is pulled.');
+});
+
+it('keeps the existing workout active when only the diet section is regenerated', function () {
+    config()->set('ai.planner.ollama_only', true);
+    config()->set('ai.planner.ollama.base_url', 'http://127.0.0.1:11434');
+    config()->set('ai.planner.ollama.model', 'llama3.1:8b');
+
+    createPlannerCatalog();
+
+    $user = User::factory()->create([
+        'diet_name' => 'Balanced',
+        'workout_days_per_week' => 3,
+        'workout_location' => 'home',
+    ]);
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode(buildPlannerPayload([
+                    'session_focus' => 'Upper Body Strength',
+                ])),
+            ],
+            'prompt_eval_count' => 220,
+            'eval_count' => 480,
+        ], 200),
+    ]);
+
+    $this->actingAs($user)
+        ->postJson('/api/ai/plan', [
+            'reason' => 'seed_full_plan',
+        ])
+        ->assertCreated();
+
+    $originalWorkoutPlan = WorkoutPlan::query()
+        ->with('days')
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->firstOrFail();
+    $originalNutritionPlan = NutritionPlan::query()
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->firstOrFail();
+    $originalWorkoutFocus = $originalWorkoutPlan->days
+        ->sortBy('day_index')
+        ->first()?->name;
+
+    $dietOnlyPayload = buildPlannerPayload([
+        'session_focus' => 'Should not replace workout',
+    ]);
+    $dietOnlyPayload['diet']['daily_targets']['calories_kcal'] = 2100;
+
+    Http::fake([
+        'http://127.0.0.1:11434/api/chat' => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'content' => json_encode($dietOnlyPayload),
+            ],
+            'prompt_eval_count' => 220,
+            'eval_count' => 480,
+        ], 200),
+    ]);
+
+    $response = $this->actingAs($user)
+        ->postJson('/api/ai/plan', [
+            'reason' => 'diet_only_refresh',
+            'generate_diet' => true,
+            'generate_workout' => false,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('plan.workout.weekly_schedule.0.focus', $originalWorkoutFocus);
+
+    $currentNutritionPlan = NutritionPlan::query()
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->firstOrFail();
+    $currentWorkoutPlan = WorkoutPlan::query()
+        ->with('days')
+        ->where('user_id', $user->id)
+        ->where('is_active', true)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($currentNutritionPlan->id)->not->toBe($originalNutritionPlan->id)
+        ->and($currentWorkoutPlan->id)->toBe($originalWorkoutPlan->id)
+        ->and($currentWorkoutPlan->days->sortBy('day_index')->first()?->name)->toBe($originalWorkoutFocus)
+        ->and(AiPlan::query()->where('user_id', $user->id)->where('type', 'diet')->count())->toBe(2)
+        ->and(AiPlan::query()->where('user_id', $user->id)->where('type', 'workout')->count())->toBe(1)
+        ->and($response->json('plans.workout.weekly_schedule.0.focus'))->toBe($originalWorkoutFocus);
+});
+
+it('queues an admin planner audit with gpu load controls for all non-admin users', function () {
+    Queue::fake();
+
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson('/api/ai/planner-audits', [
+            'gpu_load' => 'low',
+            'execution_mode' => 'live',
+            'horizons' => [14, 21, 28],
+        ])
+        ->assertStatus(202)
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('audit.gpu_load', 'low')
+        ->assertJsonPath('audit.execution_mode', 'live')
+        ->assertJsonPath('audit.horizon_days.0', 14)
+        ->assertJsonPath('audit.horizon_days.1', 21)
+        ->assertJsonPath('audit.horizon_days.2', 28);
+
+    $run = PlannerAuditRun::query()->latest('id')->firstOrFail();
+
+    expect($run->status)->toBe('queued')
+        ->and($run->gpu_load)->toBe('low')
+        ->and(data_get($run->summary_json, 'execution_mode'))->toBe('live')
+        ->and($run->requested_by)->toBe($admin->id);
+
+    Queue::assertPushed(RunPlannerAudit::class, function (RunPlannerAudit $job) use ($run): bool {
+        return $job->auditRunId === $run->id;
+    });
+});
+
+it('defaults planner audits to low load and normalizes legacy mid rows to medium in responses', function () {
+    Queue::fake();
+
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $this->actingAs($admin)
+        ->postJson('/api/ai/planner-audits', [
+            'horizons' => [14],
+        ])
+        ->assertStatus(202)
+        ->assertJsonPath('audit.gpu_load', 'low')
+        ->assertJsonPath('audit.execution_mode', 'standard');
+
+    $legacyRun = PlannerAuditRun::query()->create([
+        'requested_by' => $admin->id,
+        'status' => 'completed',
+        'gpu_load' => 'mid',
+        'horizon_days' => [14, 21, 28],
+        'total_users' => 3,
+        'total_runs' => 9,
+        'completed_runs' => 9,
+        'success_runs' => 9,
+        'failed_runs' => 0,
+    ]);
+
+    $this->actingAs($admin)
+        ->getJson('/api/ai/planner-audits/'.$legacyRun->id)
+        ->assertOk()
+        ->assertJsonPath('audit.gpu_load', 'medium')
+        ->assertJsonPath('audit.execution_mode', 'standard');
+});
+
+it('updates the gpu load for a running planner audit', function () {
+    Queue::fake();
+
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $run = PlannerAuditRun::query()->create([
+        'requested_by' => $admin->id,
+        'status' => 'running',
+        'gpu_load' => 'low',
+        'horizon_days' => [14, 21, 28],
+        'total_users' => 12,
+        'total_runs' => 36,
+        'completed_runs' => 6,
+        'success_runs' => 6,
+        'failed_runs' => 0,
+        'summary_json' => [
+            'execution_mode' => 'fast-fallback',
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->patchJson('/api/ai/planner-audits/'.$run->id, [
+            'gpu_load' => 'high',
+        ])
+        ->assertOk()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('audit.id', $run->id)
+        ->assertJsonPath('audit.gpu_load', 'high');
+
+    $run->refresh();
+
+    expect($run->gpu_load)->toBe('high')
+        ->and(data_get($run->summary_json, 'gpu_load_changes.0.from'))->toBe('low')
+        ->and(data_get($run->summary_json, 'gpu_load_changes.0.to'))->toBe('high');
+});
+
+it('rejects gpu load updates for finished planner audits', function () {
+    Queue::fake();
+
+    $admin = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+    ]);
+
+    $run = PlannerAuditRun::query()->create([
+        'requested_by' => $admin->id,
+        'status' => 'completed',
+        'gpu_load' => 'medium',
+        'horizon_days' => [14, 21, 28],
+        'total_users' => 12,
+        'total_runs' => 36,
+        'completed_runs' => 36,
+        'success_runs' => 36,
+        'failed_runs' => 0,
+        'summary_json' => [
+            'execution_mode' => 'standard',
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->patchJson('/api/ai/planner-audits/'.$run->id, [
+            'gpu_load' => 'high',
+        ])
+        ->assertStatus(422)
+        ->assertJsonPath('ok', false)
+        ->assertJsonPath('audit.gpu_load', 'medium');
 });
 
 function createPlannerCatalog(): void
@@ -944,60 +1434,243 @@ function buildCompactPlannerPayload(): array
                 'fiber_g' => 28,
                 'water_ml' => 2400,
             ],
-            'days' => [
-                [
-                    'day_index' => 1,
-                    'theme' => 'Template day A',
-                    'meals' => [
-                        [
-                            'meal_code' => 'breakfast',
-                            'title' => 'Simple breakfast',
-                            'target_kcal' => 450,
-                            'items' => [
-                                [
-                                    'name' => 'Greek Yogurt',
-                                    'portion' => '1 serving',
-                                    'calories_kcal' => 120,
-                                    'protein_g' => 17,
-                                    'carbs_g' => 6,
-                                    'fat_g' => 4,
-                                ],
+            'meal_options' => [
+                'breakfast' => [
+                    [
+                        'title' => 'Yogurt bowl',
+                        'target_kcal' => 430,
+                        'items' => [
+                            [
+                                'name' => 'Greek Yogurt',
+                                'portion' => '180 g',
+                                'calories_kcal' => 120,
+                                'protein_g' => 17,
+                                'carbs_g' => 6,
+                                'fat_g' => 4,
+                            ],
+                            [
+                                'name' => 'Apple',
+                                'portion' => '1 piece',
+                                'calories_kcal' => 95,
+                                'protein_g' => 0,
+                                'carbs_g' => 25,
+                                'fat_g' => 0,
                             ],
                         ],
-                        [
-                            'meal_code' => 'dinner',
-                            'title' => 'Simple dinner',
-                            'target_kcal' => 600,
-                            'items' => [
-                                [
-                                    'name' => 'Chicken Breast',
-                                    'portion' => '150 g',
-                                    'calories_kcal' => 250,
-                                    'protein_g' => 40,
-                                    'carbs_g' => 0,
-                                    'fat_g' => 6,
-                                ],
+                    ],
+                    [
+                        'title' => 'Egg toast plate',
+                        'target_kcal' => 440,
+                        'items' => [
+                            [
+                                'name' => 'Eggs',
+                                'portion' => '2 pcs',
+                                'calories_kcal' => 160,
+                                'protein_g' => 12,
+                                'carbs_g' => 1,
+                                'fat_g' => 11,
+                            ],
+                            [
+                                'name' => 'Wholegrain Toast',
+                                'portion' => '2 slices',
+                                'calories_kcal' => 180,
+                                'protein_g' => 6,
+                                'carbs_g' => 30,
+                                'fat_g' => 4,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Overnight oats',
+                        'target_kcal' => 450,
+                        'items' => [
+                            [
+                                'name' => 'Oats',
+                                'portion' => '220 g',
+                                'calories_kcal' => 260,
+                                'protein_g' => 12,
+                                'carbs_g' => 42,
+                                'fat_g' => 6,
                             ],
                         ],
                     ],
                 ],
-                [
-                    'day_index' => 2,
-                    'theme' => 'Template day B',
-                    'meals' => [
-                        [
-                            'meal_code' => 'breakfast',
-                            'title' => 'Alternate breakfast',
-                            'target_kcal' => 430,
-                            'items' => [
-                                [
-                                    'name' => 'Apple',
-                                    'portion' => '1 serving',
-                                    'calories_kcal' => 95,
-                                    'protein_g' => 0,
-                                    'carbs_g' => 25,
-                                    'fat_g' => 0,
-                                ],
+                'lunch' => [
+                    [
+                        'title' => 'Chicken rice bowl',
+                        'target_kcal' => 610,
+                        'items' => [
+                            [
+                                'name' => 'Chicken Breast',
+                                'portion' => '150 g',
+                                'calories_kcal' => 250,
+                                'protein_g' => 40,
+                                'carbs_g' => 0,
+                                'fat_g' => 6,
+                            ],
+                            [
+                                'name' => 'Rice',
+                                'portion' => '220 g',
+                                'calories_kcal' => 286,
+                                'protein_g' => 6,
+                                'carbs_g' => 62,
+                                'fat_g' => 1,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Tuna potato plate',
+                        'target_kcal' => 590,
+                        'items' => [
+                            [
+                                'name' => 'Tuna',
+                                'portion' => '150 g',
+                                'calories_kcal' => 220,
+                                'protein_g' => 36,
+                                'carbs_g' => 0,
+                                'fat_g' => 7,
+                            ],
+                            [
+                                'name' => 'Potatoes',
+                                'portion' => '220 g',
+                                'calories_kcal' => 190,
+                                'protein_g' => 5,
+                                'carbs_g' => 43,
+                                'fat_g' => 0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Chicken pasta salad',
+                        'target_kcal' => 620,
+                        'items' => [
+                            [
+                                'name' => 'Chicken Breast',
+                                'portion' => '150 g',
+                                'calories_kcal' => 250,
+                                'protein_g' => 40,
+                                'carbs_g' => 0,
+                                'fat_g' => 6,
+                            ],
+                            [
+                                'name' => 'Wholegrain Pasta',
+                                'portion' => '220 g',
+                                'calories_kcal' => 310,
+                                'protein_g' => 11,
+                                'carbs_g' => 60,
+                                'fat_g' => 3,
+                            ],
+                        ],
+                    ],
+                ],
+                'dinner' => [
+                    [
+                        'title' => 'Chicken dinner',
+                        'target_kcal' => 590,
+                        'items' => [
+                            [
+                                'name' => 'Chicken Breast',
+                                'portion' => '150 g',
+                                'calories_kcal' => 250,
+                                'protein_g' => 40,
+                                'carbs_g' => 0,
+                                'fat_g' => 6,
+                            ],
+                            [
+                                'name' => 'Rice',
+                                'portion' => '160 g',
+                                'calories_kcal' => 208,
+                                'protein_g' => 5,
+                                'carbs_g' => 45,
+                                'fat_g' => 1,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Fish and potatoes',
+                        'target_kcal' => 580,
+                        'items' => [
+                            [
+                                'name' => 'White Fish',
+                                'portion' => '180 g',
+                                'calories_kcal' => 210,
+                                'protein_g' => 35,
+                                'carbs_g' => 0,
+                                'fat_g' => 6,
+                            ],
+                            [
+                                'name' => 'Potatoes',
+                                'portion' => '220 g',
+                                'calories_kcal' => 190,
+                                'protein_g' => 5,
+                                'carbs_g' => 43,
+                                'fat_g' => 0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Turkey bulgur bowl',
+                        'target_kcal' => 600,
+                        'items' => [
+                            [
+                                'name' => 'Turkey Breast',
+                                'portion' => '150 g',
+                                'calories_kcal' => 230,
+                                'protein_g' => 38,
+                                'carbs_g' => 0,
+                                'fat_g' => 5,
+                            ],
+                            [
+                                'name' => 'Bulgur',
+                                'portion' => '220 g',
+                                'calories_kcal' => 250,
+                                'protein_g' => 8,
+                                'carbs_g' => 52,
+                                'fat_g' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+                'snack' => [
+                    [
+                        'title' => 'Yogurt snack',
+                        'target_kcal' => 180,
+                        'items' => [
+                            [
+                                'name' => 'Greek Yogurt',
+                                'portion' => '180 g',
+                                'calories_kcal' => 120,
+                                'protein_g' => 17,
+                                'carbs_g' => 6,
+                                'fat_g' => 4,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Fruit snack',
+                        'target_kcal' => 170,
+                        'items' => [
+                            [
+                                'name' => 'Apple',
+                                'portion' => '1 piece',
+                                'calories_kcal' => 95,
+                                'protein_g' => 0,
+                                'carbs_g' => 25,
+                                'fat_g' => 0,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Protein shake',
+                        'target_kcal' => 200,
+                        'items' => [
+                            [
+                                'name' => 'Milk banana protein shake',
+                                'portion' => '300 ml',
+                                'calories_kcal' => 190,
+                                'protein_g' => 18,
+                                'carbs_g' => 22,
+                                'fat_g' => 4,
                             ],
                         ],
                     ],

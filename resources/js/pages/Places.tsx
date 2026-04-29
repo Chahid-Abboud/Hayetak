@@ -23,8 +23,7 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { jsonRequestInit } from '@/lib/http';
-import { type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import NearbyMap, { type Place } from '../components/NearbyMap';
 
@@ -40,7 +39,17 @@ type Professional = {
     distance_m?: number | null;
     specialties?: string[] | null;
     canInteract?: boolean;
+    nutritionCenterName?: string | null;
+    goToGymName?: string | null;
+    linkedPlaceId?: string | number | null;
 };
+
+type FixedListFilter =
+    | 'all'
+    | 'gyms'
+    | 'nutrition-centers'
+    | 'dietitians'
+    | 'trainers';
 
 type AppointmentDialogState = {
     professionalId: number;
@@ -68,7 +77,6 @@ function SimpleSlider({
     onChange: (v: number) => void;
 }) {
     const clamped = Math.min(max, Math.max(min, value));
-    const pct = ((clamped - min) / Math.max(max - min, Number.EPSILON)) * 100;
 
     return (
         <div className="w-full">
@@ -86,7 +94,8 @@ function SimpleSlider({
                 step={step}
                 value={value}
                 style={{
-                    background: `linear-gradient(90deg, var(--primary) 0%, var(--primary) ${pct}%, var(--muted) ${pct}%, var(--muted) 100%)`,
+                    background:
+                        'color-mix(in oklab, var(--primary) 24%, var(--muted))',
                 }}
                 aria-label={title}
                 aria-valuemin={min}
@@ -104,7 +113,6 @@ function SimpleSlider({
 const DEFAULT_RADIUS_KM = 2;
 
 export default function Places() {
-    const { auth } = usePage<SharedData>().props;
     const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
     const [showGym, setShowGym] = useState<boolean>(true);
     const [showNutri, setShowNutri] = useState<boolean>(true);
@@ -122,10 +130,8 @@ export default function Places() {
     const [selectedPlaceId, setSelectedPlaceId] = useState<
         string | number | null
     >(null);
-    const [professionalArea, setProfessionalArea] = useState<string>('');
-    const [professionalRole, setProfessionalRole] = useState<
-        'all' | 'nutritionist' | 'trainer'
-    >('all');
+    const [listQuery, setListQuery] = useState('');
+    const [listFilter, setListFilter] = useState<FixedListFilter>('all');
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [loadingProfessionals, setLoadingProfessionals] =
         useState<boolean>(false);
@@ -194,11 +200,6 @@ export default function Places() {
             setLoadingProfessionals(true);
             try {
                 const params = new URLSearchParams();
-                if (professionalArea.trim()) {
-                    params.set('area', professionalArea.trim());
-                }
-                if (professionalRole !== 'all')
-                    params.set('role', professionalRole);
                 if (center) {
                     params.set('lat', String(center.lat));
                     params.set('lng', String(center.lon));
@@ -219,7 +220,135 @@ export default function Places() {
                 setLoadingProfessionals(false);
             }
         })();
-    }, [center, professionalArea, professionalRole]);
+    }, [center]);
+
+    const linkedProfessionals = useMemo(() => {
+        const gyms = results.filter((place) => isGymPlace(place));
+        const nutritionCenters = results.filter((place) =>
+            isNutritionCenterPlace(place),
+        );
+
+        return professionals.map((professional) => {
+            if (professional.role === 'nutritionist') {
+                const linkedPlace = findClosestPlaceForProfessional(
+                    professional,
+                    nutritionCenters,
+                );
+
+                return {
+                    ...professional,
+                    nutritionCenterName: linkedPlace?.name ?? null,
+                    linkedPlaceId: linkedPlace?.id ?? null,
+                };
+            }
+
+            if (professional.role === 'trainer') {
+                const linkedPlace = findClosestPlaceForProfessional(
+                    professional,
+                    gyms,
+                );
+
+                return {
+                    ...professional,
+                    goToGymName: linkedPlace?.name ?? null,
+                    linkedPlaceId: linkedPlace?.id ?? null,
+                };
+            }
+
+            return professional;
+        });
+    }, [professionals, results]);
+
+    const fixedListItems = useMemo(() => {
+        const query = listQuery.trim().toLowerCase();
+
+        const placeItems = results.map((place, index) => {
+            const normalizedCategory = normalizePlaceCategory(
+                place.category ?? place.type ?? 'other',
+            );
+            const filterTag: FixedListFilter =
+                normalizedCategory === 'gym' ? 'gyms' : 'nutrition-centers';
+
+            return {
+                key: `place-${place.id ?? index}`,
+                type: 'place' as const,
+                name: place.name ?? 'Nearby place',
+                distanceM:
+                    typeof place.distanceM === 'number'
+                        ? place.distanceM
+                        : null,
+                filterTag,
+                place,
+                searchIndex: [
+                    place.name,
+                    place.category,
+                    place.type,
+                    place.address,
+                    place.city,
+                    place.description,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase(),
+            };
+        });
+
+        const professionalItems = linkedProfessionals.map((professional) => {
+            const filterTag: FixedListFilter =
+                professional.role === 'nutritionist'
+                    ? 'dietitians'
+                    : 'trainers';
+            return {
+                key: `professional-${professional.id}`,
+                type: 'professional' as const,
+                name: professional.name,
+                distanceM:
+                    typeof professional.distance_m === 'number'
+                        ? professional.distance_m
+                        : null,
+                filterTag,
+                professional,
+                searchIndex: [
+                    professional.name,
+                    professional.role,
+                    professional.area,
+                    professional.city,
+                    professional.authority,
+                    ...(professional.specialties ?? []),
+                    professional.nutritionCenterName,
+                    professional.goToGymName,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase(),
+            };
+        });
+
+        const merged = [...placeItems, ...professionalItems];
+
+        const filtered = merged.filter((item) => {
+            if (listFilter !== 'all' && item.filterTag !== listFilter) {
+                return false;
+            }
+            if (query !== '' && !item.searchIndex.includes(query)) {
+                return false;
+            }
+
+            return true;
+        });
+
+        return filtered.sort((left, right) => {
+            if (left.distanceM === null && right.distanceM === null) {
+                return left.name.localeCompare(right.name);
+            }
+            if (left.distanceM === null) return 1;
+            if (right.distanceM === null) return -1;
+            if (left.distanceM !== right.distanceM) {
+                return left.distanceM - right.distanceM;
+            }
+            return left.name.localeCompare(right.name);
+        });
+    }, [linkedProfessionals, listFilter, listQuery, results]);
 
     async function openConversation(userId: number) {
         try {
@@ -407,11 +536,11 @@ export default function Places() {
                                         className="h-11 rounded-xl border border-border bg-background px-3"
                                     >
                                         <option value="both">
-                                            Gyms + Nutritionists
+                                            Gyms + Nutrition centers
                                         </option>
                                         <option value="gym">Gyms only</option>
                                         <option value="nutritionist">
-                                            Nutritionists only
+                                            Nutrition centers only
                                         </option>
                                         <option value="none">None</option>
                                     </select>
@@ -421,7 +550,8 @@ export default function Places() {
                                     <div className="flex items-center justify-between gap-3">
                                         <span>{counts.gym} gyms</span>
                                         <span>
-                                            {counts.nutritionist} nutritionists
+                                            {counts.nutritionist} nutrition
+                                            centers
                                         </span>
                                     </div>
                                 </div>
@@ -473,10 +603,12 @@ export default function Places() {
                             }}
                             className="h-9 w-full rounded-md border bg-background px-3"
                         >
-                            <option value="both">Gyms + Nutritionists</option>
+                            <option value="both">
+                                Gyms + Nutrition centers
+                            </option>
                             <option value="gym">Gyms only</option>
                             <option value="nutritionist">
-                                Nutritionists only
+                                Nutrition centers only
                             </option>
                             <option value="none">None</option>
                         </select>
@@ -502,7 +634,7 @@ export default function Places() {
                                 <span className="font-semibold">
                                     {counts.nutritionist}
                                 </span>{' '}
-                                nutritionists
+                                nutrition centers
                             </span>
                         </div>
                     </div>
@@ -538,15 +670,53 @@ export default function Places() {
 
                     <div className="md:col-span-2">
                         <div className="rounded-lg border p-3">
-                            <div className="mb-2 text-sm font-medium">
-                                Results
+                            <div className="mb-3">
+                                <div className="text-sm font-medium">
+                                    Nearby directory
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    One list for map places and approved
+                                    professionals, with one shared search.
+                                </p>
                             </div>
-                            <ul className="max-h-[480px] space-y-2 overflow-auto pr-1">
-                                {loading &&
+
+                            <div className="mb-3 grid gap-2 sm:grid-cols-2">
+                                <input
+                                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                                    placeholder="Search names, categories, areas..."
+                                    value={listQuery}
+                                    onChange={(event) =>
+                                        setListQuery(event.target.value)
+                                    }
+                                />
+                                <select
+                                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                                    value={listFilter}
+                                    onChange={(event) =>
+                                        setListFilter(
+                                            event.target
+                                                .value as FixedListFilter,
+                                        )
+                                    }
+                                >
+                                    <option value="all">All</option>
+                                    <option value="gyms">Gyms</option>
+                                    <option value="nutrition-centers">
+                                        Nutrition centers
+                                    </option>
+                                    <option value="dietitians">
+                                        Dietitians
+                                    </option>
+                                    <option value="trainers">Trainers</option>
+                                </select>
+                            </div>
+
+                            <ul className="max-h-[680px] space-y-2 overflow-auto pr-1">
+                                {(loading || loadingProfessionals) &&
                                     Array.from({ length: 4 }).map(
                                         (_, index) => (
                                             <li
-                                                key={`place-skeleton-${index}`}
+                                                key={`directory-skeleton-${index}`}
                                                 className="rounded-xl border border-border/70 bg-background/70 p-3"
                                             >
                                                 <Skeleton className="h-4 w-32" />
@@ -555,211 +725,183 @@ export default function Places() {
                                             </li>
                                         ),
                                     )}
-                                {results.length === 0 && !loading && !error && (
+
+                                {!loading &&
+                                !loadingProfessionals &&
+                                fixedListItems.length === 0 ? (
                                     <li className="text-sm text-muted-foreground">
-                                        No places found in this radius.
+                                        No nearby results for this search.
                                     </li>
-                                )}
-                                {results.map((p, i) => {
-                                    const key = `${p.id ?? `${p.name}-${i}`}`;
-                                    const category = (
-                                        p.category ??
-                                        p.type ??
-                                        'other'
-                                    ).toString();
-                                    const prettyCategory = category
-                                        .replace(/_/g, ' ')
-                                        .replace(/\b\w/g, (char) =>
-                                            char.toUpperCase(),
+                                ) : null}
+
+                                {fixedListItems.map((item) => {
+                                    if (item.type === 'place') {
+                                        const p = item.place;
+                                        const category = (
+                                            p.category ??
+                                            p.type ??
+                                            'other'
+                                        ).toString();
+                                        const prettyCategory = category
+                                            .replace(/_/g, ' ')
+                                            .replace(/\b\w/g, (char) =>
+                                                char.toUpperCase(),
+                                            );
+                                        const distanceLabel =
+                                            typeof p.distanceM === 'number'
+                                                ? `${(p.distanceM / 1000).toFixed(2)} km`
+                                                : null;
+                                        const locationLine = [p.address, p.city]
+                                            .filter(Boolean)
+                                            .join(', ');
+                                        const mapUrl = toSafeHttpUrl(
+                                            p.googleMapsLink,
                                         );
-                                    const distanceLabel =
-                                        typeof p.distanceM === 'number'
-                                            ? `${(p.distanceM / 1000).toFixed(2)} km`
-                                            : null;
-                                    const locationLine = [p.address, p.city]
-                                        .filter(Boolean)
-                                        .join(', ');
-                                    const mapUrl = toSafeHttpUrl(
-                                        p.googleMapsLink,
-                                    );
-                                    const websiteUrl = toSafeHttpUrl(p.website);
-                                    return (
-                                        <li
-                                            key={key}
-                                            className={`cursor-pointer rounded-md border p-2 transition hover:bg-muted/40 ${
-                                                selectedPlaceId !== null &&
-                                                String(selectedPlaceId) ===
-                                                    String(p.id)
-                                                    ? 'bg-muted/60'
-                                                    : ''
-                                            }`}
-                                            title="Show on map"
-                                            onClick={() =>
-                                                setSelectedPlaceId(p.id)
-                                            }
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <HoverPreview
-                                                    trigger={
-                                                        <div className="font-medium">
-                                                            {p.name ||
-                                                                '(no name)'}
-                                                        </div>
-                                                    }
-                                                    title={
-                                                        p.name || 'Nearby place'
-                                                    }
-                                                    description={
-                                                        p.description ||
-                                                        locationLine ||
-                                                        'Quick preview for this nearby place.'
-                                                    }
-                                                    meta={
-                                                        <>
-                                                            {distanceLabel ? (
+                                        const websiteUrl = toSafeHttpUrl(
+                                            p.website,
+                                        );
+
+                                        return (
+                                            <li
+                                                key={item.key}
+                                                className={`cursor-pointer rounded-md border p-2 transition hover:bg-muted/40 ${
+                                                    selectedPlaceId !== null &&
+                                                    String(selectedPlaceId) ===
+                                                        String(p.id)
+                                                        ? 'bg-muted/60'
+                                                        : ''
+                                                }`}
+                                                title="Show on map"
+                                                onClick={() =>
+                                                    setSelectedPlaceId(p.id)
+                                                }
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <HoverPreview
+                                                        trigger={
+                                                            <div className="font-medium">
+                                                                {p.name ||
+                                                                    '(no name)'}
+                                                            </div>
+                                                        }
+                                                        title={
+                                                            p.name ||
+                                                            'Nearby place'
+                                                        }
+                                                        description={
+                                                            p.description ||
+                                                            locationLine ||
+                                                            'Quick preview for this nearby place.'
+                                                        }
+                                                        meta={
+                                                            <>
+                                                                {distanceLabel ? (
+                                                                    <span>
+                                                                        {
+                                                                            distanceLabel
+                                                                        }
+                                                                    </span>
+                                                                ) : null}
+                                                                {p.rating !==
+                                                                    null &&
+                                                                p.rating !==
+                                                                    undefined ? (
+                                                                    <span>
+                                                                        Rating{' '}
+                                                                        {
+                                                                            p.rating
+                                                                        }
+                                                                    </span>
+                                                                ) : null}
                                                                 <span>
                                                                     {
-                                                                        distanceLabel
+                                                                        prettyCategory
                                                                     }
                                                                 </span>
-                                                            ) : null}
-                                                            {p.rating !==
-                                                                null &&
-                                                            p.rating !==
-                                                                undefined ? (
-                                                                <span>
-                                                                    Rating{' '}
-                                                                    {p.rating}
-                                                                </span>
-                                                            ) : null}
-                                                            <span>
-                                                                {prettyCategory}
-                                                            </span>
-                                                        </>
-                                                    }
-                                                />
-                                                <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                                                    {prettyCategory}
+                                                            </>
+                                                        }
+                                                    />
+                                                    <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                                        {prettyCategory}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                                {distanceLabel && (
-                                                    <span>{distanceLabel}</span>
-                                                )}
-                                                {p.phone && (
-                                                    <span>{p.phone}</span>
-                                                )}
-                                                {p.rating !== null &&
-                                                    p.rating !== undefined && (
+                                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                                    {distanceLabel && (
                                                         <span>
-                                                            Rating: {p.rating}
+                                                            {distanceLabel}
                                                         </span>
                                                     )}
-                                            </div>
-                                            {locationLine && (
-                                                <div className="mt-1 text-xs text-muted-foreground">
-                                                    {locationLine}
+                                                    {p.phone && (
+                                                        <span>{p.phone}</span>
+                                                    )}
+                                                    {p.rating !== null &&
+                                                        p.rating !==
+                                                            undefined && (
+                                                            <span>
+                                                                Rating:{' '}
+                                                                {p.rating}
+                                                            </span>
+                                                        )}
                                                 </div>
-                                            )}
-                                            {p.description && (
-                                                <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                                                    {p.description}
+                                                {locationLine && (
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                        {locationLine}
+                                                    </div>
+                                                )}
+                                                {p.description && (
+                                                    <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                                                        {p.description}
+                                                    </div>
+                                                )}
+                                                <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                                                    {mapUrl && (
+                                                        <a
+                                                            href={mapUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sky-700 underline"
+                                                            onClick={(event) =>
+                                                                event.stopPropagation()
+                                                            }
+                                                        >
+                                                            Open map
+                                                        </a>
+                                                    )}
+                                                    {websiteUrl && (
+                                                        <a
+                                                            href={websiteUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sky-700 underline"
+                                                            onClick={(event) =>
+                                                                event.stopPropagation()
+                                                            }
+                                                        >
+                                                            Website
+                                                        </a>
+                                                    )}
                                                 </div>
-                                            )}
-                                            <div className="mt-2 flex flex-wrap gap-3 text-xs">
-                                                {mapUrl && (
-                                                    <a
-                                                        href={mapUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-sky-700 underline"
-                                                        onClick={(event) =>
-                                                            event.stopPropagation()
-                                                        }
-                                                    >
-                                                        Open map
-                                                    </a>
-                                                )}
-                                                {websiteUrl && (
-                                                    <a
-                                                        href={websiteUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-sky-700 underline"
-                                                        onClick={(event) =>
-                                                            event.stopPropagation()
-                                                        }
-                                                    >
-                                                        Website
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                        {auth.user?.role === 'client' && (
-                            <div className="mt-4 rounded-lg border p-3">
-                                <div className="mb-2 text-sm font-medium">
-                                    Professionals
-                                </div>
-                                <p className="mb-3 text-xs text-muted-foreground">
-                                    Start or continue a conversation with
-                                    approved dietitians and trainers.
-                                </p>
-                                <div className="mb-3 grid gap-2 sm:grid-cols-2">
-                                    <input
-                                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                        placeholder="Filter by area"
-                                        value={professionalArea}
-                                        onChange={(e) =>
-                                            setProfessionalArea(e.target.value)
-                                        }
-                                    />
-                                    <select
-                                        className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                        value={professionalRole}
-                                        onChange={(e) =>
-                                            setProfessionalRole(
-                                                e.target.value as
-                                                    | 'all'
-                                                    | 'nutritionist'
-                                                    | 'trainer',
-                                            )
-                                        }
-                                    >
-                                        <option value="all">
-                                            All professionals
-                                        </option>
-                                        <option value="nutritionist">
-                                            Dietitians
-                                        </option>
-                                        <option value="trainer">
-                                            Trainers
-                                        </option>
-                                    </select>
-                                </div>
-                                <ul className="max-h-72 space-y-2 overflow-auto pr-1">
-                                    {loadingProfessionals && (
-                                        <>
-                                            {Array.from({ length: 3 }).map(
-                                                (_, index) => (
-                                                    <li
-                                                        key={`professional-skeleton-${index}`}
-                                                        className="rounded-xl border border-border/70 bg-background/70 p-3"
-                                                    >
-                                                        <Skeleton className="h-4 w-32" />
-                                                        <Skeleton className="mt-3 h-3 w-24" />
-                                                        <Skeleton className="mt-2 h-3 w-full" />
-                                                    </li>
-                                                ),
-                                            )}
-                                        </>
-                                    )}
-                                    {professionals.map((professional) => (
+                                            </li>
+                                        );
+                                    }
+
+                                    const professional = item.professional;
+                                    const roleLabel =
+                                        professional.role === 'nutritionist'
+                                            ? 'Dietitian'
+                                            : 'Trainer';
+                                    const centerOrGymLine =
+                                        professional.role === 'nutritionist'
+                                            ? professional.nutritionCenterName
+                                                ? `Nutrition center: ${professional.nutritionCenterName}`
+                                                : 'Nutrition center: not linked yet'
+                                            : professional.goToGymName
+                                              ? `Go-to gym: ${professional.goToGymName}`
+                                              : 'Go-to gym: not linked yet';
+
+                                    return (
                                         <li
-                                            key={professional.id}
+                                            key={item.key}
                                             className="rounded-xl border p-3"
                                         >
                                             <div className="flex items-start justify-between gap-3">
@@ -781,10 +923,7 @@ export default function Places() {
                                                     meta={
                                                         <>
                                                             <span>
-                                                                {professional.role ===
-                                                                'nutritionist'
-                                                                    ? 'Dietitian'
-                                                                    : 'Trainer'}
+                                                                {roleLabel}
                                                             </span>
                                                             <span>
                                                                 {professional.area ??
@@ -795,16 +934,16 @@ export default function Places() {
                                                     }
                                                 />
                                                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground capitalize">
-                                                    {professional.role ===
-                                                    'nutritionist'
-                                                        ? 'Dietitian'
-                                                        : 'Trainer'}
+                                                    {roleLabel}
                                                 </span>
                                             </div>
                                             <div className="mt-1 text-xs text-muted-foreground">
                                                 {professional.area ??
                                                     professional.city ??
                                                     'No area info'}
+                                            </div>
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {centerOrGymLine}
                                             </div>
                                             {typeof professional.distance_m ===
                                                 'number' && (
@@ -829,7 +968,21 @@ export default function Places() {
                                                     for this profile.
                                                 </div>
                                             )}
-                                            <div className="mt-2 flex gap-3 text-xs">
+                                            <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                                                {professional.linkedPlaceId ? (
+                                                    <button
+                                                        type="button"
+                                                        className="text-sky-700 underline"
+                                                        onClick={() =>
+                                                            setSelectedPlaceId(
+                                                                professional.linkedPlaceId ??
+                                                                    null,
+                                                            )
+                                                        }
+                                                    >
+                                                        Show associated place
+                                                    </button>
+                                                ) : null}
                                                 <button
                                                     className={
                                                         professional.canInteract
@@ -877,17 +1030,10 @@ export default function Places() {
                                                 </button>
                                             </div>
                                         </li>
-                                    ))}
-                                    {!loadingProfessionals &&
-                                        professionals.length === 0 && (
-                                            <li className="text-xs text-muted-foreground">
-                                                No professionals found for this
-                                                filter.
-                                            </li>
-                                        )}
-                                </ul>
-                            </div>
-                        )}
+                                    );
+                                })}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </ProductPageShell>
@@ -1039,6 +1185,66 @@ function toSafeHttpUrl(value?: string | null): string | null {
         return null;
     }
     return null;
+}
+
+function normalizePlaceCategory(
+    value: string,
+): 'gym' | 'nutritionist' | 'other' {
+    const v = value.toLowerCase();
+    if (v.includes('gym')) return 'gym';
+    if (v.includes('nutri') || v.includes('diet') || v.includes('clinic')) {
+        return 'nutritionist';
+    }
+
+    return 'other';
+}
+
+function isGymPlace(place: Place): boolean {
+    return (
+        normalizePlaceCategory(
+            (place.category ?? place.type ?? 'other').toString(),
+        ) === 'gym'
+    );
+}
+
+function isNutritionCenterPlace(place: Place): boolean {
+    return (
+        normalizePlaceCategory(
+            (place.category ?? place.type ?? 'other').toString(),
+        ) === 'nutritionist'
+    );
+}
+
+function findClosestPlaceForProfessional(
+    professional: Professional,
+    places: Place[],
+): Place | null {
+    if (places.length === 0) return null;
+
+    if (
+        typeof professional.lat === 'number' &&
+        typeof professional.lng === 'number'
+    ) {
+        let closest: Place | null = null;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        for (const place of places) {
+            const distance = haversineDistanceMeters(
+                professional.lat,
+                professional.lng,
+                place.lat,
+                place.lon,
+            );
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                closest = place;
+            }
+        }
+
+        return closest;
+    }
+
+    return places[0] ?? null;
 }
 
 function sortProfessionals(

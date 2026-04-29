@@ -16,10 +16,13 @@ use App\Models\WorkoutLogSet;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ProfessionalClientsDemoSeeder extends Seeder
 {
+    private ?bool $foodsHasMealTypesColumn = null;
+
     public function run(): void
     {
         $professionals = User::query()
@@ -194,18 +197,32 @@ class ProfessionalClientsDemoSeeder extends Seeder
             $date = Carbon::today()->subDays($offset)->toDateString();
 
             foreach ($profile['meal_plan'] as $mealIndex => $meal) {
-                $food = Food::query()->firstOrCreate(
-                    ['name' => $meal['name']],
-                    [
-                        'category' => $meal['category'],
-                        'serving_size' => 1,
-                        'serving_unit' => $meal['serving_unit'],
-                        'calories' => $meal['calories'],
-                        'protein_g' => $meal['protein_g'],
-                        'carbs_g' => $meal['carbs_g'],
-                        'fat_g' => $meal['fat_g'],
-                    ],
-                );
+                $metadata = $this->mealCatalogMetadata($meal, $profile);
+                $food = Food::query()->firstOrNew(['name' => $meal['name']]);
+
+                $attributes = [
+                    'category' => $meal['category'],
+                    'serving_size' => $meal['serving_size'] ?? 1,
+                    'serving_unit' => $meal['serving_unit'],
+                    'calories' => $meal['calories'],
+                    'protein_g' => $meal['protein_g'],
+                    'carbs_g' => $meal['carbs_g'],
+                    'fat_g' => $meal['fat_g'],
+                    'tags' => $this->mergeFoodLists($food->tags, $metadata['tags'] ?? []),
+                    'allergens' => $this->mergeFoodLists($food->allergens, $metadata['allergens'] ?? []),
+                    'diets_allowed' => $this->mergeFoodLists($food->diets_allowed, $metadata['diets_allowed'] ?? []),
+                    'ingredients' => $this->mergeFoodLists($food->ingredients, $metadata['ingredients'] ?? []),
+                ];
+
+                if ($this->foodsHasMealTypesColumn()) {
+                    $attributes['meal_types'] = $this->mergeFoodLists(
+                        $food->meal_types,
+                        $metadata['meal_types'] ?? [$meal['meal_type']]
+                    );
+                }
+
+                $food->fill($attributes);
+                $food->save();
 
                 MealEntry::query()->firstOrCreate(
                     [
@@ -600,6 +617,136 @@ class ProfessionalClientsDemoSeeder extends Seeder
         }
 
         return $combos;
+    }
+
+    private function mealCatalogMetadata(array $meal, array $profile): array
+    {
+        $dietTag = $this->normalizeDietTag((string) ($profile['diet_name'] ?? ''));
+        $lookup = $this->professionalMealCatalog()[$meal['name']] ?? [];
+
+        return [
+            'meal_types' => [$meal['meal_type']],
+            'tags' => array_values(array_filter([
+                'professional-demo',
+                'seeded',
+                strtolower((string) $meal['meal_type']),
+                $dietTag !== '' ? $dietTag : null,
+            ])),
+            'allergens' => $lookup['allergens'] ?? [],
+            'diets_allowed' => $lookup['diets_allowed'] ?? ($dietTag !== '' ? [$dietTag] : []),
+            'ingredients' => $lookup['ingredients'] ?? [],
+        ];
+    }
+
+    /**
+     * @return array<string, array<string, array<int, string>>>
+     */
+    private function professionalMealCatalog(): array
+    {
+        return [
+            'Apple Cinnamon Oat Bowl' => [
+                'allergens' => ['milk'],
+                'diets_allowed' => ['vegetarian', 'dash', 'mediterranean'],
+                'ingredients' => ['oats', 'apple', 'milk', 'cinnamon', 'chia seeds'],
+            ],
+            'Turkey Brown Rice Plate' => [
+                'allergens' => [],
+                'diets_allowed' => ['dash', 'mediterranean', 'high-protein', 'gluten-free'],
+                'ingredients' => ['turkey breast', 'brown rice', 'green beans', 'olive oil', 'herbs'],
+            ],
+            'Herb Cod Greens Plate' => [
+                'allergens' => ['fish'],
+                'diets_allowed' => ['dash', 'mediterranean', 'high-protein', 'gluten-free'],
+                'ingredients' => ['cod', 'leafy greens', 'potato', 'olive oil', 'herbs'],
+            ],
+            'Cottage Cheese Cucumber Plate' => [
+                'allergens' => ['milk'],
+                'diets_allowed' => ['vegetarian', 'low-carb', 'high-protein', 'gluten-free'],
+                'ingredients' => ['cottage cheese', 'cucumber', 'olive oil', 'mint'],
+            ],
+            'Chicken Cauliflower Rice Bowl' => [
+                'allergens' => [],
+                'diets_allowed' => ['low-carb', 'whole30', 'paleo', 'high-protein', 'gluten-free'],
+                'ingredients' => ['chicken breast', 'cauliflower rice', 'zucchini', 'olive oil', 'herbs'],
+            ],
+            'Beef Lettuce Cup Plate' => [
+                'allergens' => [],
+                'diets_allowed' => ['keto', 'low-carb', 'whole30', 'paleo', 'high-protein', 'gluten-free'],
+                'ingredients' => ['lean beef', 'lettuce', 'bell pepper', 'olive oil', 'garlic'],
+            ],
+            'Egg White Veg Scramble' => [
+                'allergens' => ['eggs'],
+                'diets_allowed' => ['vegetarian', 'high-protein', 'low-carb', 'gluten-free'],
+                'ingredients' => ['egg whites', 'spinach', 'mushrooms', 'bell pepper', 'olive oil'],
+            ],
+            'Chicken Rice Protein Bowl' => [
+                'allergens' => [],
+                'diets_allowed' => ['high-protein', 'mediterranean', 'gluten-free'],
+                'ingredients' => ['chicken breast', 'rice', 'broccoli', 'olive oil', 'herbs'],
+            ],
+            'Tuna Potato Salad Plate' => [
+                'allergens' => ['fish'],
+                'diets_allowed' => ['high-protein', 'mediterranean', 'gluten-free'],
+                'ingredients' => ['tuna', 'potato', 'green beans', 'olive oil', 'parsley'],
+            ],
+            'Late Break Fast Protein Oats' => [
+                'allergens' => ['milk'],
+                'diets_allowed' => ['vegetarian', 'high-protein'],
+                'ingredients' => ['oats', 'protein powder', 'berries', 'milk', 'chia seeds'],
+            ],
+            'Chicken Shawarma Rice Bowl' => [
+                'allergens' => [],
+                'diets_allowed' => ['high-protein', 'mediterranean'],
+                'ingredients' => ['chicken shawarma', 'rice', 'cucumber', 'tomato', 'garlic'],
+            ],
+            'Yogurt Berry Walnut Cup' => [
+                'allergens' => ['milk', 'tree nuts'],
+                'diets_allowed' => ['vegetarian', 'high-protein', 'dash', 'gluten-free'],
+                'ingredients' => ['greek yogurt', 'berries', 'walnuts', 'honey'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function mergeFoodLists(mixed $existing, array $incoming): array
+    {
+        $items = [];
+
+        foreach ([$existing, $incoming] as $value) {
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                $value = is_array($decoded) ? $decoded : preg_split('/[\r\n,;]+/', $value);
+            }
+
+            if (! is_array($value)) {
+                continue;
+            }
+
+            foreach ($value as $item) {
+                $text = strtolower(trim((string) $item));
+                if ($text !== '') {
+                    $items[] = $text;
+                }
+            }
+        }
+
+        return array_values(array_unique($items));
+    }
+
+    private function normalizeDietTag(string $dietName): string
+    {
+        return Str::of($dietName)
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '-')
+            ->trim('-')
+            ->value();
+    }
+
+    private function foodsHasMealTypesColumn(): bool
+    {
+        return $this->foodsHasMealTypesColumn ??= Schema::hasColumn('foods', 'meal_types');
     }
 
     private function activityLevelForDays(int $days): string

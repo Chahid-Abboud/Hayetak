@@ -51,7 +51,7 @@ class LegacyFullDatabaseImportSeeder extends Seeder
         DB::transaction(function () use ($quotedTables, $orderedTables, $statementsByTable): void {
             // The legacy dump contains backslash-escaped apostrophes like Child\'s Pose.
             // Enable legacy string parsing only for this import transaction.
-            DB::statement("SET LOCAL standard_conforming_strings = off");
+            DB::statement('SET LOCAL standard_conforming_strings = off');
             DB::statement("TRUNCATE TABLE {$quotedTables} RESTART IDENTITY CASCADE");
 
             foreach ($orderedTables as $table) {
@@ -73,7 +73,7 @@ class LegacyFullDatabaseImportSeeder extends Seeder
         $candidates = array_filter([
             env('LEGACY_FULL_DUMP_PATH'),
             database_path('seeders/data/Hayetak_14_3_2026_content+structure.sql'),
-            'C:\\Users\\User\\Downloads\\Hayetak_14_3_2026_content+structure.sql',
+            'C:\Users\User\Downloads\Hayetak_14_3_2026_content+structure.sql',
         ]);
 
         foreach ($candidates as $candidate) {
@@ -323,7 +323,7 @@ class LegacyFullDatabaseImportSeeder extends Seeder
 
         DB::statement(
             sprintf(
-                "SELECT setval(%s, COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM \"%s\"",
+                'SELECT setval(%s, COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM "%s"',
                 DB::getPdo()->quote($sequenceName),
                 $table,
             ),

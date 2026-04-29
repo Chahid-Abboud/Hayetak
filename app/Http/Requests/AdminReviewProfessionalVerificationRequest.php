@@ -20,4 +20,3 @@ class AdminReviewProfessionalVerificationRequest extends FormRequest
         ];
     }
 }
-

@@ -49,16 +49,10 @@ function category(bmi: number): {
     };
 }
 
-const CAT_FILL_CLASS: Record<BmiCatKey, string> = {
-    under: 'bg-accent',
-    normal: 'bg-secondary',
-    over: 'bg-amber-500',
-    obese: 'bg-destructive',
-};
 const CAT_TEXT_CLASS: Record<BmiCatKey, string> = {
     under: 'text-accent',
     normal: 'text-secondary',
-    over: 'text-amber-600',
+    over: 'text-primary',
     obese: 'text-destructive',
 };
 
@@ -98,13 +92,7 @@ function ctaFor(key: BmiCatKey) {
     }
 }
 
-function Progress({
-    bmi,
-    categoryKey,
-}: {
-    bmi: number;
-    categoryKey: BmiCatKey;
-}) {
+function Progress({ bmi }: { bmi: number }) {
     const min = 15,
         max = 40;
     const clamped = Math.max(min, Math.min(max, bmi));
@@ -115,7 +103,7 @@ function Progress({
         <div className="mt-3" aria-label="BMI progress">
             <div className="relative h-2 w-full overflow-hidden rounded bg-muted">
                 <div
-                    className={`h-full ${CAT_FILL_CLASS[categoryKey]}`}
+                    className="h-full bg-primary"
                     style={{ width: `${pct}%`, transition: 'width 300ms ease' }}
                     role="progressbar"
                     aria-valuemin={min}
@@ -203,7 +191,7 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
                 <div className={`text-sm ${CAT_TEXT_CLASS[key]}`}>{label}</div>
             </div>
 
-            <Progress bmi={bmi} categoryKey={key} />
+            <Progress bmi={bmi} />
 
             {/* Prominent, category-tinted banner */}
             <div

@@ -1,10 +1,11 @@
+import AppLogoIcon from '@/components/app-logo-icon';
 import CommandPalette, {
     type CommandPaletteItem,
 } from '@/components/command-palette';
 import NotificationBell from '@/components/NotificationBell';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { LogOut, Menu, Search, Sparkles, X } from 'lucide-react';
+import { LogOut, Menu, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type NavLinkItem = { href: string; label: string };
@@ -34,6 +35,7 @@ export default function NavHeader() {
             ? [
                   { href: '/dashboard', label: 'Overview' },
                   { href: '/coach', label: 'Coach' },
+                  { href: '/ai/planner', label: 'AI Planner' },
               ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
@@ -82,7 +84,7 @@ export default function NavHeader() {
         if (role === 'admin') {
             return [
                 {
-                    label: 'Users',
+                    label: 'Admin Workspace',
                     items: [
                         { href: '/admin/users', label: 'All Users' },
                         {
@@ -93,21 +95,18 @@ export default function NavHeader() {
                             href: '/admin/professional-verifications',
                             label: 'Verifications',
                         },
-                    ],
-                },
-                {
-                    label: 'Content',
-                    items: [
                         { href: '/admin/meals', label: 'Meals' },
                         { href: '/admin/progress', label: 'Progress' },
                         { href: '/admin/places', label: 'Places' },
+                        { href: '/admin/notifications', label: 'Alerts' },
+                        { href: '/admin/logs', label: 'Admin Logs' },
                     ],
                 },
                 {
-                    label: 'System',
+                    label: 'AI',
                     items: [
-                        { href: '/admin/logs', label: 'Admin Logs' },
-                        { href: '/admin/notifications', label: 'Alerts' },
+                        { href: '/ai/planner', label: 'AI Planner' },
+                        { href: '/coach', label: 'Coach' },
                     ],
                 },
             ];
@@ -249,16 +248,14 @@ export default function NavHeader() {
         <>
             <header className="sticky top-0 z-40 px-4 pt-4 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
-                    <div className="overflow-hidden rounded-[30px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_92%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl">
+                    <div className="overflow-hidden rounded-[30px] border border-[color:var(--sidebar-border)] bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)] shadow-[0_28px_70px_-52px_rgba(9,15,28,0.92)] backdrop-blur-xl">
                         <div className="px-4 py-3 sm:px-5 lg:px-6">
                             <div className="flex items-center gap-3">
                                 <Link
                                     href="/dashboard"
                                     className="flex min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/10"
                                 >
-                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--secondary)] via-[var(--accent)] to-[var(--sidebar-foreground)] text-[color:var(--primary)] shadow-lg">
-                                        <Sparkles className="h-5 w-5" />
-                                    </span>
+                                    <AppLogoIcon className="h-8 w-8" />
                                     <span className="min-w-0">
                                         <span
                                             className="block truncate text-xl leading-none tracking-tight"
@@ -400,7 +397,7 @@ export default function NavHeader() {
                 <div className="px-4 pt-3 sm:px-6 lg:hidden">
                     <div
                         id="mobile-hayetak-nav"
-                        className="mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-[color:var(--sidebar-border)] bg-[color-mix(in_oklab,var(--sidebar)_94%,transparent)] text-[color:var(--sidebar-foreground)] shadow-[0_24px_60px_-42px_rgba(9,15,28,0.9)] backdrop-blur-xl"
+                        className="mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-[color:var(--sidebar-border)] bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)] shadow-[0_24px_60px_-42px_rgba(9,15,28,0.9)] backdrop-blur-xl"
                     >
                         <div className="grid max-h-[calc(100svh-7.5rem)] gap-4 overflow-y-auto px-4 py-4">
                             <Link

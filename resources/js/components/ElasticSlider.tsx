@@ -74,9 +74,9 @@ export default function ElasticSlider({
             <div className="relative select-none">
                 {/* TRACK
            - Light: dark page color (--sidebar) at 15% + border (--border)
-           - Dark : gradient from --sidebar to --primary (matches header)
+           - Dark : solid --sidebar shade
         */}
-                <div className="h-2 rounded-full border [border-color:var(--border)] bg-[color:var(--sidebar)]/15 transition-all duration-300 dark:border-transparent dark:bg-[linear-gradient(to_right,var(--sidebar),var(--primary))]" />
+                <div className="h-2 rounded-full border [border-color:var(--border)] bg-[color:var(--sidebar)]/15 transition-all duration-300 dark:border-transparent dark:bg-[color:var(--sidebar)]/30" />
 
                 {/* Ticks */}
                 <div className="pointer-events-none absolute inset-x-0 -top-1 h-4">

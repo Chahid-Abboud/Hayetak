@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Chat;
 
-use App\Models\AiConversation;
+use App\Models\Ai\AiConversation;
 use App\Models\Measurement;
 use App\Models\NutritionPlan;
 use App\Models\User;
@@ -21,6 +21,9 @@ class ChatContextBuilder
         private readonly UserProfileFactResolver $profileFactResolver,
     ) {}
 
+    /**
+     * Build the full context bundle the coach uses: profile, restrictions, today's logs, 7-day history, plans, UI state, and memory.
+     */
     public function build(
         User $user,
         array $runtimeContext = [],
@@ -31,6 +34,7 @@ class ChatContextBuilder
         $runtimeContext['include_last_7_days'] = (bool) ($flags['include_last_7_days'] ?? false);
 
         $base = $this->coachContextBuilder->build($user, $runtimeContext, $conversation);
+        $deterministicAction = (string) ($classification['deterministic_action'] ?? '');
         $profile = $base['context']['profile'] ?? [];
         $resolvedProfile = $this->profileFactResolver->resolve($user);
         $selectedDate = $this->resolveSelectedDate($runtimeContext, $flags);
@@ -100,6 +104,12 @@ class ChatContextBuilder
 
         $medicalHistory = trim((string) ($profile['medical_history'] ?? ''));
         $injuries = $this->normalizeList($profile['injury_history'] ?? []);
+        $allergies = $this->normalizeList($resolvedProfile['allergies'] ?? ($profile['allergies'] ?? []));
+        $allergyAudit = null;
+
+        if (in_array($deterministicAction, ['allergy_exposure_check', 'ingredient_exposure_check'], true)) {
+            $allergyAudit = $this->allergyExposureAudit($user->id, $allergies, $anchorDate);
+        }
 
         $context = [
             'user_profile' => [
@@ -116,7 +126,7 @@ class ChatContextBuilder
             'resolved_profile' => $resolvedProfile,
             'restrictions' => [
                 'diet_type' => $resolvedProfile['diet_type'] ?? ($profile['diet_type'] ?: null),
-                'allergies' => $this->normalizeList($resolvedProfile['allergies'] ?? ($profile['allergies'] ?? [])),
+                'allergies' => $allergies,
                 'medical_conditions' => $this->normalizeList($resolvedProfile['medical_conditions'] ?? ($medicalHistory !== '' ? [$medicalHistory] : [])),
                 'injuries' => $this->normalizeList($resolvedProfile['injuries'] ?? $injuries),
             ],
@@ -193,6 +203,7 @@ class ChatContextBuilder
             'runtime' => [
                 'available_ingredients' => $this->normalizeList($runtimeContext['available_ingredients'] ?? []),
             ],
+            'allergy_audit' => $allergyAudit,
         ];
 
         return [
@@ -309,5 +320,119 @@ class ChatContextBuilder
             'carbs_g' => (int) round((float) ($row->carbs_g ?? 0)),
             'fat_g' => (int) round((float) ($row->fat_g ?? 0)),
         ];
+    }
+
+    private function allergyExposureAudit(int $userId, array $allergies, CarbonInterface $anchorDate, int $lookbackDays = 30): array
+    {
+        $normalizedAllergies = array_values(array_unique(array_filter(array_map(
+            static fn ($allergy) => mb_strtolower(trim((string) $allergy)),
+            $allergies,
+        ))));
+
+        $to = Carbon::createFromFormat('Y-m-d', $anchorDate->toDateString())->endOfDay();
+        $from = $to->copy()->subDays(max(0, $lookbackDays - 1))->startOfDay();
+
+        $rows = DB::table('meal_entries as me')
+            ->join('foods as f', 'f.id', '=', 'me.food_id')
+            ->where('me.user_id', $userId)
+            ->whereBetween(DB::raw('DATE(me.eaten_at)'), [$from->toDateString(), $to->toDateString()])
+            ->orderBy('me.eaten_at')
+            ->get([
+                'me.eaten_at',
+                'me.meal_type',
+                'f.name as food_name',
+                'f.allergens as food_allergens',
+                'f.ingredients as food_ingredients',
+            ]);
+
+        $entries = [];
+        $matchedEntries = [];
+
+        foreach ($rows as $row) {
+            $date = trim((string) ($row->eaten_at ?? ''));
+            $mealType = trim((string) ($row->meal_type ?? ''));
+            $foodName = trim((string) ($row->food_name ?? ''));
+            $normalizedFoodName = mb_strtolower($foodName);
+            $foodAllergens = array_map(
+                static fn ($value) => mb_strtolower(trim((string) $value)),
+                $this->decodeJsonList($row->food_allergens ?? null),
+            );
+            $ingredientText = mb_strtolower(implode(' ', $this->decodeJsonList($row->food_ingredients ?? null)));
+
+            $entry = [
+                'date' => $date,
+                'meal_type' => $mealType,
+                'food_name' => $foodName,
+                'allergens' => array_values(array_filter($foodAllergens)),
+                'ingredients' => array_values(array_filter($this->decodeJsonList($row->food_ingredients ?? null))),
+            ];
+            $entries[] = $entry;
+
+            $matchedAllergies = [];
+            foreach ($normalizedAllergies as $allergy) {
+                if ($allergy === '') {
+                    continue;
+                }
+
+                $matchFromName = $this->containsWholeWord($normalizedFoodName, $allergy);
+                $matchFromAllergens = in_array($allergy, $foodAllergens, true);
+                $matchFromIngredients = $this->containsWholeWord($ingredientText, $allergy);
+
+                if ($matchFromName || $matchFromAllergens || $matchFromIngredients) {
+                    $matchedAllergies[] = $allergy;
+                }
+            }
+
+            if ($matchedAllergies !== []) {
+                $matchedEntries[] = $entry + [
+                    'matched_allergies' => array_values(array_unique($matchedAllergies)),
+                ];
+            }
+        }
+
+        return [
+            'lookback_days' => $lookbackDays,
+            'range' => [
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+            ],
+            'saved_allergies' => $normalizedAllergies,
+            'logged_entries' => count($entries),
+            'entries' => $entries,
+            'matched_entries' => $matchedEntries,
+        ];
+    }
+
+    private function decodeJsonList(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $this->normalizeList($value);
+        }
+
+        if (! is_string($value)) {
+            return [];
+        }
+
+        $raw = trim($value);
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return $this->normalizeList($decoded);
+        }
+
+        return $this->normalizeList([$raw]);
+    }
+
+    private function containsWholeWord(string $text, string $term): bool
+    {
+        $candidate = trim($term);
+        if ($candidate === '') {
+            return false;
+        }
+
+        return preg_match('/\b'.preg_quote($candidate, '/').'\b/u', $text) === 1;
     }
 }

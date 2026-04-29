@@ -10,6 +10,13 @@
 /storage/*.key
 /storage/pail
 /vendor
+/.kilo
+/.npm-cache
+/batch_2026_04_10_realdata
+/tmp
+/tsconfig.tsbuildinfo
+__pycache__/
+*.pyc
 .DS_Store
 .env
 .env.backup

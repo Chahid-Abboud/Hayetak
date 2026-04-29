@@ -113,7 +113,7 @@ Key files:
 ### H. One-Command Startup
 
 A startup helper was added:
-- `scripts/start-coach.ps1`
+- `scripts/ai/selfhosted/start-coach.ps1`
 
 This script:
 - checks Ollama
@@ -162,7 +162,7 @@ Use this exact command:
 
 ```powershell
 cd c:\Users\User\hayetaravel
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 Then open:
@@ -336,7 +336,7 @@ php artisan config:clear
 If that branch also uses the self-hosted coach, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 ## 13. Main Files To Review For This Branch
@@ -357,7 +357,7 @@ app/Services/Ai/Chat/SelfHostedContextAwareChatService.php
 app/Services/Ai/Chat/UserProfileFactResolver.php
 app/Services/Ai/Chat/UserContextSnapshotBuilder.php
 app/Services/Ai/Chat/ChatSafetyGuard.php
-scripts/start-coach.ps1
+scripts/ai/selfhosted/start-coach.ps1
 ```
 
 ## 14. Short Version
@@ -366,7 +366,7 @@ scripts/start-coach.ps1
 
 ```powershell
 cd c:\Users\User\hayetaravel
-powershell -ExecutionPolicy Bypass -File .\scripts\start-coach.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\ai\selfhosted\start-coach.ps1
 ```
 
 ### Update current branch

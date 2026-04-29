@@ -3,10 +3,14 @@ import {
     ProductHero,
     ProductPageShell,
 } from '@/components/product/page';
+import {
+    ProductButton,
+    ProductTextarea,
+} from '@/components/product/product-ui';
 import { ResizablePanels } from '@/components/ui/resizable-panels';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type SharedData } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Conversation = {
@@ -23,19 +27,6 @@ type AiMessage = {
     conversation_id: number;
     role: 'user' | 'assistant' | 'system' | 'tool';
     content: string;
-    metadata?: {
-        warnings?: string[];
-        used_context_keys?: string[];
-        intent?: string;
-        feature?: string;
-        model?: string;
-        provider?: string;
-        chat?: {
-            chat_path?: string;
-            mode_label?: string;
-            reason?: string;
-        } | null;
-    } | null;
     created_at?: string | null;
 };
 
@@ -87,7 +78,7 @@ export default function AiChatPage() {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to load AI conversations.');
+                throw new Error('Could not load your coach chats.');
             }
 
             const json = await response.json();
@@ -119,7 +110,7 @@ export default function AiChatPage() {
             setError(
                 err instanceof Error
                     ? err.message
-                    : 'Unable to load AI conversations.',
+                    : 'Could not load your coach chats.',
             );
             return null;
         } finally {
@@ -144,7 +135,7 @@ export default function AiChatPage() {
             );
 
             if (!response.ok) {
-                throw new Error('Failed to load AI messages.');
+                throw new Error('Could not load this coach conversation.');
             }
 
             const json = await response.json();
@@ -154,7 +145,7 @@ export default function AiChatPage() {
                 setError(
                     err instanceof Error
                         ? err.message
-                        : 'Unable to load AI messages.',
+                        : 'Could not load this coach conversation.',
                 );
                 setMessages([]);
             }
@@ -317,14 +308,14 @@ export default function AiChatPage() {
               'What stands out from my meals today?',
               'How should I adjust dinner if my protein is low?',
               'Can I train today based on my recent workouts?',
-              'Why is my plan not showing on the dashboard?',
+              "How can I stay more consistent with today's plan?",
           ];
 
     const coachDescription = isAdmin
-        ? "Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users' private data."
+        ? "Use AI Coach for your own wellness context and Hayetak workflows. Other users' data stays private."
         : 'Ask about meals, workouts, recovery, progress, plans, nearby help, messages, appointments, or settings using your saved app data when relevant.';
     const coachDescriptionText = isAdmin
-        ? 'Use AI Coach for your own health context plus Hayetak workflow guidance. It never uses or reveals other users private data.'
+        ? 'Use AI Coach for your own wellness context and Hayetak workflows. Other users data stays private.'
         : coachDescription;
     const visibleMessages = useMemo(
         () => [...messages, ...pendingBubbles],
@@ -345,19 +336,66 @@ export default function AiChatPage() {
                                 Signed in as{' '}
                                 {auth.user.first_name ?? auth.user.name}
                             </div>
-                            <button
+                            <ProductButton
                                 type="button"
-                                className="rounded-2xl border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                emphasis="secondary"
                                 onClick={startNewChat}
                             >
                                 New chat
-                            </button>
+                            </ProductButton>
                         </div>
                     }
                 />
 
                 {error ? (
-                    <ProductBanner tone="danger">{error}</ProductBanner>
+                    <ProductBanner tone="danger" role="alert">
+                        {error}
+                    </ProductBanner>
+                ) : null}
+
+                {isAdmin ? (
+                    <section className="grid gap-4 lg:grid-cols-3">
+                        <div className="rounded-3xl border bg-card p-4">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                Triage
+                            </div>
+                            <div className="mt-2 text-base font-semibold">
+                                Conversation safety first
+                            </div>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Keep transcript review readable and escalate
+                                only flagged or unsafe patterns.
+                            </p>
+                        </div>
+                        <div className="rounded-3xl border bg-card p-4">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                Context
+                            </div>
+                            <div className="mt-2 text-base font-semibold">
+                                Use profile constraints
+                            </div>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Review replies against allergies, injuries, and
+                                recent logs before marking issues resolved.
+                            </p>
+                        </div>
+                        <div className="rounded-3xl border bg-card p-4">
+                            <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                Follow-up
+                            </div>
+                            <div className="mt-2 text-base font-semibold">
+                                Open dedicated surfaces
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <ProductButton asChild emphasis="secondary">
+                                    <Link href="/ai/planner">AI Planner</Link>
+                                </ProductButton>
+                                <ProductButton asChild emphasis="secondary">
+                                    <Link href="/admin/logs">Audit Logs</Link>
+                                </ProductButton>
+                            </div>
+                        </div>
+                    </section>
                 ) : null}
 
                 <ResizablePanels
@@ -369,7 +407,7 @@ export default function AiChatPage() {
                                     Conversations
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                    Your saved AI chat threads appear here.
+                                    Your saved coach threads.
                                 </div>
                             </div>
 
@@ -391,7 +429,7 @@ export default function AiChatPage() {
                                     </div>
                                 ) : conversations.length === 0 ? (
                                     <div className="space-y-3 px-3 py-6 text-sm text-muted-foreground">
-                                        <p>No AI chats yet.</p>
+                                        <p>No coach chats yet.</p>
                                         <p>
                                             Start with meals, workouts,
                                             progress, plan questions, or nearby
@@ -447,16 +485,20 @@ export default function AiChatPage() {
                         <section className="flex min-h-[72vh] flex-col overflow-hidden rounded-3xl border bg-card">
                             <div className="border-b px-5 py-4">
                                 <div className="text-base font-semibold">
-                                    {activeConversation?.title ?? 'New AI chat'}
+                                    {activeConversation?.title ??
+                                        'New coach chat'}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                     {isAdmin
-                                        ? 'Admin view: the coach can help with your own wellness context and Hayetak workflow questions while keeping all other users private.'
-                                        : 'Ask naturally about your profile, meals, workouts, progress, recovery, or plans.'}
+                                        ? 'Admin view: coaching for your own wellness context and workflow guidance only.'
+                                        : 'Ask about your profile, meals, workouts, recovery, or plans.'}
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-auto bg-[color:var(--muted)]/30 px-4 py-4">
+                            <div
+                                className="flex-1 overflow-auto bg-[color:var(--muted)]/30 px-4 py-4"
+                                aria-live="polite"
+                            >
                                 {loadingMessages ? (
                                     <div className="space-y-3">
                                         {Array.from({ length: 5 }).map(
@@ -482,23 +524,24 @@ export default function AiChatPage() {
                                             </div>
                                             <div className="mt-2 text-sm text-muted-foreground">
                                                 {isAdmin
-                                                    ? 'Use the coach for your own profile, meals, workouts, plans, progress, and for product guidance during admin workflows.'
-                                                    : 'The coach can already use your saved profile, meals, workouts, plans, recent progress, and the current chat thread.'}
+                                                    ? 'Use the coach for your own profile, plans, and admin workflow support.'
+                                                    : 'The coach can use your saved profile, recent meals/workouts, and this thread.'}
                                             </div>
                                         </div>
 
                                         <div className="grid gap-3 md:grid-cols-2">
                                             {promptSuggestions.map((prompt) => (
-                                                <button
+                                                <ProductButton
                                                     key={prompt}
                                                     type="button"
                                                     onClick={() =>
                                                         void send(prompt)
                                                     }
-                                                    className="rounded-2xl border bg-background p-4 text-left text-sm transition hover:border-[color:var(--primary)]/40 hover:bg-accent/40"
+                                                    emphasis="secondary"
+                                                    className="h-auto justify-start p-4 text-left whitespace-normal"
                                                 >
                                                     {prompt}
-                                                </button>
+                                                </ProductButton>
                                             ))}
                                         </div>
                                     </div>
@@ -569,47 +612,6 @@ export default function AiChatPage() {
                                                             </div>
                                                         )}
 
-                                                        {!mine &&
-                                                        isAdmin &&
-                                                        'metadata' in message &&
-                                                        Array.isArray(
-                                                            message.metadata
-                                                                ?.used_context_keys,
-                                                        ) &&
-                                                        message.metadata
-                                                            ?.used_context_keys
-                                                            ?.length ? (
-                                                            <details className="mt-3 rounded-2xl border border-border/70 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-                                                                <summary className="cursor-pointer list-none font-medium">
-                                                                    Context
-                                                                    debug
-                                                                </summary>
-                                                                <div className="mt-2 flex flex-wrap gap-2">
-                                                                    {message.metadata.used_context_keys
-                                                                        .slice(
-                                                                            0,
-                                                                            6,
-                                                                        )
-                                                                        .map(
-                                                                            (
-                                                                                key,
-                                                                            ) => (
-                                                                                <span
-                                                                                    key={
-                                                                                        key
-                                                                                    }
-                                                                                    className="rounded-full border px-2 py-1"
-                                                                                >
-                                                                                    {
-                                                                                        key
-                                                                                    }
-                                                                                </span>
-                                                                            ),
-                                                                        )}
-                                                                </div>
-                                                            </details>
-                                                        ) : null}
-
                                                         <div className="mt-2 text-[11px] opacity-70">
                                                             {isPending
                                                                 ? mine
@@ -633,7 +635,7 @@ export default function AiChatPage() {
                             <div className="border-t px-4 py-4">
                                 <div className="mb-3 flex flex-wrap gap-2">
                                     <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
-                                        Thread-aware follow-ups stay in context
+                                        Follow-ups stay in context
                                     </span>
                                     <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
                                         Saved profile data is only used when
@@ -641,8 +643,8 @@ export default function AiChatPage() {
                                     </span>
                                 </div>
                                 <div className="flex items-end gap-3">
-                                    <textarea
-                                        className="min-h-[52px] flex-1 resize-none rounded-2xl border bg-background px-4 py-3 text-sm transition outline-none focus:border-[color:var(--primary)]"
+                                    <ProductTextarea
+                                        className="min-h-[52px] flex-1 resize-none"
                                         value={text}
                                         onChange={(event) =>
                                             setText(event.target.value)
@@ -662,14 +664,13 @@ export default function AiChatPage() {
                                                 : 'Ask a follow-up about this thread, your meals, workouts, plans, or progress'
                                         }
                                     />
-                                    <button
+                                    <ProductButton
                                         type="button"
-                                        className="rounded-2xl bg-[color:var(--primary)] px-4 py-3 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                                         onClick={() => void send()}
                                         disabled={sending || !text.trim()}
                                     >
                                         {sending ? 'Working...' : 'Send'}
-                                    </button>
+                                    </ProductButton>
                                 </div>
                                 <p className="mt-2 text-xs text-muted-foreground">
                                     Press Enter to send, Shift+Enter for a new

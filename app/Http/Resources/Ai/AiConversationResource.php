@@ -8,11 +8,20 @@ use Illuminate\Support\Str;
 
 class AiConversationResource extends JsonResource
 {
+    /** @var array<int, string> */
+    private const VISIBLE_MESSAGE_ROLES = ['user', 'assistant'];
+
     public function toArray(Request $request): array
     {
         $lastMessage = $this->relationLoaded('messages')
-            ? $this->messages->sortByDesc('id')->first()
-            : $this->messages()->latest('id')->first();
+            ? $this->messages
+                ->whereIn('role', self::VISIBLE_MESSAGE_ROLES)
+                ->sortByDesc('id')
+                ->first()
+            : $this->messages()
+                ->whereIn('role', self::VISIBLE_MESSAGE_ROLES)
+                ->latest('id')
+                ->first();
 
         return [
             'id' => $this->id,

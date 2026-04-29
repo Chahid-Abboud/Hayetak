@@ -26,4 +26,3 @@ class AdminBulkUpdateUsersRequest extends FormRequest
         ];
     }
 }
-

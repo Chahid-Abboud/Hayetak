@@ -1,13 +1,16 @@
 import AppearanceTabs from '@/components/appearance-tabs';
 import {
     ProductBanner,
-    ProductHero,
-    ProductPageShell,
+    ProductSection,
+    ProductStatCard,
+    ProductStatGrid,
 } from '@/components/product/page';
-import { Head, router, usePage } from '@inertiajs/react';
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { ProductButton } from '@/components/product/product-ui';
+import SettingsLayout from '@/layouts/settings/layout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ShieldCheck, Sparkles, UserRound } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
-/* ---------- Types ---------- */
 type NumericLike = number | string;
 
 type UserProfile = {
@@ -53,19 +56,14 @@ type PageProps = {
         } | null;
     };
     flash?: { status?: string; success?: string; error?: string };
-
     displayName?: string;
     userProfile?: UserProfile;
     prefs?: Prefs;
     dietName?: string;
     weightHistory?: Measurement[];
     heightHistory?: Measurement[];
-
-    // If your backend adds it later:
-    // exerciseProgress?: ExerciseProgressPoint[];
 };
 
-/* ---------- Safe defaults ---------- */
 const DEFAULT_PROFILE = {
     first_name: '',
     last_name: '',
@@ -99,10 +97,9 @@ const FITNESS_GOAL_OPTIONS = [
 ] as const;
 
 const GENDER_OPTIONS = [
-    'male',
-    'female',
-    'other',
-    'prefer not to say',
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
+    { value: 'other', label: 'Other' },
 ] as const;
 
 const DIET_TYPES = [
@@ -132,324 +129,105 @@ const WORKOUT_DAY_OPTIONS = [
     'sunday',
 ] as const;
 
-/* ---------- Helpers ---------- */
-function cx(...classes: Array<string | false | null | undefined>) {
-    return classes.filter(Boolean).join(' ');
+function sanitizeChip(input: string) {
+    return input.trim().replace(/\s+/g, ' ');
 }
 
-function formatMaybeNumber(
-    n: number | string | null | undefined,
-    suffix?: string,
-) {
-    if (n === null || n === undefined || n === '') return '—';
-    const num = typeof n === 'string' ? Number(n) : n;
-    if (!Number.isFinite(num)) return '—';
-    return suffix ? `${num}${suffix}` : String(num);
+function toNullableNumber(value: string, integer = false) {
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+
+    const next = Number(trimmed);
+    if (!Number.isFinite(next)) return null;
+
+    return integer ? Math.round(next) : next;
 }
 
 function latestMeasurementValue(list: Measurement[]) {
-    if (!list?.length) return null;
-    // Assumes date is YYYY-MM-DD
-    const sorted = [...list].sort((a, b) => (a.date > b.date ? 1 : -1));
-    return sorted[sorted.length - 1]?.value ?? null;
-}
+    if (!list.length) return null;
 
-function sanitizeChip(input: string) {
-    return input.trim().replace(/\s+/g, ' ');
+    const sorted = [...list].sort((left, right) =>
+        left.date > right.date ? 1 : -1,
+    );
+
+    return sorted[sorted.length - 1]?.value ?? null;
 }
 
 function todayYmd() {
     return new Date().toISOString().slice(0, 10);
 }
 
-/* ---------- Small UI bits (token-friendly) ---------- */
-function SectionCard({
-    id,
-    title,
-    description,
-    actions,
-    children,
-}: {
-    id?: string;
-    title: string;
-    description?: string;
-    actions?: React.ReactNode;
-    children: React.ReactNode;
-}) {
-    return (
-        <section
-            id={id}
-            className="scroll-mt-24 rounded-2xl border border-border bg-card text-card-foreground shadow-sm"
-            aria-labelledby={id ? `${id}-title` : undefined}
-        >
-            <div className="flex flex-col gap-2 border-b border-border p-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                    <h2
-                        id={id ? `${id}-title` : undefined}
-                        className="text-lg font-semibold tracking-tight"
-                    >
-                        {title}
-                    </h2>
-                    {description ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            {description}
-                        </p>
-                    ) : null}
-                </div>
-                {actions ? <div className="shrink-0">{actions}</div> : null}
-            </div>
-            <div className="p-5">{children}</div>
-        </section>
-    );
-}
-
-function Button({
-    variant = 'primary',
-    className,
-    ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
-}) {
-    const base =
-        'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed';
-    const styles: Record<string, string> = {
-        primary:
-            'bg-primary text-primary-foreground hover:opacity-90 border border-transparent',
-        secondary:
-            'bg-secondary text-secondary-foreground hover:opacity-90 border border-transparent',
-        outline:
-            'border border-border bg-transparent text-foreground hover:bg-muted',
-        ghost: 'bg-transparent text-foreground hover:bg-muted',
-    };
-    return (
-        <button className={cx(base, styles[variant], className)} {...props} />
-    );
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-    return (
-        <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground">
-            {children}
-        </span>
-    );
-}
-
-function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="rounded-xl border border-border bg-background/40 p-4">
-            <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                {label}
-            </div>
-            <div className="mt-1 text-sm font-medium text-foreground">
-                {value}
-            </div>
-        </div>
-    );
-}
-
-function LabeledInput({
-    id,
-    label,
-    value,
-    onChange,
-    type = 'text',
-    inputMode,
-    placeholder,
-    description,
-}: {
-    id: string;
-    label: string;
-    value: string | number | readonly string[] | undefined;
-    onChange: (v: string) => void;
-    type?: string;
-    inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
-    placeholder?: string;
-    description?: string;
-}) {
-    const descId = description ? `${id}-desc` : undefined;
-    return (
-        <div>
-            <label htmlFor={id} className="text-sm font-medium text-foreground">
-                {label}
-            </label>
-            {description ? (
-                <p id={descId} className="mt-1 text-xs text-muted-foreground">
-                    {description}
-                </p>
-            ) : null}
-            <input
-                id={id}
-                type={type}
-                inputMode={inputMode}
-                className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder={placeholder}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                aria-describedby={descId}
-            />
-        </div>
-    );
-}
-
-function LabeledSelect({
-    id,
-    label,
-    value,
-    onChange,
-    children,
-    description,
-}: {
-    id: string;
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    children: React.ReactNode;
-    description?: string;
-}) {
-    const descId = description ? `${id}-desc` : undefined;
-    return (
-        <div>
-            <label htmlFor={id} className="text-sm font-medium text-foreground">
-                {label}
-            </label>
-            {description ? (
-                <p id={descId} className="mt-1 text-xs text-muted-foreground">
-                    {description}
-                </p>
-            ) : null}
-            <select
-                id={id}
-                className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                aria-describedby={descId}
-            >
-                {children}
-            </select>
-        </div>
-    );
-}
-
-function LabeledDate({
-    id,
-    label,
-    value,
-    onChange,
-}: {
-    id: string;
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-}) {
-    return (
-        <div>
-            <label htmlFor={id} className="text-sm font-medium text-foreground">
-                {label}
-            </label>
-            <input
-                id={id}
-                type="date"
-                className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
-        </div>
-    );
-}
-
-/* ---------- Page ---------- */
 export default function ProfilePage() {
     const page = usePage<PageProps>().props;
+    const authUser = page.auth?.user ?? null;
 
-    // 1) Pull from route-provided props if present…
     let providedProfile: NonNullable<UserProfile> | null =
         page.userProfile ?? null;
 
-    // 2) …otherwise fall back to globally shared auth.user
-    if (!providedProfile && page.auth?.user) {
-        const u = page.auth.user;
+    if (!providedProfile && authUser) {
         providedProfile = {
-            first_name: u.first_name ?? null,
-            last_name: u.last_name ?? null,
-            username: u.username ?? null,
-            gender: u.gender ?? null,
-            age: u.age ?? null,
-            height_cm: u.height_cm ?? null,
-            weight_kg: u.weight_kg ?? null,
+            first_name: authUser.first_name ?? null,
+            last_name: authUser.last_name ?? null,
+            username: authUser.username ?? null,
+            gender: authUser.gender ?? null,
+            age: authUser.age ?? null,
+            height_cm: authUser.height_cm ?? null,
+            weight_kg: authUser.weight_kg ?? null,
         };
     }
 
-    const authUser = page.auth?.user ?? null;
-    const email = authUser?.email ?? '—';
-    const twoFactorEnabled = !!authUser?.two_factor_enabled;
-
     const userProfile: NonNullable<UserProfile> =
         providedProfile ?? DEFAULT_PROFILE;
-
-    // ✅ fallback username so it shows even if userProfile prop is missing
-    const shownUsername = userProfile.username || authUser?.username || '';
-
     const prefs = (page.prefs ?? DEFAULT_PREFS) as NonNullable<Prefs>;
-    const dietName = page.dietName ?? '';
-
-    const weightHistory = useMemo<Measurement[]>(
+    const email = authUser?.email ?? 'Not available';
+    const twoFactorEnabled = Boolean(authUser?.two_factor_enabled);
+    const weightHistory = useMemo(
         () => (Array.isArray(page.weightHistory) ? page.weightHistory : []),
         [page.weightHistory],
     );
-    const heightHistory = useMemo<Measurement[]>(
+    const heightHistory = useMemo(
         () => (Array.isArray(page.heightHistory) ? page.heightHistory : []),
         [page.heightHistory],
     );
 
     const displayName =
-        page.displayName ??
-        (providedProfile
-            ? `${providedProfile.first_name ?? ''} ${providedProfile.last_name ?? ''}`.trim() ||
-              authUser?.username ||
-              authUser?.name ||
-              'there'
-            : authUser?.username || authUser?.name || 'there');
+        page.displayName ||
+        [userProfile.first_name ?? '', userProfile.last_name ?? '']
+            .join(' ')
+            .trim() ||
+        authUser?.username ||
+        authUser?.name ||
+        'Profile';
 
-    // Local edit state
-    const [editingProfile, setEditingProfile] = useState(false);
-    const [editingPrefs, setEditingPrefs] = useState(false);
-
-    // Focus management when toggling edit modes
-    const profileFirstFieldRef = useRef<HTMLInputElement | null>(null);
-    const prefsFirstFieldRef = useRef<HTMLInputElement | null>(null);
-
-    useEffect(() => {
-        if (editingProfile) profileFirstFieldRef.current?.focus();
-    }, [editingProfile]);
-    useEffect(() => {
-        if (editingPrefs) prefsFirstFieldRef.current?.focus();
-    }, [editingPrefs]);
-
-    // Bound inputs
     const [firstName, setFirstName] = useState(userProfile.first_name ?? '');
     const [lastName, setLastName] = useState(userProfile.last_name ?? '');
     const [username, setUsername] = useState(userProfile.username ?? '');
-    const [gender, setGender] = useState<string>(userProfile.gender ?? '');
-    const [age, setAge] = useState<number | string>(userProfile.age ?? '');
-
-    const [dietType, setDietType] = useState<string>(prefs.diet_type ?? '');
-    const [dietOther, setDietOther] = useState<string>(prefs.diet_other ?? '');
-    const [dietaryGoal, setDietaryGoal] = useState<string>(
-        prefs.dietary_goal ?? '',
+    const [gender, setGender] = useState(userProfile.gender ?? '');
+    const [age, setAge] = useState(
+        userProfile.age === null ? '' : String(userProfile.age),
     );
+    const [heightCm, setHeightCm] = useState(
+        userProfile.height_cm === null ? '' : String(userProfile.height_cm),
+    );
+    const [weightKg, setWeightKg] = useState(
+        userProfile.weight_kg === null ? '' : String(userProfile.weight_kg),
+    );
+
+    const [dietType, setDietType] = useState(prefs.diet_type ?? '');
+    const [dietOther, setDietOther] = useState(prefs.diet_other ?? '');
+    const [dietaryGoal, setDietaryGoal] = useState(prefs.dietary_goal ?? '');
     const [fitnessGoals, setFitnessGoals] = useState<string[]>(
         Array.isArray(prefs.fitness_goals) ? prefs.fitness_goals : [],
     );
     const [allergies, setAllergies] = useState<string[]>(
         Array.isArray(prefs.allergies) ? prefs.allergies : [],
     );
-    const [newAllergy, setNewAllergy] = useState('');
-    const [workoutDaysPerWeek, setWorkoutDaysPerWeek] = useState<number | ''>(
-        typeof prefs.workout_days_per_week === 'number'
-            ? prefs.workout_days_per_week
-            : '',
+    const [workoutDaysPerWeek, setWorkoutDaysPerWeek] = useState(
+        prefs.workout_days_per_week === null
+            ? ''
+            : String(prefs.workout_days_per_week),
     );
-    const [workoutLocation, setWorkoutLocation] = useState<string>(
+    const [workoutLocation, setWorkoutLocation] = useState(
         prefs.workout_location ?? '',
     );
     const [preferredWorkoutDays, setPreferredWorkoutDays] = useState<string[]>(
@@ -468,27 +246,18 @@ export default function ProfilePage() {
     const [medicalConditions, setMedicalConditions] = useState<string[]>(
         Array.isArray(prefs.medical_conditions) ? prefs.medical_conditions : [],
     );
+
+    const [newAllergy, setNewAllergy] = useState('');
     const [newEquipment, setNewEquipment] = useState('');
     const [newInjury, setNewInjury] = useState('');
     const [newMedicalCondition, setNewMedicalCondition] = useState('');
 
-    // measurements
-    const [mDate, setMDate] = useState<string>(todayYmd());
-    const [mType, setMType] = useState<'weight' | 'height'>('weight');
-    const [mValue, setMValue] = useState<string>('');
+    const [measurementDate, setMeasurementDate] = useState(todayYmd());
+    const [measurementType, setMeasurementType] = useState<'weight' | 'height'>(
+        'weight',
+    );
+    const [measurementValue, setMeasurementValue] = useState('');
 
-    // Derived labels
-    const dietTypeLabel = useMemo(() => {
-        const fromType =
-            DIET_TYPES.find((d) => d.value === (prefs?.diet_type ?? ''))
-                ?.label ?? null;
-        // If type is "other", show the custom label if present.
-        if (prefs?.diet_type === 'other' && prefs?.diet_other)
-            return prefs.diet_other;
-        return fromType ?? dietName ?? '—';
-    }, [prefs?.diet_type, prefs?.diet_other, dietName]);
-
-    // Latest stats
     const latestWeight = useMemo(
         () => latestMeasurementValue(weightHistory),
         [weightHistory],
@@ -497,11 +266,17 @@ export default function ProfilePage() {
         () => latestMeasurementValue(heightHistory),
         [heightHistory],
     );
+    const dietSummary =
+        dietType === 'other'
+            ? dietOther || 'Other'
+            : (DIET_TYPES.find((item) => item.value === dietType)?.label ??
+              page.dietName ??
+              'Not set');
 
-    /* ---------- Actions (keep routes intact) ---------- */
+    const flashMessage = page.flash?.error ?? page.flash?.success ?? null;
+    const flashTone = page.flash?.error ? 'danger' : 'success';
+
     const saveProfile = () => {
-        const ageNum =
-            typeof age === 'string' && age !== '' ? Number(age) : age;
         router.patch(
             '/settings/profile',
             {
@@ -509,9 +284,11 @@ export default function ProfilePage() {
                 last_name: lastName || null,
                 username: username || null,
                 gender: gender || null,
-                age: ageNum === '' ? null : Number(ageNum),
+                age: toNullableNumber(age, true),
+                height_cm: toNullableNumber(heightCm, true),
+                weight_kg: toNullableNumber(weightKg, false),
             },
-            { preserveScroll: true, onSuccess: () => setEditingProfile(false) },
+            { preserveScroll: true },
         );
     };
 
@@ -524,62 +301,73 @@ export default function ProfilePage() {
                 dietary_goal: dietaryGoal || null,
                 fitness_goals: fitnessGoals,
                 allergies,
-                workout_days_per_week:
-                    workoutDaysPerWeek === ''
-                        ? null
-                        : Number(workoutDaysPerWeek),
+                workout_days_per_week: toNullableNumber(
+                    workoutDaysPerWeek,
+                    true,
+                ),
                 workout_location: workoutLocation || null,
                 preferred_workout_days: preferredWorkoutDays,
                 available_equipment: availableEquipment,
                 injury_history: injuryHistory,
                 medical_conditions: medicalConditions,
             },
-            { preserveScroll: true, onSuccess: () => setEditingPrefs(false) },
+            { preserveScroll: true },
         );
     };
 
-    const addAllergy = () => {
-        const a = sanitizeChip(newAllergy);
-        if (!a || allergies.includes(a)) return;
-        setAllergies((prev) => [...prev, a]);
-        setNewAllergy('');
-    };
-
-    const removeAllergy = (a: string) => {
-        setAllergies((prev) => prev.filter((x) => x !== a));
-    };
-
     const addChip = (
-        nextValue: string,
-        list: string[],
-        setter: React.Dispatch<React.SetStateAction<string[]>>,
+        value: string,
+        current: string[],
+        setter: (next: string[]) => void,
         clear: () => void,
     ) => {
-        const v = sanitizeChip(nextValue);
-        if (!v || list.includes(v)) return;
-        setter((prev) => [...prev, v]);
+        const normalized = sanitizeChip(value);
+        if (!normalized || current.includes(normalized)) return;
+        setter([...current, normalized]);
         clear();
     };
 
     const removeChip = (
         value: string,
-        setter: React.Dispatch<React.SetStateAction<string[]>>,
+        current: string[],
+        setter: (next: string[]) => void,
     ) => {
-        setter((prev) => prev.filter((item) => item !== value));
+        setter(current.filter((item) => item !== value));
+    };
+
+    const toggleSelection = (
+        value: string,
+        current: string[],
+        setter: (next: string[]) => void,
+    ) => {
+        setter(
+            current.includes(value)
+                ? current.filter((item) => item !== value)
+                : [...current, value],
+        );
     };
 
     const addMeasurement = () => {
-        const valueNum = Number(mValue);
-        if (!mDate || !valueNum || valueNum <= 0) return;
+        const numericValue = Number(measurementValue);
+        if (
+            !measurementDate ||
+            !Number.isFinite(numericValue) ||
+            numericValue <= 0
+        )
+            return;
 
         router.post(
             '/settings/profile/measurements',
-            { date: mDate, type: mType, value: valueNum },
+            {
+                date: measurementDate,
+                type: measurementType,
+                value: numericValue,
+            },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setMDate(todayYmd());
-                    setMValue('');
+                    setMeasurementDate(todayYmd());
+                    setMeasurementValue('');
                     router.reload({
                         only: ['weightHistory', 'heightHistory', 'userProfile'],
                     });
@@ -588,1300 +376,792 @@ export default function ProfilePage() {
         );
     };
 
-    // IDs (avoid collisions + improve label associations)
-    const ids = {
-        profileFirst: useId(),
-        profileLast: useId(),
-        profileUser: useId(),
-        profileGender: useId(),
-        profileAge: useId(),
-
-        prefsDietGoal: useId(),
-        prefsDietType: useId(),
-        prefsDietOther: useId(),
-        prefsWorkoutDaysPerWeek: useId(),
-        prefsWorkoutLocation: useId(),
-        prefsEquipmentInput: useId(),
-        prefsInjuryInput: useId(),
-        prefsMedicalInput: useId(),
-
-        mDate: useId(),
-        mType: useId(),
-        mValue: useId(),
-        allergyInput: useId(),
-    };
-
-    const flash = page.flash ?? {};
-    const flashMsg = flash.success || flash.error || flash.status || '';
-
     return (
         <>
-            <Head title="Profile — Hayetak" />
+            <Head title="Profile" />
 
-            {/* Skip link for keyboard users */}
-            <a
-                href="#main"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-foreground focus:shadow"
-            >
-                Skip to profile content
-            </a>
+            <SettingsLayout>
+                {flashMessage ? (
+                    <ProductBanner tone={flashTone} role="status">
+                        {flashMessage}
+                    </ProductBanner>
+                ) : null}
 
-            <ProductPageShell width="wide">
-                <ProductHero
-                    eyebrow="Account settings"
-                    title="Profile"
-                    description="Review and update your info, goals, appearance, and logs. Progress charts now live on Dashboard."
-                />
-
-                <div
-                    id="main"
-                    className="grid grid-cols-1 gap-6 md:grid-cols-12"
+                <ProductSection
+                    title="Profile overview"
+                    description="Everything important is grouped into larger, easier-to-read cards so your details, restrictions, and progress stay simple to manage."
                 >
-                    {/* Sidebar */}
-                    <aside className="md:col-span-3">
-                        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground md:sticky md:top-20">
-                            <div className="mb-3 text-xs tracking-wide text-muted-foreground uppercase">
-                                Profile sections
+                    <div className="space-y-5">
+                        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_320px]">
+                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-5">
+                                <div className="flex flex-wrap items-start justify-between gap-4">
+                                    <div>
+                                        <div className="text-sm font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                            Account snapshot
+                                        </div>
+                                        <div className="mt-2 text-3xl font-semibold text-foreground">
+                                            {displayName}
+                                        </div>
+                                        <div className="mt-3 text-base text-muted-foreground">
+                                            {email}
+                                        </div>
+                                    </div>
+                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] border border-border/70 bg-card/80 text-foreground">
+                                        <UserRound className="h-5 w-5" />
+                                    </span>
+                                </div>
+
+                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                    <InfoTile
+                                        label="Diet setup"
+                                        value={dietSummary}
+                                    />
+                                    <InfoTile
+                                        label="Workout setup"
+                                        value={
+                                            workoutLocation
+                                                ? `${workoutLocation} - ${workoutDaysPerWeek || '0'} days`
+                                                : `${workoutDaysPerWeek || '0'} days per week`
+                                        }
+                                    />
+                                    <InfoTile
+                                        label="Allergy count"
+                                        value={String(allergies.length)}
+                                    />
+                                    <InfoTile
+                                        label="Two-factor"
+                                        value={
+                                            twoFactorEnabled
+                                                ? 'Enabled'
+                                                : 'Not enabled'
+                                        }
+                                    />
+                                </div>
                             </div>
-                            <nav
-                                aria-label="Profile page navigation"
-                                className="space-y-1"
-                            >
-                                <a
-                                    href="#overview"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Overview
-                                </a>
-                                <a
-                                    href="#details"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Profile details
-                                </a>
-                                <a
-                                    href="#preferences"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Preferences
-                                </a>
-                                <a
-                                    href="#appearance"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Appearance
-                                </a>
-                                <a
-                                    href="#logs"
-                                    className="block rounded-lg px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                                >
-                                    Logs & history
-                                </a>
-                            </nav>
+
+                            <div className="space-y-4">
+                                <QuickActionCard
+                                    title="Security"
+                                    description="Passwords, sessions, and two-factor live in the dedicated security area."
+                                    icon={<ShieldCheck className="h-5 w-5" />}
+                                    action={
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
+                                            <Link href="/settings/security">
+                                                Open security
+                                            </Link>
+                                        </ProductButton>
+                                    }
+                                />
+                                <QuickActionCard
+                                    title="AI planner"
+                                    description="Jump straight into the plan generator with your saved profile context."
+                                    icon={<Sparkles className="h-5 w-5" />}
+                                    action={
+                                        <ProductButton
+                                            asChild
+                                            emphasis="secondary"
+                                        >
+                                            <Link href="/ai/planner">
+                                                Open AI planner
+                                            </Link>
+                                        </ProductButton>
+                                    }
+                                />
+                            </div>
                         </div>
-                    </aside>
 
-                    {/* Content */}
-                    <div className="space-y-6 md:col-span-9">
-                        {/* Flash message */}
-                        {flashMsg ? (
-                            <ProductBanner
-                                tone={flash.error ? 'danger' : 'default'}
+                        <ProductStatGrid>
+                            <ProductStatCard
+                                label="Current weight"
+                                value={
+                                    latestWeight !== null
+                                        ? `${latestWeight} kg`
+                                        : 'Not logged'
+                                }
+                                helper="Your latest saved weight entry."
+                            />
+                            <ProductStatCard
+                                label="Current height"
+                                value={
+                                    latestHeight !== null
+                                        ? `${latestHeight} cm`
+                                        : heightCm
+                                          ? `${heightCm} cm`
+                                          : 'Not logged'
+                                }
+                                helper="Height history appears here when available."
+                            />
+                            <ProductStatCard
+                                label="Fitness goals"
+                                value={fitnessGoals.length}
+                                helper="Use multiple goal chips to shape AI guidance."
+                            />
+                            <ProductStatCard
+                                label="Safety notes"
+                                value={
+                                    injuryHistory.length +
+                                    medicalConditions.length
+                                }
+                                helper="Medical and injury information is preserved for safer recommendations."
+                            />
+                        </ProductStatGrid>
+                    </div>
+                </ProductSection>
+
+                <ProductSection
+                    title="Personal details"
+                    description="Names, age, and body measurements are editable here with larger inputs for easier reading."
+                >
+                    <div className="space-y-5">
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            <TextField
+                                label="First name"
+                                value={firstName}
+                                onChange={setFirstName}
+                            />
+                            <TextField
+                                label="Last name"
+                                value={lastName}
+                                onChange={setLastName}
+                            />
+                            <TextField
+                                label="Username"
+                                value={username}
+                                onChange={setUsername}
+                            />
+                            <SelectField
+                                label="Gender"
+                                value={gender}
+                                onChange={setGender}
+                                options={[
+                                    { value: '', label: 'Select gender' },
+                                    ...GENDER_OPTIONS,
+                                ]}
+                            />
+                            <TextField
+                                label="Age"
+                                value={age}
+                                onChange={setAge}
+                                type="number"
+                                inputMode="numeric"
+                            />
+                            <TextField
+                                label="Height (cm)"
+                                value={heightCm}
+                                onChange={setHeightCm}
+                                type="number"
+                                inputMode="numeric"
+                            />
+                            <TextField
+                                label="Weight (kg)"
+                                value={weightKg}
+                                onChange={setWeightKg}
+                                type="number"
+                                inputMode="decimal"
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                            <ProductButton onClick={saveProfile}>
+                                Save personal details
+                            </ProductButton>
+                        </div>
+                    </div>
+                </ProductSection>
+
+                <ProductSection
+                    title="Nutrition and safety preferences"
+                    description="Diet, goals, allergies, injuries, and medical information are separated into clean blocks so nothing feels cramped."
+                >
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div className="space-y-5">
+                            <SurfaceCard
+                                title="Diet and body goals"
+                                description="These preferences shape nutrition, coaching, and planning outputs."
                             >
-                                {flashMsg}
-                            </ProductBanner>
-                        ) : null}
-
-                        {/* Overview */}
-                        <SectionCard
-                            id="overview"
-                            title={`Welcome, ${displayName || 'there'}`}
-                            description="Review and update your info, preferences, and logs."
-                        >
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                <FieldRow label="Email" value={email} />
-                                <FieldRow
-                                    label="Two-factor auth"
-                                    value={
-                                        twoFactorEnabled
-                                            ? 'Enabled'
-                                            : 'Not enabled'
-                                    }
-                                />
-                                <FieldRow
-                                    label="Username"
-                                    value={
-                                        shownUsername
-                                            ? `@${shownUsername}`
-                                            : '—'
-                                    }
-                                />
-                                <FieldRow
-                                    label="Age"
-                                    value={formatMaybeNumber(userProfile.age)}
-                                />
-                                <FieldRow
-                                    label="Current weight"
-                                    value={
-                                        latestWeight != null
-                                            ? `${latestWeight} kg`
-                                            : formatMaybeNumber(
-                                                  userProfile.weight_kg,
-                                                  ' kg',
-                                              )
-                                    }
-                                />
-                                <FieldRow
-                                    label="Current height"
-                                    value={
-                                        latestHeight != null
-                                            ? `${latestHeight} cm`
-                                            : formatMaybeNumber(
-                                                  userProfile.height_cm,
-                                                  ' cm',
-                                              )
-                                    }
-                                />
-                                <FieldRow
-                                    label="Dietary goal"
-                                    value={prefs?.dietary_goal || '—'}
-                                />
-                                <FieldRow
-                                    label="Diet type"
-                                    value={dietTypeLabel}
-                                />
-                                <FieldRow
-                                    label="Workout location"
-                                    value={prefs?.workout_location || '—'}
-                                />
-                                <FieldRow
-                                    label="Workout days/week"
-                                    value={prefs?.workout_days_per_week ?? '—'}
-                                />
-                                <FieldRow
-                                    label="Fitness goals"
-                                    value={
-                                        prefs?.fitness_goals?.length ? (
-                                            <span className="flex flex-wrap gap-1">
-                                                {prefs.fitness_goals
-                                                    .slice(0, 4)
-                                                    .map((g, i) => (
-                                                        <Badge
-                                                            key={`${g}-${i}`}
-                                                        >
-                                                            {g}
-                                                        </Badge>
-                                                    ))}
-                                                {prefs.fitness_goals.length >
-                                                4 ? (
-                                                    <Badge>
-                                                        +
-                                                        {prefs.fitness_goals
-                                                            .length - 4}{' '}
-                                                        more
-                                                    </Badge>
-                                                ) : null}
-                                            </span>
-                                        ) : (
-                                            '—'
-                                        )
-                                    }
-                                />
-                            </div>
-                        </SectionCard>
-
-                        {/* Profile details */}
-                        <SectionCard
-                            id="details"
-                            title="Profile details"
-                            description="Keep your identity details accurate. Height/weight logs are managed in the Logs section."
-                            actions={
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => setEditingProfile((v) => !v)}
-                                >
-                                    {editingProfile ? 'Cancel' : 'Edit'}
-                                </Button>
-                            }
-                        >
-                            {!editingProfile ? (
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FieldRow
-                                        label="Name"
-                                        value={
-                                            `${userProfile.first_name ?? ''} ${userProfile.last_name ?? ''}`.trim() ||
-                                            '—'
-                                        }
-                                    />
-                                    <FieldRow
-                                        label="Username"
-                                        value={shownUsername || '—'}
-                                    />
-                                    <FieldRow
-                                        label="Gender"
-                                        value={userProfile.gender || '—'}
-                                    />
-                                    <FieldRow
-                                        label="Age"
-                                        value={formatMaybeNumber(
-                                            userProfile.age,
-                                        )}
-                                    />
-                                    <FieldRow
-                                        label="Height (profile)"
-                                        value={formatMaybeNumber(
-                                            userProfile.height_cm,
-                                            ' cm',
-                                        )}
-                                    />
-                                    <FieldRow
-                                        label="Weight (profile)"
-                                        value={formatMaybeNumber(
-                                            userProfile.weight_kg,
-                                            ' kg',
-                                        )}
-                                    />
-                                </div>
-                            ) : (
-                                <form
-                                    className="grid gap-4 sm:grid-cols-2"
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        saveProfile();
-                                    }}
-                                >
-                                    <div>
-                                        <label
-                                            htmlFor={ids.profileFirst}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            First name
-                                        </label>
-                                        <input
-                                            ref={profileFirstFieldRef}
-                                            id={ids.profileFirst}
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={firstName}
-                                            onChange={(e) =>
-                                                setFirstName(e.target.value)
-                                            }
-                                            autoComplete="given-name"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.profileLast}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Last name
-                                        </label>
-                                        <input
-                                            id={ids.profileLast}
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={lastName}
-                                            onChange={(e) =>
-                                                setLastName(e.target.value)
-                                            }
-                                            autoComplete="family-name"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.profileUser}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Username
-                                        </label>
-                                        <input
-                                            id={ids.profileUser}
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={username}
-                                            onChange={(e) =>
-                                                setUsername(e.target.value)
-                                            }
-                                            autoComplete="username"
-                                        />
-                                    </div>
-
-                                    <LabeledSelect
-                                        id={ids.profileGender}
-                                        label="Gender"
-                                        value={gender}
-                                        onChange={setGender}
-                                    >
-                                        <option value="">—</option>
-                                        {GENDER_OPTIONS.map((g) => (
-                                            <option key={g} value={g}>
-                                                {g}
-                                            </option>
-                                        ))}
-                                    </LabeledSelect>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.profileAge}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Age
-                                        </label>
-                                        <input
-                                            id={ids.profileAge}
-                                            type="number"
-                                            min={0}
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={age}
-                                            onChange={(e) =>
-                                                setAge(e.target.value)
-                                            }
-                                            inputMode="numeric"
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-                                        <Button type="submit" variant="primary">
-                                            Save profile
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() =>
-                                                setEditingProfile(false)
-                                            }
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </form>
-                            )}
-                        </SectionCard>
-
-                        {/* Preferences */}
-                        <SectionCard
-                            id="preferences"
-                            title="Preferences"
-                            description="These help personalize your plans (diet types, goals, allergies)."
-                            actions={
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => setEditingPrefs((v) => !v)}
-                                >
-                                    {editingPrefs ? 'Cancel' : 'Edit'}
-                                </Button>
-                            }
-                        >
-                            {!editingPrefs ? (
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FieldRow
-                                        label="Dietary goal"
-                                        value={prefs?.dietary_goal || '—'}
-                                    />
-                                    <FieldRow
-                                        label="Diet type"
-                                        value={dietTypeLabel}
-                                    />
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Fitness goals
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.fitness_goals?.length ? (
-                                                prefs.fitness_goals.map(
-                                                    (fg, i) => (
-                                                        <Badge
-                                                            key={`${fg}-${i}`}
-                                                        >
-                                                            {fg}
-                                                        </Badge>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Allergies
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.allergies?.length ? (
-                                                prefs.allergies.map((al, i) => (
-                                                    <Badge key={`${al}-${i}`}>
-                                                        {al}
-                                                    </Badge>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <FieldRow
-                                        label="Workout days per week"
-                                        value={
-                                            prefs?.workout_days_per_week ?? '—'
-                                        }
-                                    />
-                                    <FieldRow
-                                        label="Workout location"
-                                        value={prefs?.workout_location || '—'}
-                                    />
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Preferred workout days
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.preferred_workout_days
-                                                ?.length ? (
-                                                prefs.preferred_workout_days.map(
-                                                    (day, index) => (
-                                                        <Badge
-                                                            key={`${day}-${index}`}
-                                                        >
-                                                            {day}
-                                                        </Badge>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Available equipment
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.available_equipment
-                                                ?.length ? (
-                                                prefs.available_equipment.map(
-                                                    (item, index) => (
-                                                        <Badge
-                                                            key={`${item}-${index}`}
-                                                        >
-                                                            {item}
-                                                        </Badge>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Injury history
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.injury_history?.length ? (
-                                                prefs.injury_history.map(
-                                                    (item, index) => (
-                                                        <Badge
-                                                            key={`${item}-${index}`}
-                                                        >
-                                                            {item}
-                                                        </Badge>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-border bg-background/40 p-4">
-                                        <div className="text-xs tracking-wide text-muted-foreground uppercase">
-                                            Medical conditions
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-1">
-                                            {prefs?.medical_conditions
-                                                ?.length ? (
-                                                prefs.medical_conditions.map(
-                                                    (item, index) => (
-                                                        <Badge
-                                                            key={`${item}-${index}`}
-                                                        >
-                                                            {item}
-                                                        </Badge>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    —
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <form
-                                    className="grid gap-4 sm:grid-cols-2"
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        savePrefs();
-                                    }}
-                                >
-                                    <div className="sm:col-span-2">
-                                        <LabeledInput
-                                            id={ids.prefsDietGoal}
-                                            label="Dietary goal"
-                                            value={dietaryGoal}
-                                            onChange={setDietaryGoal}
-                                            placeholder="e.g., fat loss, maintenance, performance"
-                                            description="Short phrase is enough. This helps guide plan targets."
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.prefsDietType}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Diet type
-                                        </label>
-                                        <select
-                                            id={ids.prefsDietType}
-                                            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={dietType}
-                                            onChange={(e) =>
-                                                setDietType(e.target.value)
-                                            }
-                                        >
-                                            <option value="">—</option>
-                                            {DIET_TYPES.map((d) => (
-                                                <option
-                                                    key={d.value}
-                                                    value={d.value}
-                                                >
-                                                    {d.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {dietType === 'other' ? (
-                                        <div>
-                                            <label
-                                                htmlFor={ids.prefsDietOther}
-                                                className="text-sm font-medium text-foreground"
-                                            >
-                                                Diet type (other)
-                                            </label>
-                                            <input
-                                                ref={prefsFirstFieldRef}
-                                                id={ids.prefsDietOther}
-                                                className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                value={dietOther}
-                                                onChange={(e) =>
-                                                    setDietOther(e.target.value)
-                                                }
-                                                placeholder="Type your diet name"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="sr-only">
-                                            <input ref={prefsFirstFieldRef} />
-                                        </div>
-                                    )}
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Fitness goals
-                                        </div>
-                                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            {FITNESS_GOAL_OPTIONS.map((g) => {
-                                                const checked =
-                                                    fitnessGoals.includes(g);
-                                                return (
-                                                    <label
-                                                        key={g}
-                                                        className={cx(
-                                                            'flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring hover:bg-muted',
-                                                            checked &&
-                                                                'bg-muted/40',
-                                                        )}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            onChange={(e) =>
-                                                                setFitnessGoals(
-                                                                    (prev) =>
-                                                                        e.target
-                                                                            .checked
-                                                                            ? [
-                                                                                  ...prev,
-                                                                                  g,
-                                                                              ]
-                                                                            : prev.filter(
-                                                                                  (
-                                                                                      x,
-                                                                                  ) =>
-                                                                                      x !==
-                                                                                      g,
-                                                                              ),
-                                                                )
-                                                            }
-                                                        />
-                                                        <span>{g}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Allergies
-                                        </div>
-
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {allergies.length ? (
-                                                allergies.map((a) => (
-                                                    <span
-                                                        key={a}
-                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                    >
-                                                        {a}
-                                                        <button
-                                                            type="button"
-                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                            onClick={() =>
-                                                                removeAllergy(a)
-                                                            }
-                                                            aria-label={`Remove allergy ${a}`}
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    No allergies added.
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <label
-                                                className="sr-only"
-                                                htmlFor={ids.allergyInput}
-                                            >
-                                                Add an allergy
-                                            </label>
-                                            <input
-                                                id={ids.allergyInput}
-                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                placeholder="Add an allergy (e.g., peanuts)"
-                                                value={newAllergy}
-                                                onChange={(e) =>
-                                                    setNewAllergy(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        addAllergy();
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={addAllergy}
-                                            >
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={
-                                                ids.prefsWorkoutDaysPerWeek
-                                            }
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Workout days per week
-                                        </label>
-                                        <input
-                                            id={ids.prefsWorkoutDaysPerWeek}
-                                            type="number"
-                                            min={1}
-                                            max={7}
-                                            inputMode="numeric"
-                                            className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={workoutDaysPerWeek}
-                                            onChange={(e) => {
-                                                const next = e.target.value;
-                                                setWorkoutDaysPerWeek(
-                                                    next === ''
-                                                        ? ''
-                                                        : Math.max(
-                                                              1,
-                                                              Math.min(
-                                                                  7,
-                                                                  Number(next),
-                                                              ),
-                                                          ),
-                                                );
-                                            }}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor={ids.prefsWorkoutLocation}
-                                            className="text-sm font-medium text-foreground"
-                                        >
-                                            Workout location
-                                        </label>
-                                        <select
-                                            id={ids.prefsWorkoutLocation}
-                                            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                            value={workoutLocation}
-                                            onChange={(e) =>
-                                                setWorkoutLocation(
-                                                    e.target.value,
-                                                )
-                                            }
-                                        >
-                                            <option value="">—</option>
-                                            {WORKOUT_LOCATION_OPTIONS.map(
-                                                (option) => (
-                                                    <option
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Preferred workout days
-                                        </div>
-                                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                            {WORKOUT_DAY_OPTIONS.map((day) => {
-                                                const checked =
-                                                    preferredWorkoutDays.includes(
-                                                        day,
-                                                    );
-                                                return (
-                                                    <label
-                                                        key={day}
-                                                        className={cx(
-                                                            'flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring hover:bg-muted',
-                                                            checked &&
-                                                                'bg-muted/40',
-                                                        )}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={checked}
-                                                            onChange={(e) =>
-                                                                setPreferredWorkoutDays(
-                                                                    (prev) =>
-                                                                        e.target
-                                                                            .checked
-                                                                            ? [
-                                                                                  ...prev,
-                                                                                  day,
-                                                                              ]
-                                                                            : prev.filter(
-                                                                                  (
-                                                                                      value,
-                                                                                  ) =>
-                                                                                      value !==
-                                                                                      day,
-                                                                              ),
-                                                                )
-                                                            }
-                                                        />
-                                                        <span>{day}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Available equipment
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {availableEquipment.length ? (
-                                                availableEquipment.map(
-                                                    (item) => (
-                                                        <span
-                                                            key={item}
-                                                            className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                        >
-                                                            {item}
-                                                            <button
-                                                                type="button"
-                                                                className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                                onClick={() =>
-                                                                    removeChip(
-                                                                        item,
-                                                                        setAvailableEquipment,
-                                                                    )
-                                                                }
-                                                                aria-label={`Remove equipment ${item}`}
-                                                            >
-                                                                ×
-                                                            </button>
-                                                        </span>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    No equipment added.
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <input
-                                                id={ids.prefsEquipmentInput}
-                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                placeholder="Add equipment (e.g., Dumbbells)"
-                                                value={newEquipment}
-                                                onChange={(e) =>
-                                                    setNewEquipment(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        addChip(
-                                                            newEquipment,
-                                                            availableEquipment,
-                                                            setAvailableEquipment,
-                                                            () =>
-                                                                setNewEquipment(
-                                                                    '',
-                                                                ),
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    addChip(
-                                                        newEquipment,
-                                                        availableEquipment,
-                                                        setAvailableEquipment,
-                                                        () =>
-                                                            setNewEquipment(''),
-                                                    )
-                                                }
-                                            >
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Injury history
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {injuryHistory.length ? (
-                                                injuryHistory.map((item) => (
-                                                    <span
-                                                        key={item}
-                                                        className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                    >
-                                                        {item}
-                                                        <button
-                                                            type="button"
-                                                            className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                            onClick={() =>
-                                                                removeChip(
-                                                                    item,
-                                                                    setInjuryHistory,
-                                                                )
-                                                            }
-                                                            aria-label={`Remove injury ${item}`}
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    No injuries added.
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <input
-                                                id={ids.prefsInjuryInput}
-                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                placeholder="Add an injury (e.g., knee pain)"
-                                                value={newInjury}
-                                                onChange={(e) =>
-                                                    setNewInjury(e.target.value)
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        addChip(
-                                                            newInjury,
-                                                            injuryHistory,
-                                                            setInjuryHistory,
-                                                            () =>
-                                                                setNewInjury(
-                                                                    '',
-                                                                ),
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    addChip(
-                                                        newInjury,
-                                                        injuryHistory,
-                                                        setInjuryHistory,
-                                                        () => setNewInjury(''),
-                                                    )
-                                                }
-                                            >
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <div className="text-sm font-medium text-foreground">
-                                            Medical conditions
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {medicalConditions.length ? (
-                                                medicalConditions.map(
-                                                    (item) => (
-                                                        <span
-                                                            key={item}
-                                                            className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-1 text-xs text-foreground"
-                                                        >
-                                                            {item}
-                                                            <button
-                                                                type="button"
-                                                                className="ml-2 rounded px-1 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring"
-                                                                onClick={() =>
-                                                                    removeChip(
-                                                                        item,
-                                                                        setMedicalConditions,
-                                                                    )
-                                                                }
-                                                                aria-label={`Remove medical condition ${item}`}
-                                                            >
-                                                                ×
-                                                            </button>
-                                                        </span>
-                                                    ),
-                                                )
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">
-                                                    No medical conditions added.
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <input
-                                                id={ids.prefsMedicalInput}
-                                                className="w-full flex-1 rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                placeholder="Add a medical condition"
-                                                value={newMedicalCondition}
-                                                onChange={(e) =>
-                                                    setNewMedicalCondition(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        addChip(
-                                                            newMedicalCondition,
-                                                            medicalConditions,
-                                                            setMedicalConditions,
-                                                            () =>
-                                                                setNewMedicalCondition(
-                                                                    '',
-                                                                ),
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    addChip(
-                                                        newMedicalCondition,
-                                                        medicalConditions,
-                                                        setMedicalConditions,
-                                                        () =>
-                                                            setNewMedicalCondition(
-                                                                '',
-                                                            ),
-                                                    )
-                                                }
-                                            >
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-                                        <Button type="submit" variant="primary">
-                                            Save preferences
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() =>
-                                                setEditingPrefs(false)
-                                            }
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </form>
-                            )}
-                        </SectionCard>
-
-                        {/* Appearance */}
-                        <SectionCard
-                            id="appearance"
-                            title="Appearance"
-                            description="Choose the look that feels most comfortable across the product."
-                        >
-                            <div className="grid gap-4">
-                                <div className="rounded-xl border border-border bg-background/40 p-4">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <div>
-                                            <div className="text-sm font-semibold text-foreground">
-                                                Theme preference
-                                            </div>
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                Appearance settings now live
-                                                inside profile so your general
-                                                account setup stays together.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() =>
-                                                router.visit(
-                                                    '/settings/security',
-                                                )
-                                            }
-                                        >
-                                            Open security
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <AppearanceTabs />
-                            </div>
-                        </SectionCard>
-
-                        {/* Logs & history */}
-                        <SectionCard
-                            id="logs"
-                            title="Logs & history"
-                            description="Add measurements, then review recent entries. Charts update automatically."
-                        >
-                            <div className="grid gap-4">
-                                <div className="rounded-xl border border-border bg-muted/20 p-4">
-                                    <div className="text-sm font-semibold text-foreground">
-                                        Add a measurement
-                                    </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Log weight (kg) regularly. Height (cm)
-                                        is optional.
-                                    </p>
-
-                                    <form
-                                        className="mt-4 grid gap-3 sm:grid-cols-[12rem,12rem,1fr,auto]"
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            addMeasurement();
-                                        }}
-                                    >
-                                        <LabeledDate
-                                            id={ids.mDate}
-                                            label="Date"
-                                            value={mDate}
-                                            onChange={setMDate}
-                                        />
-
-                                        <div>
-                                            <label
-                                                htmlFor={ids.mType}
-                                                className="text-sm font-medium text-foreground"
-                                            >
-                                                Type
-                                            </label>
-                                            <select
-                                                id={ids.mType}
-                                                className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                value={mType}
-                                                onChange={(e) =>
-                                                    setMType(
-                                                        e.target.value as
-                                                            | 'weight'
-                                                            | 'height',
-                                                    )
-                                                }
-                                            >
-                                                <option value="weight">
-                                                    Weight (kg)
-                                                </option>
-                                                <option value="height">
-                                                    Height (cm)
-                                                </option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label
-                                                htmlFor={ids.mValue}
-                                                className="text-sm font-medium text-foreground"
-                                            >
-                                                Value
-                                            </label>
-                                            <input
-                                                id={ids.mValue}
-                                                type="number"
-                                                inputMode="decimal"
-                                                min={0}
-                                                step="0.1"
-                                                className="mt-2 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                                placeholder={
-                                                    mType === 'weight'
-                                                        ? 'e.g., 72'
-                                                        : 'e.g., 175'
-                                                }
-                                                value={mValue}
-                                                onChange={(e) =>
-                                                    setMValue(e.target.value)
-                                                }
-                                            />
-                                        </div>
-
-                                        <div className="flex items-end">
-                                            <Button
-                                                type="submit"
-                                                variant="primary"
-                                                className="w-full"
-                                            >
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </form>
-
-                                    {(!mDate ||
-                                        !mValue ||
-                                        Number(mValue) <= 0) && (
-                                        <p className="mt-3 text-xs text-muted-foreground">
-                                            Tip: choose a date and enter a value
-                                            greater than 0.
-                                        </p>
-                                    )}
-                                </div>
-
                                 <div className="grid gap-4 md:grid-cols-2">
-                                    <RecentListCard
-                                        title="Recent Weight (kg)"
-                                        data={weightHistory}
+                                    <SelectField
+                                        label="Diet type"
+                                        value={dietType}
+                                        onChange={setDietType}
+                                        options={[
+                                            {
+                                                value: '',
+                                                label: 'Select diet type',
+                                            },
+                                            ...DIET_TYPES,
+                                        ]}
                                     />
-                                    <RecentListCard
-                                        title="Recent Height (cm)"
-                                        data={heightHistory}
+                                    <TextField
+                                        label="Dietary goal"
+                                        value={dietaryGoal}
+                                        onChange={setDietaryGoal}
+                                        placeholder="Example: fat loss or balanced eating"
+                                    />
+                                    {dietType === 'other' ? (
+                                        <div className="md:col-span-2">
+                                            <TextField
+                                                label="Custom diet label"
+                                                value={dietOther}
+                                                onChange={setDietOther}
+                                                placeholder="Describe your diet preference"
+                                            />
+                                        </div>
+                                    ) : null}
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="text-sm font-semibold text-foreground">
+                                        Fitness goals
+                                    </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        {FITNESS_GOAL_OPTIONS.map((goal) => (
+                                            <TogglePill
+                                                key={goal}
+                                                active={fitnessGoals.includes(
+                                                    goal,
+                                                )}
+                                                onClick={() =>
+                                                    toggleSelection(
+                                                        goal,
+                                                        fitnessGoals,
+                                                        setFitnessGoals,
+                                                    )
+                                                }
+                                            >
+                                                {goal}
+                                            </TogglePill>
+                                        ))}
+                                    </div>
+                                </div>
+                            </SurfaceCard>
+
+                            <ChipEditor
+                                title="Allergies"
+                                description="Add every food or ingredient that must never appear in recommendations."
+                                items={allergies}
+                                value={newAllergy}
+                                onValueChange={setNewAllergy}
+                                onAdd={() =>
+                                    addChip(
+                                        newAllergy,
+                                        allergies,
+                                        setAllergies,
+                                        () => setNewAllergy(''),
+                                    )
+                                }
+                                onRemove={(item) =>
+                                    removeChip(item, allergies, setAllergies)
+                                }
+                                placeholder="Add an allergy"
+                                emptyLabel="No allergies saved."
+                            />
+                        </div>
+
+                        <div className="space-y-5">
+                            <ChipEditor
+                                title="Injury history"
+                                description="List injuries that should influence exercise alternatives and coaching advice."
+                                items={injuryHistory}
+                                value={newInjury}
+                                onValueChange={setNewInjury}
+                                onAdd={() =>
+                                    addChip(
+                                        newInjury,
+                                        injuryHistory,
+                                        setInjuryHistory,
+                                        () => setNewInjury(''),
+                                    )
+                                }
+                                onRemove={(item) =>
+                                    removeChip(
+                                        item,
+                                        injuryHistory,
+                                        setInjuryHistory,
+                                    )
+                                }
+                                placeholder="Add an injury"
+                                emptyLabel="No injuries saved."
+                            />
+
+                            <ChipEditor
+                                title="Medical conditions"
+                                description="Add any condition that should be respected by workout and nutrition guidance."
+                                items={medicalConditions}
+                                value={newMedicalCondition}
+                                onValueChange={setNewMedicalCondition}
+                                onAdd={() =>
+                                    addChip(
+                                        newMedicalCondition,
+                                        medicalConditions,
+                                        setMedicalConditions,
+                                        () => setNewMedicalCondition(''),
+                                    )
+                                }
+                                onRemove={(item) =>
+                                    removeChip(
+                                        item,
+                                        medicalConditions,
+                                        setMedicalConditions,
+                                    )
+                                }
+                                placeholder="Add a medical condition"
+                                emptyLabel="No medical conditions saved."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                        <ProductButton onClick={savePrefs}>
+                            Save nutrition and safety preferences
+                        </ProductButton>
+                    </div>
+                </ProductSection>
+
+                <ProductSection
+                    title="Workout setup"
+                    description="Training location, weekly cadence, preferred days, and available equipment stay together in a clear planning block."
+                >
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div className="space-y-5">
+                            <SurfaceCard
+                                title="Training basics"
+                                description="Set your usual workout rhythm and where you train."
+                            >
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <TextField
+                                        label="Workout days per week"
+                                        value={workoutDaysPerWeek}
+                                        onChange={setWorkoutDaysPerWeek}
+                                        type="number"
+                                        inputMode="numeric"
+                                    />
+                                    <SelectField
+                                        label="Workout location"
+                                        value={workoutLocation}
+                                        onChange={setWorkoutLocation}
+                                        options={[
+                                            {
+                                                value: '',
+                                                label: 'Select location',
+                                            },
+                                            ...WORKOUT_LOCATION_OPTIONS,
+                                        ]}
                                     />
                                 </div>
-                            </div>
-                        </SectionCard>
 
-                        <footer className="px-1 py-2 text-xs text-muted-foreground">
-                            Data is loaded from your database via Laravel.
-                            (React escapes output by default.)
-                        </footer>
+                                <div className="space-y-3">
+                                    <div className="text-sm font-semibold text-foreground">
+                                        Preferred workout days
+                                    </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        {WORKOUT_DAY_OPTIONS.map((day) => (
+                                            <TogglePill
+                                                key={day}
+                                                active={preferredWorkoutDays.includes(
+                                                    day,
+                                                )}
+                                                onClick={() =>
+                                                    toggleSelection(
+                                                        day,
+                                                        preferredWorkoutDays,
+                                                        setPreferredWorkoutDays,
+                                                    )
+                                                }
+                                            >
+                                                {day}
+                                            </TogglePill>
+                                        ))}
+                                    </div>
+                                </div>
+                            </SurfaceCard>
+                        </div>
+
+                        <div className="space-y-5">
+                            <ChipEditor
+                                title="Available equipment"
+                                description="Save what you actually have access to so workouts can stay practical."
+                                items={availableEquipment}
+                                value={newEquipment}
+                                onValueChange={setNewEquipment}
+                                onAdd={() =>
+                                    addChip(
+                                        newEquipment,
+                                        availableEquipment,
+                                        setAvailableEquipment,
+                                        () => setNewEquipment(''),
+                                    )
+                                }
+                                onRemove={(item) =>
+                                    removeChip(
+                                        item,
+                                        availableEquipment,
+                                        setAvailableEquipment,
+                                    )
+                                }
+                                placeholder="Add equipment"
+                                emptyLabel="No equipment saved."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                        <ProductButton onClick={savePrefs}>
+                            Save workout setup
+                        </ProductButton>
+                        <ProductButton asChild emphasis="secondary">
+                            <Link href="/workouts/plan">
+                                Open workout planner
+                            </Link>
+                        </ProductButton>
+                    </div>
+                </ProductSection>
+
+                <ProductSection
+                    title="Measurements and appearance"
+                    description="Progress logging and interface comfort stay in one clean section with larger inputs and readable history cards."
+                >
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div className="space-y-5">
+                            <SurfaceCard
+                                title="Add a measurement"
+                                description="Log weight regularly and update height when needed."
+                            >
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    <TextField
+                                        label="Date"
+                                        value={measurementDate}
+                                        onChange={setMeasurementDate}
+                                        type="date"
+                                    />
+                                    <SelectField
+                                        label="Type"
+                                        value={measurementType}
+                                        onChange={(value) =>
+                                            setMeasurementType(
+                                                value as 'weight' | 'height',
+                                            )
+                                        }
+                                        options={[
+                                            {
+                                                value: 'weight',
+                                                label: 'Weight (kg)',
+                                            },
+                                            {
+                                                value: 'height',
+                                                label: 'Height (cm)',
+                                            },
+                                        ]}
+                                    />
+                                    <TextField
+                                        label="Value"
+                                        value={measurementValue}
+                                        onChange={setMeasurementValue}
+                                        type="number"
+                                        inputMode="decimal"
+                                        placeholder={
+                                            measurementType === 'weight'
+                                                ? 'e.g. 72'
+                                                : 'e.g. 175'
+                                        }
+                                    />
+                                </div>
+
+                                <div className="mt-4 flex flex-wrap gap-3">
+                                    <ProductButton onClick={addMeasurement}>
+                                        Save measurement
+                                    </ProductButton>
+                                </div>
+                            </SurfaceCard>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <RecentListCard
+                                    title="Recent weight"
+                                    unit="kg"
+                                    data={weightHistory}
+                                />
+                                <RecentListCard
+                                    title="Recent height"
+                                    unit="cm"
+                                    data={heightHistory}
+                                />
+                            </div>
+                        </div>
+
+                        <SurfaceCard
+                            title="Appearance"
+                            description="Theme controls remain available here so comfort settings stay close to the rest of your profile."
+                        >
+                            <AppearanceTabs />
+                        </SurfaceCard>
+                    </div>
+                </ProductSection>
+            </SettingsLayout>
+        </>
+    );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-[20px] border border-border/70 bg-card/80 p-4">
+            <div className="text-sm font-semibold text-muted-foreground">
+                {label}
+            </div>
+            <div className="mt-2 text-base font-semibold text-foreground">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function QuickActionCard({
+    title,
+    description,
+    icon,
+    action,
+}: {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    action: React.ReactNode;
+}) {
+    return (
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="text-lg font-semibold text-foreground">
+                        {title}
+                    </div>
+                    <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {description}
                     </div>
                 </div>
-            </ProductPageShell>
-        </>
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-[18px] border border-border/70 bg-card/80 text-foreground">
+                    {icon}
+                </span>
+            </div>
+            <div className="mt-4">{action}</div>
+        </div>
+    );
+}
+
+function SurfaceCard({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+            <div className="space-y-2">
+                <div className="text-lg font-semibold text-foreground">
+                    {title}
+                </div>
+                <div className="text-sm leading-6 text-muted-foreground">
+                    {description}
+                </div>
+            </div>
+            <div className="mt-5 space-y-4">{children}</div>
+        </div>
+    );
+}
+
+function TextField({
+    label,
+    value,
+    onChange,
+    type = 'text',
+    inputMode,
+    placeholder,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    type?: string;
+    inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+    placeholder?: string;
+}) {
+    return (
+        <label className="block">
+            <span className="text-sm font-semibold text-foreground">
+                {label}
+            </span>
+            <input
+                type={type}
+                inputMode={inputMode}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-card px-4 text-base text-foreground"
+            />
+        </label>
+    );
+}
+
+function SelectField({
+    label,
+    value,
+    onChange,
+    options,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    options: Array<{ value: string; label: string }>;
+}) {
+    return (
+        <label className="block">
+            <span className="text-sm font-semibold text-foreground">
+                {label}
+            </span>
+            <select
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-card px-4 text-base text-foreground"
+            >
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+        </label>
+    );
+}
+
+function TogglePill({
+    active,
+    onClick,
+    children,
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                active
+                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                    : 'border-border/70 bg-card/80 text-foreground hover:bg-background'
+            }`}
+        >
+            {children}
+        </button>
+    );
+}
+
+function ChipEditor({
+    title,
+    description,
+    items,
+    value,
+    onValueChange,
+    onAdd,
+    onRemove,
+    placeholder,
+    emptyLabel,
+}: {
+    title: string;
+    description: string;
+    items: string[];
+    value: string;
+    onValueChange: (value: string) => void;
+    onAdd: () => void;
+    onRemove: (item: string) => void;
+    placeholder: string;
+    emptyLabel: string;
+}) {
+    return (
+        <SurfaceCard title={title} description={description}>
+            <div className="flex flex-wrap gap-3">
+                {items.length ? (
+                    items.map((item) => (
+                        <span
+                            key={item}
+                            className="inline-flex items-center rounded-full border border-border/70 bg-card/80 px-4 py-2 text-sm font-semibold text-foreground"
+                        >
+                            {item}
+                            <button
+                                type="button"
+                                className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground transition hover:text-foreground"
+                                onClick={() => onRemove(item)}
+                                aria-label={`Remove ${item}`}
+                            >
+                                x
+                            </button>
+                        </span>
+                    ))
+                ) : (
+                    <div className="text-base text-muted-foreground">
+                        {emptyLabel}
+                    </div>
+                )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <TextField
+                    label="Add item"
+                    value={value}
+                    onChange={onValueChange}
+                    placeholder={placeholder}
+                />
+                <div className="flex items-end">
+                    <ProductButton
+                        onClick={onAdd}
+                        className="h-12 w-full sm:w-auto"
+                    >
+                        Add
+                    </ProductButton>
+                </div>
+            </div>
+        </SurfaceCard>
     );
 }
 
 function RecentListCard({
     title,
+    unit,
     data,
 }: {
     title: string;
+    unit: string;
     data: Measurement[];
 }) {
-    const items = useMemo(() => {
-        const safe = Array.isArray(data) ? data : [];
-        return safe.slice().sort((a, b) => (a.date > b.date ? 1 : -1));
-    }, [data]);
+    const items = [...data]
+        .sort((left, right) => (left.date > right.date ? 1 : -1))
+        .slice(-8)
+        .reverse();
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
-            <div className="text-sm font-semibold">{title}</div>
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+            <div className="text-lg font-semibold text-foreground">{title}</div>
             {items.length ? (
-                <ul className="mt-3 space-y-2 text-sm">
-                    {items
-                        .slice(-8)
-                        .reverse()
-                        .map((m, i) => (
-                            <li
-                                key={`${m.date}-${i}`}
-                                className="flex items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2"
-                            >
-                                <span className="text-muted-foreground">
-                                    {m.date}
-                                </span>
-                                <span className="font-medium text-foreground tabular-nums">
-                                    {m.value}
-                                </span>
-                            </li>
-                        ))}
-                </ul>
+                <div className="mt-4 space-y-3">
+                    {items.map((item, index) => (
+                        <div
+                            key={`${item.date}-${index}`}
+                            className="flex items-center justify-between rounded-[18px] border border-border/70 bg-card/80 px-4 py-3"
+                        >
+                            <div className="text-sm font-semibold text-muted-foreground">
+                                {item.date}
+                            </div>
+                            <div className="text-base font-semibold text-foreground">
+                                {item.value} {unit}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             ) : (
-                <div className="mt-3 text-sm text-muted-foreground">
+                <div className="mt-4 text-base text-muted-foreground">
                     No entries yet.
                 </div>
             )}

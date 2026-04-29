@@ -1,14 +1,18 @@
-﻿import {
+import {
     ProductBanner,
     ProductEmptyState,
     ProductHero,
     ProductPageShell,
     ProductSection,
 } from '@/components/product/page';
+import {
+    ProductButton,
+    ProductModeButton,
+} from '@/components/product/product-ui';
 import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CalendarDays, Search, Shuffle, UtensilsCrossed } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink';
@@ -103,10 +107,6 @@ type PlannedDay = {
         id: number;
         name: string;
         goal?: string | null;
-        source?: {
-            provider?: string | null;
-            model?: string | null;
-        } | null;
     };
     day: {
         id: number;
@@ -137,19 +137,6 @@ type PageProps = DayResponse & {
 const ZERO: Totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
 const SUMMARY_MEALS: MealType[] = ['breakfast', 'lunch', 'dinner'];
-
-function sourceLabel(
-    source?: { provider?: string | null; model?: string | null } | null,
-) {
-    const provider = source?.provider?.trim();
-    const model = source?.model?.trim();
-
-    if (!provider && !model) return 'Model unavailable';
-    if (!provider) return model ?? 'Model unavailable';
-    if (!model) return provider;
-
-    return `${provider} - ${model}`;
-}
 
 function todayYmd() {
     return new Date().toISOString().slice(0, 10);
@@ -201,6 +188,15 @@ export default function TrackMealsPage() {
     } | null>(null);
     const [selectedPlannedItem, setSelectedPlannedItem] =
         useState<PlannedItem | null>(null);
+    const [substituteModalOpen, setSubstituteModalOpen] = useState(false);
+    const [plannedLogItem, setPlannedLogItem] = useState<PlannedItem | null>(
+        null,
+    );
+    const [plannedLogModalOpen, setPlannedLogModalOpen] = useState(false);
+    const [plannedLogServings, setPlannedLogServings] = useState(1);
+    const [plannedServingInput, setPlannedServingInput] = useState<
+        Record<number, string>
+    >({});
     const [openAdd, setOpenAdd] = useState(false);
     const [selectedFood, setSelectedFood] = useState<SearchFood | null>(null);
     const [portionCount, setPortionCount] = useState(1);
@@ -218,12 +214,52 @@ export default function TrackMealsPage() {
         if (!day.planModeAvailable && mode === 'follow-plan') {
             setMode('quick-log');
             setSelectedPlannedItem(null);
+            setSubstituteModalOpen(false);
+            setPlannedLogItem(null);
+            setPlannedLogModalOpen(false);
         }
     }, [day.planModeAvailable, mode]);
 
     useEffect(() => {
         setSelectedPlannedItem(null);
+        setSubstituteModalOpen(false);
+        setPlannedLogItem(null);
+        setPlannedLogModalOpen(false);
     }, [date]);
+
+    useEffect(() => {
+        const plannedItems =
+            day.plannedDay?.meals.flatMap((meal) => meal.items) ?? [];
+
+        if (!plannedItems.length) {
+            setPlannedServingInput({});
+            return;
+        }
+
+        setPlannedServingInput((current) => {
+            const next = { ...current };
+            const keep = new Set<number>();
+
+            for (const item of plannedItems) {
+                keep.add(item.id);
+                if (next[item.id] !== undefined) {
+                    continue;
+                }
+                next[item.id] = String(
+                    item.logged_entry?.servings ?? item.default_servings,
+                );
+            }
+
+            for (const key of Object.keys(next)) {
+                const itemId = Number(key);
+                if (!keep.has(itemId)) {
+                    delete next[itemId];
+                }
+            }
+
+            return next;
+        });
+    }, [day.plannedDay]);
 
     const fetchDay = async (nextDate: string) => {
         const response = await axios.get<DayResponse>('/api/meal-tracker/day', {
@@ -238,7 +274,10 @@ export default function TrackMealsPage() {
     }, [date, mealType]);
 
     useEffect(() => {
-        if (mode === 'follow-plan' && !selectedPlannedItem) {
+        if (
+            mode === 'follow-plan' &&
+            (!selectedPlannedItem || !substituteModalOpen)
+        ) {
             setResults([]);
             return;
         }
@@ -278,11 +317,38 @@ export default function TrackMealsPage() {
         return () => {
             if (debounceRef.current) window.clearTimeout(debounceRef.current);
         };
-    }, [mode, selectedPlannedItem, query, page, mealType]);
+    }, [mode, selectedPlannedItem, substituteModalOpen, query, page, mealType]);
+
+    const plannedServingValue = (item: PlannedItem) => {
+        const raw = plannedServingInput[item.id];
+        const parsed = Number(raw);
+
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return parsed;
+        }
+
+        return item.logged_entry?.servings ?? item.default_servings;
+    };
+
+    const updatePlannedServingInput = (itemId: number, value: string) => {
+        setPlannedServingInput((current) => ({ ...current, [itemId]: value }));
+    };
+
+    const applyPlannedServing = (item: PlannedItem, multiplier: number) => {
+        const next = Math.max(
+            0.25,
+            Math.round(item.default_servings * multiplier * 100) / 100,
+        );
+        updatePlannedServingInput(item.id, String(next));
+    };
 
     const openAddDialog = (food: SearchFood) => {
         setSelectedFood(food);
-        setPortionCount(1);
+        if (mode === 'follow-plan' && selectedPlannedItem) {
+            setPortionCount(plannedServingValue(selectedPlannedItem));
+        } else {
+            setPortionCount(1);
+        }
         setOpenAdd(true);
     };
 
@@ -290,10 +356,32 @@ export default function TrackMealsPage() {
         setSelectedFood(null);
         setPortionCount(1);
         setOpenAdd(false);
+        if (mode === 'follow-plan') {
+            setSelectedPlannedItem(null);
+        }
+    };
+
+    const openPlannedLogModal = (item: PlannedItem) => {
+        const servingAmount = plannedServingValue(item);
+        setPlannedLogItem(item);
+        setPlannedLogServings(servingAmount > 0 ? servingAmount : 1);
+        setPlannedLogModalOpen(true);
+    };
+
+    const closePlannedLogModal = () => {
+        setPlannedLogModalOpen(false);
+        setPlannedLogItem(null);
     };
 
     const confirmAdd = async () => {
         if (!selectedFood) return;
+        if (!Number.isFinite(portionCount) || portionCount <= 0) {
+            setStatus({
+                tone: 'danger',
+                message: 'Enter a serving amount greater than zero.',
+            });
+            return;
+        }
 
         try {
             if (mode === 'follow-plan' && selectedPlannedItem) {
@@ -323,6 +411,7 @@ export default function TrackMealsPage() {
                         : 'Meal added successfully.',
             });
             setSelectedPlannedItem(null);
+            setSubstituteModalOpen(false);
             await fetchDay(date);
         } catch (error: unknown) {
             const message =
@@ -334,14 +423,35 @@ export default function TrackMealsPage() {
         }
     };
 
-    const logExactPlannedItem = async (item: PlannedItem) => {
-        try {
-            await axios.post(`/api/meal-tracker/planned-items/${item.id}/log`, {
-                food_id: item.food.id,
-                servings: item.default_servings,
-                eaten_at: date,
+    const confirmPlannedMealLog = async () => {
+        if (!plannedLogItem) return;
+        const servings = plannedLogServings;
+
+        if (!Number.isFinite(servings) || servings <= 0) {
+            setStatus({
+                tone: 'danger',
+                message: 'Enter a serving amount greater than zero.',
             });
-            setStatus({ tone: 'success', message: 'Planned meal logged.' });
+            return;
+        }
+
+        try {
+            await axios.post(
+                `/api/meal-tracker/planned-items/${plannedLogItem.id}/log`,
+                {
+                    food_id: plannedLogItem.food.id,
+                    servings,
+                    eaten_at: date,
+                },
+            );
+            updatePlannedServingInput(plannedLogItem.id, String(servings));
+            closePlannedLogModal();
+            setStatus({
+                tone: 'success',
+                message: plannedLogItem.logged_entry
+                    ? 'Planned meal updated.'
+                    : 'Planned meal logged.',
+            });
             await fetchDay(date);
         } catch (error: unknown) {
             const message =
@@ -351,6 +461,24 @@ export default function TrackMealsPage() {
                     : 'Could not log this planned meal.';
             setStatus({ tone: 'danger', message });
         }
+    };
+
+    const openSubstituteModal = (item: PlannedItem) => {
+        setMode('follow-plan');
+        setSelectedPlannedItem(item);
+        setPortionCount(plannedServingValue(item));
+        setQuery('');
+        setPage(1);
+        setResults([]);
+        setSubstituteModalOpen(true);
+    };
+
+    const closeSubstituteModal = () => {
+        setSubstituteModalOpen(false);
+        setSelectedPlannedItem(null);
+        setQuery('');
+        setPage(1);
+        setResults([]);
     };
 
     const removeEntry = async (entryId: number) => {
@@ -366,6 +494,19 @@ export default function TrackMealsPage() {
         }
     };
 
+    const plannedMealPreviewTotals = plannedLogItem
+        ? {
+              calories: Math.round(
+                  plannedLogItem.food.calories * plannedLogServings,
+              ),
+              protein: Math.round(
+                  plannedLogItem.food.protein * plannedLogServings,
+              ),
+              carbs: Math.round(plannedLogItem.food.carbs * plannedLogServings),
+              fat: Math.round(plannedLogItem.food.fat * plannedLogServings),
+          }
+        : null;
+
     const entries = day.entries ?? [];
     const plannedMeals = day.plannedDay?.meals ?? [];
 
@@ -373,7 +514,7 @@ export default function TrackMealsPage() {
         <>
             <Head title="Meal Tracker" />
 
-            <ProductPageShell width="wide" className="space-y-8">
+            <ProductPageShell width="wide">
                 <ProductHero
                     eyebrow="Meal Tracker"
                     title={
@@ -381,12 +522,12 @@ export default function TrackMealsPage() {
                             ? "Follow today's plan"
                             : 'Quick log your meals'
                     }
-                    description="The tracker opens in plan-first mode when a nutrition plan exists, but quick logging stays one tap away for users who want a flexible day."
+                    description="The tracker opens in plan-follow mode when a nutrition plan exists, with quick log always available."
                     meta={
                         <div className="space-y-2 text-sm">
                             <div className="font-medium text-foreground">
                                 {day.plannedDay
-                                    ? sourceLabel(day.plannedDay.plan.source)
+                                    ? day.plannedDay.plan.name
                                     : props.dietName || 'Meal tracking'}
                             </div>
                             <div className="text-muted-foreground">
@@ -404,7 +545,7 @@ export default function TrackMealsPage() {
                                 }
                                 className="h-11 rounded-2xl border border-border/70 bg-background px-3 text-sm text-foreground"
                             />
-                            <ModeButton
+                            <ProductModeButton
                                 active={mode === 'follow-plan'}
                                 disabled={!day.planModeAvailable}
                                 onClick={() =>
@@ -413,28 +554,28 @@ export default function TrackMealsPage() {
                                 }
                             >
                                 Follow Plan
-                            </ModeButton>
-                            <ModeButton
+                            </ProductModeButton>
+                            <ProductModeButton
                                 active={mode === 'quick-log'}
                                 onClick={() => {
                                     setMode('quick-log');
-                                    setSelectedPlannedItem(null);
+                                    closeSubstituteModal();
                                 }}
                             >
                                 Quick Log
-                            </ModeButton>
-                            <Link
-                                href="/ai/planner"
-                                className="inline-flex h-11 items-center rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground no-underline transition hover:bg-card"
-                            >
-                                AI Planner
-                            </Link>
+                            </ProductModeButton>
+                            <ProductButton asChild emphasis="secondary">
+                                <Link href="/ai/planner">AI Planner</Link>
+                            </ProductButton>
                         </div>
                     }
                 />
 
                 {status ? (
-                    <ProductBanner tone={status.tone}>
+                    <ProductBanner
+                        tone={status.tone}
+                        role={status.tone === 'danger' ? 'alert' : 'status'}
+                    >
                         {status.message}
                     </ProductBanner>
                 ) : null}
@@ -443,7 +584,7 @@ export default function TrackMealsPage() {
                     day.plannedDay ? (
                         <ProductSection
                             title="Today's planned meals"
-                            description="Planned meals show first by default. Exact logging and substitution are attached to each planned item so adherence stays visible."
+                            description="Adjust servings, log the planned item, or swap with a safe substitute."
                         >
                             <div className="space-y-6">
                                 <MacroCard
@@ -455,7 +596,7 @@ export default function TrackMealsPage() {
                                 />
                                 <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
                                     <div className="text-lg font-semibold text-foreground">
-                                        Plan context
+                                        Today's plan details
                                     </div>
                                     <div className="mt-3 text-sm text-muted-foreground">
                                         {day.plannedDay.plan.name} - Day{' '}
@@ -498,13 +639,22 @@ export default function TrackMealsPage() {
                                                             <div className="mt-1 text-xs text-muted-foreground">
                                                                 {item.grams
                                                                     ? `${item.grams} g`
-                                                                    : `${item.servings ?? item.default_servings} servings`}
+                                                                    : `${plannedServingValue(item)} servings`}
                                                                 {' - '}
+                                                                {Math.round(
+                                                                    item.food
+                                                                        .calories *
+                                                                        plannedServingValue(
+                                                                            item,
+                                                                        ),
+                                                                )}{' '}
+                                                                kcal total
+                                                                {' · '}
                                                                 {Math.round(
                                                                     item.food
                                                                         .calories,
                                                                 )}{' '}
-                                                                kcal
+                                                                kcal per serving
                                                             </div>
                                                         </div>
                                                         <span className="haye-chip">
@@ -529,34 +679,113 @@ export default function TrackMealsPage() {
                                                         </div>
                                                     ) : null}
 
+                                                    <div className="mt-4 space-y-3 rounded-[20px] border border-border/60 bg-background/80 p-3">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <div className="text-sm font-medium text-foreground">
+                                                                Serving amount
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    updatePlannedServingInput(
+                                                                        item.id,
+                                                                        String(
+                                                                            item.default_servings,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                                className="rounded-full border border-border/70 px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                                                            >
+                                                                Use plan amount
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            {[0.5, 1, 1.5].map(
+                                                                (
+                                                                    multiplier,
+                                                                ) => (
+                                                                    <button
+                                                                        key={
+                                                                            multiplier
+                                                                        }
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            applyPlannedServing(
+                                                                                item,
+                                                                                multiplier,
+                                                                            )
+                                                                        }
+                                                                        className="rounded-full border border-border/70 px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                                                                    >
+                                                                        {
+                                                                            multiplier
+                                                                        }
+                                                                        x
+                                                                    </button>
+                                                                ),
+                                                            )}
+                                                            <input
+                                                                type="number"
+                                                                min={0.25}
+                                                                step={0.25}
+                                                                value={
+                                                                    plannedServingInput[
+                                                                        item.id
+                                                                    ] ??
+                                                                    String(
+                                                                        item.default_servings,
+                                                                    )
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    updatePlannedServingInput(
+                                                                        item.id,
+                                                                        event
+                                                                            .target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                className="h-9 w-28 rounded-xl border border-border/70 bg-background px-2 py-1 text-sm"
+                                                            />
+                                                            <span className="text-xs text-muted-foreground">
+                                                                servings
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Planned amount:{' '}
+                                                            {
+                                                                item.default_servings
+                                                            }{' '}
+                                                            servings
+                                                        </div>
+                                                    </div>
+
                                                     <div className="mt-4 flex flex-wrap gap-2">
                                                         <button
                                                             type="button"
                                                             onClick={() =>
-                                                                void logExactPlannedItem(
+                                                                openPlannedLogModal(
                                                                     item,
                                                                 )
                                                             }
                                                             className="inline-flex h-10 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
                                                         >
-                                                            Log exact
+                                                            {item.logged_entry
+                                                                ? 'Update logged meal'
+                                                                : 'Log planned meal'}
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => {
-                                                                setMode(
-                                                                    'follow-plan',
-                                                                );
-                                                                setSelectedPlannedItem(
+                                                            onClick={() =>
+                                                                openSubstituteModal(
                                                                     item,
-                                                                );
-                                                                setQuery('');
-                                                                setPage(1);
-                                                            }}
+                                                                )
+                                                            }
                                                             className="inline-flex h-10 items-center gap-2 rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card"
                                                         >
                                                             <Shuffle className="h-4 w-4" />
-                                                            Find substitute
+                                                            Choose substitute
                                                         </button>
                                                     </div>
                                                 </div>
@@ -582,28 +811,11 @@ export default function TrackMealsPage() {
                     )
                 ) : null}
 
-                <ProductSection
-                    title={
-                        mode === 'follow-plan'
-                            ? selectedPlannedItem
-                                ? `Find a substitute for ${selectedPlannedItem.food.name}`
-                                : 'Choose a planned item to substitute'
-                            : 'Quick log search'
-                    }
-                    description={
-                        mode === 'follow-plan'
-                            ? selectedPlannedItem
-                                ? 'This search is tied to a specific planned item, so substitutes can still count toward adherence.'
-                                : 'Tap "Find substitute" on a planned item to open the substitution search.'
-                            : 'This is the normal meal search flow for people who are not following the plan right now.'
-                    }
-                >
-                    {mode === 'follow-plan' && !selectedPlannedItem ? (
-                        <ProductEmptyState
-                            title="Substitution search waits for a planned item"
-                            description="Pick a planned item above and the search panel will switch into substitute mode for that meal."
-                        />
-                    ) : (
+                {mode === 'quick-log' ? (
+                    <ProductSection
+                        title="Quick log search"
+                        description="Search foods and log meals for flexible days."
+                    >
                         <div className="space-y-6">
                             <MacroCard
                                 title="Daily totals"
@@ -618,26 +830,22 @@ export default function TrackMealsPage() {
                                     <Search className="h-4 w-4" />
                                     Search foods
                                 </div>
-                                {mode === 'quick-log' ? (
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        {MEALS.map((type) => (
-                                            <button
-                                                key={type}
-                                                type="button"
-                                                onClick={() =>
-                                                    setMealType(type)
-                                                }
-                                                className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                                                    mealType === type
-                                                        ? 'border-primary/30 bg-primary/10 text-foreground'
-                                                        : 'border-border/70 bg-card text-foreground hover:bg-background'
-                                                }`}
-                                            >
-                                                {type}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : null}
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {MEALS.map((type) => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => setMealType(type)}
+                                            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                                                mealType === type
+                                                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                                                    : 'border-border/70 bg-card text-foreground hover:bg-background'
+                                            }`}
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
                                 <input
                                     value={query}
                                     onChange={(event) => {
@@ -682,83 +890,255 @@ export default function TrackMealsPage() {
                                                         }
                                                         className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
                                                     >
-                                                        {mode === 'follow-plan'
-                                                            ? 'Use substitute'
-                                                            : 'Add'}
+                                                        Add
                                                     </button>
                                                 </div>
                                             </div>
                                         ))
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
-                                <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                                    <UtensilsCrossed className="h-4 w-4" />
-                                    Today's entries
-                                </div>
-                                <div className="mt-4 space-y-3">
-                                    {entries.length ? (
-                                        entries.map((entry) => (
-                                            <div
-                                                key={entry.id}
-                                                className="rounded-[22px] border border-border/70 bg-card/80 p-4"
-                                            >
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div>
-                                                        <div className="font-medium text-foreground">
-                                                            {entry.food.name}
-                                                        </div>
-                                                        <div className="mt-1 text-xs text-muted-foreground">
-                                                            {entry.meal_type} -{' '}
-                                                            {entry.servings}{' '}
-                                                            servings
-                                                        </div>
-                                                        {entry.plan_tracking ? (
-                                                            <div className="mt-2 text-xs text-foreground/80">
-                                                                Linked to
-                                                                planned item:{' '}
-                                                                {
-                                                                    entry
-                                                                        .plan_tracking
-                                                                        .planned_food_name
-                                                                }
-                                                                {' - '}
-                                                                {statusLabel(
-                                                                    entry
-                                                                        .plan_tracking
-                                                                        .status,
-                                                                )}
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            void removeEntry(
-                                                                entry.id,
-                                                            )
-                                                        }
-                                                        className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <ProductEmptyState
-                                            title="Nothing logged yet"
-                                            description="The day timeline will appear here as soon as you log the first item."
-                                        />
                                     )}
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </ProductSection>
+                ) : null}
+
+                <ProductSection
+                    title="Today's entries"
+                    description="Daily timeline of logged meals, including exact and substitute plan matches."
+                >
+                    <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                        <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                            <UtensilsCrossed className="h-4 w-4" />
+                            Logged meals
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            {entries.length ? (
+                                entries.map((entry) => (
+                                    <div
+                                        key={entry.id}
+                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                    >
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div>
+                                                <div className="font-medium text-foreground">
+                                                    {entry.food.name}
+                                                </div>
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {entry.meal_type} -{' '}
+                                                    {entry.servings} servings
+                                                </div>
+                                                {entry.plan_tracking ? (
+                                                    <div className="mt-2 text-xs text-foreground/80">
+                                                        Linked to planned item:{' '}
+                                                        {
+                                                            entry.plan_tracking
+                                                                .planned_food_name
+                                                        }
+                                                        {' - '}
+                                                        {statusLabel(
+                                                            entry.plan_tracking
+                                                                .status,
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    void removeEntry(entry.id)
+                                                }
+                                                className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <ProductEmptyState
+                                    title="Nothing logged yet"
+                                    description="Your timeline appears after the first log entry."
+                                />
+                            )}
+                        </div>
+                    </div>
                 </ProductSection>
             </ProductPageShell>
+            {plannedLogModalOpen && plannedLogItem ? (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={closePlannedLogModal}
+                    />
+                    <div className="haye-panel relative z-10 w-full max-w-md rounded-[30px] p-5 text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    Log planned meal
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                    {plannedLogItem.food.name}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closePlannedLogModal}
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
+                            1 serving = {plannedLogItem.food.serving_size}
+                            {plannedLogItem.food.serving_unit}
+                        </div>
+
+                        <label className="mt-4 block text-sm font-medium text-foreground">
+                            Servings
+                            <input
+                                type="number"
+                                min={0.25}
+                                step={0.25}
+                                value={plannedLogServings}
+                                onChange={(event) =>
+                                    setPlannedLogServings(
+                                        Number(event.target.value) || 1,
+                                    )
+                                }
+                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                            />
+                        </label>
+
+                        {plannedMealPreviewTotals ? (
+                            <div className="mt-4 rounded-[22px] border border-border/70 bg-card/80 p-4 text-sm text-foreground">
+                                Approximate totals:{' '}
+                                {plannedMealPreviewTotals.calories} kcal
+                                {' - '}P {plannedMealPreviewTotals.protein}
+                                {' - '}C {plannedMealPreviewTotals.carbs}
+                                {' - '}F {plannedMealPreviewTotals.fat}
+                            </div>
+                        ) : null}
+
+                        <div className="mt-5 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={closePlannedLogModal}
+                                className="rounded-full border border-border/70 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-background"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void confirmPlannedMealLog()}
+                                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                            >
+                                {plannedLogItem.logged_entry
+                                    ? 'Update logged meal'
+                                    : 'Log planned meal'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+            {substituteModalOpen && selectedPlannedItem ? (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={closeSubstituteModal}
+                    />
+                    <div className="haye-panel relative z-10 w-full max-w-2xl rounded-[30px] p-5 text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    Choose substitute
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                    Replace {selectedPlannedItem.food.name}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeSubstituteModal}
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-3 rounded-[22px] border border-border/70 bg-background/72 p-3 text-xs text-muted-foreground">
+                            Planned servings carry over automatically so logging
+                            stays fast.
+                        </div>
+
+                        <input
+                            value={query}
+                            onChange={(event) => {
+                                setQuery(event.target.value);
+                                setPage(1);
+                            }}
+                            placeholder="Search substitute foods"
+                            className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
+                        />
+
+                        <div className="mt-4 max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+                            {loading ? (
+                                <div className="text-sm text-muted-foreground">
+                                    Searching...
+                                </div>
+                            ) : results.length ? (
+                                results.map((food) => (
+                                    <div
+                                        key={food.id}
+                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div className="font-medium text-foreground">
+                                                    {food.name}
+                                                </div>
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {food.category ?? 'Food'}
+                                                    {' - '}
+                                                    {Math.round(
+                                                        food.calories ?? 0,
+                                                    )}{' '}
+                                                    kcal
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSubstituteModalOpen(
+                                                        false,
+                                                    );
+                                                    openAddDialog(food);
+                                                }}
+                                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                                            >
+                                                Use substitute
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <ProductEmptyState
+                                    title="No matches yet"
+                                    description="Try a different ingredient name or category."
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {openAdd && selectedFood ? (
                 <div
                     role="dialog"
@@ -774,7 +1154,7 @@ export default function TrackMealsPage() {
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">
                                     {mode === 'follow-plan'
-                                        ? 'Plan substitute'
+                                        ? 'Substitute planned meal'
                                         : `Add to ${mealType}`}
                                 </div>
                                 <div className="mt-1 text-lg font-semibold text-foreground">
@@ -794,6 +1174,13 @@ export default function TrackMealsPage() {
                             1 serving = {selectedFood.serving_size}
                             {selectedFood.serving_unit}
                         </div>
+                        {mode === 'follow-plan' && selectedPlannedItem ? (
+                            <div className="mt-3 rounded-[22px] border border-border/70 bg-card/80 p-3 text-xs text-muted-foreground">
+                                Replacing: {selectedPlannedItem.food.name} (
+                                {plannedServingValue(selectedPlannedItem)}{' '}
+                                servings)
+                            </div>
+                        ) : null}
 
                         <label className="mt-4 block text-sm font-medium text-foreground">
                             Servings
@@ -856,33 +1243,6 @@ export default function TrackMealsPage() {
     );
 }
 
-function ModeButton({
-    active,
-    disabled,
-    onClick,
-    children,
-}: {
-    active: boolean;
-    disabled?: boolean;
-    onClick: () => void;
-    children: ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onClick}
-            className={`inline-flex h-11 items-center rounded-2xl border px-4 text-sm font-semibold transition ${
-                active
-                    ? 'border-primary/30 bg-primary/10 text-foreground'
-                    : 'border-border/70 bg-background text-foreground hover:bg-card'
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-        >
-            {children}
-        </button>
-    );
-}
-
 function MacroCard({
     title,
     totals,
@@ -904,7 +1264,7 @@ function MacroCard({
             target: targets?.calories ?? null,
             remaining: remaining?.calories ?? null,
             unit: 'kcal',
-            fillClass: 'from-amber-300 via-orange-400 to-rose-500',
+            fillClass: 'bg-primary',
         },
         {
             key: 'protein' as const,
@@ -913,7 +1273,7 @@ function MacroCard({
             target: targets?.protein ?? null,
             remaining: remaining?.protein ?? null,
             unit: 'g',
-            fillClass: 'from-emerald-300 via-green-400 to-teal-500',
+            fillClass: 'bg-primary/90',
         },
         {
             key: 'carbs' as const,
@@ -922,7 +1282,7 @@ function MacroCard({
             target: targets?.carbs ?? null,
             remaining: remaining?.carbs ?? null,
             unit: 'g',
-            fillClass: 'from-sky-300 via-cyan-400 to-blue-500',
+            fillClass: 'bg-primary/80',
         },
         {
             key: 'fat' as const,
@@ -931,7 +1291,7 @@ function MacroCard({
             target: targets?.fat ?? null,
             remaining: remaining?.fat ?? null,
             unit: 'g',
-            fillClass: 'from-fuchsia-300 via-violet-400 to-purple-500',
+            fillClass: 'bg-primary/70',
         },
     ];
 
@@ -1000,7 +1360,7 @@ function MacroCard({
 
                             <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-background">
                                 <div
-                                    className={`h-full rounded-full bg-gradient-to-r ${macro.fillClass} transition-all`}
+                                    className={`h-full rounded-full ${macro.fillClass} transition-all`}
                                     style={{ width: `${baseProgress}%` }}
                                 />
                             </div>
@@ -1067,7 +1427,7 @@ function MacroCard({
 
                                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-background">
                                     <div
-                                        className="h-full rounded-full bg-gradient-to-r from-primary/80 via-primary to-primary"
+                                        className="h-full rounded-full bg-primary"
                                         style={{ width: `${calorieShare}%` }}
                                     />
                                 </div>

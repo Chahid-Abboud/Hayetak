@@ -1,4 +1,5 @@
 import { AppProductShell } from '@/components/product/app-shell';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
 import type { HTMLAttributes, ReactNode } from 'react';
 
@@ -9,6 +10,8 @@ const WIDTH_CLASS: Record<ProductPageWidth, string> = {
     default: 'max-w-6xl',
     wide: 'max-w-7xl',
 };
+
+const DEFAULT_SECTION_STACK = 'space-y-12 sm:space-y-14 lg:space-y-16';
 
 export function ProductPageShell({
     children,
@@ -21,11 +24,8 @@ export function ProductPageShell({
     width?: ProductPageWidth;
     withNav?: boolean;
 }) {
-    const mainClassName = cn(
-        'mx-auto w-full space-y-8',
-        WIDTH_CLASS[width],
-        className,
-    );
+    const mainClassName = cn('mx-auto w-full', WIDTH_CLASS[width]);
+    const contentClassName = cn('mt-5', DEFAULT_SECTION_STACK, className);
 
     if (!withNav) {
         return (
@@ -35,14 +35,24 @@ export function ProductPageShell({
                     mainClassName,
                 )}
             >
-                {children}
+                <div className="flex justify-end">
+                    <div className="rounded-[18px] border border-border/70 bg-background/78 p-1 shadow-sm">
+                        <ThemeSwitcher />
+                    </div>
+                </div>
+                <div className={contentClassName}>{children}</div>
             </main>
         );
     }
 
     return (
         <AppProductShell mainClassName={mainClassName}>
-            {children}
+            <div className="flex justify-end">
+                <div className="rounded-[18px] border border-border/70 bg-background/78 p-1 shadow-sm">
+                    <ThemeSwitcher />
+                </div>
+            </div>
+            <div className={contentClassName}>{children}</div>
         </AppProductShell>
     );
 }
@@ -283,7 +293,7 @@ export function ProductFilterRow({
     return (
         <div
             className={cn(
-                'rounded-[22px] border border-border/70 bg-background/70 p-3',
+                'rounded-[24px] border border-border/70 bg-background/74 p-3 shadow-[0_16px_42px_-34px_rgba(15,23,42,0.78)]',
                 className,
             )}
         >
@@ -302,7 +312,7 @@ export function ProductStickyActions({
     return (
         <div
             className={cn(
-                'sticky bottom-3 z-20 rounded-[22px] border border-border/70 bg-background/88 p-3 shadow-sm backdrop-blur',
+                'sticky bottom-3 z-20 rounded-[24px] border border-border/70 bg-background/92 p-3 shadow-[0_18px_48px_-32px_rgba(15,23,42,0.82)] backdrop-blur-xl',
                 className,
             )}
         >

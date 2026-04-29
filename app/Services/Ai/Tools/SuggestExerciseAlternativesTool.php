@@ -76,6 +76,10 @@ class SuggestExerciseAlternativesTool implements AiTool
                 continue;
             }
 
+            if ($this->exerciseConflictsWithInjuries($exercise, $injuries)) {
+                continue;
+            }
+
             $name = trim((string) $exercise->name);
             if ($name === '') {
                 continue;
@@ -135,6 +139,49 @@ class SuggestExerciseAlternativesTool implements AiTool
             'alternatives' => array_slice($results, 0, $limit),
             'count' => min($limit, count($results)),
         ];
+    }
+
+    private function exerciseConflictsWithInjuries(Exercise $exercise, array $injuries): bool
+    {
+        if ($injuries === []) {
+            return false;
+        }
+
+        $conditions = array_map(
+            'mb_strtolower',
+            $this->normalizeList($exercise->conditions ?? [])
+        );
+        $jointStress = array_map(
+            'mb_strtolower',
+            $this->normalizeList($exercise->joint_stress ?? [])
+        );
+
+        if ($conditions === [] && $jointStress === []) {
+            return false;
+        }
+
+        foreach ($injuries as $injury) {
+            $injuryText = mb_strtolower(trim((string) $injury));
+            if ($injuryText === '') {
+                continue;
+            }
+
+            foreach (array_merge($conditions, $jointStress) as $constraint) {
+                $constraintText = mb_strtolower(trim((string) $constraint));
+                if ($constraintText === '') {
+                    continue;
+                }
+
+                if (
+                    str_contains($injuryText, $constraintText)
+                    || str_contains($constraintText, $injuryText)
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function normalizeList(mixed $value): array

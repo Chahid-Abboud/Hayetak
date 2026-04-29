@@ -1,41 +1,49 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { useAppearance } from '@/hooks/use-appearance';
+import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
     ArrowRight,
     Brain,
-    ChevronRight,
     Dumbbell,
     MapPin,
     Menu,
     MessageSquare,
+    Moon,
     ShieldCheck,
     Sparkles,
+    Sun,
     Utensils,
     X,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const FOCUS_RING =
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const AUTO_PREVIEW_INTERVAL_MS = 3200;
 
 function Cta({
     href,
     children,
     variant = 'primary',
+    className,
 }: {
     href: string;
     children: ReactNode;
     variant?: 'primary' | 'secondary';
+    className?: string;
 }) {
     return (
         <Link
             href={href}
-            className={`${FOCUS_RING} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold no-underline transition ${
+            className={cn(
+                `${FOCUS_RING} inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold no-underline transition`,
                 variant === 'primary'
                     ? 'bg-primary text-primary-foreground shadow-[0_20px_44px_-28px_rgba(23,38,60,0.85)] hover:-translate-y-0.5'
-                    : 'border border-border/70 bg-card/80 text-foreground hover:-translate-y-0.5 hover:bg-background/90'
-            }`}
+                    : 'border border-border/70 bg-card/80 text-foreground hover:-translate-y-0.5 hover:bg-background/90',
+                className,
+            )}
         >
             {children}
         </Link>
@@ -49,52 +57,141 @@ function SectionTitle({
 }: {
     eyebrow: string;
     title: string;
-    description: string;
+    description?: string;
 }) {
     return (
         <div className="text-center">
             <p className="haye-kicker">{eyebrow}</p>
             <h2
-                className="mx-auto mt-3 max-w-3xl text-3xl tracking-tight text-foreground sm:text-4xl"
+                className="mx-auto mt-3 max-w-3xl text-3xl tracking-normal text-foreground sm:text-4xl"
                 style={{ fontFamily: 'var(--font-display)' }}
             >
                 {title}
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                {description}
+            {description ? (
+                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                    {description}
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
+type PreviewTab = {
+    label: string;
+    icon: typeof Brain;
+    description: string;
+    content: ReactNode;
+};
+
+function PreviewPanel({
+    title,
+    eyebrow,
+    children,
+    accent = false,
+}: {
+    title: string;
+    eyebrow?: string;
+    children: ReactNode;
+    accent?: boolean;
+}) {
+    return (
+        <div
+            className={`rounded-[26px] border p-4 shadow-[0_24px_50px_-38px_rgba(15,23,42,0.42)] ${
+                accent
+                    ? 'border-primary/30 bg-primary text-primary-foreground'
+                    : 'border-border/70 bg-card/82 text-foreground'
+            }`}
+        >
+            {eyebrow ? (
+                <p
+                    className={`text-[11px] font-semibold tracking-[0.18em] uppercase ${
+                        accent
+                            ? 'text-primary-foreground/72'
+                            : 'text-muted-foreground'
+                    }`}
+                >
+                    {eyebrow}
+                </p>
+            ) : null}
+            <p className="mt-2 text-sm font-semibold">{title}</p>
+            <div
+                className={`mt-3 text-sm leading-6 ${
+                    accent
+                        ? 'text-primary-foreground/84'
+                        : 'text-muted-foreground'
+                }`}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function PreviewMetric({ value, label }: { value: string; label: string }) {
+    return (
+        <div className="rounded-[22px] border border-border/70 bg-card/82 px-4 py-4 shadow-[0_16px_34px_-28px_rgba(7,14,10,0.35)]">
+            <p className="text-2xl font-semibold tracking-normal text-foreground">
+                {value}
+            </p>
+            <p className="mt-1 text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                {label}
             </p>
         </div>
     );
 }
 
-function PreviewFrame({
+function PreviewShell({
+    activeLabel,
     title,
-    subtitle,
+    description,
     children,
 }: {
+    activeLabel: string;
     title: string;
-    subtitle: string;
+    description: string;
     children: ReactNode;
 }) {
     return (
-        <div className="overflow-hidden rounded-[30px] border border-border/70 bg-card/88 shadow-[0_30px_70px_-44px_rgba(23,38,60,0.85)]">
-            <div className="border-b border-border/70 px-5 py-4">
-                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                    {subtitle}
-                </p>
-                <p className="mt-1 text-base font-semibold text-foreground">
-                    {title}
-                </p>
+        <div className="grid h-full min-h-0 overflow-hidden rounded-[24px] border border-border/70 bg-card/88 text-foreground shadow-[0_30px_64px_-54px_rgba(0,0,0,0.35)]">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
+                <div className="border-b border-border/70 bg-background/74 px-4 py-3 sm:px-5">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                    {activeLabel}
+                                </span>
+                            </div>
+                            <h3
+                                className="mt-2 text-[1.25rem] tracking-normal text-foreground sm:text-[1.46rem]"
+                                style={{ fontFamily: 'var(--font-display)' }}
+                            >
+                                {title}
+                            </h3>
+                            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                {description}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="min-h-0 overflow-hidden px-3 py-3 text-sm sm:px-4">
+                    {children}
+                </div>
             </div>
-            <div className="p-5">{children}</div>
         </div>
     );
 }
 
 export default function Landing() {
+    const { updateAppearance } = useAppearance();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [activePreview, setActivePreview] = useState(0);
+    const [activePreview, setActivePreview] = useState(4);
+    const [previewInView, setPreviewInView] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [isDark, setIsDark] = useState(false);
+    const previewSectionRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 18);
@@ -102,257 +199,575 @@ export default function Landing() {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
-    const previews = [
+    useEffect(() => {
+        const syncTheme = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        syncTheme();
+
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
+
+        return () => observer.disconnect();
+    }, []);
+
+    const previews: PreviewTab[] = [
         {
-            label: 'Planner',
+            label: 'AI Planner',
             icon: Brain,
+            description:
+                'Planner output is structured, safety-aware, and easy to scan.',
             content: (
-                <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-                    <div className="space-y-3">
-                        <div className="rounded-[24px] border border-border/70 bg-background/74 p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">
-                                        Recomposition phase
-                                    </p>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Goal-driven calories and protein for a
-                                        4-day routine.
-                                    </p>
-                                </div>
-                                <Brain className="size-5 text-secondary" />
+                <PreviewShell
+                    activeLabel="AI Planner"
+                    title="Plan around real-life limits, then keep it usable."
+                    description="Nutrition, workouts, and restrictions stay in one connected flow."
+                >
+                    <div className="grid h-full gap-4 lg:grid-cols-[1.12fr_0.88fr]">
+                        <div className="space-y-4">
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <PreviewMetric
+                                    value="2,180"
+                                    label="Daily kcal target"
+                                />
+                                <PreviewMetric
+                                    value="158 g"
+                                    label="Protein anchor"
+                                />
+                                <PreviewMetric
+                                    value="4 days"
+                                    label="Workout split"
+                                />
                             </div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {[
-                                    'Peanut allergy',
-                                    'Shoulder history',
-                                    'Gym + home',
-                                    '4 workout days',
-                                ].map((chip) => (
-                                    <span key={chip} className="haye-chip">
-                                        {chip}
-                                    </span>
-                                ))}
+
+                            <PreviewPanel
+                                eyebrow="Profile inputs"
+                                title="Safety and setup stay attached"
+                            >
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        'Peanut allergy',
+                                        'Shoulder history',
+                                        'Gym + home',
+                                        '4 workout days',
+                                        'Recovery-aware split',
+                                    ].map((chip) => (
+                                        <span
+                                            key={chip}
+                                            className="rounded-full border border-border/70 bg-card/82 px-3 py-1 text-xs font-medium text-foreground"
+                                        >
+                                            {chip}
+                                        </span>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                <PreviewPanel
+                                    eyebrow="Nutrition side"
+                                    title="Meal rhythm for the cycle"
+                                >
+                                    Breakfast, lunch, dinner, and snack timing
+                                    stay balanced around the training days with
+                                    less repetition.
+                                </PreviewPanel>
+                                <PreviewPanel
+                                    eyebrow="Training side"
+                                    title="Weekly split laid out clearly"
+                                >
+                                    Upper, lower, push, and pull sessions stay
+                                    aligned with equipment access and shoulder
+                                    tolerance.
+                                </PreviewPanel>
                             </div>
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
+
+                        <div className="space-y-4">
+                            <PreviewPanel
+                                eyebrow="Coach summary"
+                                title="Plan notes for this user"
+                                accent
+                            >
+                                <div className="space-y-3">
+                                    {[
+                                        'Meal options stay allergy-safe and practical for busy workdays.',
+                                        'Training choices lean on stable pressing alternatives when needed.',
+                                        'Meal variety is increased when past plans felt repetitive.',
+                                    ].map((item) => (
+                                        <div
+                                            key={item}
+                                            className="rounded-[18px] bg-white/9 px-4 py-3"
+                                        >
+                                            {item}
+                                        </div>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+
+                            <div className="grid gap-4">
+                                <PreviewPanel
+                                    eyebrow="Next review"
+                                    title="Progress check-ins stay simple"
+                                >
+                                    The plan refreshes after steady logs and
+                                    weigh-ins instead of sending the user into a
+                                    technical settings flow.
+                                </PreviewPanel>
+                                <PreviewPanel
+                                    eyebrow="Day snapshot"
+                                    title="Meals and workouts stay connected"
+                                >
+                                    Training days can carry a slightly heavier
+                                    intake while rest days keep structure and
+                                    recovery visible.
+                                </PreviewPanel>
+                            </div>
+                        </div>
+                    </div>
+                </PreviewShell>
+            ),
+        },
+        {
+            label: 'Nearby/Map',
+            icon: MapPin,
+            description:
+                'Nearby support shows map context, filtered places, and fast next actions.',
+            content: (
+                <PreviewShell
+                    activeLabel="Nearby/Map"
+                    title="Find support around the user without leaving the flow."
+                    description="Gyms, trainers, and nutritionists stay visible with distance, fit, and messaging context."
+                >
+                    <div className="grid h-full gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                        <div className="relative min-h-[18rem] overflow-hidden rounded-[26px] border border-border/70 bg-background/74">
+                            <div className="absolute inset-x-8 top-1/2 h-1 rotate-[-11deg] rounded-full bg-primary/40" />
+                            <div className="absolute inset-y-8 left-1/2 w-1 rotate-[18deg] rounded-full bg-secondary/35" />
                             {[
-                                ['2,180 kcal', 'daily target'],
-                                ['158 g protein', 'macro anchor'],
-                            ].map(([value, label]) => (
+                                {
+                                    position: 'top-[22%] left-[24%]',
+                                    label: 'Gym',
+                                    icon: Dumbbell,
+                                },
+                                {
+                                    position: 'top-[48%] left-[58%]',
+                                    label: 'Dietitian',
+                                    icon: Utensils,
+                                },
+                                {
+                                    position: 'top-[67%] left-[36%]',
+                                    label: 'Trainer',
+                                    icon: Activity,
+                                },
+                            ].map(({ position, label, icon: Icon }) => (
                                 <div
                                     key={label}
-                                    className="rounded-[22px] border border-border/70 bg-card/82 px-4 py-4"
+                                    className={`absolute ${position} rounded-[18px] border border-border/70 bg-card/88 px-3 py-2 shadow-[0_18px_40px_-26px_rgba(0,0,0,0.35)]`}
                                 >
-                                    <p className="text-xl font-semibold text-foreground">
-                                        {value}
-                                    </p>
-                                    <p className="mt-1 text-xs tracking-[0.18em] text-muted-foreground uppercase">
-                                        {label}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-primary-foreground/72 uppercase">
-                            Coach summary
-                        </p>
-                        <div className="mt-4 space-y-3">
-                            {[
-                                'Meal templates respect allergy and diet inputs',
-                                'Workout split adapts to available equipment',
-                                'Past diet friction informs meal variety',
-                            ].map((item) => (
-                                <div
-                                    key={item}
-                                    className="rounded-[18px] bg-white/8 px-4 py-3 text-sm leading-6"
-                                >
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            label: 'Meal tracker',
-            icon: Utensils,
-            content: (
-                <div className="grid gap-4 lg:grid-cols-[1.04fr_0.96fr]">
-                    <div className="space-y-3">
-                        {[
-                            ['Breakfast', '620 kcal', 'Protein still on pace'],
-                            [
-                                'Lunch',
-                                'On target',
-                                'Coach suggests more fiber later',
-                            ],
-                            ['Snack', 'Needs protein', 'Two safe swaps ready'],
-                        ].map(([meal, status, note]) => (
-                            <div
-                                key={meal}
-                                className="rounded-[22px] border border-border/70 bg-background/74 p-4"
-                            >
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="font-semibold text-foreground">
-                                        {meal}
-                                    </p>
-                                    <span className="haye-chip">{status}</span>
-                                </div>
-                                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                    {note}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="space-y-3">
-                        <div className="rounded-[24px] border border-border/70 bg-card/82 p-4">
-                            {[
-                                ['Calories', '1,860 / 2,180', '85%'],
-                                ['Protein', '132 g / 158 g', '84%'],
-                                ['Hydration', '7 / 9 cups', '78%'],
-                            ].map(([label, value, width]) => (
-                                <div key={label} className="mb-4 last:mb-0">
-                                    <div className="flex items-center justify-between gap-3 text-sm">
-                                        <span className="text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-[12px] bg-primary/18 text-primary">
+                                            <Icon className="size-3.5" />
+                                        </span>
+                                        <span className="text-xs font-semibold text-foreground">
                                             {label}
                                         </span>
-                                        <span className="font-medium text-foreground">
-                                            {value}
-                                        </span>
-                                    </div>
-                                    <div className="mt-2 h-2 rounded-full bg-muted">
-                                        <div
-                                            className="h-2 rounded-full bg-secondary"
-                                            style={{ width }}
-                                        />
                                     </div>
                                 </div>
                             ))}
-                        </div>
-                        <div className="rounded-[24px] border border-border/70 bg-accent/25 p-4 text-accent-foreground">
-                            Dinner can stay within target with lentil soup,
-                            grilled chicken, or a dairy-free yogurt bowl, all
-                            filtered around your restrictions.
-                        </div>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            label: 'Workout log',
-            icon: Dumbbell,
-            content: (
-                <div className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-                    <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-sm font-semibold">
-                                    Push day
+                            <div className="absolute right-4 bottom-4 rounded-[18px] border border-border/70 bg-card/88 px-4 py-3">
+                                <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                    Current area
                                 </p>
-                                <p className="mt-1 text-sm text-primary-foreground/72">
-                                    38 minutes active
+                                <p className="mt-1 text-sm font-semibold text-foreground">
+                                    3 options within 4 km
                                 </p>
                             </div>
-                            <Dumbbell className="size-5" />
                         </div>
-                        <div className="mt-5 space-y-3">
+
+                        <div className="space-y-4">
                             {[
-                                'Incline dumbbell press',
-                                'Machine chest press',
-                                'Cable lateral raise',
-                            ].map((exercise) => (
-                                <div
-                                    key={exercise}
-                                    className="rounded-[18px] bg-white/8 px-4 py-3 text-sm"
+                                [
+                                    'Byblos Fit Hub',
+                                    '2.4 km',
+                                    'Gym with strength equipment and trainer availability.',
+                                ],
+                                [
+                                    'Maya Nasser',
+                                    '3.1 km',
+                                    'Dietitian matched to Mediterranean meal planning.',
+                                ],
+                                [
+                                    'Cedar Performance',
+                                    '3.8 km',
+                                    'Trainer comfortable with shoulder-aware programming.',
+                                ],
+                            ].map(([name, distance, note]) => (
+                                <PreviewPanel
+                                    key={name}
+                                    eyebrow={distance}
+                                    title={name}
                                 >
-                                    {exercise}
-                                </div>
+                                    {note}
+                                </PreviewPanel>
                             ))}
                         </div>
                     </div>
-                    <div className="space-y-3">
-                        <div className="rounded-[22px] border border-border/70 bg-background/74 p-4">
-                            <p className="font-semibold text-foreground">
-                                Set memory
-                            </p>
-                            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                Last set remembered: 26 kg x 9 reps.
-                            </p>
-                        </div>
-                        <div className="rounded-[22px] border border-border/70 bg-card/82 p-4">
-                            <p className="font-semibold text-foreground">
-                                Alternative ready
-                            </p>
-                            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                If the shoulder feels irritated, swap to the
-                                planner’s safer pressing options.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                </PreviewShell>
             ),
         },
         {
-            label: 'AI coach',
-            icon: MessageSquare,
+            label: 'Track Meals',
+            icon: Utensils,
+            description:
+                'Meal tracking combines plan-following and quick logging in one focused view.',
             content: (
-                <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
-                    <div className="space-y-3">
-                        <div className="rounded-[22px] border border-border/70 bg-background/74 p-4">
-                            <p className="font-semibold text-foreground">
-                                Hayetak coach
-                            </p>
-                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                                You are still short on protein today. A
-                                dairy-free yogurt bowl or grilled chicken wrap
-                                would close the gap without violating your
-                                restrictions.
-                            </p>
-                        </div>
-                        <div className="rounded-[22px] border border-border/70 bg-card/82 p-4">
-                            <p className="font-semibold text-foreground">
-                                Safety layer
-                            </p>
-                            <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                                If shoulder discomfort is more than mild today,
-                                skip heavy pressing and use the injury-safe
-                                substitutions already in your plan.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="rounded-[24px] border border-border/70 bg-primary p-5 text-primary-foreground">
-                        {[
-                            [
-                                'Today',
-                                'Meals, hydration, active workout, current gap',
-                            ],
-                            [
-                                'Last 7 days',
-                                'Consistency, recovery trend, skipped meals',
-                            ],
-                            [
-                                'Profile',
-                                'Goals, allergies, injuries, diet type',
-                            ],
-                        ].map(([label, copy]) => (
-                            <div
-                                key={label}
-                                className="mb-3 rounded-[18px] bg-white/8 px-4 py-3 last:mb-0"
-                            >
-                                <p className="text-sm font-semibold">{label}</p>
-                                <p className="mt-1 text-sm leading-6 text-primary-foreground/74">
-                                    {copy}
-                                </p>
+                <PreviewShell
+                    activeLabel="Track Meals"
+                    title="Log what happened today without losing the plan."
+                    description="Quick logging, planned meals, safe substitutions, and daily totals all stay close to each other."
+                >
+                    <div className="grid h-full gap-4 lg:grid-cols-[1.06fr_0.94fr]">
+                        <div className="space-y-4">
+                            <PreviewPanel eyebrow="Planned day" title="Today">
+                                <div className="space-y-3">
+                                    {[
+                                        [
+                                            'Breakfast',
+                                            'Logged exact',
+                                            'Greek yogurt bowl with berries',
+                                        ],
+                                        [
+                                            'Lunch',
+                                            'Logged substitute',
+                                            'Chicken rice bowl with extra vegetables',
+                                        ],
+                                        [
+                                            'Snack',
+                                            'Pending',
+                                            'Protein gap still open for tonight',
+                                        ],
+                                        [
+                                            'Dinner',
+                                            'Planned',
+                                            'Two dairy-free options are ready',
+                                        ],
+                                    ].map(([meal, status, note]) => (
+                                        <div
+                                            key={meal}
+                                            className="rounded-[20px] border border-border/70 bg-card/82 px-4 py-3"
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="text-sm font-semibold text-foreground">
+                                                    {meal}
+                                                </p>
+                                                <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                                                    {status}
+                                                </span>
+                                            </div>
+                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                                {note}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <PreviewPanel
+                                    eyebrow="Coach note"
+                                    title="Safe swaps stay close"
+                                >
+                                    If protein is still low, the next suggestion
+                                    stays filtered around allergies and diet
+                                    type.
+                                </PreviewPanel>
+                                <PreviewPanel
+                                    eyebrow="Mode"
+                                    title="Quick log or follow plan"
+                                >
+                                    Users can log fast or stay anchored to the
+                                    generated meal structure for the day.
+                                </PreviewPanel>
                             </div>
-                        ))}
+                        </div>
+
+                        <div className="space-y-4">
+                            <PreviewPanel
+                                eyebrow="Daily totals"
+                                title="Today at a glance"
+                            >
+                                <div className="space-y-4">
+                                    {[
+                                        ['Calories', '1,860 / 2,180', '85%'],
+                                        ['Protein', '132 g / 158 g', '84%'],
+                                        ['Hydration', '7 / 9 cups', '78%'],
+                                    ].map(([label, value, width]) => (
+                                        <div key={label}>
+                                            <div className="flex items-center justify-between gap-3 text-sm">
+                                                <span className="text-muted-foreground">
+                                                    {label}
+                                                </span>
+                                                <span className="font-medium text-foreground">
+                                                    {value}
+                                                </span>
+                                            </div>
+                                            <div className="mt-2 h-2 rounded-full bg-muted">
+                                                <div
+                                                    className="h-2 rounded-full bg-secondary"
+                                                    style={{ width }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+
+                            <PreviewPanel
+                                eyebrow="Recommended next meal"
+                                title="Dinner stays on target"
+                                accent
+                            >
+                                Lentil soup, grilled chicken, or a dairy-free
+                                yogurt bowl would close the day cleanly without
+                                breaking restrictions.
+                            </PreviewPanel>
+
+                            <PreviewPanel
+                                eyebrow="Discovery"
+                                title="Fast logging stays practical"
+                            >
+                                Search, planned items, and substitutions all
+                                feel like one flow instead of separate tools.
+                            </PreviewPanel>
+                        </div>
                     </div>
-                </div>
+                </PreviewShell>
+            ),
+        },
+        {
+            label: 'Workout Log',
+            icon: Dumbbell,
+            description:
+                'The workout tracker mirrors the real product more closely, with modes, active session status, and safer alternatives all in one workspace.',
+            content: (
+                <PreviewShell
+                    activeLabel="Workout Log"
+                    title="Keep guided sessions and fast logging in one clear workspace."
+                    description="Day selection, live set logging, and safe alternatives stay visible without crowding the session."
+                >
+                    <div className="grid h-full gap-4 lg:grid-cols-[0.94fr_1.06fr]">
+                        <div className="space-y-4">
+                            <PreviewPanel
+                                eyebrow="Session modes"
+                                title="Follow AI plan, custom plan, or freestyle"
+                            >
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        'Follow AI Plan',
+                                        'My Plan',
+                                        'Freestyle',
+                                    ].map((chip, index) => (
+                                        <span
+                                            key={chip}
+                                            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                                index === 0
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'border border-border/70 bg-card/82 text-foreground'
+                                            }`}
+                                        >
+                                            {chip}
+                                        </span>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+
+                            <PreviewPanel
+                                eyebrow="Recommended day"
+                                title="Push day"
+                                accent
+                            >
+                                <div className="space-y-3">
+                                    {[
+                                        'Incline dumbbell press',
+                                        'Machine chest press',
+                                        'Cable lateral raise',
+                                        'Triceps rope pushdown',
+                                    ].map((exercise) => (
+                                        <div
+                                            key={exercise}
+                                            className="rounded-[18px] bg-white/9 px-4 py-3"
+                                        >
+                                            {exercise}
+                                        </div>
+                                    ))}
+                                </div>
+                            </PreviewPanel>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <PreviewMetric
+                                    value="38 min"
+                                    label="Active session"
+                                />
+                                <PreviewMetric value="8" label="Sets logged" />
+                                <PreviewMetric
+                                    value="26 kg"
+                                    label="Top set memory"
+                                />
+                            </div>
+
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                <PreviewPanel
+                                    eyebrow="Active logging"
+                                    title="Set-by-set flow"
+                                >
+                                    Reps, weight, and previous performance stay
+                                    visible while the session is in progress.
+                                </PreviewPanel>
+                                <PreviewPanel
+                                    eyebrow="Protection"
+                                    title="Alternative ready"
+                                >
+                                    If shoulder discomfort shows up, the page
+                                    can swap to safer pressing options without
+                                    breaking the workout rhythm.
+                                </PreviewPanel>
+                            </div>
+
+                            <PreviewPanel
+                                eyebrow="Recent sessions"
+                                title="Timeline stays easy to scan"
+                            >
+                                The page can show guided and freestyle sessions
+                                in one timeline, so nothing feels buried after
+                                the workout ends.
+                            </PreviewPanel>
+                        </div>
+                    </div>
+                </PreviewShell>
+            ),
+        },
+        {
+            label: 'AI Coach',
+            icon: MessageSquare,
+            description:
+                'Coach responses stay grounded in profile and recent behavior.',
+            content: (
+                <PreviewShell
+                    activeLabel="AI Coach"
+                    title="Answers stay personalized without exposing internal AI noise."
+                    description="Conversation stays central with today, last 7 days, and restriction context available."
+                >
+                    <div className="grid h-full gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+                        <div className="space-y-4">
+                            <div className="space-y-3 rounded-[28px] border border-border/70 bg-background/88 p-4 shadow-[0_24px_50px_-38px_rgba(15,23,42,0.42)]">
+                                <div className="flex justify-end">
+                                    <div className="max-w-[78%] rounded-[24px] bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground">
+                                        I still need a safe dinner idea that
+                                        helps me close protein tonight.
+                                    </div>
+                                </div>
+                                <div className="flex justify-start">
+                                    <div className="max-w-[84%] rounded-[24px] border border-border/70 bg-card/84 px-4 py-3 text-sm leading-6 text-foreground">
+                                        You are still short on protein today. A
+                                        grilled chicken wrap, lentil bowl, or
+                                        dairy-free yogurt parfait would close
+                                        the gap without violating your saved
+                                        restrictions.
+                                    </div>
+                                </div>
+                                <div className="flex justify-start">
+                                    <div className="max-w-[84%] rounded-[24px] border border-border/70 bg-card/84 px-4 py-3 text-sm leading-6 text-foreground">
+                                        If your shoulder feels irritated after
+                                        training, keep dinner simple and skip
+                                        anything that makes prep uncomfortable.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <PreviewPanel
+                                    eyebrow="Reply style"
+                                    title="Clear next step"
+                                >
+                                    Replies stay direct, safe, and actionable.
+                                </PreviewPanel>
+                                <PreviewPanel
+                                    eyebrow="Follow-up ready"
+                                    title="Thread-aware coaching"
+                                >
+                                    The coach can keep the conversation moving
+                                    without asking the user to repeat their
+                                    profile.
+                                </PreviewPanel>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <PreviewPanel
+                                eyebrow="Today"
+                                title="Current context"
+                            >
+                                Meals logged, hydration pace, and any active
+                                workout stay available before suggestions are
+                                made.
+                            </PreviewPanel>
+                            <PreviewPanel
+                                eyebrow="Last 7 days"
+                                title="Consistency snapshot"
+                            >
+                                Meal consistency, recovery trend, and missed
+                                habits help the answer stay realistic.
+                            </PreviewPanel>
+                            <PreviewPanel
+                                eyebrow="Profile"
+                                title="Restrictions stay attached"
+                                accent
+                            >
+                                Goals, allergies, injuries, and diet type remain
+                                in the coaching context by default.
+                            </PreviewPanel>
+                        </div>
+                    </div>
+                </PreviewShell>
             ),
         },
     ];
+
+    useEffect(() => {
+        const section = previewSectionRef.current;
+        if (!section || typeof IntersectionObserver === 'undefined') {
+            setPreviewInView(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setPreviewInView(entry.isIntersecting);
+            },
+            { threshold: 0.25 },
+        );
+
+        observer.observe(section);
+
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        if (!previewInView) {
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            setActivePreview((current) => (current + 1) % previews.length);
+        }, AUTO_PREVIEW_INTERVAL_MS);
+
+        return () => window.clearInterval(timer);
+    }, [previewInView, previews.length]);
 
     return (
         <>
@@ -364,13 +779,7 @@ export default function Landing() {
                 Skip to main content
             </a>
 
-            <div className="relative min-h-screen overflow-hidden bg-background">
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(215,109,79,0.18),transparent_60%)] dark:bg-[radial-gradient(circle_at_top,rgba(241,141,107,0.18),transparent_60%)]" />
-                    <div className="absolute top-24 right-0 h-72 w-72 rounded-full bg-primary/8 blur-3xl" />
-                    <div className="absolute top-96 left-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
-                </div>
-
+            <div className="relative min-h-screen overflow-hidden bg-background [font-kerning:normal] [text-rendering:optimizeLegibility] [word-spacing:0.015em]">
                 <header
                     className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
                         scrolled
@@ -383,12 +792,10 @@ export default function Landing() {
                             href="#hero"
                             className="inline-flex items-center gap-3 no-underline"
                         >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-secondary via-accent to-primary text-primary-foreground shadow-[0_18px_34px_-22px_rgba(23,38,60,0.9)]">
-                                <AppLogoIcon className="size-6 fill-current" />
-                            </span>
+                            <AppLogoIcon className="size-8" />
                             <div>
                                 <p
-                                    className="text-xl tracking-tight text-foreground"
+                                    className="text-xl tracking-normal text-foreground"
                                     style={{
                                         fontFamily: 'var(--font-display)',
                                     }}
@@ -400,10 +807,11 @@ export default function Landing() {
                                 </p>
                             </div>
                         </a>
+
                         <nav className="hidden items-center gap-3 md:flex">
                             {[
                                 ['#story', 'How it works'],
-                                ['#preview', 'Product preview'],
+                                ['#preview', 'Live demo'],
                                 ['#trust', 'Trust & safety'],
                             ].map(([href, label]) => (
                                 <a
@@ -415,7 +823,26 @@ export default function Landing() {
                                 </a>
                             ))}
                         </nav>
+
                         <div className="hidden items-center gap-3 md:flex">
+                            <div className="inline-flex items-center rounded-full border border-border/70 bg-card/80 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => updateAppearance('light')}
+                                    aria-label="Switch to light mode"
+                                    className={`${FOCUS_RING} inline-flex h-8 w-8 items-center justify-center rounded-full transition ${!isDark ? 'bg-primary/16' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Sun className="size-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updateAppearance('dark')}
+                                    aria-label="Switch to dark mode"
+                                    className={`${FOCUS_RING} inline-flex h-8 w-8 items-center justify-center rounded-full transition ${isDark ? 'bg-primary/16' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Moon className="size-4" />
+                                </button>
+                            </div>
                             <Cta href="/login" variant="secondary">
                                 Sign in
                             </Cta>
@@ -424,6 +851,7 @@ export default function Landing() {
                                 <ArrowRight className="size-4" />
                             </Cta>
                         </div>
+
                         <button
                             type="button"
                             onClick={() => setMobileOpen((open) => !open)}
@@ -436,12 +864,31 @@ export default function Landing() {
                             )}
                         </button>
                     </div>
+
                     {mobileOpen ? (
                         <div className="border-t border-border/70 bg-background/95 px-4 py-4 backdrop-blur-xl md:hidden">
+                            <div className="mb-3 inline-flex items-center rounded-full border border-border/70 bg-card/80 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => updateAppearance('light')}
+                                    aria-label="Switch to light mode"
+                                    className={`${FOCUS_RING} inline-flex h-8 w-8 items-center justify-center rounded-full transition ${!isDark ? 'bg-primary/16' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Sun className="size-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updateAppearance('dark')}
+                                    aria-label="Switch to dark mode"
+                                    className={`${FOCUS_RING} inline-flex h-8 w-8 items-center justify-center rounded-full transition ${isDark ? 'bg-primary/16' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Moon className="size-4" />
+                                </button>
+                            </div>
                             <div className="space-y-3">
                                 {[
                                     ['#story', 'How it works'],
-                                    ['#preview', 'Product preview'],
+                                    ['#preview', 'Live demo'],
                                     ['#trust', 'Trust & safety'],
                                 ].map(([href, label]) => (
                                     <a
@@ -463,376 +910,33 @@ export default function Landing() {
                         id="hero"
                         className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
                     >
-                        <div className="grid gap-12 lg:grid-cols-[0.96fr_1.04fr] lg:items-start xl:gap-16">
-                            <div className="space-y-7 pt-2 lg:pr-4">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/78 px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-primary uppercase shadow-sm backdrop-blur">
-                                    <Sparkles className="size-3.5" />
-                                    Calm, premium AI health platform
-                                </div>
-                                <div className="space-y-4">
-                                    <h1
-                                        className="max-w-2xl text-[3.15rem] leading-[0.96] tracking-[-0.03em] text-foreground sm:text-[4rem] lg:text-[4.7rem] xl:text-[5.15rem]"
-                                        style={{
-                                            fontFamily: 'var(--font-display)',
-                                        }}
-                                    >
-                                        Create your profile, generate a safer
-                                        plan, track the day, and get coaching
-                                        that adapts.
-                                    </h1>
-                                    <p className="max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
-                                        Hayetak brings nutrition planning,
-                                        workout planning, logging, messaging,
-                                        appointments, and AI guidance into one
-                                        structured experience built around
-                                        trust, personalization, and readability.
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2 text-sm">
-                                    {[
-                                        {
-                                            icon: Activity,
-                                            label: 'Create profile',
-                                        },
-                                        {
-                                            icon: Brain,
-                                            label: 'Generate AI plan',
-                                        },
-                                        {
-                                            icon: Utensils,
-                                            label: 'Log meals and workouts',
-                                        },
-                                        {
-                                            icon: Sparkles,
-                                            label: 'Get adaptive coaching',
-                                        },
-                                    ].map((step, index) => (
-                                        <div
-                                            key={step.label}
-                                            className="flex items-center gap-2"
-                                        >
-                                            {index > 0 ? (
-                                                <ChevronRight className="size-4 text-muted-foreground/60" />
-                                            ) : null}
-                                            <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/76 px-3 py-2 font-medium text-foreground">
-                                                <step.icon className="size-4 text-secondary" />
-                                                {step.label}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <Cta href="/register">
-                                        Build my routine
-                                        <ArrowRight className="size-4" />
-                                    </Cta>
-                                    <Cta href="/login" variant="secondary">
-                                        Sign in
-                                    </Cta>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        'Allergy-aware planning',
-                                        'Injury-aware exercise alternatives',
-                                        'Meals + workouts in one flow',
-                                        'Profile-based AI guidance',
-                                    ].map((signal) => (
-                                        <span
-                                            key={signal}
-                                            className="haye-chip"
-                                        >
-                                            {signal}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
+                        <div className="mx-auto w-full max-w-[80%] space-y-6 pt-4 text-center">
+                            <h1
+                                className="mx-auto w-full max-w-full text-[2.7rem] leading-[0.98] tracking-[-0.02em] text-foreground sm:text-[3.45rem] lg:text-[4rem]"
+                                style={{
+                                    fontFamily: 'var(--font-display)',
+                                }}
+                            >
+                                Create your profile, generate a safer plan,
+                                track the day, and get coaching that adapts.
+                            </h1>
 
-                            <div className="relative lg:pt-2">
-                                <div className="absolute -top-6 right-8 h-28 w-28 rounded-full bg-secondary/16 blur-3xl" />
-                                <div className="absolute bottom-10 left-8 h-24 w-24 rounded-full bg-accent/20 blur-3xl" />
-                                <div className="relative space-y-4">
-                                    <div className="haye-panel rounded-[34px] p-5 sm:p-6">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="haye-kicker">
-                                                    Today inside Hayetak
-                                                </p>
-                                                <h3
-                                                    className="mt-3 text-2xl tracking-tight text-foreground"
-                                                    style={{
-                                                        fontFamily:
-                                                            'var(--font-display)',
-                                                    }}
-                                                >
-                                                    Daily command center
-                                                </h3>
-                                            </div>
-                                            <span className="rounded-full bg-secondary/12 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-secondary uppercase">
-                                                Adaptive brief
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                            {[
-                                                ['1,860', 'kcal logged'],
-                                                ['132 g', 'protein'],
-                                                ['72%', 'hydration'],
-                                            ].map(([value, label]) => (
-                                                <div
-                                                    key={label}
-                                                    className="min-h-[8.75rem] rounded-[22px] border border-border/70 bg-background/74 p-4"
-                                                >
-                                                    <p className="text-2xl font-semibold text-foreground">
-                                                        {value}
-                                                    </p>
-                                                    <p className="mt-1 text-xs tracking-[0.18em] text-muted-foreground uppercase">
-                                                        {label}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div className="mt-4 rounded-[28px] border border-border/70 bg-primary p-5 text-primary-foreground">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                    <p className="text-sm font-semibold">
-                                                        Daily brief
-                                                    </p>
-                                                    <p className="mt-2 text-sm leading-7 text-primary-foreground/80">
-                                                        Protein is still low for
-                                                        today. A dairy-free
-                                                        snack after training
-                                                        would close the gap
-                                                        while keeping your
-                                                        restrictions intact.
-                                                    </p>
-                                                </div>
-                                                <span className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-medium tracking-[0.18em] uppercase">
-                                                    Safe
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                                            <div className="rounded-[24px] border border-border/70 bg-card/82 p-4">
-                                                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    Meal tracker
-                                                </p>
-                                                <div className="mt-3 space-y-2">
-                                                    {[
-                                                        [
-                                                            'Breakfast',
-                                                            'Logged - on target',
-                                                        ],
-                                                        [
-                                                            'Lunch',
-                                                            'Coach suggests more fiber',
-                                                        ],
-                                                        [
-                                                            'Snack',
-                                                            'Protein gap still open',
-                                                        ],
-                                                    ].map(([meal, note]) => (
-                                                        <div
-                                                            key={meal}
-                                                            className="rounded-[18px] bg-background/74 px-4 py-3"
-                                                        >
-                                                            <p className="text-sm font-semibold text-foreground">
-                                                                {meal}
-                                                            </p>
-                                                            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                                                                {note}
-                                                            </p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="rounded-[24px] border border-border/70 bg-card/82 p-4">
-                                                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    Workout log
-                                                </p>
-                                                <div className="mt-3 rounded-[20px] bg-background/74 p-4">
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <p className="text-sm font-semibold text-foreground">
-                                                            Push day
-                                                        </p>
-                                                        <Dumbbell className="size-4 text-secondary" />
-                                                    </div>
-                                                    <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                                                        Last set remembered and
-                                                        safer shoulder-friendly
-                                                        swaps stay visible.
-                                                    </p>
-                                                    <div className="mt-3 flex flex-wrap gap-2">
-                                                        {[
-                                                            '38 min',
-                                                            '8 sets logged',
-                                                            'Alt ready',
-                                                        ].map((chip) => (
-                                                            <span
-                                                                key={chip}
-                                                                className="haye-chip"
-                                                            >
-                                                                {chip}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-4 lg:grid-cols-2">
-                                        <div className="haye-panel rounded-[30px] p-5">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="haye-kicker">
-                                                        Nearby care
-                                                    </p>
-                                                    <p className="mt-2 text-lg font-semibold text-foreground">
-                                                        Discovery stays in flow
-                                                    </p>
-                                                </div>
-                                                <MapPin className="size-5 text-secondary" />
-                                            </div>
-                                            <div className="mt-4 space-y-3 text-sm">
-                                                {[
-                                                    [
-                                                        'FitZone Gym',
-                                                        '0.3 km',
-                                                        'Verified equipment details',
-                                                    ],
-                                                    [
-                                                        'Dr. Sara Khalil',
-                                                        '1.2 km',
-                                                        'Nutritionist accepting appointments',
-                                                    ],
-                                                ].map(
-                                                    ([
-                                                        name,
-                                                        distance,
-                                                        note,
-                                                    ]) => (
-                                                        <div
-                                                            key={name}
-                                                            className="rounded-[22px] border border-border/70 bg-background/74 p-4"
-                                                        >
-                                                            <div className="flex items-center justify-between gap-3">
-                                                                <p className="font-semibold text-foreground">
-                                                                    {name}
-                                                                </p>
-                                                                <span className="haye-chip">
-                                                                    {distance}
-                                                                </span>
-                                                            </div>
-                                                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                                                {note}
-                                                            </p>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-[30px] border border-border/70 bg-card/84 p-5 shadow-[0_24px_60px_-40px_rgba(23,38,60,0.45)]">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="haye-kicker">
-                                                        Coach context
-                                                    </p>
-                                                    <p className="mt-2 text-lg font-semibold text-foreground">
-                                                        The AI sees the full
-                                                        picture
-                                                    </p>
-                                                </div>
-                                                <MessageSquare className="size-5 text-secondary" />
-                                            </div>
-                                            <div className="mt-4 space-y-3">
-                                                {[
-                                                    [
-                                                        'Today',
-                                                        'Meals, hydration, workout status, current protein gap',
-                                                    ],
-                                                    [
-                                                        'Last 7 days',
-                                                        'Recovery trend, consistency, skipped sessions or meals',
-                                                    ],
-                                                    [
-                                                        'Profile',
-                                                        'Goals, allergies, medical notes, injuries, diet type',
-                                                    ],
-                                                ].map(([label, copy]) => (
-                                                    <div
-                                                        key={label}
-                                                        className="rounded-[20px] border border-border/70 bg-background/74 px-4 py-3"
-                                                    >
-                                                        <p className="text-sm font-semibold text-foreground">
-                                                            {label}
-                                                        </p>
-                                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                            {copy}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-[28px] border border-secondary/20 bg-secondary/10 p-5 text-foreground shadow-[0_20px_50px_-38px_rgba(215,109,79,0.55)] lg:col-span-2">
-                                            <div className="flex items-start gap-3">
-                                                <ShieldCheck className="mt-0.5 size-5 text-secondary" />
-                                                <div>
-                                                    <p className="text-sm font-semibold">
-                                                        Safety signals stay
-                                                        visible
-                                                    </p>
-                                                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                                                        Allergies, injuries,
-                                                        medical constraints, and
-                                                        equipment limits shape
-                                                        plans and suggestions
-                                                        before advice appears.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                            {[
-                                [
-                                    '2,180 kcal',
-                                    'Planner targets built from real profile inputs',
-                                ],
-                                [
-                                    '4-day split',
-                                    'Workout plan shaped around schedule, equipment, and injury history',
-                                ],
-                                [
-                                    '7-day context',
-                                    'Coach replies can reference recent meals, training, and recovery patterns',
-                                ],
-                                [
-                                    'Safety first',
-                                    'Allergies, diet type, and constraints stay visible across the flow',
-                                ],
-                            ].map(([value, copy]) => (
-                                <div
-                                    key={value}
-                                    className="haye-panel h-full rounded-[28px] p-5"
+                            <div className="flex flex-wrap justify-center gap-3">
+                                <Cta
+                                    href="/register"
+                                    className="px-7 py-3.5 text-base"
                                 >
-                                    <p className="text-2xl font-semibold tracking-tight text-foreground">
-                                        {value}
-                                    </p>
-                                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                                        {copy}
-                                    </p>
-                                </div>
-                            ))}
+                                    Start your plan
+                                    <ArrowRight className="size-5" />
+                                </Cta>
+                                <Cta
+                                    href="/login"
+                                    variant="secondary"
+                                    className="px-7 py-3.5 text-base"
+                                >
+                                    Sign in
+                                </Cta>
+                            </div>
                         </div>
                     </section>
 
@@ -843,8 +947,8 @@ export default function Landing() {
                         <SectionTitle
                             eyebrow="How it works"
                             title="A full health workflow, not a scattered fitness stack"
-                            description="Hayetak connects profile onboarding, AI planning, meal tracking, workout logging, and adaptive coaching into one structured journey."
                         />
+
                         <div className="mt-10 grid gap-4 lg:grid-cols-4">
                             {[
                                 {
@@ -882,7 +986,7 @@ export default function Landing() {
                                         </span>
                                         <Icon className="size-5 text-secondary" />
                                     </div>
-                                    <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
+                                    <p className="mt-5 text-lg font-semibold tracking-normal text-foreground">
                                         {title}
                                     </p>
                                     <p className="mt-3 text-sm leading-7 text-muted-foreground">
@@ -893,47 +997,82 @@ export default function Landing() {
                         </div>
                     </section>
 
-                    <section
-                        id="preview"
-                        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
-                    >
-                        <SectionTitle
-                            eyebrow="Product preview"
-                            title="Core product surfaces designed for clarity, safety, and momentum"
-                            description="Switch through the planner, meal tracker, workout log, and AI coach to see how Hayetak presents real product value instead of abstract AI promises."
-                        />
-                        <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-                            {previews.map((tab, index) => (
-                                <button
-                                    key={tab.label}
-                                    type="button"
-                                    onClick={() => setActivePreview(index)}
-                                    className={`${FOCUS_RING} inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition ${
-                                        activePreview === index
-                                            ? 'bg-primary text-primary-foreground shadow-[0_20px_34px_-24px_rgba(23,38,60,0.8)]'
-                                            : 'border border-border/70 bg-card/78 text-foreground hover:bg-background/90'
-                                    }`}
-                                >
-                                    <tab.icon className="size-4" />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="mt-8">
-                            <PreviewFrame
-                                title={
-                                    previews[activePreview]?.label ?? 'Planner'
-                                }
-                                subtitle="Inside Hayetak"
-                            >
-                                {previews[activePreview]?.content}
-                            </PreviewFrame>
+                    <section id="preview" className="relative py-6 sm:py-8">
+                        <div
+                            ref={previewSectionRef}
+                            className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+                        >
+                            <div className="haye-panel overflow-hidden rounded-[30px] border border-border/70 bg-card/88 shadow-[0_34px_80px_-64px_rgba(0,0,0,0.35)] backdrop-blur">
+                                <div className="flex w-full flex-col">
+                                    <div className="px-4 pt-4 pb-3 sm:px-5 lg:px-6">
+                                        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                            <div className="max-w-3xl">
+                                                <h2
+                                                    className="mt-2 text-[1.65rem] tracking-normal text-foreground sm:text-[2rem]"
+                                                    style={{
+                                                        fontFamily:
+                                                            'var(--font-display)',
+                                                    }}
+                                                >
+                                                    Real product views
+                                                </h2>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                {previews.map(
+                                                    (preview, index) => (
+                                                        <button
+                                                            key={preview.label}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setActivePreview(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            className={`${FOCUS_RING} inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition ${
+                                                                activePreview ===
+                                                                index
+                                                                    ? 'bg-primary text-primary-foreground shadow-[0_16px_30px_-24px_rgba(143,199,63,0.8)]'
+                                                                    : 'border border-border/70 bg-card/80 text-foreground hover:bg-background/90'
+                                                            }`}
+                                                        >
+                                                            <preview.icon className="size-4" />
+                                                            {preview.label}
+                                                        </button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="h-[32rem] overflow-hidden border-y border-border/70 bg-background/70 sm:h-[34rem] lg:h-[36rem]">
+                                        <div className="h-full w-full transition-all duration-300 ease-out">
+                                            {previews[activePreview]?.content}
+                                        </div>
+                                    </div>
+
+                                    <div className="px-4 py-3 sm:px-5 lg:px-6">
+                                        <div className="flex items-center gap-2">
+                                            {previews.map((preview, index) => (
+                                                <span
+                                                    key={`${preview.label}-progress`}
+                                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                                        activePreview === index
+                                                            ? 'w-12 bg-primary'
+                                                            : 'w-5 bg-border'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
                     <section
                         id="trust"
-                        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
+                        className="mx-auto max-w-7xl px-4 pt-10 pb-12 sm:px-6 lg:px-8 lg:pt-12 lg:pb-14"
                     >
                         <div className="haye-panel rounded-[36px] p-6 sm:p-8 lg:p-10">
                             <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
@@ -942,7 +1081,7 @@ export default function Landing() {
                                         Trust and safety
                                     </p>
                                     <h2
-                                        className="mt-3 text-3xl tracking-tight text-foreground sm:text-4xl"
+                                        className="mt-3 text-3xl tracking-normal text-foreground sm:text-4xl"
                                         style={{
                                             fontFamily: 'var(--font-display)',
                                         }}
@@ -955,7 +1094,7 @@ export default function Landing() {
                                         type, injury history, and medical
                                         constraints affect planning and coaching
                                         where decisions are made, not only in
-                                        hidden settings or error messages.
+                                        hidden settings or technical messages.
                                     </p>
                                     <div className="mt-6 flex flex-wrap gap-3">
                                         <Cta href="/register">
@@ -967,6 +1106,7 @@ export default function Landing() {
                                         </Cta>
                                     </div>
                                 </div>
+
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     {[
                                         {
@@ -982,7 +1122,7 @@ export default function Landing() {
                                         {
                                             icon: Brain,
                                             title: 'Context-aware coaching',
-                                            copy: 'Coach suggestions can reference today’s logs and the last 7 days instead of generic advice.',
+                                            copy: "Coach suggestions can reference today's logs and the last 7 days.",
                                         },
                                         {
                                             icon: MapPin,
@@ -991,7 +1131,7 @@ export default function Landing() {
                                         },
                                     ].map(({ icon: Icon, title, copy }) => (
                                         <div
-                                            key={String(title)}
+                                            key={title}
                                             className="rounded-[24px] border border-border/70 bg-background/74 p-5"
                                         >
                                             <Icon className="size-5 text-secondary" />
@@ -1004,34 +1144,6 @@ export default function Landing() {
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="mx-auto max-w-7xl px-4 py-10 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-                        <div className="haye-panel rounded-[36px] px-6 py-8 text-center sm:px-8 sm:py-10">
-                            <p className="haye-kicker">Ready to begin</p>
-                            <h2
-                                className="mt-4 text-4xl tracking-tight text-foreground sm:text-5xl"
-                                style={{ fontFamily: 'var(--font-display)' }}
-                            >
-                                Build your plan once, then let Hayetak keep the
-                                whole system connected.
-                            </h2>
-                            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                                Client, trainer, and nutritionist accounts all
-                                start from the same calmer product language:
-                                structured, premium, responsive, and grounded in
-                                real health context.
-                            </p>
-                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                                <Cta href="/register">
-                                    Create account
-                                    <ArrowRight className="size-4" />
-                                </Cta>
-                                <Cta href="/login" variant="secondary">
-                                    I already have an account
-                                </Cta>
                             </div>
                         </div>
                     </section>

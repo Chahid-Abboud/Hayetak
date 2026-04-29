@@ -199,4 +199,3 @@ class ProgressLabelReadinessService
         return $this->userWeightCache[$userId];
     }
 }
-

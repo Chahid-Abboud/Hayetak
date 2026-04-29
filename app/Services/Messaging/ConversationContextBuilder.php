@@ -2,7 +2,7 @@
 
 namespace App\Services\Messaging;
 
-use App\Models\AiPlan;
+use App\Models\Ai\AiPlan;
 use App\Models\Appointment;
 use App\Models\Conversation;
 use App\Models\MealEntry;
@@ -203,4 +203,3 @@ class ConversationContextBuilder
         return $total;
     }
 }
-

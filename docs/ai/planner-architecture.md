@@ -31,7 +31,7 @@ This keeps the planner ready for a weekly adherence/result review loop without r
 - `app/Console/Commands/AiExportTrainingData.php`
 - `app/Console/Commands/AiExportProgressPredictionData.php`
 - `app/Console/Commands/AiListProgressLabelReadiness.php`
-- `scripts/train_progress_predictor.py`
+- `scripts/ai/training/train_progress_predictor.py`
 - The stored plan schema contains `ml_readiness`.
 
 The project can later export structured `(input_context -> target_json)` examples for a small regression or recommendation experiment. That future experiment is intentionally optional and does not replace the main LLM-based planner.

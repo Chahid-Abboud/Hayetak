@@ -71,4 +71,3 @@ class AdminProgressController extends Controller
         return $request->validate($rules);
     }
 }
-

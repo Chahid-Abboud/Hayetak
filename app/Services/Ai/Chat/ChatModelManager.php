@@ -12,6 +12,9 @@ class ChatModelManager
 {
     public function __construct(private readonly FeatureConfigResolver $features) {}
 
+    /**
+     * Resolve the concrete chat client implementation from feature configuration.
+     */
     public function client(): ChatModelClient
     {
         return match ($this->features->provider(FeatureConfigResolver::FEATURE_CHAT)) {

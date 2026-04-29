@@ -1,4 +1,19 @@
 import {
+    AdminEmpty,
+    AdminField,
+    AdminInput,
+    AdminNativeSelect,
+    AdminNotice,
+    AdminOverviewCard,
+    AdminPanel,
+    AdminSearchInput,
+    AdminSplitLayout,
+    AdminStickyBar,
+    AdminTextarea,
+    AdminToolbar,
+    AdminToolbarGroup,
+} from '@/components/admin/admin-ui';
+import {
     AdminSection,
     AdminShell,
     AdminStatCard,
@@ -7,16 +22,8 @@ import {
 import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Head } from '@inertiajs/react';
-import {
-    BellRing,
-    CheckCircle2,
-    Search,
-    Send,
-    Users,
-    XCircle,
-} from 'lucide-react';
+import { BellRing, CheckCircle2, Send, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type UserOption = {
@@ -183,19 +190,15 @@ export default function AdminNotificationsIndex() {
             <Head title="Admin Notifications" />
             <RoleGuard roles={['admin']}>
                 <AdminShell
-                    title="Alerts Console"
+                    title="Notifications"
                     description="Send targeted in-app alerts to specific users, then verify whether those alerts are still unread, already seen, or dismissed."
                 >
                     <div className="space-y-6">
                         {error ? (
-                            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
-                                {error}
-                            </div>
+                            <AdminNotice tone="danger">{error}</AdminNotice>
                         ) : null}
                         {message ? (
-                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-100">
-                                {message}
-                            </div>
+                            <AdminNotice tone="success">{message}</AdminNotice>
                         ) : null}
 
                         <AdminStatsGrid>
@@ -218,66 +221,83 @@ export default function AdminNotificationsIndex() {
                             />
                         </AdminStatsGrid>
 
-                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+                        <AdminSection
+                            title="Triage guidance"
+                            description="Compose and delivery history stay separate so broadcast actions remain deliberate and audit reading stays clear."
+                        >
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                <AdminOverviewCard
+                                    title="Compose lane"
+                                    description="Select recipients first, then draft and send. Keep sends intentional and targeted."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        Selected recipients:{' '}
+                                        {selectedUsers.length}. Sending remains
+                                        disabled until title, message, and at
+                                        least one recipient are set.
+                                    </div>
+                                </AdminOverviewCard>
+                                <AdminOverviewCard
+                                    title="Delivery lane"
+                                    description="Use status filtering to confirm what was unread, read, or dismissed."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        History is readable by default; raw logs
+                                        stay in dedicated audit surfaces.
+                                    </div>
+                                </AdminOverviewCard>
+                            </div>
+                        </AdminSection>
+
+                        <AdminSplitLayout className="xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                             <AdminSection
-                                title="Compose Alert"
+                                title="Compose"
                                 description="Pick one or more users, write the alert, and send it to their notification bell."
                             >
                                 <div className="space-y-4">
-                                    <label className="space-y-2">
-                                        <span className="text-sm font-medium text-foreground">
-                                            Title
-                                        </span>
-                                        <Input
+                                    <AdminField label="Title">
+                                        <AdminInput
                                             value={title}
                                             onChange={(event) =>
                                                 setTitle(event.target.value)
                                             }
                                             placeholder="Short alert title"
                                         />
-                                    </label>
+                                    </AdminField>
 
-                                    <label className="space-y-2">
-                                        <span className="text-sm font-medium text-foreground">
-                                            Message
-                                        </span>
-                                        <textarea
+                                    <AdminField label="Message">
+                                        <AdminTextarea
                                             rows={5}
                                             value={body}
                                             onChange={(event) =>
                                                 setBody(event.target.value)
                                             }
                                             placeholder="What should the selected users see?"
-                                            className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                         />
-                                    </label>
+                                    </AdminField>
 
                                     <div className="space-y-3">
-                                        <label className="space-y-2">
-                                            <span className="text-sm font-medium text-foreground">
-                                                Find recipients
-                                            </span>
-                                            <div className="relative">
-                                                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                                <Input
-                                                    value={userSearch}
-                                                    onChange={(event) =>
-                                                        setUserSearch(
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Search by name or email"
-                                                    className="pl-9"
-                                                />
-                                            </div>
-                                        </label>
+                                        <AdminField
+                                            label="Find recipients"
+                                            helper="Start typing a name or email, then click a result to add it to this alert."
+                                        >
+                                            <AdminSearchInput
+                                                value={userSearch}
+                                                onChange={(event) =>
+                                                    setUserSearch(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="Search by name or email"
+                                            />
+                                        </AdminField>
 
                                         <div className="grid gap-2">
                                             {loadingUsers ? (
                                                 <div className="text-sm text-muted-foreground">
                                                     Searching users...
                                                 </div>
-                                            ) : (
+                                            ) : userResults.length > 0 ? (
                                                 userResults.map((user) => (
                                                     <button
                                                         key={user.id}
@@ -314,15 +334,21 @@ export default function AdminNotificationsIndex() {
                                                         </Badge>
                                                     </button>
                                                 ))
+                                            ) : (
+                                                <AdminEmpty
+                                                    title="No matching users"
+                                                    description="Try a broader name or email search to find recipients."
+                                                    className="py-8"
+                                                />
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                            <Users className="h-4 w-4" />
-                                            Selected recipients
-                                        </div>
+                                    <AdminPanel
+                                        eyebrow="Recipients"
+                                        title="Selected recipients"
+                                        description="Remove any recipient before sending if this alert should stay targeted."
+                                    >
                                         <div className="flex flex-wrap gap-2">
                                             {selectedUsers.map((user) => (
                                                 <button
@@ -349,46 +375,69 @@ export default function AdminNotificationsIndex() {
                                                 </div>
                                             ) : null}
                                         </div>
-                                    </div>
+                                    </AdminPanel>
 
-                                    <Button
-                                        type="button"
-                                        onClick={() => void send()}
-                                        disabled={
-                                            sending ||
-                                            !title.trim() ||
-                                            !body.trim() ||
-                                            selectedUsers.length === 0
-                                        }
+                                    <AdminStickyBar
+                                        summary={`${selectedUsers.length} recipient${selectedUsers.length === 1 ? '' : 's'} ready`}
                                     >
-                                        <Send className="h-4 w-4" />
-                                        {sending ? 'Sending...' : 'Send alert'}
-                                    </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => void send()}
+                                            disabled={
+                                                sending ||
+                                                !title.trim() ||
+                                                !body.trim() ||
+                                                selectedUsers.length === 0
+                                            }
+                                        >
+                                            <Send className="h-4 w-4" />
+                                            {sending
+                                                ? 'Sending...'
+                                                : 'Send alert'}
+                                        </Button>
+                                    </AdminStickyBar>
                                 </div>
                             </AdminSection>
 
                             <AdminSection
-                                title="Recent Alert History"
-                                description="Review the latest sent alerts and confirm each recipient’s current state."
+                                title="Filter & action toolbar"
+                                description="Review the latest sent alerts and confirm each recipient's current state."
                                 actions={
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(event) =>
-                                            setStatusFilter(event.target.value)
-                                        }
-                                        className="flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                    >
-                                        <option value="all">
-                                            All statuses
-                                        </option>
-                                        <option value="unread">Unread</option>
-                                        <option value="read">Read</option>
-                                        <option value="dismissed">
-                                            Dismissed
-                                        </option>
-                                    </select>
+                                    <AdminToolbar variant="plain">
+                                        <AdminToolbarGroup className="w-full sm:w-auto">
+                                            <AdminField
+                                                label="Status"
+                                                className="w-full sm:w-44"
+                                            >
+                                                <AdminNativeSelect
+                                                    value={statusFilter}
+                                                    onChange={(event) =>
+                                                        setStatusFilter(
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="all">
+                                                        All statuses
+                                                    </option>
+                                                    <option value="unread">
+                                                        Unread
+                                                    </option>
+                                                    <option value="read">
+                                                        Read
+                                                    </option>
+                                                    <option value="dismissed">
+                                                        Dismissed
+                                                    </option>
+                                                </AdminNativeSelect>
+                                            </AdminField>
+                                        </AdminToolbarGroup>
+                                    </AdminToolbar>
                                 }
                             >
+                                <div className="mb-4 text-sm text-muted-foreground">
+                                    Delivery history
+                                </div>
                                 <div className="space-y-3">
                                     {loadingAlerts ? (
                                         <div className="text-sm text-muted-foreground">
@@ -397,9 +446,11 @@ export default function AdminNotificationsIndex() {
                                     ) : null}
 
                                     {!loadingAlerts && alerts.length === 0 ? (
-                                        <div className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
-                                            No alerts match the current filter.
-                                        </div>
+                                        <AdminEmpty
+                                            title="No alerts match this filter"
+                                            description="Once alerts are sent, their read and dismissed state will show up here."
+                                            className="py-8"
+                                        />
                                     ) : null}
 
                                     {alerts.map((alert) => {
@@ -412,7 +463,7 @@ export default function AdminNotificationsIndex() {
                                         return (
                                             <article
                                                 key={alert.id}
-                                                className="rounded-2xl border border-border/70 bg-background/80 p-4"
+                                                className="dashboard-surface rounded-[24px] p-4"
                                             >
                                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                                     <div className="space-y-1">
@@ -479,7 +530,7 @@ export default function AdminNotificationsIndex() {
                                     })}
                                 </div>
                             </AdminSection>
-                        </div>
+                        </AdminSplitLayout>
                     </div>
                 </AdminShell>
             </RoleGuard>

@@ -1,7 +1,7 @@
 <?php
 
-use Tests\TestCase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\TestCase;
 
 uses(TestCase::class);
 

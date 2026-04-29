@@ -256,6 +256,7 @@ export default function NearbyMap({
         m.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         m.on('load', () => {
+            addMarkerImages(m);
             addSourcesAndLayers(m);
             drawRadiusCircle(
                 m,
@@ -320,7 +321,7 @@ export default function NearbyMap({
             // user marker in your theme
             const el = document.createElement('div');
             el.className =
-                'rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 border-2 border-slate-950/10 shadow-lg w-4 h-4';
+                'rounded-full bg-primary border-2 border-slate-950/10 shadow-lg w-4 h-4';
             el.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
 
             userMarkerRef.current = new mapboxgl.Marker({ element: el })
@@ -390,8 +391,7 @@ export default function NearbyMap({
 
     return (
         <div className="relative">
-            {/* toolbar */}
-            <div className="absolute top-2 left-2 z-10 flex items-center gap-2 rounded-xl border bg-card/90 p-2 shadow">
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-2 rounded-xl border border-border/70 bg-card/92 p-2 shadow-sm backdrop-blur">
                 <button
                     type="button"
                     onClick={() => onToggleGym?.(!showGym)}
@@ -412,22 +412,77 @@ export default function NearbyMap({
                             : 'border-border bg-background text-foreground'
                     }`}
                 >
-                    Nutritionists
+                    Nutrition centers
                 </button>
+            </div>
+
+            <div className="absolute top-16 right-3 z-10 rounded-xl border border-border/70 bg-card/92 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+                <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                    Current area
+                </div>
+                <div className="mt-1 font-medium">
+                    {places.length} option{places.length === 1 ? '' : 's'} in{' '}
+                    {(Math.round(radiusKm * 10) / 10).toFixed(1)} km
+                </div>
             </div>
 
             <div
                 ref={divRef}
-                className="h-[480px] w-full rounded-2xl border shadow-sm"
+                className="h-[520px] w-full rounded-[24px] border border-border/70 shadow-sm"
             />
 
-            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <div>
-                    View: {viewCenter.lat.toFixed(5)},{' '}
-                    {viewCenter.lon.toFixed(5)} - Radius from user: {radiusKm}{' '}
-                    km
+            <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-2">
+                    <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fcb3f]/40 bg-[#223726] text-[#8fcb3f]">
+                            <svg
+                                viewBox="0 0 16 16"
+                                aria-hidden="true"
+                                className="h-3 w-3"
+                            >
+                                <g
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    fill="none"
+                                >
+                                    <path d="M4 8h8" />
+                                    <path d="M2.7 5.6v4.8M4.2 6.2v3.6M11.8 6.2v3.6M13.3 5.6v4.8" />
+                                </g>
+                            </svg>
+                        </span>
+                        Gym
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fcb3f]/40 bg-[#223726] text-[#8fcb3f]">
+                            <svg
+                                viewBox="0 0 16 16"
+                                aria-hidden="true"
+                                className="h-3 w-3"
+                            >
+                                <g
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    fill="none"
+                                >
+                                    <path d="M5.5 3.5v9" />
+                                    <path d="M4 3.5v3M5.5 3.5v3M7 3.5v3" />
+                                    <path d="M10.5 3.5v9" />
+                                    <path d="M10.5 3.5l2 2.7" />
+                                </g>
+                            </svg>
+                        </span>
+                        Nutrition center / Dietitian
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-cyan-500/70" />
+                        Search radius
+                    </span>
                 </div>
-                <div>
+                <div className="text-right">
                     {loading ? (
                         'Loading...'
                     ) : error ? (
@@ -435,6 +490,11 @@ export default function NearbyMap({
                     ) : (
                         `${places.length} places`
                     )}
+                </div>
+                <div className="sm:col-span-2">
+                    View: {viewCenter.lat.toFixed(5)},{' '}
+                    {viewCenter.lon.toFixed(5)} - Radius from user: {radiusKm}{' '}
+                    km
                 </div>
             </div>
         </div>
@@ -574,21 +634,20 @@ function addSourcesAndLayers(map: Map) {
     if (!map.getLayer('places-unclustered')) {
         map.addLayer({
             id: 'places-unclustered',
-            type: 'circle',
+            type: 'symbol',
             source: 'places',
-            paint: {
-                'circle-color': [
+            layout: {
+                'icon-image': [
                     'match',
                     ['get', 'type'],
                     'gym',
-                    '#10b981', // green
+                    'marker-gym-logo',
                     'nutritionist',
-                    '#2563eb', // blue
-                    '#a78bfa', // fallback
+                    'marker-nutrition-logo',
+                    'marker-other-logo',
                 ],
-                'circle-radius': 6,
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#ffffff',
+                'icon-size': 0.92,
+                'icon-allow-overlap': true,
             },
         });
     }
@@ -621,6 +680,111 @@ function addSourcesAndLayers(map: Map) {
             },
         });
     }
+}
+
+function addMarkerImages(map: Map) {
+    if (!map.hasImage('marker-gym-logo')) {
+        map.addImage('marker-gym-logo', createLogoMarkerImage('gym'), {
+            pixelRatio: 2,
+        });
+    }
+
+    if (!map.hasImage('marker-nutrition-logo')) {
+        map.addImage(
+            'marker-nutrition-logo',
+            createLogoMarkerImage('nutritionist'),
+            { pixelRatio: 2 },
+        );
+    }
+
+    if (!map.hasImage('marker-other-logo')) {
+        map.addImage('marker-other-logo', createLogoMarkerImage('other'), {
+            pixelRatio: 2,
+        });
+    }
+}
+
+function createLogoMarkerImage(
+    kind: 'gym' | 'nutritionist' | 'other',
+): ImageData {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+        throw new Error('Could not create map marker canvas context.');
+    }
+
+    context.clearRect(0, 0, size, size);
+
+    const badgeColor = '#223726';
+    const glyphColor = '#8fcb3f';
+
+    context.beginPath();
+    context.arc(size / 2, size / 2, 16, 0, Math.PI * 2);
+    context.fillStyle = badgeColor;
+    context.fill();
+
+    context.beginPath();
+    context.arc(size / 2, size / 2, 16, 0, Math.PI * 2);
+    context.lineWidth = 1.8;
+    context.strokeStyle = 'rgba(143,203,63,0.28)';
+    context.stroke();
+
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = glyphColor;
+    context.fillStyle = glyphColor;
+
+    if (kind === 'gym') {
+        // Dumbbell icon (angled)
+        context.lineWidth = 2.6;
+        context.beginPath();
+        context.moveTo(23, 36);
+        context.lineTo(41, 28);
+        context.stroke();
+
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(19, 33);
+        context.lineTo(21.5, 38.5);
+        context.moveTo(22.2, 30.8);
+        context.lineTo(24.2, 35.5);
+        context.moveTo(39.8, 28.5);
+        context.lineTo(41.8, 33.2);
+        context.moveTo(42.5, 25.8);
+        context.lineTo(45, 31.2);
+        context.stroke();
+    } else if (kind === 'nutritionist') {
+        // Fork + knife icon
+        context.lineWidth = 2.4;
+        context.beginPath();
+        context.moveTo(24, 24);
+        context.lineTo(24, 40);
+        context.moveTo(20.5, 24);
+        context.lineTo(20.5, 30);
+        context.moveTo(24, 24);
+        context.lineTo(24, 30);
+        context.moveTo(27.5, 24);
+        context.lineTo(27.5, 30);
+        context.stroke();
+
+        context.lineWidth = 2.8;
+        context.beginPath();
+        context.moveTo(36, 24);
+        context.lineTo(36, 40);
+        context.moveTo(36, 24);
+        context.lineTo(40.5, 30);
+        context.stroke();
+    } else {
+        context.beginPath();
+        context.arc(size / 2, size / 2, 5, 0, Math.PI * 2);
+        context.fill();
+    }
+
+    return context.getImageData(0, 0, size, size);
 }
 
 function updatePlacesLayer(map: Map, list: Place[]) {

@@ -48,9 +48,16 @@ class AdminMealController extends Controller
 
     public function destroyFood(Request $request, Food $food): JsonResponse
     {
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
         $payload = $food->only(['id', 'name', 'category']);
         $food->delete();
-        $this->logger->log($request->user()->id, 'admin.food.delete', null, $payload);
+        $this->logger->log($request->user()->id, 'admin.food.delete', null, [
+            ...$payload,
+            'reason' => $data['reason'] ?? null,
+        ]);
 
         return response()->json(['ok' => true]);
     }
@@ -58,9 +65,28 @@ class AdminMealController extends Controller
     public function mealEntries(Request $request): JsonResponse
     {
         $userId = $request->query('user_id');
+        $mealType = trim((string) $request->query('meal_type', ''));
+        $search = trim((string) $request->query('search', ''));
         $rows = MealEntry::query()
             ->with(['user:id,email,first_name,last_name', 'food:id,name'])
             ->when($userId, fn ($q) => $q->where('user_id', (int) $userId))
+            ->when($mealType !== '', fn ($q) => $q->where('meal_type', $mealType))
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.$search.'%';
+
+                $query->where(function ($subQuery) use ($like) {
+                    $subQuery
+                        ->whereHas('user', function ($userQuery) use ($like) {
+                            $userQuery
+                                ->where('email', 'like', $like)
+                                ->orWhere('first_name', 'like', $like)
+                                ->orWhere('last_name', 'like', $like);
+                        })
+                        ->orWhereHas('food', function ($foodQuery) use ($like) {
+                            $foodQuery->where('name', 'like', $like);
+                        });
+                });
+            })
             ->latest('id')
             ->paginate((int) $request->query('per_page', 30));
 
@@ -84,11 +110,17 @@ class AdminMealController extends Controller
 
     public function destroyMealEntry(Request $request, MealEntry $mealEntry): JsonResponse
     {
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
         $payload = $mealEntry->only(['id', 'user_id', 'food_id']);
         $mealEntry->delete();
-        $this->logger->log($request->user()->id, 'admin.meal_entry.delete', null, $payload);
+        $this->logger->log($request->user()->id, 'admin.meal_entry.delete', null, [
+            ...$payload,
+            'reason' => $data['reason'] ?? null,
+        ]);
 
         return response()->json(['ok' => true]);
     }
 }
-

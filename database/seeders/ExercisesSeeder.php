@@ -149,7 +149,7 @@ class ExercisesSeeder extends Seeder
                     $unknownMuscles[$u] = true;
                 }
 
-continue;
+                continue;
             }
 
             $equipment = $this->normalizeEquipment($this->take($row, ['equipment', 'apparatus', 'machine', 'tool']));
@@ -315,7 +315,7 @@ continue;
             }
         }
 
-return false;
+        return false;
     }
 
     private function cleanVideoUrl(?string $url): ?string

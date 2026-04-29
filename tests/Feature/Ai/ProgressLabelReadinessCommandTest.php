@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\AiRequest;
+use App\Models\Ai\AiRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -110,4 +110,3 @@ it('reports ready and pending planner rows for progress labels', function () {
         ->expectsOutputToContain('Pending by reason - missing_end: 1')
         ->assertExitCode(0);
 });
-

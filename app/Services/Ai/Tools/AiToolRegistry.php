@@ -5,6 +5,8 @@ namespace App\Services\Ai\Tools;
 class AiToolRegistry
 {
     /**
+     * Return every tool the coach can execute from deterministic tool planning.
+     *
      * @return array<int, AiTool>
      */
     public function all(): array
@@ -18,6 +20,9 @@ class AiToolRegistry
         ];
     }
 
+    /**
+     * Locate a registered tool by its public function-call name.
+     */
     public function find(string $name): ?AiTool
     {
         foreach ($this->all() as $tool) {

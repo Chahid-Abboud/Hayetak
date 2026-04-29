@@ -67,4 +67,3 @@ class AdminPlaceLocalController extends Controller
         ]);
     }
 }
-

@@ -6,6 +6,9 @@ use App\Services\Ai\Chat\Contracts\ChatModelClient;
 
 class StubChatModelClient implements ChatModelClient
 {
+    /**
+     * Return deterministic, intent-based fallback responses without calling an LLM provider.
+     */
     public function respond(string $question, array $context, array $options = []): array
     {
         $intent = (string) ($options['intent'] ?? 'general_coaching');
@@ -34,6 +37,9 @@ class StubChatModelClient implements ChatModelClient
         ];
     }
 
+    /**
+     * Build nutrition-focused guidance using today's macros, goals, and saved restrictions.
+     */
     private function nutritionReply(string $question, array $context): string
     {
         $protein = (int) ($context['today_summary']['protein_g'] ?? 0);
@@ -256,6 +262,9 @@ class StubChatModelClient implements ChatModelClient
         );
     }
 
+    /**
+     * Build workout guidance from recent workout activity and injury context.
+     */
     private function workoutReply(string $question, array $context): string
     {
         $todayWorkedOut = (bool) ($context['today_summary']['workout_logged'] ?? false);
@@ -293,6 +302,9 @@ class StubChatModelClient implements ChatModelClient
         ).$injuryText;
     }
 
+    /**
+     * Build progress-oriented feedback from measurements, nutrition consistency, and workouts.
+     */
     private function progressReply(string $question, array $context): string
     {
         $measurement = $context['last_7_days_summary']['latest_measurement'] ?? null;
@@ -351,6 +363,9 @@ class StubChatModelClient implements ChatModelClient
         );
     }
 
+    /**
+     * Answer plan-state questions based on active nutrition/workout plan availability.
+     */
     private function planReply(string $question, array $context): string
     {
         $hasNutritionPlan = (bool) ($context['plans']['nutrition_plan_active'] ?? false);
@@ -385,6 +400,9 @@ class StubChatModelClient implements ChatModelClient
         return 'At least one active plan is missing. Check planner status and regenerate the missing plan.';
     }
 
+    /**
+     * Return nearby guidance, optionally using the runtime coordinates if present.
+     */
     private function nearbyReply(array $context): string
     {
         $lat = $context['nearby_context']['lat'] ?? null;
@@ -397,6 +415,9 @@ class StubChatModelClient implements ChatModelClient
         return 'Your location is available, so Nearby should show support options close to you. Use filters to match your goal and budget.';
     }
 
+    /**
+     * Provide short answers for messages/appointments/notifications flows.
+     */
     private function communicationReply(string $question): string
     {
         if (str_contains($question, 'appointment')) {
@@ -410,6 +431,9 @@ class StubChatModelClient implements ChatModelClient
         return 'Use Messages to continue an existing thread or start one from a professional profile.';
     }
 
+    /**
+     * Provide account/settings troubleshooting guidance.
+     */
     private function settingsReply(string $question): string
     {
         if (str_contains($question, 'password')) {
@@ -435,6 +459,9 @@ class StubChatModelClient implements ChatModelClient
         return 'Most account updates are in Settings -> Profile and Settings -> Security.';
     }
 
+    /**
+     * Return wellness/recovery guidance when the intent is general health support.
+     */
     private function wellnessReply(string $question, array $context): string
     {
         if ($this->containsAny($question, ['recovery tips after a hard workout', 'recovery tips'])) {
@@ -480,6 +507,9 @@ class StubChatModelClient implements ChatModelClient
         return $this->generalReply($context);
     }
 
+    /**
+     * Generic fallback response when no specific intent branch matches.
+     */
     private function generalReply(array $context): string
     {
         $goal = $context['user_profile']['goal'] ?? 'your goal';
@@ -494,6 +524,9 @@ class StubChatModelClient implements ChatModelClient
         );
     }
 
+    /**
+     * Simple substring matcher used by deterministic branches.
+     */
     private function containsAny(string $haystack, array $needles): bool
     {
         foreach ($needles as $needle) {

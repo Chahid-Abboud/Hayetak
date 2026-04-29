@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\PostgresTextArrayCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,6 +33,6 @@ class Food extends Model
         'allergens' => 'array',   // jsonb array
         'diets_allowed' => 'array',   // jsonb array
         'ingredients' => 'array',   // jsonb array
-        'meal_types' => 'array',   // jsonb array like ["breakfast","snack"]
+        'meal_types' => PostgresTextArrayCast::class,
     ];
 }

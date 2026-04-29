@@ -9,6 +9,9 @@ class OllamaClient
 {
     public function __construct(private readonly FeatureConfigResolver $features) {}
 
+    /**
+     * Create an embedding vector for a text input using the feature's embedding configuration.
+     */
     public function embed(string $feature, string $text): array
     {
         $settings = $this->features->ollamaEmbedding($feature);
@@ -48,6 +51,9 @@ class OllamaClient
         ];
     }
 
+    /**
+     * Send a chat-completion style request to Ollama and normalize usage metadata.
+     */
     public function chat(string $feature, array $messages, array $options = []): array
     {
         $settings = $this->features->ollamaChat($feature);
@@ -101,6 +107,9 @@ class OllamaClient
         ];
     }
 
+    /**
+     * Convert mixed message payloads (plain text or typed content parts) into Ollama format.
+     */
     private function normalizeMessages(array $messages): array
     {
         return array_map(function (array $message): array {

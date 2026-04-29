@@ -6,17 +6,13 @@ import { register } from '@/routes';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
 import {
-    Activity,
     ArrowRight,
-    Brain,
-    Check,
     Eye,
     EyeOff,
     LoaderCircle,
     Lock,
     Mail,
     Shield,
-    Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -69,127 +65,22 @@ function PasswordField({ error }: { error?: string }) {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
-    const features = [
-        {
-            icon: Brain,
-            title: 'AI-personalized plans',
-            desc: 'Nutrition and workout plans built from your unique profile.',
-        },
-        {
-            icon: Activity,
-            title: 'Context-aware coaching',
-            desc: "Your AI coach knows today's meals, last 7 days, and your goals.",
-        },
-        {
-            icon: Shield,
-            title: 'Allergy & injury safe',
-            desc: 'Recommendations stay grounded in your restrictions and history.',
-        },
-        {
-            icon: Sparkles,
-            title: 'Track everything',
-            desc: 'Meals, workouts, water, and progress live in one intelligent system.',
-        },
-    ];
-
     return (
         <>
             <Head title="Log in" />
 
-            <div className="min-h-screen bg-background text-foreground lg:flex">
-                <div className="relative hidden overflow-hidden lg:flex lg:w-[42%] lg:flex-col lg:justify-between lg:p-10 xl:w-[45%] xl:p-14">
-                    <div className="absolute inset-0 bg-[linear-gradient(160deg,#17263c_0%,#1b2a42_52%,#162033_100%)]" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(201,164,76,0.18),transparent_40%)]" />
-                    <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-secondary/12 blur-3xl" />
-                    <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-accent/14 blur-3xl" />
-
-                    <div className="relative">
-                        <div className="mb-12 flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-secondary via-accent to-primary shadow-lg shadow-black/20">
-                                <AppLogoIcon className="size-4 fill-current text-white" />
-                            </div>
-                            <span className="font-semibold tracking-tight text-white/92">
-                                Hayetak
-                            </span>
-                        </div>
-
-                        <div className="mb-10 space-y-4">
-                            <h1
-                                className="text-3xl leading-tight tracking-tight text-white/88 xl:text-4xl"
-                                style={{ fontFamily: 'var(--font-display)' }}
-                            >
-                                Welcome back to{' '}
-                                <span className="bg-gradient-to-r from-[#f7efdf] via-[#f1c9aa] to-[#e0ba61] bg-clip-text text-transparent">
-                                    your health OS
-                                </span>
-                            </h1>
-                            <p className="leading-relaxed text-white/72">
-                                Pick up right where you left off. Your AI plans,
-                                logs, and coaching history are waiting for you.
-                            </p>
-                        </div>
-
-                        <div className="space-y-4">
-                            {features.map((feature) => (
-                                <div
-                                    key={feature.title}
-                                    className="flex items-start gap-3"
-                                >
-                                    <div className="flex h-8 w-8 flex-none items-center justify-center rounded-xl border border-white/10 bg-white/8">
-                                        <feature.icon className="size-4 text-secondary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-white/88">
-                                            {feature.title}
-                                        </p>
-                                        <p className="mt-0.5 text-xs text-white/62">
-                                            {feature.desc}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="relative space-y-3 border-t border-white/10 pt-6">
-                        <div className="flex flex-wrap gap-3">
-                            {[
-                                { icon: Lock, text: '256-bit encrypted' },
-                                { icon: Shield, text: 'Safety-first AI' },
-                                { icon: Check, text: 'No ads, ever' },
-                            ].map((item) => (
-                                <div
-                                    key={item.text}
-                                    className="flex items-center gap-1.5"
-                                >
-                                    <item.icon className="size-3.5 text-white/50" />
-                                    <span className="text-xs text-white/52">
-                                        {item.text}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-xs text-white/46">
-                            Hayetak is not a medical service. Consult a
-                            qualified professional for medical decisions.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:py-0">
-                    <div className="mb-10 flex self-start lg:hidden">
-                        <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-secondary via-accent to-primary">
-                                <AppLogoIcon className="size-4 fill-current text-white" />
-                            </div>
-                            <span className="font-semibold text-foreground">
-                                Hayetak
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="w-full max-w-sm">
+            <div className="min-h-screen bg-background px-6 py-10 text-foreground sm:px-8 sm:py-14 lg:px-12">
+                <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-xl items-center justify-center">
+                    <div className="w-full rounded-[32px] border border-border/70 bg-card/92 p-6 shadow-[0_35px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur sm:p-8">
                         <div className="mb-8">
+                            <div className="mb-6 flex items-center gap-2.5">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 shadow-[0_18px_34px_-24px_rgba(23,38,60,0.9)]">
+                                    <AppLogoIcon className="size-4.5" />
+                                </div>
+                                <span className="font-semibold tracking-tight text-foreground">
+                                    Hayetak
+                                </span>
+                            </div>
                             <h2
                                 className="mb-1.5 text-2xl tracking-tight text-foreground"
                                 style={{ fontFamily: 'var(--font-display)' }}

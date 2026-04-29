@@ -1,12 +1,21 @@
+﻿import {
+    AdminDataTable,
+    AdminEmpty,
+    AdminField,
+    AdminInput,
+    AdminNotice,
+    AdminOverviewCard,
+    AdminSplitLayout,
+    AdminStickyBar,
+    AdminTextarea,
+} from '@/components/admin/admin-ui';
 import {
     AdminSection,
     AdminShell,
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
-import { ProductBanner, ProductEmptyState } from '@/components/product/page';
 import {
-    ProductTable,
     ProductTableBody,
     ProductTableCell,
     ProductTableEmptyRow,
@@ -16,9 +25,6 @@ import {
 } from '@/components/product/table';
 import RoleGuard from '@/components/RoleGuard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { jsonRequestInit } from '@/lib/http';
 import { Head } from '@inertiajs/react';
 import { Plus, RefreshCcw, Trash2 } from 'lucide-react';
@@ -208,13 +214,13 @@ export default function AdminProgressPage() {
                     description="Review measurement records with clearer filtering and editing so trend data stays trustworthy."
                     actions={
                         <div className="flex flex-wrap items-center gap-2">
-                            <Input
+                            <AdminInput
                                 value={userId}
                                 onChange={(event) =>
                                     setUserId(event.target.value)
                                 }
                                 placeholder="Filter by user ID"
-                                className="h-10 w-44 rounded-full"
+                                className="w-44 rounded-full"
                             />
                             <Button
                                 type="button"
@@ -268,27 +274,62 @@ export default function AdminProgressPage() {
                             />
                         </AdminStatsGrid>
 
+                        <AdminSection
+                            title="Triage guidance"
+                            description="Keep measurement editing calm and traceable: filter first, review trends, then apply corrections."
+                        >
+                            <div className="grid gap-4 xl:grid-cols-2">
+                                <AdminOverviewCard
+                                    title="Queue snapshot"
+                                    description="Use user-level filtering to narrow the list before touching records."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        {userId
+                                            ? `Filtered to user #${userId}.`
+                                            : 'No user filter active. Showing all recent measurements.'}
+                                    </div>
+                                </AdminOverviewCard>
+                                <AdminOverviewCard
+                                    title="Selected record context"
+                                    description="Edit one record at a time to keep chart consistency and auditability."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 text-sm text-muted-foreground">
+                                        {selected
+                                            ? `Selected ${selected.id ? `entry #${selected.id}` : 'new entry draft'}.`
+                                            : 'Select a measurement from the list to open the detail editor.'}
+                                    </div>
+                                </AdminOverviewCard>
+                            </div>
+                        </AdminSection>
+
                         {error ? (
-                            <ProductBanner tone="danger">{error}</ProductBanner>
+                            <AdminNotice tone="danger">{error}</AdminNotice>
                         ) : null}
                         {success ? (
-                            <ProductBanner tone="success">
-                                {success}
-                            </ProductBanner>
+                            <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
 
-                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
+                        <AdminSection
+                            title="Filter & action toolbar"
+                            description="Use list/detail split by default so trend context stays readable while editing."
+                        >
+                            <div className="text-sm text-muted-foreground">
+                                Measurement workspace
+                            </div>
+                        </AdminSection>
+
+                        <AdminSplitLayout>
                             <AdminSection
                                 title="Recent measurements"
                                 description="Select a measurement to inspect or correct it."
                             >
                                 {loading ? (
-                                    <ProductEmptyState
+                                    <AdminEmpty
                                         title="Loading progress logs"
                                         description="Fetching the latest measurements for the selected filter."
                                     />
                                 ) : (
-                                    <ProductTable>
+                                    <AdminDataTable>
                                         <ProductTableHead>
                                             <tr>
                                                 <ProductTableHeaderCell>
@@ -359,7 +400,7 @@ export default function AdminProgressPage() {
                                                 />
                                             ) : null}
                                         </ProductTableBody>
-                                    </ProductTable>
+                                    </AdminDataTable>
                                 )}
                             </AdminSection>
 
@@ -372,7 +413,7 @@ export default function AdminProgressPage() {
                                 description="Keep logged values structured so profile charts stay reliable."
                             >
                                 {!selected ? (
-                                    <ProductEmptyState
+                                    <AdminEmpty
                                         title="Select or create an entry"
                                         description="Choose a row from the table or create a new measurement."
                                     />
@@ -391,9 +432,8 @@ export default function AdminProgressPage() {
                                                 })
                                             }
                                         />
-                                        <label className="space-y-2">
-                                            <Label>Date</Label>
-                                            <Input
+                                        <AdminField label="Date">
+                                            <AdminInput
                                                 type="date"
                                                 value={selected.measured_at}
                                                 onChange={(event) =>
@@ -404,7 +444,7 @@ export default function AdminProgressPage() {
                                                     })
                                                 }
                                             />
-                                        </label>
+                                        </AdminField>
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <Field
                                                 label="Weight (kg)"
@@ -439,9 +479,8 @@ export default function AdminProgressPage() {
                                                 })
                                             }
                                         />
-                                        <label className="space-y-2">
-                                            <Label>Notes</Label>
-                                            <Textarea
+                                        <AdminField label="Notes">
+                                            <AdminTextarea
                                                 rows={4}
                                                 value={selected.notes ?? ''}
                                                 onChange={(event) =>
@@ -452,8 +491,14 @@ export default function AdminProgressPage() {
                                                     })
                                                 }
                                             />
-                                        </label>
-                                        <div className="flex flex-wrap gap-3">
+                                        </AdminField>
+                                        <AdminStickyBar
+                                            summary={
+                                                selected.id
+                                                    ? `Editing entry #${selected.id}`
+                                                    : 'Creating a new measurement entry'
+                                            }
+                                        >
                                             <Button
                                                 type="button"
                                                 onClick={() => void save()}
@@ -478,11 +523,11 @@ export default function AdminProgressPage() {
                                                     Delete
                                                 </Button>
                                             ) : null}
-                                        </div>
+                                        </AdminStickyBar>
                                     </div>
                                 )}
                             </AdminSection>
-                        </div>
+                        </AdminSplitLayout>
                     </div>
                 </AdminShell>
             </RoleGuard>
@@ -501,8 +546,8 @@ function Field({
 }) {
     return (
         <label className="space-y-2">
-            <Label>{label}</Label>
-            <Input
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            <AdminInput
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
             />

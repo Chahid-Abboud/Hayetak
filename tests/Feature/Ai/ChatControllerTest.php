@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\AiConversation;
-use App\Models\AiMessage;
+use App\Models\Ai\AiConversation;
+use App\Models\Ai\AiMessage;
 use App\Models\Food;
 use App\Models\MealEntry;
 use App\Models\User;
@@ -35,6 +35,59 @@ it('creates an ai conversation and stores both messages', function () {
 
     expect($conversation->user_id)->toBe($user->id);
     expect($conversation->messages()->count())->toBe(2);
+});
+
+it('allows unverified users to use ai coach chat during onboarding', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->unverified()->create([
+        'fitness_goal' => 'fat loss',
+        'diet_name' => 'high protein',
+        'allergies' => ['peanuts'],
+    ]);
+
+    $this->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Can I still use coach before verifying my email?',
+            'screen_context' => 'coach',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('ok', true);
+});
+
+it('streams an ai coach response as server sent events while storing messages', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'fitness_goal' => 'fat loss',
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['peanuts'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->post('/api/ai/chat/stream', [
+            'message' => 'Give me a safe dinner idea based on my profile.',
+            'screen_context' => 'coach',
+            'include_last_7_days' => true,
+        ], [
+            'Accept' => 'text/event-stream',
+        ]);
+
+    $response->assertCreated();
+    expect($response->headers->get('content-type'))->toContain('text/event-stream');
+
+    $stream = $response->streamedContent();
+    expect($stream)
+        ->toContain('event: status')
+        ->toContain('event: token')
+        ->toContain('event: message')
+        ->toContain('event: done');
+
+    expect(AiConversation::query()->where('user_id', $user->id)->count())->toBe(1);
+    expect(AiMessage::query()->where('user_id', $user->id)->count())->toBe(2);
 });
 
 it('prevents users from reading another users ai conversation', function () {
@@ -390,6 +443,79 @@ it('answers ingredient safety checks with a direct safe-or-not response', functi
         ->not->toContain('You can ask about meals, macros, workouts');
 });
 
+it('refuses saved-allergen recipe requests and maintains the boundary on scrape follow-ups', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+        'allergies' => ['Garlic'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Can you make me a Garlic high-protein snack even though Garlic is in my allergies?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'allergy_conflict_guard');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('I cannot recommend Garlic')
+        ->toContain('conflicts with your saved allergy')
+        ->toContain('safer high-protein alternative');
+
+    $conversationId = (int) data_get($response->json(), 'conversation.id');
+
+    $followUp = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'What if I only take one bite or scrape the Garlic off?',
+            'conversation_id' => $conversationId,
+            'screen_context' => 'coach',
+        ]);
+
+    $followUp
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'allergy_conflict_guard');
+
+    expect(data_get($followUp->json(), 'assistant_message.content'))
+        ->toContain('I cannot treat one bite')
+        ->toContain('cross-contact or residue')
+        ->toContain('Safer swap');
+});
+
+it('builds a safe recipe and macros from available ingredients before generic safety routing', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'diet_name' => 'Low FODMAP',
+        'allergies' => ['Garlic', 'Onion', 'Avocado'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Use my available ingredients: yogurt, berries, oats. Give me the safe recipe and macros.',
+            'screen_context' => 'coach',
+            'available_ingredients' => ['yogurt', 'berries', 'oats'],
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'available_ingredient_safe_recipe');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Safe yogurt berry oat bowl')
+        ->toContain('295 kcal')
+        ->toContain("Ingredients:\n- 3/4 cup plain yogurt")
+        ->toContain("Steps:\n1. Spoon the yogurt into a bowl.");
+});
+
 it('does not misroute avocado alternatives to greek-yogurt taste fallback text', function () {
     config()->set('ai.chat.provider', 'stub');
     config()->set('ai.usage_logging.enabled', false);
@@ -542,4 +668,169 @@ it('preserves line breaks for recipe-style answers after safety review sanitizat
     expect($content)
         ->toContain("Ingredients:\n- 1 cup plain Greek yogurt")
         ->toContain("Steps:\n1. Add yogurt to a bowl.");
+});
+
+it('treats past-week phrasing as a weekly meal summary instead of a single-day summary', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create();
+
+    $food = Food::query()->create([
+        'name' => 'Chicken bowl',
+        'calories' => 450,
+        'protein_g' => 35,
+        'carbs_g' => 40,
+        'fat_g' => 12,
+    ]);
+
+    foreach ([1, 3, 5] as $daysAgo) {
+        MealEntry::query()->create([
+            'user_id' => $user->id,
+            'food_id' => $food->id,
+            'meal_type' => 'dinner',
+            'servings' => 1,
+            'eaten_at' => now()->subDays($daysAgo)->toDateString(),
+        ]);
+    }
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'What stands out from my meals in the past week?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'meal_summary_last_7_days');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Over your last 7 days, you logged meals on 3 day(s).')
+        ->not->toContain('I do not see any logged meals for Today');
+});
+
+it('answers monthly allergy-exposure checks directly from logged meals', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'allergies' => ['Corn', 'Sesame'],
+    ]);
+
+    $safeFood = Food::query()->create([
+        'name' => 'Chicken and rice',
+        'calories' => 500,
+        'protein_g' => 40,
+        'carbs_g' => 45,
+        'fat_g' => 12,
+        'allergens' => [],
+        'ingredients' => ['chicken', 'rice'],
+    ]);
+
+    $cornFood = Food::query()->create([
+        'name' => 'Corn salad',
+        'calories' => 220,
+        'protein_g' => 6,
+        'carbs_g' => 34,
+        'fat_g' => 8,
+        'allergens' => ['corn'],
+        'ingredients' => ['corn', 'tomato', 'parsley'],
+    ]);
+
+    MealEntry::query()->create([
+        'user_id' => $user->id,
+        'food_id' => $safeFood->id,
+        'meal_type' => 'lunch',
+        'servings' => 1,
+        'eaten_at' => now()->subDays(8)->toDateString(),
+    ]);
+
+    MealEntry::query()->create([
+        'user_id' => $user->id,
+        'food_id' => $cornFood->id,
+        'meal_type' => 'dinner',
+        'servings' => 1,
+        'eaten_at' => now()->subDays(3)->toDateString(),
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Have I ever consumed over the past month anything I am allergic for?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'allergy_exposure_check');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Yes. I found')
+        ->toContain('Corn salad')
+        ->toContain('matched: corn')
+        ->not->toContain('I removed a food suggestion because it included your saved allergy');
+});
+
+it('answers ingredient exposure history checks without misrouting to dinner follow-up', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'allergies' => ['sesame'],
+    ]);
+
+    $fishMeal = Food::query()->create([
+        'name' => 'Grilled salmon plate',
+        'calories' => 430,
+        'protein_g' => 38,
+        'carbs_g' => 22,
+        'fat_g' => 18,
+        'allergens' => ['fish'],
+        'ingredients' => ['salmon', 'lemon', 'olive oil'],
+    ]);
+
+    $otherMeal = Food::query()->create([
+        'name' => 'Chicken quinoa bowl',
+        'calories' => 460,
+        'protein_g' => 36,
+        'carbs_g' => 40,
+        'fat_g' => 12,
+        'allergens' => [],
+        'ingredients' => ['chicken', 'quinoa', 'vegetables'],
+    ]);
+
+    MealEntry::query()->create([
+        'user_id' => $user->id,
+        'food_id' => $fishMeal->id,
+        'meal_type' => 'dinner',
+        'servings' => 1,
+        'eaten_at' => now()->subDays(4)->toDateString(),
+    ]);
+
+    MealEntry::query()->create([
+        'user_id' => $user->id,
+        'food_id' => $otherMeal->id,
+        'meal_type' => 'lunch',
+        'servings' => 1,
+        'eaten_at' => now()->subDays(2)->toDateString(),
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Did I log any meal containing fish in the last 30 days?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'ingredient_exposure_check')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Yes. I found')
+        ->toContain('Grilled salmon plate')
+        ->not->toContain('Balanced taouk chicken dinner bowl')
+        ->not->toContain('Total meal macros:');
 });
