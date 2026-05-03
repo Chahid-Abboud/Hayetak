@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Ai\AiPlan;
+use App\Models\AiPlan;
 use App\Models\Appointment;
 use App\Models\Food;
 use App\Models\MealEntry;

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiMessage;
+use App\Models\AiConversation;
+use App\Models\AiMessage;
 use App\Models\Food;
 use App\Models\MealEntry;
 use App\Models\User;
@@ -35,6 +35,13 @@ it('creates an ai conversation and stores both messages', function () {
 
     expect($conversation->user_id)->toBe($user->id);
     expect($conversation->messages()->count())->toBe(2);
+
+    $sources = collect(data_get($response->json(), 'assistant_message.metadata.context_sources', []));
+    expect($sources->pluck('key')->all())
+        ->toContain('user_profile')
+        ->toContain('restrictions')
+        ->toContain('today_summary')
+        ->toContain('last_7_days_summary');
 });
 
 it('allows unverified users to use ai coach chat during onboarding', function () {

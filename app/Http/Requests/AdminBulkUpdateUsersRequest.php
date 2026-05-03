@@ -17,7 +17,7 @@ class AdminBulkUpdateUsersRequest extends FormRequest
         return [
             'user_ids' => ['required', 'array', 'min:1', 'max:200'],
             'user_ids.*' => ['integer', 'distinct', 'exists:users,id'],
-            'action' => ['required', Rule::in(['verify', 'unverify', 'set_status'])],
+            'action' => ['required', Rule::in(['verify', 'unverify', 'suspend', 'reactivate', 'delete', 'set_status'])],
             'status' => [
                 Rule::requiredIf(fn () => $this->input('action') === 'set_status'),
                 'nullable',

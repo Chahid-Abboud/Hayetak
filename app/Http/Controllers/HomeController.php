@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiRequest;
+use App\Models\AiConversation;
+use App\Models\AiRequest;
 use App\Models\MealLog;
 use App\Models\Measurement;
 use App\Models\NutritionPlan;
@@ -30,6 +30,10 @@ class HomeController extends Controller
         $today = now()->toDateString();
         $isAdmin = $user && (string) ($user->role ?? '') === 'admin';
 
+        if ($isAdmin) {
+            return redirect()->route('admin.overview.index');
+        }
+
         // ---- User profile (for BMI) ----
         $profile = $user ? [
             'age' => isset($user->age) ? (int) $user->age : null,
@@ -40,6 +44,7 @@ class HomeController extends Controller
         // ---- Water intake ----
         $todayMl = 0;
         $targetMl = 2000;
+        $waterWeekly = null;
         $weightHistory = [];
         $heightHistory = [];
 
@@ -54,6 +59,8 @@ class HomeController extends Controller
                         ->whereDate('for_day', $today) // fixed column name
                         ->value('ml') ?? 0
                 );
+
+                $waterWeekly = $this->weeklyWaterSummary((int) $user->id, $targetMl);
             }
 
             if (Schema::hasTable('measurements')) {
@@ -88,6 +95,16 @@ class HomeController extends Controller
                         ])
                         ->values()
                         ->all();
+                }
+
+                $latestWeight = collect($weightHistory)->last();
+                if (is_array($latestWeight) && is_numeric($latestWeight['value'] ?? null)) {
+                    $profile['weight_kg'] = (float) $latestWeight['value'];
+                }
+
+                $latestHeight = collect($heightHistory)->last();
+                if (is_array($latestHeight) && is_numeric($latestHeight['value'] ?? null)) {
+                    $profile['height_cm'] = (float) $latestHeight['value'];
                 }
             }
         }
@@ -307,7 +324,11 @@ class HomeController extends Controller
             ] : null],
             'isGuest' => ! $user,
             'userProfile' => $profile,
-            'water' => ['today_ml' => $todayMl, 'target_ml' => $targetMl],
+            'water' => [
+                'today_ml' => $todayMl,
+                'target_ml' => $targetMl,
+                'weekly' => $waterWeekly,
+            ],
             'todayLog' => $todayLog,
             'latestLog' => $latestLog,
             'todayMacros' => $todayMacros,
@@ -327,6 +348,83 @@ class HomeController extends Controller
             'progressPrediction' => $this->sanitizer->sanitizeProgressPredictionPayload($progressPrediction, $isAdmin),
             'predictionTrend' => $predictionTrend,
         ]);
+    }
+
+    /**
+     * @return array{
+     *   start_date:string,
+     *   end_date:string,
+     *   average_ml:int,
+     *   average_pct:int,
+     *   logged_days:int,
+     *   target_hit_days:int,
+     *   tip:string
+     * }|null
+     */
+    private function weeklyWaterSummary(int $userId, int $targetMl): ?array
+    {
+        if (! Schema::hasTable('water_intakes')) {
+            return null;
+        }
+
+        $latestDay = DB::table('water_intakes')
+            ->where('user_id', $userId)
+            ->max('for_day');
+
+        $end = $latestDay
+            ? CarbonImmutable::parse((string) $latestDay)->startOfDay()
+            : CarbonImmutable::today()->startOfDay();
+        $start = $end->subDays(6);
+
+        $rows = DB::table('water_intakes')
+            ->where('user_id', $userId)
+            ->whereDate('for_day', '>=', $start->toDateString())
+            ->whereDate('for_day', '<=', $end->toDateString())
+            ->get(['for_day', 'ml']);
+
+        if ($rows->isEmpty()) {
+            return [
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString(),
+                'average_ml' => 0,
+                'average_pct' => 0,
+                'logged_days' => 0,
+                'target_hit_days' => 0,
+                'tip' => 'Start with two easy anchors: one glass after waking and one with lunch.',
+            ];
+        }
+
+        $totalMl = (int) $rows->sum(fn ($row): int => (int) $row->ml);
+        $averageMl = (int) round($totalMl / 7);
+        $averagePct = (int) round(($averageMl / max(1, $targetMl)) * 100);
+        $loggedDays = $rows
+            ->filter(fn ($row): bool => (int) $row->ml > 0)
+            ->count();
+        $targetHitDays = $rows
+            ->filter(fn ($row): bool => (int) $row->ml >= $targetMl)
+            ->count();
+
+        if ($targetHitDays >= 6) {
+            $tip = 'Great consistency this week. Keep the same rhythm and avoid forcing extra water late at night.';
+        } elseif ($averagePct >= 90) {
+            $tip = 'You are close to target. Add one small glass earlier in the day to turn close misses into hits.';
+        } elseif ($averagePct >= 65) {
+            $tip = 'Your baseline is solid. Add 300-500 mL before lunch or around training to close the gap.';
+        } elseif ($loggedDays < 4) {
+            $tip = 'The biggest win is logging consistency. Pair water tracking with breakfast for the next 3 days.';
+        } else {
+            $tip = 'Hydration is trending low. Start with a 500 mL bottle before midday, then reassess in the evening.';
+        }
+
+        return [
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+            'average_ml' => $averageMl,
+            'average_pct' => $averagePct,
+            'logged_days' => $loggedDays,
+            'target_hit_days' => $targetHitDays,
+            'tip' => $tip,
+        ];
     }
 
     /**

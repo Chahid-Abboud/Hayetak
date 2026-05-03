@@ -539,7 +539,7 @@ export default function MessagesPage() {
     );
 
     const right = (
-        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-[30px] border border-border/70 bg-card/95 shadow-sm">
+        <div className="flex min-h-[70vh] flex-col overflow-hidden rounded-[30px] border border-border/70 bg-card/95 shadow-sm">
             {!activeConversation ? (
                 <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
                     Select a conversation to open the thread.

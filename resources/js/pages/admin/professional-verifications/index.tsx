@@ -38,7 +38,7 @@ import RoleGuard from '@/components/RoleGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { jsonRequestInit } from '@/lib/http';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     CalendarClock,
     FileBadge2,
@@ -91,6 +91,8 @@ type VerificationResponse = {
     from?: number | null;
     to?: number | null;
 };
+
+type RoleFilter = 'all' | 'trainer' | 'nutritionist';
 
 function personName(user?: Verification['user']) {
     return (
@@ -167,6 +169,27 @@ function formatStatusLabel(value: string) {
     return value
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatRoleLabel(role?: Verification['role'] | RoleFilter | null) {
+    if (role === 'nutritionist') {
+        return 'Dietitian';
+    }
+
+    if (role === 'trainer') {
+        return 'Trainer';
+    }
+
+    return 'All roles';
+}
+
+function reviewNeedsNotes(
+    status: ReviewStatus,
+    verification: Verification | null,
+) {
+    const expiryDelta = verification ? daysUntil(verification.expiry_date) : null;
+
+    return status !== 'approved' || (expiryDelta !== null && expiryDelta <= 30);
 }
 
 function EvidenceRow({
@@ -285,6 +308,9 @@ function VerificationDecisionSurface({
         });
     }
 
+    const requiresNotes = reviewNeedsNotes(reviewStatus, verification);
+    const notesMissing = requiresNotes && reviewNotes.trim().length === 0;
+
     return (
         <div className="space-y-4">
             {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
@@ -334,7 +360,7 @@ function VerificationDecisionSurface({
                 <Button
                     type="button"
                     onClick={onSubmit}
-                    disabled={!verification || saving}
+                    disabled={!verification || saving || notesMissing}
                 >
                     {saving ? 'Saving...' : 'Save review'}
                 </Button>
@@ -347,9 +373,7 @@ function VerificationDecisionSurface({
                     <div className="space-y-4">
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
-                                {verification.role === 'nutritionist'
-                                    ? 'Dietitian'
-                                    : 'Trainer'}
+                                {formatRoleLabel(verification.role)}
                             </Badge>
                             <StatusChipSet
                                 items={[
@@ -400,6 +424,7 @@ function VerificationDecisionSurface({
                 primaryActionLabel="Save review"
                 onPrimaryAction={onSubmit}
                 busy={saving}
+                disabled={notesMissing}
                 secondaryAction={
                     <Button type="button" variant="outline" onClick={onRefresh}>
                         <RefreshCcw className="h-4 w-4" />
@@ -418,16 +443,30 @@ function VerificationDecisionSurface({
                     </AdminNotice>
                 )}
 
+                {notesMissing ? (
+                    <AdminNotice tone="warning">
+                        Review notes are required for rejected requests, needs
+                        info decisions, and approvals with expired or near-expiry
+                        credentials.
+                    </AdminNotice>
+                ) : null}
+
                 <AdminPanel
-                    title="Evidence trail"
+                    title="Evidence summary"
                     description="Core facts that admins usually need before approving or requesting more information."
                 >
-                    <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
                         <EvidenceRow
                             icon={<UserRound className="h-4 w-4" />}
                             label="Applicant"
                             value={personName(verification.user)}
                             meta={verification.user?.email}
+                        />
+                        <EvidenceRow
+                            icon={<FileBadge2 className="h-4 w-4" />}
+                            label="Legal name"
+                            value={verification.full_legal_name}
+                            meta={`License ${verification.license_number}`}
                         />
                         <EvidenceRow
                             icon={<ShieldCheck className="h-4 w-4" />}
@@ -436,11 +475,53 @@ function VerificationDecisionSurface({
                             meta={verification.country_state}
                         />
                         <EvidenceRow
+                            icon={<CalendarClock className="h-4 w-4" />}
+                            label="Expiry date"
+                            value={formatDate(verification.expiry_date)}
+                            meta={
+                                expiryDelta === null
+                                    ? 'Timing unavailable'
+                                    : expiryDelta < 0
+                                      ? 'Expired credential'
+                                      : `${expiryDelta} day${expiryDelta === 1 ? '' : 's'} remaining`
+                            }
+                        />
+                        <EvidenceRow
                             icon={<RefreshCcw className="h-4 w-4" />}
                             label="Reviewer history"
                             value={reviewerName(verification)}
                             meta={formatDateTime(verification.reviewed_at)}
                         />
+                        <EvidenceRow
+                            icon={<ShieldCheck className="h-4 w-4" />}
+                            label="Account state"
+                            value={
+                                verification.user?.verified
+                                    ? 'Verified account'
+                                    : 'Unverified account'
+                            }
+                            meta={formatStatusLabel(
+                                verification.user?.status || 'pending',
+                            )}
+                        />
+                    </div>
+                </AdminPanel>
+
+                <AdminPanel
+                    title="Logs and diagnostics"
+                    description="Raw audit data stays out of the review page. Open logs when you need exact technical history."
+                >
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/logs">
+                                Open admin logs
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href={`/admin/users/${verification.user?.id}`}>
+                                Open account record
+                            </Link>
+                        </Button>
                     </div>
                 </AdminPanel>
             </ReviewDecisionPanel>
@@ -451,6 +532,7 @@ function VerificationDecisionSurface({
 export default function AdminProfessionalVerifications() {
     const [rows, setRows] = useState<Verification[]>([]);
     const [status, setStatus] = useState('pending');
+    const [role, setRole] = useState<RoleFilter>('all');
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -472,9 +554,14 @@ export default function AdminProfessionalVerifications() {
         try {
             const params = new URLSearchParams({
                 status,
+                role,
                 page: String(currentPage),
                 per_page: '20',
             });
+
+            if (query.trim()) {
+                params.set('search', query.trim());
+            }
 
             const res = await fetch(
                 `/api/admin/professional-verifications?${params.toString()}`,
@@ -506,7 +593,7 @@ export default function AdminProfessionalVerifications() {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, status]);
+    }, [currentPage, query, role, status]);
 
     useEffect(() => {
         void load();
@@ -514,30 +601,28 @@ export default function AdminProfessionalVerifications() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [status]);
+    }, [query, role, status]);
 
     const filteredRows = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
-        if (normalizedQuery === '') {
-            return rows;
-        }
-
         return rows.filter((row) =>
-            [
-                row.full_legal_name,
-                row.license_number,
-                row.authority,
-                row.country_state,
-                row.user?.email,
-                row.user?.first_name,
-                row.user?.last_name,
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase()
-                .includes(normalizedQuery),
+            (role === 'all' || row.role === role) &&
+            (normalizedQuery === '' ||
+                [
+                    row.full_legal_name,
+                    row.license_number,
+                    row.authority,
+                    row.country_state,
+                    row.user?.email,
+                    row.user?.first_name,
+                    row.user?.last_name,
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(normalizedQuery)),
         );
-    }, [query, rows]);
+    }, [query, role, rows]);
 
     useEffect(() => {
         if (filteredRows.length === 0) {
@@ -588,8 +673,11 @@ export default function AdminProfessionalVerifications() {
     );
 
     const activeFilterCount = useMemo(
-        () => (status !== 'pending' ? 1 : 0) + (query.trim() ? 1 : 0),
-        [query, status],
+        () =>
+            (status !== 'pending' ? 1 : 0) +
+            (role !== 'all' ? 1 : 0) +
+            (query.trim() ? 1 : 0),
+        [query, role, status],
     );
 
     const selectedExpiryDelta = useMemo(
@@ -600,8 +688,23 @@ export default function AdminProfessionalVerifications() {
         [selectedVerification],
     );
 
+    const selectedNeedsNotes = useMemo(
+        () => reviewNeedsNotes(reviewStatus, selectedVerification),
+        [reviewStatus, selectedVerification],
+    );
+
     async function submitReview() {
         if (!selectedVerification) {
+            return;
+        }
+
+        if (
+            reviewNeedsNotes(reviewStatus, selectedVerification) &&
+            reviewNotes.trim().length === 0
+        ) {
+            setError(
+                'Add review notes before saving this decision. Notes are required for reject, needs info, and near-expiry or expired approvals.',
+            );
             return;
         }
 
@@ -719,7 +822,12 @@ export default function AdminProfessionalVerifications() {
                                                 Review state is{' '}
                                                 {status === 'all'
                                                     ? 'showing every request.'
-                                                    : `${formatStatusLabel(status).toLowerCase()} only.`}
+                                                    : `${formatStatusLabel(status).toLowerCase()} only.`}{' '}
+                                                Role is{' '}
+                                                {formatRoleLabel(
+                                                    role,
+                                                ).toLowerCase()}
+                                                .
                                             </div>
                                         </div>
 
@@ -759,7 +867,7 @@ export default function AdminProfessionalVerifications() {
                                             </div>
                                             <div className="mt-1 text-sm leading-6 text-muted-foreground">
                                                 {selectedVerification
-                                                    ? `${selectedVerification.role === 'nutritionist' ? 'Dietitian' : 'Trainer'} review with evidence and account state pinned beside the queue.`
+                                                    ? `${formatRoleLabel(selectedVerification.role)} review with evidence and account state pinned beside the queue.`
                                                     : 'Choose a request to keep evidence and decision controls pinned in place.'}
                                             </div>
                                         </div>
@@ -861,6 +969,31 @@ export default function AdminProfessionalVerifications() {
                                             <option value="all">All</option>
                                         </AdminNativeSelect>
                                     </AdminField>
+
+                                    <AdminField
+                                        label="Role"
+                                        className="sm:w-48"
+                                    >
+                                        <AdminNativeSelect
+                                            value={role}
+                                            onChange={(event) =>
+                                                setRole(
+                                                    event.target
+                                                        .value as RoleFilter,
+                                                )
+                                            }
+                                        >
+                                            <option value="all">
+                                                All roles
+                                            </option>
+                                            <option value="trainer">
+                                                Trainers
+                                            </option>
+                                            <option value="nutritionist">
+                                                Dietitians
+                                            </option>
+                                        </AdminNativeSelect>
+                                    </AdminField>
                                 </AdminToolbarGroup>
 
                                 <AdminToolbarGroup className="w-full xl:w-auto xl:justify-end">
@@ -893,17 +1026,20 @@ export default function AdminProfessionalVerifications() {
                                             />
                                         ) : (
                                             <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
-                                                <AdminDataTable>
+                                                <AdminDataTable tableClassName="min-w-[1040px]">
                                                     <ProductTableHead>
                                                         <tr>
                                                             <ProductTableHeaderCell>
-                                                                Professional
+                                                                Applicant
                                                             </ProductTableHeaderCell>
                                                             <ProductTableHeaderCell>
-                                                                License
+                                                                Evidence
                                                             </ProductTableHeaderCell>
                                                             <ProductTableHeaderCell>
-                                                                Status
+                                                                Status & account
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Reviewer notes
                                                             </ProductTableHeaderCell>
                                                             <ProductTableHeaderCell className="w-40">
                                                                 Actions
@@ -949,10 +1085,9 @@ export default function AdminProfessionalVerifications() {
                                                                                         variant="outline"
                                                                                         className="rounded-full px-2.5 py-1 capitalize"
                                                                                     >
-                                                                                        {row.role ===
-                                                                                        'nutritionist'
-                                                                                            ? 'Dietitian'
-                                                                                            : 'Trainer'}
+                                                                                        {formatRoleLabel(
+                                                                                            row.role,
+                                                                                        )}
                                                                                     </Badge>
                                                                                     <span>
                                                                                         {
@@ -1004,9 +1139,31 @@ export default function AdminProfessionalVerifications() {
                                                                                     ]}
                                                                                 />
                                                                                 <div className="text-xs text-muted-foreground">
+                                                                                    Account:{' '}
+                                                                                    {formatStatusLabel(
+                                                                                        row
+                                                                                            .user
+                                                                                            ?.status ||
+                                                                                            'pending',
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-1">
+                                                                                <div className="text-sm font-medium text-foreground">
                                                                                     {reviewerName(
                                                                                         row,
                                                                                     )}
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {formatDateTime(
+                                                                                        row.reviewed_at,
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="line-clamp-2 text-xs text-muted-foreground">
+                                                                                    {row.notes ||
+                                                                                        'No reviewer notes yet.'}
                                                                                 </div>
                                                                             </div>
                                                                         </ProductTableCell>
@@ -1038,7 +1195,7 @@ export default function AdminProfessionalVerifications() {
                                                         filteredRows.length ===
                                                             0 ? (
                                                             <ProductTableEmptyRow
-                                                                colSpan={4}
+                                                                colSpan={5}
                                                                 title="No verification requests found"
                                                                 description="Try another status filter or come back when new professional applications arrive."
                                                             />
@@ -1121,7 +1278,11 @@ export default function AdminProfessionalVerifications() {
                             <Button
                                 type="button"
                                 onClick={() => void submitReview()}
-                                disabled={saving}
+                                disabled={
+                                    saving ||
+                                    (selectedNeedsNotes &&
+                                        reviewNotes.trim().length === 0)
+                                }
                             >
                                 {saving ? 'Saving...' : 'Save review'}
                             </Button>

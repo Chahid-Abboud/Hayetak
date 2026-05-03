@@ -2,7 +2,19 @@ import React from 'react';
 
 type Props = {
     isGuest: boolean;
-    water: { today_ml: number; target_ml: number };
+    water: {
+        today_ml: number;
+        target_ml: number;
+        weekly?: {
+            start_date: string;
+            end_date: string;
+            average_ml: number;
+            average_pct: number;
+            logged_days: number;
+            target_hit_days: number;
+            tip: string;
+        } | null;
+    };
     onQuickAdd?: (ml: number) => void;
     loading?: boolean;
 };
@@ -38,6 +50,7 @@ export default function WaterCard({
     const basePct = Math.max(0, Math.min(100, pctFloat));
     const overflowPct = Math.max(0, Math.min(100, pctFloat - 100));
     const remaining = Math.max(0, water.target_ml - water.today_ml);
+    const weekly = water.weekly ?? null;
     const status =
         pctFloat >= 100
             ? 'Target reached'
@@ -159,7 +172,7 @@ export default function WaterCard({
                 </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
                 <div className="rounded-[20px] border border-border/70 bg-background/72 p-4">
                     <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
                         Target
@@ -170,11 +183,29 @@ export default function WaterCard({
                 </div>
                 <div className="rounded-[20px] border border-border/70 bg-background/72 p-4">
                     <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                        Remaining
+                        7-day avg
                     </div>
                     <div className="mt-2 text-lg font-semibold text-foreground">
-                        {remaining} mL
+                        {weekly ? `${weekly.average_ml} mL` : 'N/A'}
                     </div>
+                    {weekly ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                            {weekly.average_pct}% of target
+                        </div>
+                    ) : null}
+                </div>
+                <div className="rounded-[20px] border border-border/70 bg-background/72 p-4">
+                    <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                        Target days
+                    </div>
+                    <div className="mt-2 text-lg font-semibold text-foreground">
+                        {weekly ? `${weekly.target_hit_days}/7` : 'N/A'}
+                    </div>
+                    {weekly ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                            {weekly.logged_days}/7 logged
+                        </div>
+                    ) : null}
                 </div>
                 <div className="rounded-[20px] border border-border/70 bg-background/72 p-4">
                     <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
@@ -187,6 +218,17 @@ export default function WaterCard({
                     </div>
                 </div>
             </div>
+
+            {weekly ? (
+                <div className="rounded-[20px] border border-primary/20 bg-primary/10 p-4">
+                    <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                        Weekly tip
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-foreground">
+                        {weekly.tip}
+                    </p>
+                </div>
+            ) : null}
 
             {!isGuest && onQuickAdd ? (
                 <div className="flex flex-wrap gap-2">

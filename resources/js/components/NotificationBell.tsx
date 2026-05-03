@@ -55,17 +55,17 @@ export default function NotificationBell({
         }
     }
 
-    useEffect(() => {
+  useEffect(() => {
+    void load();
+
+    const interval = window.setInterval(() => {
         void load();
+    }, 5000);
 
-        const interval = window.setInterval(() => {
-            void load();
-        }, 30000);
-
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, []);
+    return () => {
+        window.clearInterval(interval);
+    };
+}, []);
 
     useEffect(() => {
         if (open) {

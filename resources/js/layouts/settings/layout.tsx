@@ -13,7 +13,6 @@ import { type PropsWithChildren } from 'react';
 
 type SettingsNavGroup = {
     label: string;
-    description: string;
     items: Array<{
         title: string;
         href: string;
@@ -26,8 +25,6 @@ type SettingsNavGroup = {
 const sidebarGroups: SettingsNavGroup[] = [
     {
         label: 'General',
-        description:
-            'Your profile page now includes identity, preferences, and appearance controls.',
         items: [
             {
                 title: 'Profile',
@@ -45,7 +42,6 @@ const sidebarGroups: SettingsNavGroup[] = [
     },
     {
         label: 'Account',
-        description: 'Security stays together in one dedicated place.',
         items: [
             {
                 title: 'Security',
@@ -83,41 +79,20 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         <ProductPageShell width="wide">
             <ProductHero
                 eyebrow="Account settings"
-                title="Settings workspace"
-                description="Manage your health identity, sign-in protection, and interface preferences from one calm control layer."
+                title={activeItem.title}
+                description={activeItem.helper}
                 meta={
-                    <div className="space-y-3">
-                        <div className="rounded-[22px] border border-border/70 bg-background/80 p-4">
-                            <p className="haye-kicker">Focused section</p>
-                            <div className="mt-3 flex items-center gap-3">
-                                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-foreground">
-                                    <activeItem.icon className="h-5 w-5" />
-                                </span>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-foreground">
-                                        {activeItem.title}
-                                    </p>
-                                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                        {activeItem.helper}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-[20px] border border-border/70 bg-card/85 p-4">
-                                <p className="haye-kicker">Profile</p>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    Keep goals, allergies, and baseline data
-                                    aligned.
-                                </p>
-                            </div>
-                            <div className="rounded-[20px] border border-border/70 bg-card/85 p-4">
-                                <p className="haye-kicker">Security</p>
-                                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    Password and two-factor stay in the same
-                                    lane.
-                                </p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-foreground">
+                            <activeItem.icon className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                                Current section
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                                {activeItem.title}
+                            </p>
                         </div>
                     </div>
                 }
@@ -133,22 +108,19 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 }
             />
 
-            <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
                 <aside className="xl:sticky xl:top-8 xl:self-start">
-                    <div className="rounded-[28px] border border-border/70 bg-card/95 p-4 shadow-sm">
-                        <div className="space-y-4">
+                    <div className="rounded-[22px] border border-border/70 bg-card/95 p-3 shadow-sm">
+                        <div className="space-y-3">
                             {sidebarGroups.map((group) => (
                                 <section
                                     key={group.label}
                                     className="space-y-2"
                                 >
-                                    <div className="space-y-1 px-2">
+                                    <div className="px-2">
                                         <h2 className="text-sm font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                                             {group.label}
                                         </h2>
-                                        <p className="text-sm leading-6 text-muted-foreground">
-                                            {group.description}
-                                        </p>
                                     </div>
 
                                     <nav className="grid gap-2">
@@ -165,17 +137,17 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                                     variant="ghost"
                                                     asChild
                                                     className={cn(
-                                                        'h-auto justify-start rounded-[22px] px-4 py-3 text-left',
+                                                        'h-auto justify-start rounded-2xl px-3 py-3 text-left',
                                                         active
                                                             ? 'border border-primary/20 bg-primary/10 text-foreground shadow-[0_12px_30px_-24px_rgba(23,38,60,0.55)] hover:bg-primary/10'
                                                             : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                                                     )}
                                                 >
                                                     <Link href={item.href}>
-                                                        <div className="flex items-start gap-3">
+                                                        <div className="flex w-full items-start gap-3">
                                                             <span
                                                                 className={cn(
-                                                                    'mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl border',
+                                                                    'mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border',
                                                                     active
                                                                         ? 'border-primary/20 bg-primary/12 text-foreground'
                                                                         : 'border-border/70 bg-background/80 text-muted-foreground',
@@ -187,7 +159,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                                                 <div className="font-medium">
                                                                     {item.title}
                                                                 </div>
-                                                                <div className="text-xs leading-5 text-muted-foreground">
+                                                                <div className="text-xs leading-5 break-words whitespace-normal text-muted-foreground">
                                                                     {
                                                                         item.helper
                                                                     }

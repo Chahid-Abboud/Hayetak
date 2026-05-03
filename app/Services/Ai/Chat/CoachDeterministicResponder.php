@@ -46,6 +46,14 @@ class CoachDeterministicResponder
             return $riskSpecific;
         }
 
+        if ($this->isShortAffirmation($normalizedQuestion)) {
+            $affirmationFollowUp = $this->shortAffirmationFollowUpAnswer($context);
+
+            if ($affirmationFollowUp !== null) {
+                return $affirmationFollowUp;
+            }
+        }
+
         if (($classification['scope'] ?? 'in_domain') === 'out_of_domain') {
             return [
                 'answer' => $this->outOfDomainAnswer($user, $normalizedQuestion),
@@ -54,6 +62,17 @@ class CoachDeterministicResponder
                 'mode_label' => 'Out of scope',
                 'reason' => 'domain_guard',
                 'model' => 'coach-domain-guard',
+            ];
+        }
+
+        if ($this->isGratitudeOrClosing($normalizedQuestion)) {
+            return [
+                'answer' => 'You are very welcome. I am here whenever you want help with meals, workouts, recovery, or your plan.',
+                'warnings' => [],
+                'chat_path' => 'conversation',
+                'mode_label' => 'Conversation',
+                'reason' => 'gratitude_acknowledgement',
+                'model' => 'coach-conversation-shortcut',
             ];
         }
 
@@ -1870,6 +1889,305 @@ class CoachDeterministicResponder
         ]);
     }
 
+    private function isGratitudeOrClosing(string $question): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $question));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        $gratitudeOnly = [
+            'thanks',
+            'thank you',
+            'thank you so much',
+            'thanks a lot',
+            'thanks so much',
+            'thx',
+            'ty',
+            'appreciate it',
+            'much appreciated',
+            'perfect thanks',
+            'ok thanks',
+            'okay thanks',
+            'great thanks',
+            'got it thanks',
+            'that helps thanks',
+        ];
+
+        if (in_array($normalized, $gratitudeOnly, true)) {
+            return true;
+        }
+
+        if ($this->containsAny($normalized, ['thank you', 'thanks', 'appreciate it'])) {
+            return mb_strlen($normalized) <= 80
+                && ! $this->containsAny($normalized, [
+                    'meal',
+                    'workout',
+                    'exercise',
+                    'protein',
+                    'calorie',
+                    'recipe',
+                    'plan',
+                    'what',
+                    'how',
+                    'can i',
+                    'should i',
+                    'suggest',
+                    'recommend',
+                ]);
+        }
+
+        return false;
+    }
+
+    private function isShortAffirmation(string $question): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $question));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '' || mb_strlen($normalized) > 50) {
+            return false;
+        }
+
+        return in_array($normalized, [
+            'yes',
+            'yeah',
+            'yep',
+            'yup',
+            'absolutely',
+            'please',
+            'please do',
+            'yes please',
+            'yeah please',
+            'yep please',
+            'yup please',
+            'sure',
+            'sure please',
+            'ok',
+            'okay',
+            'ok please',
+            'okay please',
+            'do it',
+            'go ahead',
+            'give it',
+            'give them',
+            'give me them',
+            'give me those',
+            'show it',
+            'show them',
+            'show me',
+            'show me them',
+            'send it',
+            'send them',
+            'list them',
+            'tell me',
+            'tell me more',
+            'continue',
+            'continue please',
+            'sounds good',
+            'sounds good please',
+            'lets do it',
+            'let us do it',
+        ], true);
+    }
+
+    private function shortAffirmationFollowUpAnswer(array $context): ?array
+    {
+        $lastAssistantTurn = mb_strtolower($this->lastAssistantTurn($context) ?? '');
+        $offerText = $lastAssistantTurn !== '' ? $lastAssistantTurn : $this->recentContextText($context);
+
+        if ($this->containsAny($offerText, [
+            'low-intensity exercises',
+            'low intensity exercises',
+            'modifications to help you get moving',
+            'get moving without feeling too exhausted',
+            'boost your energy level',
+            'feeling sluggish',
+        ])) {
+            return $this->fixedCoachAnswer([
+                'Absolutely. Here is a low-intensity session for a sluggish day.',
+                'Do 5 minutes easy walking or marching in place, then 2 rounds of: 8 bodyweight squats to a comfortable depth, 8 wall push-ups, 10 glute bridges, 8 slow bird dogs per side, and 30 seconds easy breathing between moves.',
+                'Keep the effort around 4-5 out of 10. If you feel better after that, add 5-10 minutes of easy walking; if you feel worse, stop and treat today as recovery.',
+            ], 'sluggish_follow_up_movement');
+        }
+
+        if ($this->containsAny($offerText, [
+            'recipe',
+            'macros',
+            'full recipe',
+            'ingredients',
+            'prep',
+        ])) {
+            return $this->recipeMacroFollowUpAnswer($context)
+                ?? $this->offeredRecipeAnswer($context);
+        }
+
+        if ($this->containsAny($offerText, [
+            'food recommendation',
+            'food recommendations',
+            'meal recommendation',
+            'meal recommendations',
+            'snack',
+            'meal idea',
+            'meal ideas',
+            'what to eat',
+            'foods to eat',
+        ])) {
+            return $this->offeredFoodRecommendationAnswer($context);
+        }
+
+        if ($this->containsAny($offerText, [
+            'exercise substitute',
+            'exercise substitutes',
+            'exercise alternative',
+            'exercise alternatives',
+            'safer alternatives',
+            'modifications',
+            'modify the workout',
+            'swap',
+            'workout substitute',
+            'workout alternatives',
+        ])) {
+            return $this->offeredExerciseSubstitutionAnswer($context);
+        }
+
+        if ($this->containsAny($offerText, [
+            'workout routine',
+            'workout plan',
+            'training plan',
+            'plan a workout',
+            'routine for you',
+        ])) {
+            return $this->offeredWorkoutRoutineAnswer($context);
+        }
+
+        if ($this->containsAny($offerText, [
+            'tips',
+            'suggestions',
+            'strategies',
+            'guidance',
+            'elaborate',
+            'more specific guidance',
+            'help you with',
+        ])) {
+            return $this->offeredTipsAnswer($context);
+        }
+
+        return null;
+    }
+
+    private function offeredRecipeAnswer(array $context): array
+    {
+        $recipe = $this->defaultSafeSnackRecipe($context);
+
+        return [
+            'answer' => implode("\n", [
+                sprintf('Absolutely. Here is a safe recipe: %s.', $recipe['title']),
+                sprintf(
+                    'Macros per serving: %d kcal, %d g protein, %d g carbs, %d g fat.',
+                    $recipe['macros']['calories'],
+                    $recipe['macros']['protein_g'],
+                    $recipe['macros']['carbs_g'],
+                    $recipe['macros']['fat_g'],
+                ),
+                'Ingredients:',
+                '- '.implode("\n- ", $recipe['ingredients']),
+                'Steps:',
+                '1. '.implode("\n1. ", $recipe['steps']),
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'offered_recipe_follow_up',
+            'model' => 'coach-conversation-shortcut',
+        ];
+    }
+
+    private function offeredFoodRecommendationAnswer(array $context): array
+    {
+        $dietType = mb_strtolower(trim((string) ($context['restrictions']['diet_type'] ?? '')));
+        $allergyText = $this->savedAllergyText($context);
+
+        if ($dietType === 'vegan') {
+            return $this->fixedCoachAnswer([
+                'Absolutely. Here are quick vegan food options that keep your saved restrictions in mind:',
+                '1. Peanut butter banana oat bowl with soy milk: about 520 kcal, 18 g protein, 67 g carbs, 22 g fat.',
+                '2. Lentil rice bowl with olive oil and spinach: about 610 kcal, 24 g protein, 88 g carbs, 18 g fat.',
+                '3. Tofu hummus wrap with vegetables: about 480 kcal, 26 g protein, 54 g carbs, 18 g fat.',
+                'Avoid anything that includes your saved allergens: '.$allergyText.'.',
+            ], 'offered_food_recommendations');
+        }
+
+        return $this->fixedCoachAnswer([
+            'Absolutely. Here are food options that keep your saved restrictions in mind:',
+            '1. Greek yogurt with banana, oats, honey, and walnuts: about 560 kcal, 28 g protein, 72 g carbs, 18 g fat.',
+            '2. Turkey or chicken rice bowl with olive oil and vegetables: about 620 kcal, 42 g protein, 66 g carbs, 20 g fat.',
+            '3. Cottage cheese toast with berries and nuts: about 430 kcal, 27 g protein, 44 g carbs, 16 g fat.',
+            'Avoid anything that includes your saved allergens: '.$allergyText.'.',
+        ], 'offered_food_recommendations');
+    }
+
+    private function offeredExerciseSubstitutionAnswer(array $context): array
+    {
+        $injuries = array_values(array_filter(array_map(
+            static fn ($injury) => trim((string) $injury),
+            $context['restrictions']['injuries'] ?? [],
+        )));
+        $injuryText = $injuries !== [] ? implode(', ', $injuries) : 'your saved injury history';
+
+        return $this->fixedCoachAnswer([
+            'Absolutely. Here are safer exercise substitutes based on '.$injuryText.':',
+            '1. If squats bother knees: use box squats, glute bridges, or supported step-ups only in a pain-free range.',
+            '2. If overhead pressing bothers shoulders: use wall push-ups, incline push-ups, band rows, or light lateral raises below painful range.',
+            '3. If running feels too hard today: use easy walking, cycling, or low-impact intervals at 4-5 out of 10 effort.',
+            'Stop any movement that causes sharp pain, and keep the substitute easy enough that form stays controlled.',
+        ], 'offered_exercise_substitutes');
+    }
+
+    private function offeredWorkoutRoutineAnswer(array $context): array
+    {
+        $equipment = array_values(array_filter(array_map(
+            static fn ($item) => trim((string) $item),
+            $context['user_profile']['available_equipment'] ?? [],
+        )));
+        $equipmentText = $equipment !== [] ? implode(', ', $equipment) : 'bodyweight';
+
+        return $this->fixedCoachAnswer([
+            'Absolutely. Here is a simple low-stress workout using '.$equipmentText.'.',
+            'Warm-up: 5 minutes easy walking or marching, then shoulder circles and hip hinges.',
+            'Main work: 2-3 rounds of 8 comfortable squats or sit-to-stands, 8 incline or wall push-ups, 10 glute bridges, 8 rows if equipment allows, and 20-30 seconds of dead bugs.',
+            'Cool down: 3-5 minutes easy walking and gentle breathing. Keep effort moderate and stop if pain increases.',
+        ], 'offered_workout_routine');
+    }
+
+    private function offeredTipsAnswer(array $context): array
+    {
+        $today = is_array($context['today_summary'] ?? null) ? $context['today_summary'] : [];
+        $protein = is_numeric($today['protein_g'] ?? null) ? (int) $today['protein_g'] : 0;
+        $water = is_numeric($today['water_ml'] ?? null) ? (int) $today['water_ml'] : 0;
+        $targetWater = is_numeric($today['target_water_ml'] ?? null) ? (int) $today['target_water_ml'] : 0;
+
+        return $this->fixedCoachAnswer([
+            'Absolutely. Here are focused tips you can act on now:',
+            sprintf('1. Protein: you have about %d g logged for the selected day, so make the next meal protein-forward if that is behind your target.', $protein),
+            sprintf('2. Hydration: you have about %d ml logged%s. Add water steadily instead of chugging late.', $water, $targetWater > 0 ? ' toward a target around '.$targetWater.' ml' : ''),
+            '3. Energy: if you feel sluggish, do 10-15 minutes easy movement first, then decide whether a full workout still makes sense.',
+            '4. Meals: pair protein with a carb source and fruit or vegetables so the fix is practical, not just restrictive.',
+        ], 'offered_tips_follow_up');
+    }
+
+    private function savedAllergyText(array $context): string
+    {
+        $allergies = array_values(array_filter(array_map(
+            static fn ($allergy) => trim((string) $allergy),
+            $context['restrictions']['allergies'] ?? [],
+        )));
+
+        return $allergies === [] ? 'none saved' : implode(', ', $allergies);
+    }
+
     private function isRecipeMacroFollowUp(string $question): bool
     {
         return $this->containsAny($question, [
@@ -2269,10 +2587,27 @@ class CoachDeterministicResponder
         return false;
     }
 
-    /**
-     * @param  array<int, string>  $needles
-     */
-    private function recentContextContains(array $context, array $needles): bool
+    private function lastAssistantTurn(array $context): ?string
+    {
+        $recentTurns = is_array($context['conversation_context']['recent_turns'] ?? null)
+            ? $context['conversation_context']['recent_turns']
+            : [];
+
+        foreach (array_reverse($recentTurns) as $turn) {
+            if (($turn['r'] ?? null) !== 'assistant') {
+                continue;
+            }
+
+            $content = trim((string) ($turn['c'] ?? ''));
+            if ($content !== '') {
+                return $content;
+            }
+        }
+
+        return null;
+    }
+
+    private function recentContextText(array $context): string
     {
         $recentTurns = is_array($context['conversation_context']['recent_turns'] ?? null)
             ? $context['conversation_context']['recent_turns']
@@ -2284,7 +2619,15 @@ class CoachDeterministicResponder
             $text .= ' '.mb_strtolower(trim((string) ($turn['c'] ?? '')));
         }
 
-        return $this->containsAny($text, $needles);
+        return $text;
+    }
+
+    /**
+     * @param  array<int, string>  $needles
+     */
+    private function recentContextContains(array $context, array $needles): bool
+    {
+        return $this->containsAny($this->recentContextText($context), $needles);
     }
 
     private function todayMacroLine(array $context): string

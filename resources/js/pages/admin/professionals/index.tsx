@@ -17,7 +17,6 @@ import {
     AdminToolbarGroup,
 } from '@/components/admin/admin-ui';
 import {
-    AdminSplitView,
     EntityDetailDrawer,
     StatusChipSet,
 } from '@/components/admin/admin-workflows';
@@ -68,6 +67,7 @@ type Pro = {
 
 type ProfessionalResponse = {
     data?: Pro[];
+    cities?: string[];
     total?: number;
     current_page?: number;
     last_page?: number;
@@ -439,6 +439,8 @@ export default function AdminProfessionalsPage() {
     const [readiness, setReadiness] = useState<
         'all' | 'ready' | 'needs_cleanup' | 'verified'
     >('all');
+    const [city, setCity] = useState('all');
+    const [cityOptions, setCityOptions] = useState<string[]>([]);
     const [query, setQuery] = useState('');
     const [rows, setRows] = useState<Pro[]>([]);
     const [selected, setSelected] = useState<Pro | null>(null);
@@ -464,6 +466,18 @@ export default function AdminProfessionalsPage() {
                 per_page: '20',
             });
 
+            if (query.trim()) {
+                params.set('search', query.trim());
+            }
+
+            if (readiness !== 'all') {
+                params.set('readiness', readiness);
+            }
+
+            if (city !== 'all') {
+                params.set('city', city);
+            }
+
             const res = await fetch(
                 `/api/admin/professionals?${params.toString()}`,
                 {
@@ -479,6 +493,7 @@ export default function AdminProfessionalsPage() {
             const nextRows = Array.isArray(json?.data) ? json.data : [];
 
             setRows(nextRows);
+            setCityOptions(Array.isArray(json?.cities) ? json.cities : []);
             setTotal(Number(json?.total ?? 0));
             setCurrentPage(Number(json?.current_page ?? 1));
             setLastPage(Number(json?.last_page ?? 1));
@@ -500,7 +515,7 @@ export default function AdminProfessionalsPage() {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, role]);
+    }, [city, currentPage, query, readiness, role]);
 
     useEffect(() => {
         void load();
@@ -508,7 +523,7 @@ export default function AdminProfessionalsPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [role]);
+    }, [city, query, readiness, role]);
 
     const filteredRows = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
@@ -532,6 +547,10 @@ export default function AdminProfessionalsPage() {
                 return false;
             }
 
+            if (city !== 'all' && row.city !== city) {
+                return false;
+            }
+
             if (readiness === 'ready') {
                 return isDirectoryReady(row);
             }
@@ -546,7 +565,7 @@ export default function AdminProfessionalsPage() {
 
             return true;
         });
-    }, [query, readiness, rows]);
+    }, [city, query, readiness, rows]);
 
     useEffect(() => {
         if (filteredRows.length === 0) {
@@ -574,8 +593,9 @@ export default function AdminProfessionalsPage() {
         () =>
             (role !== 'trainer' ? 1 : 0) +
             (readiness !== 'all' ? 1 : 0) +
+            (city !== 'all' ? 1 : 0) +
             (query.trim() ? 1 : 0),
-        [query, readiness, role],
+        [city, query, readiness, role],
     );
 
     const selectedGapCount = useMemo(
@@ -780,10 +800,28 @@ export default function AdminProfessionalsPage() {
                             title="Filter & actions toolbar"
                             description={
                                 from && to
-                                    ? `Showing ${from}-${to} of ${total} profiles. Select a row to keep the editor pinned beside the directory.`
-                                    : 'Select a row to keep the editor pinned beside the directory.'
+                                    ? `Showing ${from}-${to} of ${total} profiles. Review the selected profile, then filter and work through the directory list.`
+                                    : 'Review the selected profile, then filter and work through the directory list.'
                             }
                         >
+                            {error && selected ? (
+                                <AdminNotice tone="danger">{error}</AdminNotice>
+                            ) : null}
+
+                            <AdminScrollArea
+                                className="mb-4"
+                                maxHeightClassName="max-h-[56vh]"
+                            >
+                                <ProfessionalEditorSurface
+                                    professional={selected}
+                                    onChange={setSelected}
+                                    onSave={() => void save()}
+                                    onRefresh={() => void load()}
+                                    loading={loading}
+                                    saving={saving}
+                                />
+                            </AdminScrollArea>
+
                             <AdminToolbar>
                                 <AdminToolbarGroup grow>
                                     <AdminField
@@ -849,6 +887,27 @@ export default function AdminProfessionalsPage() {
                                             </option>
                                         </AdminNativeSelect>
                                     </AdminField>
+
+                                    <AdminField label="City" className="sm:w-52">
+                                        <AdminNativeSelect
+                                            value={city}
+                                            onChange={(event) =>
+                                                setCity(event.target.value)
+                                            }
+                                        >
+                                            <option value="all">
+                                                All cities
+                                            </option>
+                                            {cityOptions.map((option) => (
+                                                <option
+                                                    key={option}
+                                                    value={option}
+                                                >
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </AdminNativeSelect>
+                                    </AdminField>
                                 </AdminToolbarGroup>
 
                                 <AdminToolbarGroup className="w-full xl:w-auto xl:justify-end">
@@ -866,13 +925,7 @@ export default function AdminProfessionalsPage() {
                                 </AdminToolbarGroup>
                             </AdminToolbar>
 
-                            {error && selected ? (
-                                <AdminNotice tone="danger">{error}</AdminNotice>
-                            ) : null}
-
-                            <AdminSplitView
-                                list={
-                                    <div className="space-y-4">
+                            <div className="mt-4 space-y-4">
                                         {loading &&
                                         filteredRows.length === 0 ? (
                                             <AdminEmpty
@@ -881,14 +934,20 @@ export default function AdminProfessionalsPage() {
                                             />
                                         ) : (
                                             <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
-                                                <AdminDataTable tableClassName="min-w-[780px]">
+                                                <AdminDataTable tableClassName="min-w-[980px]">
                                                     <ProductTableHead>
                                                         <tr>
                                                             <ProductTableHeaderCell>
                                                                 Professional
                                                             </ProductTableHeaderCell>
                                                             <ProductTableHeaderCell>
-                                                                Directory
+                                                                Public contact
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Profile content
+                                                            </ProductTableHeaderCell>
+                                                            <ProductTableHeaderCell>
+                                                                Directory readiness
                                                             </ProductTableHeaderCell>
                                                             <ProductTableHeaderCell>
                                                                 Verification
@@ -960,10 +1019,76 @@ export default function AdminProfessionalsPage() {
                                                                                         'Contact display missing'}
                                                                                 </div>
                                                                                 <div className="text-xs text-muted-foreground">
+                                                                                    {row.availability_text ||
+                                                                                        'Availability missing'}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-2">
+                                                                                <div className="line-clamp-2 text-sm text-foreground">
+                                                                                    {row.professional_bio ||
+                                                                                        'Bio missing'}
+                                                                                </div>
+                                                                                <div className="flex flex-wrap gap-1">
+                                                                                    {(row.specialties ??
+                                                                                        [])
+                                                                                        .slice(
+                                                                                            0,
+                                                                                            3,
+                                                                                        )
+                                                                                        .map(
+                                                                                            (
+                                                                                                specialty,
+                                                                                            ) => (
+                                                                                                <Badge
+                                                                                                    key={
+                                                                                                        specialty
+                                                                                                    }
+                                                                                                    variant="secondary"
+                                                                                                    className="rounded-full px-2 py-0.5 text-[11px]"
+                                                                                                >
+                                                                                                    {
+                                                                                                        specialty
+                                                                                                    }
+                                                                                                </Badge>
+                                                                                            ),
+                                                                                        )}
+                                                                                    {(row.specialties ??
+                                                                                        [])
+                                                                                        .length ===
+                                                                                    0 ? (
+                                                                                        <span className="text-xs text-muted-foreground">
+                                                                                            Specialties
+                                                                                            missing
+                                                                                        </span>
+                                                                                    ) : null}
+                                                                                </div>
+                                                                            </div>
+                                                                        </ProductTableCell>
+                                                                        <ProductTableCell>
+                                                                            <div className="space-y-2">
+                                                                                <StatusChipSet
+                                                                                    items={[
+                                                                                        {
+                                                                                            value: isDirectoryReady(
+                                                                                                row,
+                                                                                            )
+                                                                                                ? 'ready'
+                                                                                                : 'needs_cleanup',
+                                                                                            label: isDirectoryReady(
+                                                                                                row,
+                                                                                            )
+                                                                                                ? 'Ready'
+                                                                                                : 'Needs cleanup',
+                                                                                        },
+                                                                                    ]}
+                                                                                />
+                                                                                <div className="text-xs text-muted-foreground">
                                                                                     {gaps.length ===
                                                                                     0
-                                                                                        ? 'Discovery fields look complete.'
-                                                                                        : `${gaps.length} field gap${gaps.length === 1 ? '' : 's'} remaining`}
+                                                                                        ? 'Core public fields are complete.'
+                                                                                        : `Missing ${gaps.join(', ')}.`}
                                                                                 </div>
                                                                             </div>
                                                                         </ProductTableCell>
@@ -1025,7 +1150,7 @@ export default function AdminProfessionalsPage() {
                                                         filteredRows.length ===
                                                             0 ? (
                                                             <ProductTableEmptyRow
-                                                                colSpan={4}
+                                                                colSpan={6}
                                                                 title="No professionals found"
                                                                 description="Switch roles, adjust search, or return once new professional profiles exist."
                                                             />
@@ -1058,21 +1183,7 @@ export default function AdminProfessionalsPage() {
                                                 )
                                             }
                                         />
-                                    </div>
-                                }
-                                detail={
-                                    <ProfessionalEditorSurface
-                                        professional={selected}
-                                        onChange={setSelected}
-                                        onSave={() => void save()}
-                                        onRefresh={() => void load()}
-                                        loading={loading}
-                                        saving={saving}
-                                    />
-                                }
-                                listClassName="min-w-0"
-                                detailClassName="min-w-0"
-                            />
+                            </div>
                         </AdminSection>
                     </div>
                 </AdminShell>

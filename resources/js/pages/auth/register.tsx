@@ -257,7 +257,7 @@ function SectionCard({
     headingRef?: React.RefObject<HTMLHeadingElement | null>;
 }) {
     return (
-        <section className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-[0_26px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6">
+        <div className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-[0_26px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6">
             <div className="space-y-2 border-b border-border/70 pb-4">
                 <p className="text-[11px] font-semibold tracking-[0.2em] text-secondary uppercase">
                     Guided setup
@@ -277,7 +277,7 @@ function SectionCard({
                 ) : null}
             </div>
             <div className="space-y-4 pt-5">{children}</div>
-        </section>
+        </div>
     );
 }
 

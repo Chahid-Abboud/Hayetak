@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Ai\StoreChatMessageRequest;
 use App\Http\Resources\Ai\AiConversationResource;
 use App\Http\Resources\Ai\AiMessageResource;
-use App\Models\Ai\AiConversation;
+use App\Models\AiConversation;
 use App\Services\Ai\Chat\ChatOrchestrator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

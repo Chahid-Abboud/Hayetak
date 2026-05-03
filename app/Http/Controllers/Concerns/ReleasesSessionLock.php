@@ -13,12 +13,18 @@ trait ReleasesSessionLock
         }
 
         $session = $request->session();
+
         if (! $session->isStarted()) {
             return;
         }
 
         // Persist session changes early and release the underlying lock so
-        // long-running requests do not block other tabs/pages.
+        // long-running AI requests do not block other tabs/pages.
         $session->save();
+
+        // Extra safety for native PHP session/file-session locking.
+        if (function_exists('session_write_close')) {
+            @session_write_close();
+        }
     }
 }

@@ -1,15 +1,19 @@
 import {
     AdminDataTable,
     AdminEmpty,
+    AdminField,
     AdminInput,
+    AdminNativeSelect,
     AdminNotice,
+    AdminPagination,
     AdminPanel,
+    AdminScrollArea,
     AdminStickyBar,
+    AdminTextarea,
+    AdminToolbar,
+    AdminToolbarGroup,
 } from '@/components/admin/admin-ui';
 import {
-    ActivityTimeline,
-    AdminFilterToolbar,
-    AdminSplitView,
     ConfirmActionDialogWithReason,
     EntityDetailDrawer,
     StatusChipSet,
@@ -29,379 +33,546 @@ import {
     ProductTableRow,
 } from '@/components/product/table';
 import RoleGuard from '@/components/RoleGuard';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { jsonRequestInit } from '@/lib/http';
-import { Head } from '@inertiajs/react';
-import { Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { EyeOff, Merge, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Food = {
     id: number | null;
     name: string;
+    brand?: string | null;
     category?: string | null;
+    serving_size?: number | string | null;
+    serving_unit?: string | null;
     calories?: number | null;
-    protein_g?: number | null;
-    carbs_g?: number | null;
-    fat_g?: number | null;
+    protein_g?: number | string | null;
+    carbs_g?: number | string | null;
+    fat_g?: number | string | null;
+    fiber_g?: number | string | null;
+    sugar_g?: number | string | null;
+    sodium_mg?: number | null;
+    cholesterol_mg?: number | null;
+    allergens?: string[];
+    diets_allowed?: string[];
+    tags?: string[];
+    meal_types?: string[];
+    visibility?: 'visible' | 'hidden';
+    planner_suitability?: 'suitable' | 'needs_review';
+    planner_warnings?: string[];
+    duplicate_warning?: string | null;
 };
 
-type MealEntry = {
-    id: number;
-    user_id: number;
-    food_id: number;
-    meal_type: string;
-    servings: string;
-    eaten_at: string;
-    user?: {
-        id: number;
-        email: string;
-        first_name?: string | null;
-        last_name?: string | null;
-    } | null;
-    food?: { id: number; name: string } | null;
-};
-
-type PaginatedResponse<T> = {
-    data?: T[];
+type FoodResponse = {
+    data?: Food[];
     total?: number;
     current_page?: number;
     last_page?: number;
     from?: number | null;
     to?: number | null;
+    stats?: {
+        total: number;
+        missing_macros: number;
+        missing_allergens: number;
+        planner_review: number;
+        duplicate_groups: number;
+    };
+    filters?: {
+        categories?: string[];
+    };
 };
 
 const EMPTY_FOOD: Food = {
     id: null,
     name: '',
+    brand: '',
     category: '',
+    serving_size: 100,
+    serving_unit: 'g',
     calories: null,
     protein_g: null,
     carbs_g: null,
     fat_g: null,
+    fiber_g: null,
+    sugar_g: null,
+    sodium_mg: null,
+    cholesterol_mg: null,
+    allergens: [],
+    diets_allowed: [],
+    tags: [],
+    meal_types: ['breakfast', 'lunch', 'dinner', 'snack', 'drink'],
+    visibility: 'visible',
+    planner_suitability: 'needs_review',
+    planner_warnings: [],
+    duplicate_warning: null,
 };
 
-function personName(entry: MealEntry) {
-    return (
-        [entry.user?.first_name, entry.user?.last_name]
-            .filter(Boolean)
-            .join(' ') ||
-        entry.user?.email ||
-        `User #${entry.user_id}`
-    );
+function listToText(value?: string[]) {
+    return (value ?? []).join(', ');
 }
 
-function formatDateTime(value?: string | null) {
-    if (!value) {
-        return 'Not available';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-    }).format(date);
+function textToList(value: string) {
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
 }
 
-function EntryDetailPanel({
-    entry,
-    onEntryChange,
+function numberOrNull(value: string) {
+    return value.trim() === '' ? null : Number(value);
+}
+
+function formatMacro(value?: number | string | null, suffix = 'g') {
+    if (value === null || value === undefined || value === '') {
+        return '-';
+    }
+
+    return `${value}${suffix}`;
+}
+
+function buildFoodPayload(food: Food) {
+    return {
+        name: food.name.trim(),
+        brand: food.brand?.trim() || null,
+        category: food.category?.trim() || null,
+        serving_size:
+            food.serving_size === null || food.serving_size === undefined
+                ? null
+                : Number(food.serving_size),
+        serving_unit: food.serving_unit?.trim() || null,
+        calories:
+            food.calories === null || food.calories === undefined
+                ? null
+                : Number(food.calories),
+        protein_g:
+            food.protein_g === null || food.protein_g === undefined
+                ? null
+                : Number(food.protein_g),
+        carbs_g:
+            food.carbs_g === null || food.carbs_g === undefined
+                ? null
+                : Number(food.carbs_g),
+        fat_g:
+            food.fat_g === null || food.fat_g === undefined
+                ? null
+                : Number(food.fat_g),
+        fiber_g:
+            food.fiber_g === null || food.fiber_g === undefined
+                ? null
+                : Number(food.fiber_g),
+        sugar_g:
+            food.sugar_g === null || food.sugar_g === undefined
+                ? null
+                : Number(food.sugar_g),
+        sodium_mg:
+            food.sodium_mg === null || food.sodium_mg === undefined
+                ? null
+                : Number(food.sodium_mg),
+        cholesterol_mg:
+            food.cholesterol_mg === null || food.cholesterol_mg === undefined
+                ? null
+                : Number(food.cholesterol_mg),
+        allergens: food.allergens ?? [],
+        diets_allowed: food.diets_allowed ?? [],
+        tags: food.tags ?? [],
+        meal_types: food.meal_types ?? [],
+    };
+}
+
+function FoodEditor({
+    food,
+    onChange,
     onSave,
+    onHide,
+    onMerge,
     onDelete,
     saving,
 }: {
-    entry: MealEntry | null;
-    onEntryChange: (entry: MealEntry) => void;
+    food: Food | null;
+    onChange: (food: Food) => void;
     onSave: () => void;
+    onHide: () => void;
+    onMerge: () => void;
     onDelete: () => void;
     saving: boolean;
 }) {
-    if (!entry) {
+    if (!food) {
         return (
             <AdminEmpty
-                title="Select a meal log"
-                description="Open a recent entry to correct meal type, servings, or eaten time."
+                title="Select a catalog item"
+                description="Open a food to edit nutrition data, compatibility, allergens, and planner suitability."
             />
         );
     }
 
     return (
-        <AdminPanel
-            title={entry.food?.name || `Food #${entry.food_id}`}
-            description="Editable meal-log detail for quick admin corrections."
-        >
-            <div className="space-y-4">
-                <StatusChipSet
-                    items={[
-                        { value: entry.meal_type, label: entry.meal_type },
-                        { value: 'default', label: personName(entry) },
-                    ]}
-                />
+        <div className="space-y-4">
+            <AdminPanel
+                title={food.id ? food.name : 'Create food'}
+                description="Readable catalog editor for planner-safe nutrition metadata. Raw meal logs stay on the separate Meal Logs page."
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                        <StatusChipSet
+                            items={[
+                                {
+                                    value: food.visibility ?? 'visible',
+                                    label:
+                                        food.visibility === 'hidden'
+                                            ? 'Hidden'
+                                            : 'Visible',
+                                },
+                                {
+                                    value:
+                                        food.planner_suitability ??
+                                        'needs_review',
+                                    label:
+                                        food.planner_suitability === 'suitable'
+                                            ? 'Planner suitable'
+                                            : 'Planner review',
+                                },
+                            ]}
+                        />
+                    </div>
 
-                <Field
-                    label="Meal type"
-                    value={entry.meal_type}
-                    onChange={(value) =>
-                        onEntryChange({ ...entry, meal_type: value })
-                    }
-                />
-                <Field
-                    label="Servings"
-                    value={entry.servings}
-                    onChange={(value) =>
-                        onEntryChange({ ...entry, servings: value })
-                    }
-                />
-                <Field
-                    label="Eaten at"
-                    value={entry.eaten_at}
-                    onChange={(value) =>
-                        onEntryChange({ ...entry, eaten_at: value })
-                    }
-                />
+                    {food.duplicate_warning ? (
+                        <AdminNotice tone="warning">
+                            {food.duplicate_warning}
+                        </AdminNotice>
+                    ) : null}
 
-                <AdminStickyBar
-                    summary={`User #${entry.user_id} • ${formatDateTime(entry.eaten_at)}`}
+                    {(food.planner_warnings ?? []).length > 0 ? (
+                        <AdminNotice tone="warning">
+                            Planner warnings:{' '}
+                            {(food.planner_warnings ?? []).join(', ')}.
+                        </AdminNotice>
+                    ) : null}
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <AdminField label="Name">
+                            <AdminInput
+                                value={food.name}
+                                onChange={(event) =>
+                                    onChange({ ...food, name: event.target.value })
+                                }
+                            />
+                        </AdminField>
+                        <AdminField label="Category">
+                            <AdminInput
+                                value={food.category ?? ''}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...food,
+                                        category: event.target.value,
+                                    })
+                                }
+                            />
+                        </AdminField>
+                        <AdminField label="Brand">
+                            <AdminInput
+                                value={food.brand ?? ''}
+                                onChange={(event) =>
+                                    onChange({ ...food, brand: event.target.value })
+                                }
+                            />
+                        </AdminField>
+                        <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-3">
+                            <AdminField label="Serving size">
+                                <AdminInput
+                                    type="number"
+                                    value={food.serving_size ?? ''}
+                                    onChange={(event) =>
+                                        onChange({
+                                            ...food,
+                                            serving_size: numberOrNull(
+                                                event.target.value,
+                                            ),
+                                        })
+                                    }
+                                />
+                            </AdminField>
+                            <AdminField label="Unit">
+                                <AdminInput
+                                    value={food.serving_unit ?? ''}
+                                    onChange={(event) =>
+                                        onChange({
+                                            ...food,
+                                            serving_unit: event.target.value,
+                                        })
+                                    }
+                                />
+                            </AdminField>
+                        </div>
+                    </div>
+                </div>
+            </AdminPanel>
+
+            <AdminPanel
+                title="Macros and nutrition"
+                description="Macro fields stay in a full readable form because planner quality depends on accurate values."
+            >
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {[
+                        ['Calories', 'calories'],
+                        ['Protein (g)', 'protein_g'],
+                        ['Carbs (g)', 'carbs_g'],
+                        ['Fat (g)', 'fat_g'],
+                        ['Fiber (g)', 'fiber_g'],
+                        ['Sugar (g)', 'sugar_g'],
+                        ['Sodium (mg)', 'sodium_mg'],
+                        ['Cholesterol (mg)', 'cholesterol_mg'],
+                    ].map(([label, key]) => (
+                        <AdminField key={key} label={label}>
+                            <AdminInput
+                                type="number"
+                                value={String(food[key as keyof Food] ?? '')}
+                                onChange={(event) =>
+                                    onChange({
+                                        ...food,
+                                        [key]: numberOrNull(event.target.value),
+                                    })
+                                }
+                            />
+                        </AdminField>
+                    ))}
+                </div>
+            </AdminPanel>
+
+            <AdminPanel
+                title="Safety and compatibility"
+                description="These readable lists drive allergy avoidance, diet compatibility, planner suitability, and search filtering."
+            >
+                <div className="grid gap-4 md:grid-cols-2">
+                    <AdminField label="Allergens" helper="Comma-separated, e.g. peanuts, sesame.">
+                        <AdminTextarea
+                            rows={3}
+                            value={listToText(food.allergens)}
+                            onChange={(event) =>
+                                onChange({
+                                    ...food,
+                                    allergens: textToList(event.target.value),
+                                })
+                            }
+                        />
+                    </AdminField>
+                    <AdminField label="Diet compatibility" helper="Comma-separated, e.g. vegan, keto, mediterranean.">
+                        <AdminTextarea
+                            rows={3}
+                            value={listToText(food.diets_allowed)}
+                            onChange={(event) =>
+                                onChange({
+                                    ...food,
+                                    diets_allowed: textToList(event.target.value),
+                                })
+                            }
+                        />
+                    </AdminField>
+                    <AdminField label="Meal types">
+                        <AdminInput
+                            value={listToText(food.meal_types)}
+                            onChange={(event) =>
+                                onChange({
+                                    ...food,
+                                    meal_types: textToList(event.target.value),
+                                })
+                            }
+                        />
+                    </AdminField>
+                    <AdminField label="Tags">
+                        <AdminInput
+                            value={listToText(food.tags)}
+                            onChange={(event) =>
+                                onChange({
+                                    ...food,
+                                    tags: textToList(event.target.value),
+                                })
+                            }
+                        />
+                    </AdminField>
+                </div>
+            </AdminPanel>
+
+            <AdminStickyBar
+                summary={food.id ? `Editing food #${food.id}` : 'Creating food'}
+            >
+                <Button
+                    type="button"
+                    onClick={onSave}
+                    disabled={saving || food.name.trim() === ''}
                 >
-                    <Button type="button" onClick={onSave} disabled={saving}>
-                        <Pencil className="h-4 w-4" />
-                        {saving ? 'Saving...' : 'Save entry'}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={onDelete}
-                        disabled={saving}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                    </Button>
-                </AdminStickyBar>
-            </div>
-        </AdminPanel>
+                    <Pencil className="h-4 w-4" />
+                    {saving ? 'Saving...' : 'Save'}
+                </Button>
+                {food.id ? (
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onHide}
+                            disabled={saving}
+                        >
+                            <EyeOff className="h-4 w-4" />
+                            Hide
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onMerge}
+                            disabled={saving}
+                        >
+                            <Merge className="h-4 w-4" />
+                            Merge duplicate
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={onDelete}
+                            disabled={saving}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                        </Button>
+                    </>
+                ) : null}
+            </AdminStickyBar>
+        </div>
     );
 }
 
 export default function AdminMealsPage() {
     const [foods, setFoods] = useState<Food[]>([]);
-    const [entries, setEntries] = useState<MealEntry[]>([]);
-    const [foodQ, setFoodQ] = useState('');
-    const [entrySearch, setEntrySearch] = useState('');
-    const [mealTypeFilter, setMealTypeFilter] = useState('all');
+    const [query, setQuery] = useState('');
+    const [category, setCategory] = useState('all');
+    const [suitability, setSuitability] = useState('all');
+    const [categories, setCategories] = useState<string[]>([]);
     const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-    const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
-    const [editingEntry, setEditingEntry] = useState<MealEntry | null>(null);
-    const [entryDrawerOpen, setEntryDrawerOpen] = useState(false);
-    const [foodDeleteOpen, setFoodDeleteOpen] = useState(false);
-    const [entryDeleteOpen, setEntryDeleteOpen] = useState(false);
-    const [loadingFoods, setLoadingFoods] = useState(true);
-    const [loadingEntries, setLoadingEntries] = useState(true);
-    const [savingFood, setSavingFood] = useState(false);
-    const [savingEntry, setSavingEntry] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [hideOpen, setHideOpen] = useState(false);
+    const [mergeOpen, setMergeOpen] = useState(false);
+    const [mergeTargetId, setMergeTargetId] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [entryPage, setEntryPage] = useState(1);
-    const [entryLastPage, setEntryLastPage] = useState(1);
-    const [entryFrom, setEntryFrom] = useState<number | null>(null);
-    const [entryTo, setEntryTo] = useState<number | null>(null);
-    const [entryTotal, setEntryTotal] = useState(0);
-    const [workspaceTab, setWorkspaceTab] = useState<'catalog' | 'logs'>(
-        'catalog',
-    );
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [from, setFrom] = useState<number | null>(null);
+    const [to, setTo] = useState<number | null>(null);
+    const [total, setTotal] = useState(0);
+    const [stats, setStats] = useState({
+        total: 0,
+        missing_macros: 0,
+        missing_allergens: 0,
+        planner_review: 0,
+        duplicate_groups: 0,
+    });
 
     const loadFoods = useCallback(async () => {
-        setLoadingFoods(true);
+        setLoading(true);
         setError(null);
 
         try {
-            const res = await fetch(
-                `/api/admin/foods?per_page=20&q=${encodeURIComponent(foodQ)}`,
-                { headers: { Accept: 'application/json' } },
-            );
+            const params = new URLSearchParams({
+                page: String(currentPage),
+                per_page: '25',
+            });
 
-            if (!res.ok) {
-                throw new Error('Could not load the food catalog.');
+            if (query.trim()) {
+                params.set('q', query.trim());
+            }
+            if (category !== 'all') {
+                params.set('category', category);
+            }
+            if (suitability !== 'all') {
+                params.set('suitability', suitability);
             }
 
-            const json = (await res.json()) as PaginatedResponse<Food>;
-            const nextFoods = Array.isArray(json?.data) ? json.data : [];
+            const response = await fetch(`/api/admin/foods?${params.toString()}`, {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Could not load food catalog.');
+            }
+
+            const json = (await response.json()) as FoodResponse;
+            const nextFoods = Array.isArray(json.data) ? json.data : [];
+
             setFoods(nextFoods);
-            setSelectedFood((current) =>
-                current && current.id === null
-                    ? current
-                    : current &&
-                        nextFoods.some((food) => food.id === current.id)
-                      ? (nextFoods.find((food) => food.id === current.id) ??
-                        null)
-                      : (nextFoods[0] ?? null),
+            setCategories(
+                Array.isArray(json.filters?.categories)
+                    ? json.filters.categories
+                    : [],
             );
+            setStats({
+                total: Number(json.stats?.total ?? 0),
+                missing_macros: Number(json.stats?.missing_macros ?? 0),
+                missing_allergens: Number(json.stats?.missing_allergens ?? 0),
+                planner_review: Number(json.stats?.planner_review ?? 0),
+                duplicate_groups: Number(json.stats?.duplicate_groups ?? 0),
+            });
+            setTotal(Number(json.total ?? 0));
+            setCurrentPage(Number(json.current_page ?? 1));
+            setLastPage(Number(json.last_page ?? 1));
+            setFrom(json.from ?? null);
+            setTo(json.to ?? null);
+            setSelectedFood((current) => {
+                if (current?.id === null) {
+                    return current;
+                }
+
+                if (current && nextFoods.some((food) => food.id === current.id)) {
+                    return nextFoods.find((food) => food.id === current.id) ?? null;
+                }
+
+                return nextFoods[0] ?? null;
+            });
         } catch (loadError) {
             setFoods([]);
             setSelectedFood(null);
             setError(
                 loadError instanceof Error
                     ? loadError.message
-                    : 'Could not load the food catalog.',
+                    : 'Could not load food catalog.',
             );
         } finally {
-            setLoadingFoods(false);
+            setLoading(false);
         }
-    }, [foodQ]);
-
-    const loadEntries = useCallback(async () => {
-        setLoadingEntries(true);
-        setError(null);
-
-        try {
-            const params = new URLSearchParams({
-                per_page: '20',
-                page: String(entryPage),
-            });
-
-            if (entrySearch.trim()) {
-                params.set('search', entrySearch.trim());
-            }
-            if (mealTypeFilter !== 'all') {
-                params.set('meal_type', mealTypeFilter);
-            }
-
-            const res = await fetch(
-                `/api/admin/meal-entries?${params.toString()}`,
-                {
-                    headers: { Accept: 'application/json' },
-                },
-            );
-
-            if (!res.ok) {
-                throw new Error('Could not load recent meal entries.');
-            }
-
-            const json = (await res.json()) as PaginatedResponse<MealEntry>;
-            const rows = Array.isArray(json?.data) ? json.data : [];
-
-            setEntries(rows);
-            setEntryTotal(Number(json?.total ?? 0));
-            setEntryPage(Number(json?.current_page ?? 1));
-            setEntryLastPage(Number(json?.last_page ?? 1));
-            setEntryFrom(json?.from ?? null);
-            setEntryTo(json?.to ?? null);
-        } catch (loadError) {
-            setEntries([]);
-            setError(
-                loadError instanceof Error
-                    ? loadError.message
-                    : 'Could not load recent meal entries.',
-            );
-        } finally {
-            setLoadingEntries(false);
-        }
-    }, [entryPage, entrySearch, mealTypeFilter]);
+    }, [category, currentPage, query, suitability]);
 
     useEffect(() => {
         void loadFoods();
     }, [loadFoods]);
 
     useEffect(() => {
-        void loadEntries();
-    }, [loadEntries]);
+        setCurrentPage(1);
+    }, [category, query, suitability]);
 
-    useEffect(() => {
-        setEntryPage(1);
-    }, [entrySearch, mealTypeFilter]);
-
-    useEffect(() => {
-        if (entries.length === 0) {
-            setSelectedEntryId(null);
-            setEditingEntry(null);
-            return;
-        }
-
-        if (
-            !selectedEntryId ||
-            !entries.some((entry) => entry.id === selectedEntryId)
-        ) {
-            setSelectedEntryId(entries[0].id);
-            setEditingEntry(entries[0]);
-            return;
-        }
-
-        const current =
-            entries.find((entry) => entry.id === selectedEntryId) ?? null;
-        setEditingEntry(current);
-    }, [entries, selectedEntryId]);
-
-    const selectedEntry = useMemo(
-        () => entries.find((entry) => entry.id === selectedEntryId) ?? null,
-        [entries, selectedEntryId],
-    );
-
-    useEffect(() => {
-        if (selectedEntry) {
-            setEditingEntry(selectedEntry);
-        }
-    }, [selectedEntry]);
-
-    const totalCalories = useMemo(
-        () => foods.reduce((sum, food) => sum + Number(food.calories ?? 0), 0),
-        [foods],
-    );
-    const missingCategoryCount = useMemo(
-        () => foods.filter((food) => !food.category).length,
-        [foods],
-    );
-    const missingMacroCount = useMemo(
-        () =>
-            foods.filter(
-                (food) =>
-                    food.protein_g == null ||
-                    food.carbs_g == null ||
-                    food.fat_g == null,
-            ).length,
-        [foods],
+    const selectedWarnings = useMemo(
+        () => selectedFood?.planner_warnings ?? [],
+        [selectedFood],
     );
 
     async function saveFood() {
-        if (!selectedFood) return;
+        if (!selectedFood) {
+            return;
+        }
 
-        setSavingFood(true);
+        setSaving(true);
         setError(null);
         setSuccess(null);
 
         try {
-            const payload = {
-                name: selectedFood.name,
-                category: selectedFood.category || null,
-                calories:
-                    selectedFood.calories == null
-                        ? null
-                        : Number(selectedFood.calories),
-                protein_g:
-                    selectedFood.protein_g == null
-                        ? null
-                        : Number(selectedFood.protein_g),
-                carbs_g:
-                    selectedFood.carbs_g == null
-                        ? null
-                        : Number(selectedFood.carbs_g),
-                fat_g:
-                    selectedFood.fat_g == null
-                        ? null
-                        : Number(selectedFood.fat_g),
-            };
-
             const response = await fetch(
                 selectedFood.id === null
                     ? '/api/admin/foods'
                     : `/api/admin/foods/${selectedFood.id}`,
                 jsonRequestInit(
                     selectedFood.id === null ? 'POST' : 'PUT',
-                    payload,
+                    buildFoodPayload(selectedFood),
                 ),
             );
 
@@ -410,31 +581,67 @@ export default function AdminMealsPage() {
                 throw new Error(
                     typeof json?.message === 'string'
                         ? json.message
-                        : 'Could not save this food.',
+                        : 'Could not save food.',
                 );
             }
 
             setSuccess(
                 selectedFood.id === null
-                    ? 'Food added to the catalog.'
-                    : 'Food updated successfully.',
+                    ? 'Food created.'
+                    : 'Food updated.',
             );
+            setDrawerOpen(false);
             await loadFoods();
         } catch (saveError) {
             setError(
                 saveError instanceof Error
                     ? saveError.message
-                    : 'Could not save this food.',
+                    : 'Could not save food.',
             );
         } finally {
-            setSavingFood(false);
+            setSaving(false);
+        }
+    }
+
+    async function hideFood(reason: string) {
+        if (!selectedFood?.id) {
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const response = await fetch(
+                `/api/admin/foods/${selectedFood.id}/hide`,
+                jsonRequestInit('PATCH', { reason }),
+            );
+
+            if (!response.ok) {
+                throw new Error('Could not hide this food.');
+            }
+
+            setHideOpen(false);
+            setSuccess('Food hidden from planner/search suitability.');
+            await loadFoods();
+        } catch (hideError) {
+            setError(
+                hideError instanceof Error
+                    ? hideError.message
+                    : 'Could not hide this food.',
+            );
+        } finally {
+            setSaving(false);
         }
     }
 
     async function deleteFood(reason: string) {
-        if (!selectedFood?.id) return;
+        if (!selectedFood?.id) {
+            return;
+        }
 
-        setSavingFood(true);
+        setSaving(true);
         setError(null);
         setSuccess(null);
 
@@ -445,11 +652,17 @@ export default function AdminMealsPage() {
             );
 
             if (!response.ok) {
-                throw new Error('Could not delete this food.');
+                const json = await response.json().catch(() => null);
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not delete this food.',
+                );
             }
 
-            setFoodDeleteOpen(false);
-            setSuccess('Food removed from the catalog.');
+            setDeleteOpen(false);
+            setDrawerOpen(false);
+            setSuccess('Food deleted.');
             await loadFoods();
         } catch (deleteError) {
             setError(
@@ -458,24 +671,25 @@ export default function AdminMealsPage() {
                     : 'Could not delete this food.',
             );
         } finally {
-            setSavingFood(false);
+            setSaving(false);
         }
     }
 
-    async function saveEntry() {
-        if (!editingEntry) return;
+    async function mergeFood(reason: string) {
+        if (!selectedFood?.id) {
+            return;
+        }
 
-        setSavingEntry(true);
+        setSaving(true);
         setError(null);
         setSuccess(null);
 
         try {
             const response = await fetch(
-                `/api/admin/meal-entries/${editingEntry.id}`,
-                jsonRequestInit('PUT', {
-                    meal_type: editingEntry.meal_type,
-                    servings: Number(editingEntry.servings),
-                    eaten_at: editingEntry.eaten_at,
+                `/api/admin/foods/${selectedFood.id}/merge`,
+                jsonRequestInit('POST', {
+                    target_food_id: Number(mergeTargetId),
+                    reason,
                 }),
             );
 
@@ -484,73 +698,41 @@ export default function AdminMealsPage() {
                 throw new Error(
                     typeof json?.message === 'string'
                         ? json.message
-                        : 'Could not update this meal entry.',
+                        : 'Could not merge this duplicate.',
                 );
             }
 
-            setSuccess('Meal entry updated successfully.');
-            await loadEntries();
-        } catch (saveError) {
+            setMergeOpen(false);
+            setDrawerOpen(false);
+            setMergeTargetId('');
+            setSuccess('Duplicate merged into the selected target food.');
+            await loadFoods();
+        } catch (mergeError) {
             setError(
-                saveError instanceof Error
-                    ? saveError.message
-                    : 'Could not update this meal entry.',
+                mergeError instanceof Error
+                    ? mergeError.message
+                    : 'Could not merge this duplicate.',
             );
         } finally {
-            setSavingEntry(false);
-        }
-    }
-
-    async function deleteEntry(reason: string) {
-        if (!selectedEntry) return;
-
-        setSavingEntry(true);
-        setError(null);
-        setSuccess(null);
-
-        try {
-            const response = await fetch(
-                `/api/admin/meal-entries/${selectedEntry.id}`,
-                jsonRequestInit('DELETE', { reason }),
-            );
-
-            if (!response.ok) {
-                throw new Error('Could not delete this meal entry.');
-            }
-
-            setEntryDeleteOpen(false);
-            setEntryDrawerOpen(false);
-            setSuccess('Meal entry deleted successfully.');
-            await loadEntries();
-        } catch (deleteError) {
-            setError(
-                deleteError instanceof Error
-                    ? deleteError.message
-                    : 'Could not delete this meal entry.',
-            );
-        } finally {
-            setSavingEntry(false);
+            setSaving(false);
         }
     }
 
     return (
         <>
-            <Head title="Admin Meals" />
+            <Head title="Admin Food Catalog" />
 
             <RoleGuard roles={['admin']}>
                 <AdminShell
-                    title="Meals management"
-                    description="Keep catalog nutrition data trustworthy, then correct the recent meal logs that affect planner quality and coach safety."
+                    title="Meals / Food Catalog"
+                    description="Maintain planner-safe catalog nutrition data separately from user meal-log review."
                     actions={
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => {
-                                    void loadFoods();
-                                    void loadEntries();
-                                }}
-                                disabled={loadingFoods || loadingEntries}
+                                onClick={() => void loadFoods()}
+                                disabled={loading}
                             >
                                 <RefreshCcw className="h-4 w-4" />
                                 Refresh
@@ -559,12 +741,11 @@ export default function AdminMealsPage() {
                                 type="button"
                                 onClick={() => {
                                     setSelectedFood({ ...EMPTY_FOOD });
-                                    setSuccess(null);
-                                    setError(null);
+                                    setDrawerOpen(true);
                                 }}
                             >
                                 <Plus className="h-4 w-4" />
-                                Add food
+                                Create food
                             </Button>
                         </div>
                     }
@@ -572,586 +753,484 @@ export default function AdminMealsPage() {
                     <div className="space-y-6">
                         <AdminStatsGrid>
                             <AdminStatCard
-                                label="Visible foods"
-                                value={
-                                    loadingFoods ? '...' : String(foods.length)
-                                }
+                                label="Catalog foods"
+                                value={loading ? '...' : String(stats.total)}
                                 tone="accent"
-                                helper="Current food search applied."
+                                helper="Total foods in the catalog."
                             />
                             <AdminStatCard
-                                label="Foods missing category"
+                                label="Missing macros"
                                 value={
-                                    loadingFoods
+                                    loading
                                         ? '...'
-                                        : String(missingCategoryCount)
+                                        : String(stats.missing_macros)
                                 }
-                                helper="Catalog entries that need better discovery metadata."
+                                helper="Rows missing calories or core macros."
                             />
                             <AdminStatCard
-                                label="Foods missing macros"
+                                label="Missing allergens"
                                 value={
-                                    loadingFoods
+                                    loading
                                         ? '...'
-                                        : String(missingMacroCount)
+                                        : String(stats.missing_allergens)
                                 }
-                                helper="Entries that weaken planner and coach trust."
+                                helper="Rows without allergen metadata."
                             />
                             <AdminStatCard
-                                label="Visible calories total"
+                                label="Planner review"
                                 value={
-                                    loadingFoods
+                                    loading
                                         ? '...'
-                                        : `${Math.round(totalCalories)} kcal`
+                                        : String(stats.planner_review)
                                 }
-                                helper="Quick sense-check for catalog completeness."
+                                helper="Rows flagged by catalog suitability checks."
+                            />
+                            <AdminStatCard
+                                label="Duplicate groups"
+                                value={
+                                    loading
+                                        ? '...'
+                                        : String(stats.duplicate_groups)
+                                }
+                                helper="Normalized name collisions."
                             />
                         </AdminStatsGrid>
 
-                        <AdminSection
-                            title="Filter & action toolbar"
-                            description="Switch between catalog stewardship and meal-log corrections without mixing both workflows in one crowded pane."
-                        >
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Button
-                                    type="button"
-                                    variant={
-                                        workspaceTab === 'catalog'
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    onClick={() => setWorkspaceTab('catalog')}
-                                >
-                                    Food catalog
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={
-                                        workspaceTab === 'logs'
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    onClick={() => setWorkspaceTab('logs')}
-                                >
-                                    Meal logs
-                                </Button>
-                            </div>
-                        </AdminSection>
-
-                        {error ? (
-                            <AdminNotice tone="danger">{error}</AdminNotice>
-                        ) : null}
+                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
 
-                        {workspaceTab === 'catalog' ? (
-                            <AdminSection
-                                title="Food catalog workspace"
-                                description="Search the food catalog, review macro completeness, and update entries without leaving the admin flow."
-                            >
-                                <AdminFilterToolbar
-                                    search={foodQ}
-                                    onSearchChange={setFoodQ}
-                                    searchPlaceholder="Search foods by name"
-                                />
+                        <AdminSection
+                            title="Catalog Guidance"
+                            description="Food Catalog is for reusable nutrition metadata that planner and coach depend on. User Meal Logs are reviewed in their own admin surface."
+                        >
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                <AdminPanel
+                                    title="Planner safety"
+                                    description="Allergens, diet compatibility, meal types, and anomaly tags determine whether a food is safe for recommendations."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[20px] px-4 py-4 text-sm leading-6 text-muted-foreground">
+                                        Hide questionable foods instead of
+                                        deleting referenced catalog rows. Merge
+                                        duplicates when a cleaner target exists.
+                                    </div>
+                                </AdminPanel>
+                                <AdminPanel
+                                    title="Selected item"
+                                    description="Quick suitability summary for the current table selection."
+                                >
+                                    <div className="dashboard-surface-soft rounded-[20px] px-4 py-4 text-sm leading-6 text-muted-foreground">
+                                        {selectedFood ? (
+                                            <>
+                                                <span className="font-medium text-foreground">
+                                                    {selectedFood.name}
+                                                </span>{' '}
+                                                has{' '}
+                                                {selectedWarnings.length === 0
+                                                    ? 'no visible planner warnings.'
+                                                    : `${selectedWarnings.length} warning${selectedWarnings.length === 1 ? '' : 's'}.`}
+                                            </>
+                                        ) : (
+                                            'Select a catalog row to inspect warnings.'
+                                        )}
+                                    </div>
+                                </AdminPanel>
+                            </div>
+                        </AdminSection>
 
-                                <AdminSplitView
-                                    list={
-                                        loadingFoods ? (
-                                            <AdminEmpty
-                                                title="Loading foods"
-                                                description="Fetching the latest food catalog."
-                                            />
-                                        ) : (
-                                            <AdminDataTable>
-                                                <ProductTableHead>
-                                                    <tr>
-                                                        <ProductTableHeaderCell>
-                                                            Food
-                                                        </ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>
-                                                            Category
-                                                        </ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>
-                                                            Macros
-                                                        </ProductTableHeaderCell>
-                                                    </tr>
-                                                </ProductTableHead>
-                                                <ProductTableBody>
-                                                    {foods.map((food) => (
-                                                        <ProductTableRow
-                                                            key={
-                                                                food.id ??
-                                                                food.name
-                                                            }
-                                                            interactive
-                                                            className={
-                                                                food.id ===
-                                                                selectedFood?.id
-                                                                    ? 'bg-primary/6'
-                                                                    : undefined
-                                                            }
+                        <AdminSection
+                            title="Tabs"
+                            description="Catalog editing and user meal-log review stay separate."
+                        >
+                            <div className="flex flex-wrap gap-2">
+                                <Button type="button">Food Catalog</Button>
+                                <Button asChild type="button" variant="outline">
+                                    <Link href="/admin/meal-logs">
+                                        User Meal Logs
+                                    </Link>
+                                </Button>
+                            </div>
+                        </AdminSection>
+
+                        <AdminSection
+                            title="Toolbar"
+                            description={
+                                from && to
+                                    ? `Showing ${from}-${to} of ${total} foods.`
+                                    : 'Filter the reusable food catalog.'
+                            }
+                        >
+                            <AdminToolbar>
+                                <AdminToolbarGroup grow>
+                                    <AdminField label="Search" className="xl:flex-1">
+                                        <AdminInput
+                                            value={query}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
+                                            placeholder="Search name, category, or serving unit"
+                                        />
+                                    </AdminField>
+                                    <AdminField label="Category" className="sm:w-56">
+                                        <AdminNativeSelect
+                                            value={category}
+                                            onChange={(event) =>
+                                                setCategory(event.target.value)
+                                            }
+                                        >
+                                            <option value="all">
+                                                All categories
+                                            </option>
+                                            {categories.map((option) => (
+                                                <option
+                                                    key={option}
+                                                    value={option}
+                                                >
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </AdminNativeSelect>
+                                    </AdminField>
+                                    <AdminField
+                                        label="Planner suitability"
+                                        className="sm:w-56"
+                                    >
+                                        <AdminNativeSelect
+                                            value={suitability}
+                                            onChange={(event) =>
+                                                setSuitability(event.target.value)
+                                            }
+                                        >
+                                            <option value="all">All</option>
+                                            <option value="suitable">
+                                                Suitable
+                                            </option>
+                                            <option value="needs_review">
+                                                Needs review
+                                            </option>
+                                        </AdminNativeSelect>
+                                    </AdminField>
+                                </AdminToolbarGroup>
+                            </AdminToolbar>
+                        </AdminSection>
+
+                        <AdminSection
+                            title="Food Catalog"
+                            description="Compact table for scanning; open the drawer for readable macro and safety editing."
+                        >
+                            {loading && foods.length === 0 ? (
+                                <AdminEmpty
+                                    title="Loading food catalog"
+                                    description="Fetching catalog foods and planner suitability metadata."
+                                />
+                            ) : (
+                                <AdminScrollArea maxHeightClassName="max-h-[68vh]">
+                                    <AdminDataTable tableClassName="min-w-[1120px]">
+                                        <ProductTableHead>
+                                            <tr>
+                                                <ProductTableHeaderCell>
+                                                    Food
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Serving
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Macros
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Allergens
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Diet compatibility
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Visibility
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Planner
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell className="w-36">
+                                                    Actions
+                                                </ProductTableHeaderCell>
+                                            </tr>
+                                        </ProductTableHead>
+                                        <ProductTableBody>
+                                            {foods.map((food) => (
+                                                <ProductTableRow
+                                                    key={food.id}
+                                                    interactive
+                                                    className={
+                                                        food.id ===
+                                                        selectedFood?.id
+                                                            ? 'bg-primary/5'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    <ProductTableCell>
+                                                        <button
+                                                            type="button"
+                                                            className="w-full text-left"
+                                                            onClick={() => {
+                                                                setSelectedFood(
+                                                                    food,
+                                                                );
+                                                                setDrawerOpen(
+                                                                    true,
+                                                                );
+                                                            }}
                                                         >
-                                                            <ProductTableCell>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        setSelectedFood(
-                                                                            {
-                                                                                ...food,
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    className="w-full text-left font-medium"
-                                                                >
-                                                                    {food.name}
-                                                                </button>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell className="text-sm text-muted-foreground">
+                                                            <div className="font-medium text-foreground">
+                                                                {food.name}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
                                                                 {food.category ||
-                                                                    'Uncategorized'}
-                                                            </ProductTableCell>
-                                                            <ProductTableCell className="text-sm text-muted-foreground">
-                                                                {food.calories ??
-                                                                    0}{' '}
-                                                                kcal • P{' '}
-                                                                {food.protein_g ??
-                                                                    0}{' '}
-                                                                • C{' '}
-                                                                {food.carbs_g ??
-                                                                    0}{' '}
-                                                                • F{' '}
-                                                                {food.fat_g ??
-                                                                    0}
-                                                            </ProductTableCell>
-                                                        </ProductTableRow>
-                                                    ))}
-                                                    {foods.length === 0 ? (
-                                                        <ProductTableEmptyRow
-                                                            colSpan={3}
-                                                            title="No foods found"
-                                                            description="Try another search term or add a new food to the catalog."
+                                                                    'No category'}
+                                                            </div>
+                                                            {food.duplicate_warning ? (
+                                                                <div className="mt-1 text-xs font-medium text-amber-700">
+                                                                    Duplicate
+                                                                    warning
+                                                                </div>
+                                                            ) : null}
+                                                        </button>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="text-sm text-foreground">
+                                                            {food.serving_size ??
+                                                                '-'}{' '}
+                                                            {food.serving_unit ||
+                                                                'unit missing'}
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="space-y-1 text-xs text-muted-foreground">
+                                                            <div className="font-medium text-foreground">
+                                                                {formatMacro(
+                                                                    food.calories,
+                                                                    ' kcal',
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                P{' '}
+                                                                {formatMacro(
+                                                                    food.protein_g,
+                                                                )}{' '}
+                                                                · C{' '}
+                                                                {formatMacro(
+                                                                    food.carbs_g,
+                                                                )}{' '}
+                                                                · F{' '}
+                                                                {formatMacro(
+                                                                    food.fat_g,
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="flex max-w-48 flex-wrap gap-1">
+                                                            {(food.allergens ?? [])
+                                                                .slice(0, 3)
+                                                                .map((item) => (
+                                                                    <Badge
+                                                                        key={item}
+                                                                        variant="outline"
+                                                                    >
+                                                                        {item}
+                                                                    </Badge>
+                                                                ))}
+                                                            {(food.allergens ?? [])
+                                                                .length === 0 ? (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    Missing
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="flex max-w-56 flex-wrap gap-1">
+                                                            {(food.diets_allowed ??
+                                                                [])
+                                                                .slice(0, 3)
+                                                                .map((item) => (
+                                                                    <Badge
+                                                                        key={item}
+                                                                        variant="secondary"
+                                                                    >
+                                                                        {item}
+                                                                    </Badge>
+                                                                ))}
+                                                            {(food.diets_allowed ??
+                                                                []).length ===
+                                                            0 ? (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    Not scoped
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <StatusChipSet
+                                                            items={[
+                                                                {
+                                                                    value:
+                                                                        food.visibility ??
+                                                                        'visible',
+                                                                    label:
+                                                                        food.visibility ===
+                                                                        'hidden'
+                                                                            ? 'Hidden'
+                                                                            : 'Visible',
+                                                                },
+                                                            ]}
                                                         />
-                                                    ) : null}
-                                                </ProductTableBody>
-                                            </AdminDataTable>
-                                        )
-                                    }
-                                    detail={
-                                        !selectedFood ? (
-                                            <AdminEmpty
-                                                title="Select or create a food"
-                                                description="Choose a row from the catalog or add a new food entry."
-                                            />
-                                        ) : (
-                                            <AdminPanel
-                                                title={
-                                                    selectedFood.id === null
-                                                        ? 'Create food'
-                                                        : 'Edit food'
-                                                }
-                                                description="Keep catalog entries clean so planner and tracking experiences stay trustworthy."
-                                            >
-                                                <div className="space-y-4">
-                                                    <Field
-                                                        label="Food name"
-                                                        value={
-                                                            selectedFood.name
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                name: value,
-                                                            })
-                                                        }
-                                                    />
-                                                    <Field
-                                                        label="Category"
-                                                        value={
-                                                            selectedFood.category ??
-                                                            ''
-                                                        }
-                                                        onChange={(value) =>
-                                                            setSelectedFood({
-                                                                ...selectedFood,
-                                                                category: value,
-                                                            })
-                                                        }
-                                                    />
-                                                    <div className="grid gap-4 sm:grid-cols-2">
-                                                        <Field
-                                                            label="Calories"
-                                                            value={
-                                                                selectedFood.calories ==
-                                                                null
-                                                                    ? ''
-                                                                    : String(
-                                                                          selectedFood.calories,
-                                                                      )
-                                                            }
-                                                            onChange={(value) =>
-                                                                setSelectedFood(
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="space-y-1">
+                                                            <StatusChipSet
+                                                                items={[
                                                                     {
-                                                                        ...selectedFood,
-                                                                        calories:
-                                                                            value ===
-                                                                            ''
-                                                                                ? null
-                                                                                : Number(
-                                                                                      value,
-                                                                                  ),
+                                                                        value:
+                                                                            food.planner_suitability ??
+                                                                            'needs_review',
+                                                                        label:
+                                                                            food.planner_suitability ===
+                                                                            'suitable'
+                                                                                ? 'Suitable'
+                                                                                : 'Needs review',
                                                                     },
-                                                                )
-                                                            }
-                                                        />
-                                                        <Field
-                                                            label="Protein (g)"
-                                                            value={
-                                                                selectedFood.protein_g ==
-                                                                null
-                                                                    ? ''
-                                                                    : String(
-                                                                          selectedFood.protein_g,
-                                                                      )
-                                                            }
-                                                            onChange={(value) =>
-                                                                setSelectedFood(
-                                                                    {
-                                                                        ...selectedFood,
-                                                                        protein_g:
-                                                                            value ===
-                                                                            ''
-                                                                                ? null
-                                                                                : Number(
-                                                                                      value,
-                                                                                  ),
-                                                                    },
-                                                                )
-                                                            }
-                                                        />
-                                                        <Field
-                                                            label="Carbs (g)"
-                                                            value={
-                                                                selectedFood.carbs_g ==
-                                                                null
-                                                                    ? ''
-                                                                    : String(
-                                                                          selectedFood.carbs_g,
-                                                                      )
-                                                            }
-                                                            onChange={(value) =>
-                                                                setSelectedFood(
-                                                                    {
-                                                                        ...selectedFood,
-                                                                        carbs_g:
-                                                                            value ===
-                                                                            ''
-                                                                                ? null
-                                                                                : Number(
-                                                                                      value,
-                                                                                  ),
-                                                                    },
-                                                                )
-                                                            }
-                                                        />
-                                                        <Field
-                                                            label="Fat (g)"
-                                                            value={
-                                                                selectedFood.fat_g ==
-                                                                null
-                                                                    ? ''
-                                                                    : String(
-                                                                          selectedFood.fat_g,
-                                                                      )
-                                                            }
-                                                            onChange={(value) =>
-                                                                setSelectedFood(
-                                                                    {
-                                                                        ...selectedFood,
-                                                                        fat_g:
-                                                                            value ===
-                                                                            ''
-                                                                                ? null
-                                                                                : Number(
-                                                                                      value,
-                                                                                  ),
-                                                                    },
-                                                                )
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <AdminStickyBar
-                                                        summary={
-                                                            selectedFood.id
-                                                                ? `Editing food #${selectedFood.id}`
-                                                                : 'Creating a new catalog food'
-                                                        }
-                                                    >
+                                                                ]}
+                                                            />
+                                                            <div className="line-clamp-1 text-xs text-muted-foreground">
+                                                                {(food.planner_warnings ??
+                                                                    [])
+                                                                    .slice(0, 2)
+                                                                    .join(', ') ||
+                                                                    'No warnings'}
+                                                            </div>
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
                                                         <Button
                                                             type="button"
-                                                            onClick={() =>
-                                                                void saveFood()
-                                                            }
-                                                            disabled={
-                                                                savingFood ||
-                                                                !selectedFood.name
-                                                            }
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                setSelectedFood(
+                                                                    food,
+                                                                );
+                                                                setDrawerOpen(
+                                                                    true,
+                                                                );
+                                                            }}
                                                         >
-                                                            {savingFood
-                                                                ? 'Saving...'
-                                                                : 'Save food'}
+                                                            Edit
                                                         </Button>
-                                                        {selectedFood.id ? (
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                onClick={() =>
-                                                                    setFoodDeleteOpen(
-                                                                        true,
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    savingFood
-                                                                }
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                                Delete
-                                                            </Button>
-                                                        ) : null}
-                                                    </AdminStickyBar>
-                                                </div>
-                                            </AdminPanel>
-                                        )
-                                    }
-                                />
-                            </AdminSection>
-                        ) : null}
+                                                    </ProductTableCell>
+                                                </ProductTableRow>
+                                            ))}
 
-                        {workspaceTab === 'logs' ? (
-                            <AdminSection
-                                title="Meal logs workspace"
-                                description={
-                                    entryFrom && entryTo
-                                        ? `Showing ${entryFrom}-${entryTo} of ${entryTotal} recent logs. Open a row to edit or delete it.`
-                                        : 'Open a row to edit or delete it.'
+                                            {!loading && foods.length === 0 ? (
+                                                <ProductTableEmptyRow
+                                                    colSpan={8}
+                                                    title="No foods found"
+                                                    description="Adjust filters or create a new catalog food."
+                                                />
+                                            ) : null}
+                                        </ProductTableBody>
+                                    </AdminDataTable>
+                                </AdminScrollArea>
+                            )}
+
+                            <AdminPagination
+                                currentPage={currentPage}
+                                lastPage={lastPage}
+                                disabled={loading}
+                                summary={
+                                    from && to
+                                        ? `Showing ${from}-${to} of ${total} foods`
+                                        : 'Pagination follows active catalog filters.'
                                 }
-                            >
-                                <AdminFilterToolbar
-                                    search={entrySearch}
-                                    onSearchChange={setEntrySearch}
-                                    searchPlaceholder="Search user or food name"
-                                    filters={[
-                                        {
-                                            label: 'Meal type',
-                                            value: mealTypeFilter,
-                                            onChange: setMealTypeFilter,
-                                            options: [
-                                                {
-                                                    value: 'all',
-                                                    label: 'All meals',
-                                                },
-                                                {
-                                                    value: 'breakfast',
-                                                    label: 'Breakfast',
-                                                },
-                                                {
-                                                    value: 'lunch',
-                                                    label: 'Lunch',
-                                                },
-                                                {
-                                                    value: 'dinner',
-                                                    label: 'Dinner',
-                                                },
-                                                {
-                                                    value: 'snack',
-                                                    label: 'Snack',
-                                                },
-                                                {
-                                                    value: 'drink',
-                                                    label: 'Drink',
-                                                },
-                                            ],
-                                        },
-                                    ]}
-                                />
-
-                                <AdminSplitView
-                                    list={
-                                        <div className="space-y-4">
-                                            {loadingEntries ? (
-                                                <AdminEmpty
-                                                    title="Loading meal logs"
-                                                    description="Fetching the latest tracked entries."
-                                                />
-                                            ) : (
-                                                <ActivityTimeline
-                                                    items={entries.map(
-                                                        (entry) => ({
-                                                            id: entry.id,
-                                                            title:
-                                                                entry.food
-                                                                    ?.name ||
-                                                                `Food #${entry.food_id}`,
-                                                            description:
-                                                                personName(
-                                                                    entry,
-                                                                ),
-                                                            meta: `${entry.meal_type} • ${entry.servings} serving(s)`,
-                                                            timestamp:
-                                                                formatDateTime(
-                                                                    entry.eaten_at,
-                                                                ),
-                                                            tone: 'success',
-                                                            chips: [
-                                                                {
-                                                                    value: entry.meal_type,
-                                                                    label: entry.meal_type,
-                                                                },
-                                                            ],
-                                                        }),
-                                                    )}
-                                                    selectedId={selectedEntryId}
-                                                    onSelect={(id) =>
-                                                        setSelectedEntryId(
-                                                            Number(id),
-                                                        )
-                                                    }
-                                                    emptyTitle="No recent meal logs"
-                                                    emptyDescription="Meal activity will appear here once users continue tracking."
-                                                />
-                                            )}
-
-                                            <AdminStickyBar
-                                                summary={
-                                                    entryFrom && entryTo
-                                                        ? `Showing ${entryFrom}-${entryTo} of ${entryTotal} logs`
-                                                        : 'Pagination stays aligned with the active meal filters.'
-                                                }
-                                            >
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        setEntryPage((page) =>
-                                                            Math.max(
-                                                                1,
-                                                                page - 1,
-                                                            ),
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        loadingEntries ||
-                                                        entryPage <= 1
-                                                    }
-                                                >
-                                                    Previous
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        setEntryPage((page) =>
-                                                            Math.min(
-                                                                entryLastPage,
-                                                                page + 1,
-                                                            ),
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        loadingEntries ||
-                                                        entryPage >=
-                                                            entryLastPage
-                                                    }
-                                                >
-                                                    Next
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        setEntryDrawerOpen(true)
-                                                    }
-                                                    disabled={!selectedEntry}
-                                                    className="xl:hidden"
-                                                >
-                                                    Inspect
-                                                </Button>
-                                            </AdminStickyBar>
-                                        </div>
-                                    }
-                                    detail={
-                                        <EntryDetailPanel
-                                            entry={editingEntry}
-                                            onEntryChange={setEditingEntry}
-                                            onSave={() => void saveEntry()}
-                                            onDelete={() =>
-                                                setEntryDeleteOpen(true)
-                                            }
-                                            saving={savingEntry}
-                                        />
-                                    }
-                                />
-                            </AdminSection>
-                        ) : null}
+                                onPrevious={() =>
+                                    setCurrentPage((page) =>
+                                        Math.max(1, page - 1),
+                                    )
+                                }
+                                onNext={() =>
+                                    setCurrentPage((page) =>
+                                        Math.min(lastPage, page + 1),
+                                    )
+                                }
+                            />
+                        </AdminSection>
                     </div>
                 </AdminShell>
             </RoleGuard>
 
             <EntityDetailDrawer
-                open={entryDrawerOpen}
-                onOpenChange={setEntryDrawerOpen}
-                title={editingEntry?.food?.name || 'Meal log detail'}
-                description="Mobile drill-in for correcting a recent meal log."
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                title={selectedFood?.name || 'Food editor'}
+                description="Edit reusable food catalog data."
             >
-                <EntryDetailPanel
-                    entry={editingEntry}
-                    onEntryChange={setEditingEntry}
-                    onSave={() => void saveEntry()}
-                    onDelete={() => setEntryDeleteOpen(true)}
-                    saving={savingEntry}
+                <FoodEditor
+                    food={selectedFood}
+                    onChange={setSelectedFood}
+                    onSave={() => void saveFood()}
+                    onHide={() => setHideOpen(true)}
+                    onMerge={() => setMergeOpen(true)}
+                    onDelete={() => setDeleteOpen(true)}
+                    saving={saving}
                 />
             </EntityDetailDrawer>
 
             <ConfirmActionDialogWithReason
-                open={foodDeleteOpen}
-                onOpenChange={setFoodDeleteOpen}
-                title="Delete food from catalog"
-                description="This removes the catalog entry and stores the reason in the admin audit log."
+                open={hideOpen}
+                onOpenChange={setHideOpen}
+                title="Hide food from planner suitability"
+                description="This adds admin visibility tags while keeping referenced logs and plans intact."
+                confirmLabel="Hide food"
+                confirmVariant="default"
+                busy={saving}
+                onConfirm={(reason) => void hideFood(reason)}
+            />
+
+            <ConfirmActionDialogWithReason
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                title="Delete food"
+                description="Deletion only works when no logs or plans reference this food. Merge duplicates first when needed."
                 confirmLabel="Delete food"
-                busy={savingFood}
+                busy={saving}
                 onConfirm={(reason) => void deleteFood(reason)}
             />
 
             <ConfirmActionDialogWithReason
-                open={entryDeleteOpen}
-                onOpenChange={setEntryDeleteOpen}
-                title="Delete meal entry"
-                description="This removes the meal log and stores the reason in the admin audit log."
-                confirmLabel="Delete entry"
-                busy={savingEntry}
-                onConfirm={(reason) => void deleteEntry(reason)}
+                open={mergeOpen}
+                onOpenChange={setMergeOpen}
+                title="Merge duplicate food"
+                description={
+                    <div className="space-y-3">
+                        <p>
+                            Move logs and plans from this food into the target
+                            food, then remove this duplicate.
+                        </p>
+                        <AdminField label="Target food ID">
+                            <AdminInput
+                                value={mergeTargetId}
+                                onChange={(event) =>
+                                    setMergeTargetId(event.target.value)
+                                }
+                                placeholder="Enter the catalog ID to keep"
+                            />
+                        </AdminField>
+                    </div>
+                }
+                confirmLabel="Merge duplicate"
+                confirmVariant="default"
+                busy={saving}
+                onConfirm={(reason) => void mergeFood(reason)}
             />
         </>
-    );
-}
-
-function Field({
-    label,
-    value,
-    onChange,
-}: {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-}) {
-    return (
-        <label className="space-y-2">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            <AdminInput
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
-            />
-        </label>
     );
 }

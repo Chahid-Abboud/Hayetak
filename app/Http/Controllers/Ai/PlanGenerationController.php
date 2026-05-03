@@ -81,32 +81,40 @@ class PlanGenerationController extends Controller
      *
      * Useful for manual testing without re-registering or waiting on the HTTP request.
      */
-    public function generate(Request $request)
-    {
-        $user = $request->user();
+public function generate(Request $request): JsonResponse
+{
+    $user = $request->user();
 
-        $days = (int) $request->input('days', 14);
-        if ($days <= 14) {
-            $days = 14;
-        } elseif ($days <= 21) {
-            $days = 21;
-        } else {
-            $days = 28;
-        }
+    $days = (int) $request->input(
+        'plan_horizon_days',
+        $request->input('days', (int) config('ai.planner.default_horizon_days', 14))
+    );
 
-        GeneratePlansForUser::dispatch(
-            userId: $user->id,
-            days: $days,
-            regenerate: true,
-            reason: 'manual_background_generation',
-            generateDiet: $request->boolean('generate_diet', true),
-            generateWorkout: $request->boolean('generate_workout', true),
-        );
-
-        return response()->json([
-            'ok' => true,
-            'message' => 'Plan generation dispatched',
-            'days' => $days,
-        ]);
+    if ($days <= 14) {
+        $days = 14;
+    } elseif ($days <= 21) {
+        $days = 21;
+    } else {
+        $days = 28;
     }
+
+    // Return the HTTP request immediately; the queue worker will do the slow model call.
+    $this->releaseSessionLock($request);
+
+    GeneratePlansForUser::dispatch(
+        userId: $user->id,
+        days: $days,
+        regenerate: $request->boolean('regenerate', true),
+        reason: (string) $request->input('reason', 'manual_background_generation'),
+        generateDiet: $request->boolean('generate_diet', true),
+        generateWorkout: $request->boolean('generate_workout', true),
+    );
+
+    return response()->json([
+        'ok' => true,
+        'status' => 'queued',
+        'message' => 'Plan generation started. You can keep using Hayetak while we prepare it.',
+        'days' => $days,
+    ], 202);
+}
 }

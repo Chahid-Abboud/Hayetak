@@ -1,4 +1,0 @@
-run_index,user_id,name,email,role,status,horizon_days,version,generation_id,ai_request_id,provider,model,diet_days_count,workout_days_count,review_after_days,usage_input_tokens,usage_output_tokens,usage_total_tokens,duration_ms,started_at,finished_at,error_type,error_message
-1,14,"Hayetak Messages Guide",messages-guide@hayetak.local,admin,success,14,1,d062ab60-5b2b-478e-b365-7ac0ca3d38ce,199,local_fallback,hayetak-local-fallback-v1,14,7,14,0,0,0,2007,2026-04-05T10:44:44+00:00,2026-04-05T10:44:46+00:00,,
-2,14,"Hayetak Messages Guide",messages-guide@hayetak.local,admin,success,21,2,598d9e59-9b5b-4466-94a4-3080da0658e3,200,local_fallback,hayetak-local-fallback-v1,21,7,21,0,0,0,1909,2026-04-05T10:44:46+00:00,2026-04-05T10:44:48+00:00,,
-3,14,"Hayetak Messages Guide",messages-guide@hayetak.local,admin,success,28,3,86b2e437-cbdc-479a-8e52-98f7601fd6a6,201,local_fallback,hayetak-local-fallback-v1,28,7,28,0,0,0,2112,2026-04-05T10:44:48+00:00,2026-04-05T10:44:50+00:00,,

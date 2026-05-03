@@ -2,29 +2,31 @@
 
 namespace App\Services\Ai\Chat;
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiMessage;
+use App\Models\AiConversation;
+use App\Models\AiMessage;
 use App\Models\User;
 use App\Services\Ai\AiUsageLogger;
 use App\Services\Ai\Evaluation\ChatResponseQualityScorer;
 use App\Services\Ai\Runtime\FeatureConfigResolver;
 use App\Services\Ai\Tools\CoachToolExecutor;
+use App\Services\AppNotificationService;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 class ChatOrchestrator
 {
-    public function __construct(
-        private readonly ChatIntentClassifier $classifier,
-        private readonly ChatContextBuilder $contextBuilder,
-        private readonly ChatSafetyGuard $safetyGuard,
-        private readonly CoachDeterministicResponder $deterministicResponder,
-        private readonly ChatModelManager $modelManager,
-        private readonly CoachToolExecutor $toolExecutor,
-        private readonly ChatResponseQualityScorer $qualityScorer,
-        private readonly AiUsageLogger $usageLogger,
-        private readonly FeatureConfigResolver $features,
-    ) {}
+  public function __construct(
+    private readonly ChatIntentClassifier $classifier,
+    private readonly ChatContextBuilder $contextBuilder,
+    private readonly ChatSafetyGuard $safetyGuard,
+    private readonly CoachDeterministicResponder $deterministicResponder,
+    private readonly ChatModelManager $modelManager,
+    private readonly CoachToolExecutor $toolExecutor,
+    private readonly ChatResponseQualityScorer $qualityScorer,
+    private readonly AiUsageLogger $usageLogger,
+    private readonly FeatureConfigResolver $features,
+    private readonly AppNotificationService $notifications,
+) {}
 
     /**
      * Run the complete coach pipeline: classify, gather context, call tools/model/fallbacks, review safety, and persist messages.
@@ -169,6 +171,7 @@ class ChatOrchestrator
             $classification,
             $warnings
         );
+        $contextSources = $this->contextSources($contextBundle['context']);
 
         $assistantMessage = AiMessage::query()->create([
             'conversation_id' => $conversation->id,
@@ -184,6 +187,7 @@ class ChatOrchestrator
                 'model' => $model,
                 'screen_context' => $runtimeContext['screen_context'] ?? 'coach',
                 'chat' => $chatMetadata,
+                'context_sources' => $contextSources,
                 'tools' => [
                     'planned_calls' => $tooling['calls'] ?? [],
                     'executed' => $tooling['results'] ?? [],
@@ -191,6 +195,7 @@ class ChatOrchestrator
                 'quality' => $quality,
             ],
         ]);
+        $this->notifications->chatbotResponded($user);
 
         $conversation->forceFill([
             'title' => $conversation->title ?: $this->makeTitle($question),
@@ -234,5 +239,131 @@ class ChatOrchestrator
     private function makeTitle(string $question): string
     {
         return Str::limit(Str::of($question)->squish()->value(), 60);
+    }
+
+    /**
+     * Summarize which own-user context groups were loaded for this turn without exposing raw prompt text.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function contextSources(array $context): array
+    {
+        $definitions = [
+            'user_profile' => [
+                'label' => 'Saved profile',
+                'fields' => [
+                    'age' => 'age',
+                    'sex' => 'sex',
+                    'height_cm' => 'height',
+                    'weight_kg' => 'weight',
+                    'goal' => 'goal',
+                    'activity_level' => 'activity level',
+                    'workout_location' => 'workout location',
+                    'workout_days_per_week' => 'workout days per week',
+                    'available_equipment' => 'available equipment',
+                ],
+            ],
+            'restrictions' => [
+                'label' => 'Safety restrictions',
+                'fields' => [
+                    'diet_type' => 'diet type',
+                    'allergies' => 'allergies',
+                    'medical_conditions' => 'medical conditions',
+                    'injuries' => 'injuries',
+                ],
+            ],
+            'today_summary' => [
+                'label' => 'Selected day logs',
+                'fields' => [
+                    'date' => 'date',
+                    'calories' => 'calories',
+                    'protein_g' => 'protein',
+                    'carbs_g' => 'carbs',
+                    'fat_g' => 'fat',
+                    'water_ml' => 'water',
+                    'target_water_ml' => 'water target',
+                    'meals' => 'meal entries',
+                    'workouts' => 'workout entries',
+                ],
+            ],
+            'last_7_days_summary' => [
+                'label' => 'Last 7 days',
+                'fields' => [
+                    'nutrition' => 'nutrition summary',
+                    'workouts_completed' => 'workout count',
+                    'workout_day_names' => 'workout days',
+                    'latest_measurement' => 'latest measurement',
+                ],
+            ],
+            'plans' => [
+                'label' => 'Active plans',
+                'fields' => [
+                    'nutrition_plan_name' => 'nutrition plan',
+                    'nutrition_goal' => 'nutrition goal',
+                    'nutrition_targets' => 'nutrition targets',
+                    'workout_plan_name' => 'workout plan',
+                    'workout_goal' => 'workout goal',
+                    'workout_days' => 'workout days',
+                ],
+            ],
+            'conversation_context' => [
+                'label' => 'Current thread',
+                'fields' => [
+                    'recent_turns' => 'recent messages',
+                    'summary' => 'conversation summary',
+                ],
+            ],
+            'runtime' => [
+                'label' => 'Current request details',
+                'fields' => [
+                    'available_ingredients' => 'available ingredients',
+                ],
+            ],
+            'tool_results' => [
+                'label' => 'Coach tools',
+                'fields' => [],
+            ],
+        ];
+
+        $sources = [];
+
+        foreach ($definitions as $group => $definition) {
+            $payload = is_array($context[$group] ?? null) ? $context[$group] : [];
+            if ($payload === []) {
+                continue;
+            }
+
+            $fields = [];
+            foreach (($definition['fields'] ?? []) as $key => $label) {
+                if (array_key_exists($key, $payload) && $this->hasContextValue($payload[$key])) {
+                    $fields[] = $label;
+                }
+            }
+
+            if ($fields === [] && $group !== 'tool_results') {
+                continue;
+            }
+
+            $sources[] = [
+                'key' => $group,
+                'label' => $definition['label'],
+                'fields' => $fields,
+            ];
+        }
+
+        return $sources;
+    }
+
+    private function hasContextValue(mixed $value): bool
+    {
+        if ($value === null || $value === '' || $value === false) {
+            return false;
+        }
+
+        if (is_array($value)) {
+            return $value !== [];
+        }
+
+        return true;
     }
 }

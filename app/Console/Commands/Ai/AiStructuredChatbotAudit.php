@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\Ai\AiConversation;
+use App\Models\AiConversation;
 use App\Models\User;
 use App\Services\Ai\Chat\ChatOrchestrator;
 use App\Services\Ai\Evaluation\StructuredChatbotAuditSuite;

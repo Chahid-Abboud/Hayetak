@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Persistence;
 
-use App\Models\Ai\AiPlan;
+use App\Models\AiPlan;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;

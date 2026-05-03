@@ -1,4 +1,9 @@
 import {
+    PredictorVsActualCard,
+    type PredictionTrendPoint,
+    type PredictorMeasurement,
+} from '@/components/ai/predictor-vs-actual-card';
+import {
     ProductBanner,
     ProductEmptyState,
     ProductHero,
@@ -203,6 +208,8 @@ type PageProps = {
     profileConstraints?: ProfileConstraints | null;
     isAdmin: boolean;
     latestAuditRun?: PlannerAuditRunState | null;
+    predictionTrend?: PredictionTrendPoint[];
+    weightHistory?: PredictorMeasurement[];
     defaults: {
         plan_horizon_days: number;
     };
@@ -210,6 +217,17 @@ type PageProps = {
 
 function planStatusLabel(plan?: LitePlan | null) {
     return plan ? 'Ready' : 'Not ready';
+}
+
+function cleanPlannerName(name?: string | null) {
+    return (
+        name
+            ?.replace(/\b(?:planner-)?v\d+(?:\.\d+)?\b/gi, '')
+            .replace(/\bplan-json-v\d+\b/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/\s+[-:/]\s*$/g, '')
+            .trim() || null
+    );
 }
 
 function safetyProfileLabel(profile?: ProfileConstraints | null) {
@@ -594,6 +612,8 @@ export default function AiPlannerPage() {
         profileConstraints,
         isAdmin,
         latestAuditRun,
+        predictionTrend,
+        weightHistory,
     } = usePage<PageProps>().props;
 
     const [planHorizonDays, setPlanHorizonDays] = useState<number>(
@@ -623,8 +643,12 @@ export default function AiPlannerPage() {
     const [lastPromptedAuditId, setLastPromptedAuditId] = useState<
         number | null
     >(null);
+    const showAdminTools = false;
 
     const plan = generation?.plan ?? null;
+    const canRenderPredictionTimeline = Boolean(
+        (predictionTrend?.length ?? 0) > 0 || (weightHistory?.length ?? 0) >= 2,
+    );
 
     useEffect(() => {
         setAuditRun(latestAuditRun ?? null);
@@ -736,55 +760,65 @@ export default function AiPlannerPage() {
     }, [currentAuditId, currentAuditStatus, isAdmin]);
 
     const generatePlan = async () => {
-        if (!generateDiet && !generateWorkout) {
-            setStatus({
-                tone: 'danger',
-                message: 'Select diet, workout, or both before generating.',
-            });
+    if (!generateDiet && !generateWorkout) {
+        setStatus({
+            tone: 'danger',
+            message: 'Select diet, workout, or both before generating.',
+        });
 
-            return;
-        }
+        return;
+    }
 
-        setGenerating(true);
-        setStatus(null);
+    setGenerating(true);
+    setStatus(null);
 
-        try {
-            await axios.post('/api/ai/plan', {
-                regenerate: true,
-                reason: 'planner_page_manual_generation',
-                plan_horizon_days: planHorizonDays,
-                generate_diet: generateDiet,
-                generate_workout: generateWorkout,
-            });
+    try {
+        await axios.post('/api/ai/plan/background', {
+            regenerate: true,
+            reason: 'planner_page_manual_generation',
+            plan_horizon_days: planHorizonDays,
+            generate_diet: generateDiet,
+            generate_workout: generateWorkout,
+        });
 
-            setStatus({
-                tone: 'success',
-                message:
-                    generateDiet && generateWorkout
-                        ? 'Diet and workout generated successfully. Reloading the latest version now.'
-                        : generateDiet
-                          ? 'Diet generated successfully. Reloading the latest version now.'
-                          : 'Workout generated successfully. Reloading the latest version now.',
-            });
+        setStatus({
+            tone: 'success',
+            message:
+                generateDiet && generateWorkout
+                    ? 'Diet and workout generation started. You can keep using Hayetak while the plan is being prepared.'
+                    : generateDiet
+                      ? 'Diet generation started. You can keep using Hayetak while the diet plan is being prepared.'
+                      : 'Workout generation started. You can keep using Hayetak while the workout plan is being prepared.',
+        });
+
+        /*
+         * This does NOT block the page.
+         * It waits 12 seconds, then reloads only the planner props
+         * to check if the queue finished.
+         */
+        window.setTimeout(() => {
             router.reload({
                 only: [
                     'generation',
                     'nutritionPlan',
                     'workoutPlan',
                     'latestAuditRun',
+                    'predictionTrend',
+                    'weightHistory',
                 ],
             });
-        } catch (error: unknown) {
-            const message =
-                axios.isAxiosError(error) &&
-                typeof error.response?.data?.message === 'string'
-                    ? error.response.data.message
-                    : 'Could not generate a new plan right now.';
+        }, 12000);
+    } catch (error: unknown) {
+        const message =
+            axios.isAxiosError(error) &&
+            typeof error.response?.data?.message === 'string'
+                ? error.response.data.message
+                : 'Could not start plan generation right now.';
 
-            setStatus({ tone: 'danger', message });
-        } finally {
-            setGenerating(false);
-        }
+        setStatus({ tone: 'danger', message });
+    } finally {
+        setGenerating(false);
+    }
     };
 
     const startAudit = async () => {
@@ -873,14 +907,14 @@ export default function AiPlannerPage() {
 
             <ProductPageShell width="wide">
                 <ProductHero
-                    eyebrow="AI Planner"
-                    title="Your generated diet and workout system"
-                    description="Review your plan, confirm safety constraints, and move directly into daily execution."
+                    eyebrow="Planner"
+                    title="Plans, tips, and predictor"
+                    description="Generate your meal and workout plan, review practical tips, and compare predicted progress with real check-ins."
                     meta={
                         <div className="space-y-3 text-sm">
                             <div className="font-medium text-foreground">
-                                {nutritionPlan?.name ??
-                                    workoutPlan?.name ??
+                                {cleanPlannerName(nutritionPlan?.name) ??
+                                    cleanPlannerName(workoutPlan?.name) ??
                                     'No generated plan yet'}
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -1004,7 +1038,7 @@ export default function AiPlannerPage() {
                     ))}
                 </ProductStatGrid>
 
-                {isAdmin ? (
+                {showAdminTools && isAdmin ? (
                     <ProductSection
                         title="Admin triage"
                         description="For moderation and reliability work, check planner status first, then open coach or logs only when follow-up is needed."
@@ -1040,8 +1074,8 @@ export default function AiPlannerPage() {
 
                 {plan ? (
                     <ProductSection
-                        title="Plan review"
-                        description="Run a quick safety and realism check before you start the cycle."
+                        title="Plan tips"
+                        description="Quick checks to keep the plan readable and practical before you start."
                     >
                         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
                             <SimpleListCard
@@ -1132,80 +1166,8 @@ export default function AiPlannerPage() {
                 ) : (
                     <>
                         <ProductSection
-                            title="Profile Constraints Used"
-                            description="Saved profile inputs that must be respected during generation."
-                        >
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                <SimpleListCard
-                                    title="Goals and diet"
-                                    items={[
-                                        profileConstraints?.dietary_goal
-                                            ? `Dietary goal: ${profileConstraints.dietary_goal}`
-                                            : 'Dietary goal: not set',
-                                        profileConstraints?.fitness_goal
-                                            ? `Fitness goal: ${profileConstraints.fitness_goal}`
-                                            : 'Fitness goal: not set',
-                                        profileConstraints?.diet_type
-                                            ? `Diet type: ${profileConstraints.diet_type}`
-                                            : 'Diet type: not set',
-                                    ]}
-                                />
-                                <SimpleListCard
-                                    title="Workout preferences"
-                                    items={[
-                                        profileConstraints?.workout_location
-                                            ? `Location: ${profileConstraints.workout_location}`
-                                            : 'Location: not set',
-                                        profileConstraints?.workout_days_per_week
-                                            ? `Days per week: ${profileConstraints.workout_days_per_week}`
-                                            : 'Days per week: not set',
-                                        profileConstraints
-                                            ?.preferred_workout_days?.length
-                                            ? `Preferred days: ${profileConstraints.preferred_workout_days.join(', ')}`
-                                            : 'Preferred days: not set',
-                                    ]}
-                                />
-                                <SimpleListCard
-                                    title="Safety constraints"
-                                    items={
-                                        profileConstraints?.allergies?.length
-                                            ? profileConstraints.allergies.map(
-                                                  (item) => `Allergy: ${item}`,
-                                              )
-                                            : ['No allergies saved.']
-                                    }
-                                />
-                                <SimpleListCard
-                                    title="Medical and equipment"
-                                    items={[
-                                        ...(profileConstraints
-                                            ?.medical_conditions?.length
-                                            ? profileConstraints.medical_conditions.map(
-                                                  (item) =>
-                                                      `Medical condition: ${item}`,
-                                              )
-                                            : ['No medical conditions saved.']),
-                                        ...(profileConstraints?.injury_history
-                                            ?.length
-                                            ? profileConstraints.injury_history.map(
-                                                  (item) =>
-                                                      `Injury history: ${item}`,
-                                              )
-                                            : ['No injury history saved.']),
-                                        ...(profileConstraints
-                                            ?.available_equipment?.length
-                                            ? [
-                                                  `Available equipment: ${profileConstraints.available_equipment.join(', ')}`,
-                                              ]
-                                            : ['No equipment saved.']),
-                                    ]}
-                                />
-                            </div>
-                        </ProductSection>
-
-                        <ProductSection
-                            title="Overview and safety"
-                            description="Safety rules and boundaries applied to this plan."
+                            title="Tips"
+                            description="Safety boundaries and plan notes."
                         >
                             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                                 <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
@@ -1268,8 +1230,8 @@ export default function AiPlannerPage() {
                         </ProductSection>
 
                         <ProductSection
-                            title="Diet structure"
-                            description="Structured meal output used by the tracker and adherence review."
+                            title="Meal plan"
+                            description="Meals, targets, grocery list, and prep notes."
                         >
                             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                                 <div className="space-y-4">
@@ -1465,7 +1427,7 @@ export default function AiPlannerPage() {
                         </ProductSection>
 
                         <ProductSection
-                            title="Workout structure"
+                            title="Workout plan"
                             description="Weekly training structure aligned with your restrictions and equipment."
                         >
                             <div className="grid gap-4 lg:grid-cols-2">
@@ -1581,8 +1543,8 @@ export default function AiPlannerPage() {
                         </ProductSection>
 
                         <ProductSection
-                            title="Check-in and adjustments"
-                            description="Use end-of-cycle checkpoints to decide whether to continue or regenerate."
+                            title="Adjustment tips"
+                            description="Use these checkpoints before you continue or regenerate."
                         >
                             <div className="grid gap-4 lg:grid-cols-2">
                                 <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
@@ -1623,9 +1585,23 @@ export default function AiPlannerPage() {
                         </ProductSection>
 
                         <ProductSection
-                            title="Progress Prediction"
+                            title="Predictor"
                             description="Expected trend for this cycle using your current plan and recent outcomes."
                         >
+                            {canRenderPredictionTimeline ? (
+                                <div className="mb-5">
+                                    <PredictorVsActualCard
+                                        trend={predictionTrend ?? []}
+                                        weighIns={weightHistory ?? []}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mb-5 rounded-[24px] border border-dashed border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
+                                    Generate a plan and keep logging weight
+                                    check-ins to unlock the predictor graph.
+                                </div>
+                            )}
+
                             <div className="grid gap-4 lg:grid-cols-3">
                                 <SimpleListCard
                                     title="Weight projection"
@@ -1660,7 +1636,7 @@ export default function AiPlannerPage() {
                     </>
                 )}
 
-                {isAdmin ? (
+                {showAdminTools && isAdmin ? (
                     <ProductSection
                         title="Planner Audit"
                         description="Admin controls for background planner audits."
@@ -1838,10 +1814,15 @@ export default function AiPlannerPage() {
                 <ProductStickyActions>
                     <div className="mr-auto flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span>
-                            Nutrition: {nutritionPlan?.name ?? 'Not ready'}
+                            Nutrition:{' '}
+                            {cleanPlannerName(nutritionPlan?.name) ??
+                                'Not ready'}
                         </span>
                         <span>-</span>
-                        <span>Workout: {workoutPlan?.name ?? 'Not ready'}</span>
+                        <span>
+                            Workout:{' '}
+                            {cleanPlannerName(workoutPlan?.name) ?? 'Not ready'}
+                        </span>
                     </div>
                     <ProductButton asChild emphasis="secondary" size="sm">
                         <Link href="/track-meals">Follow meal plan</Link>
@@ -1867,7 +1848,7 @@ export default function AiPlannerPage() {
                                   ? 'Generate workout'
                                   : 'Choose plan type'}
                     </ProductButton>
-                    {isAdmin ? (
+                    {showAdminTools && isAdmin ? (
                         <ProductButton
                             type="button"
                             emphasis="secondary"
@@ -1879,146 +1860,63 @@ export default function AiPlannerPage() {
                     ) : null}
                 </ProductStickyActions>
 
-                <Dialog
-                    open={auditDialogOpen}
-                    onOpenChange={setAuditDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-xl">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {auditIsActive
-                                    ? 'Planner Audit Workload Control'
-                                    : 'Planner Audit Load Control'}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {auditIsActive
-                                    ? 'This popup stays available while the audit is queued or running. Changing GPU workload updates the pacing and cooldown profile for the next run cycle without stopping the audit.'
-                                    : 'This launches a background planner audit for all non-admin accounts across 14, 21, and 28 days. It starts on low GPU load by default, and you can switch it here before launch. GPU load changes pacing and cooldowns between runs, while execution mode controls whether the audit follows standard planner behavior, uses a fast path, or runs direct generation.'}
-                            </DialogDescription>
-                        </DialogHeader>
+                {showAdminTools ? (
+                    <Dialog
+                        open={auditDialogOpen}
+                        onOpenChange={setAuditDialogOpen}
+                    >
+                        <DialogContent className="sm:max-w-xl">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {auditIsActive
+                                        ? 'Planner Audit Workload Control'
+                                        : 'Planner Audit Load Control'}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {auditIsActive
+                                        ? 'This popup stays available while the audit is queued or running. Changing GPU workload updates the pacing and cooldown profile for the next run cycle without stopping the audit.'
+                                        : 'This launches a background planner audit for all non-admin accounts across 14, 21, and 28 days. It starts on low GPU load by default, and you can switch it here before launch. GPU load changes pacing and cooldowns between runs, while execution mode controls whether the audit follows standard planner behavior, uses a fast path, or runs direct generation.'}
+                                </DialogDescription>
+                            </DialogHeader>
 
-                        <div className="grid gap-3">
-                            {[
-                                {
-                                    value: 'low' as const,
-                                    label: 'Low',
-                                    description:
-                                        'Longest cooldowns, best when you want room for other background tasks.',
-                                },
-                                {
-                                    value: 'medium' as const,
-                                    label: 'Medium',
-                                    description:
-                                        'Balanced pacing with moderate cooldowns between audit runs.',
-                                },
-                                {
-                                    value: 'high' as const,
-                                    label: 'High',
-                                    description:
-                                        'Pushes the audit through as fast as possible with minimal cooldowns.',
-                                },
-                            ].map((option) => (
-                                <label
-                                    key={option.value}
-                                    className={`flex cursor-pointer items-start gap-3 rounded-[20px] border p-4 ${
-                                        auditGpuLoad === option.value
-                                            ? 'border-foreground/30 bg-card'
-                                            : 'border-border/70 bg-background/70'
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="audit-gpu-load"
-                                        value={option.value}
-                                        checked={auditGpuLoad === option.value}
-                                        onChange={() =>
-                                            setAuditGpuLoad(option.value)
-                                        }
-                                        className="mt-1 h-4 w-4"
-                                    />
-                                    <div>
-                                        <div className="font-medium text-foreground">
-                                            {option.label}
-                                        </div>
-                                        <div className="mt-1 text-sm text-muted-foreground">
-                                            {option.description}
-                                        </div>
-                                    </div>
-                                </label>
-                            ))}
-                        </div>
-
-                        {auditIsActive ? (
-                            <div className="grid gap-3">
-                                <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-                                    Current workload:{' '}
-                                    <span className="font-medium text-foreground">
-                                        {(auditRun?.gpu_load ?? auditGpuLoad)
-                                            .charAt(0)
-                                            .toUpperCase() +
-                                            (
-                                                auditRun?.gpu_load ??
-                                                auditGpuLoad
-                                            ).slice(1)}
-                                    </span>
-                                    . Any new selection below updates the live
-                                    audit pacing on the next run cycle.
-                                </div>
-                                <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-                                    Execution mode is locked to{' '}
-                                    <span className="font-medium text-foreground">
-                                        {auditExecutionModeLabel(
-                                            auditRun?.execution_mode ??
-                                                auditExecutionMode,
-                                        )}
-                                    </span>{' '}
-                                    for the current run. Start a new audit if
-                                    you want to switch between Standard, Fast
-                                    path, and Direct generation.
-                                </div>
-                            </div>
-                        ) : (
                             <div className="grid gap-3">
                                 {[
                                     {
-                                        value: 'standard' as const,
-                                        label: 'Standard',
+                                        value: 'low' as const,
+                                        label: 'Low',
                                         description:
-                                            'Honors the current planner setup and only falls back if the app is already configured to do so.',
+                                            'Longest cooldowns, best when you want room for other background tasks.',
                                     },
                                     {
-                                        value: 'fast-fallback' as const,
-                                        label: 'Fast path',
+                                        value: 'medium' as const,
+                                        label: 'Medium',
                                         description:
-                                            'Best for large verification sweeps when you want quicker pacing for broad checks.',
+                                            'Balanced pacing with moderate cooldowns between audit runs.',
                                     },
                                     {
-                                        value: 'live' as const,
-                                        label: 'Direct generation',
+                                        value: 'high' as const,
+                                        label: 'High',
                                         description:
-                                            'Runs direct generation for each request so timing reflects the direct path.',
+                                            'Pushes the audit through as fast as possible with minimal cooldowns.',
                                     },
                                 ].map((option) => (
                                     <label
                                         key={option.value}
                                         className={`flex cursor-pointer items-start gap-3 rounded-[20px] border p-4 ${
-                                            auditExecutionMode === option.value
+                                            auditGpuLoad === option.value
                                                 ? 'border-foreground/30 bg-card'
                                                 : 'border-border/70 bg-background/70'
                                         }`}
                                     >
                                         <input
                                             type="radio"
-                                            name="audit-execution-mode"
+                                            name="audit-gpu-load"
                                             value={option.value}
                                             checked={
-                                                auditExecutionMode ===
-                                                option.value
+                                                auditGpuLoad === option.value
                                             }
                                             onChange={() =>
-                                                setAuditExecutionMode(
-                                                    option.value,
-                                                )
+                                                setAuditGpuLoad(option.value)
                                             }
                                             className="mt-1 h-4 w-4"
                                         />
@@ -2033,43 +1931,138 @@ export default function AiPlannerPage() {
                                     </label>
                                 ))}
                             </div>
-                        )}
 
-                        <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-                            {auditIsActive
-                                ? 'Keep this popup open while the audit is running if you want a quick way to switch between low, medium, and high pacing. ETA updates still refresh every 5 minutes in the audit card.'
-                                : 'ETA updates refresh every 5 minutes while the audit is running. Report files are written with the current date-based PlannerGenerated name, and the selected execution mode is saved into the audit summary.'}
-                        </div>
+                            {auditIsActive ? (
+                                <div className="grid gap-3">
+                                    <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+                                        Current workload:{' '}
+                                        <span className="font-medium text-foreground">
+                                            {(
+                                                auditRun?.gpu_load ??
+                                                auditGpuLoad
+                                            )
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                (
+                                                    auditRun?.gpu_load ??
+                                                    auditGpuLoad
+                                                ).slice(1)}
+                                        </span>
+                                        . Any new selection below updates the
+                                        live audit pacing on the next run cycle.
+                                    </div>
+                                    <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+                                        Execution mode is locked to{' '}
+                                        <span className="font-medium text-foreground">
+                                            {auditExecutionModeLabel(
+                                                auditRun?.execution_mode ??
+                                                    auditExecutionMode,
+                                            )}
+                                        </span>{' '}
+                                        for the current run. Start a new audit
+                                        if you want to switch between Standard,
+                                        Fast path, and Direct generation.
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3">
+                                    {[
+                                        {
+                                            value: 'standard' as const,
+                                            label: 'Standard',
+                                            description:
+                                                'Honors the current planner setup and only falls back if the app is already configured to do so.',
+                                        },
+                                        {
+                                            value: 'fast-fallback' as const,
+                                            label: 'Fast path',
+                                            description:
+                                                'Best for large verification sweeps when you want quicker pacing for broad checks.',
+                                        },
+                                        {
+                                            value: 'live' as const,
+                                            label: 'Direct generation',
+                                            description:
+                                                'Runs direct generation for each request so timing reflects the direct path.',
+                                        },
+                                    ].map((option) => (
+                                        <label
+                                            key={option.value}
+                                            className={`flex cursor-pointer items-start gap-3 rounded-[20px] border p-4 ${
+                                                auditExecutionMode ===
+                                                option.value
+                                                    ? 'border-foreground/30 bg-card'
+                                                    : 'border-border/70 bg-background/70'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="audit-execution-mode"
+                                                value={option.value}
+                                                checked={
+                                                    auditExecutionMode ===
+                                                    option.value
+                                                }
+                                                onChange={() =>
+                                                    setAuditExecutionMode(
+                                                        option.value,
+                                                    )
+                                                }
+                                                className="mt-1 h-4 w-4"
+                                            />
+                                            <div>
+                                                <div className="font-medium text-foreground">
+                                                    {option.label}
+                                                </div>
+                                                <div className="mt-1 text-sm text-muted-foreground">
+                                                    {option.description}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
 
-                        <DialogFooter>
-                            <ProductButton
-                                type="button"
-                                emphasis="secondary"
-                                onClick={() => setAuditDialogOpen(false)}
-                                disabled={auditSubmitting || auditLoadUpdating}
-                            >
-                                {auditIsActive ? 'Close popup' : 'Cancel'}
-                            </ProductButton>
-                            <ProductButton
-                                type="button"
-                                onClick={() =>
-                                    auditIsActive
-                                        ? updateAuditGpuLoad()
-                                        : startAudit()
-                                }
-                                disabled={auditSubmitting || auditLoadUpdating}
-                            >
+                            <div className="rounded-[18px] border border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
                                 {auditIsActive
-                                    ? auditLoadUpdating
-                                        ? 'Updating workload...'
-                                        : 'Apply workload change'
-                                    : auditSubmitting
-                                      ? 'Starting audit...'
-                                      : 'Start audit'}
-                            </ProductButton>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                                    ? 'Keep this popup open while the audit is running if you want a quick way to switch between low, medium, and high pacing. ETA updates still refresh every 5 minutes in the audit card.'
+                                    : 'ETA updates refresh every 5 minutes while the audit is running. Report files are written with the current date-based PlannerGenerated name, and the selected execution mode is saved into the audit summary.'}
+                            </div>
+
+                            <DialogFooter>
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    onClick={() => setAuditDialogOpen(false)}
+                                    disabled={
+                                        auditSubmitting || auditLoadUpdating
+                                    }
+                                >
+                                    {auditIsActive ? 'Close popup' : 'Cancel'}
+                                </ProductButton>
+                                <ProductButton
+                                    type="button"
+                                    onClick={() =>
+                                        auditIsActive
+                                            ? updateAuditGpuLoad()
+                                            : startAudit()
+                                    }
+                                    disabled={
+                                        auditSubmitting || auditLoadUpdating
+                                    }
+                                >
+                                    {auditIsActive
+                                        ? auditLoadUpdating
+                                            ? 'Updating workload...'
+                                            : 'Apply workload change'
+                                        : auditSubmitting
+                                          ? 'Starting audit...'
+                                          : 'Start audit'}
+                                </ProductButton>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                ) : null}
             </ProductPageShell>
         </>
     );

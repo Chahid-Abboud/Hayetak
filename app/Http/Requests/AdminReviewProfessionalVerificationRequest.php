@@ -16,7 +16,7 @@ class AdminReviewProfessionalVerificationRequest extends FormRequest
     {
         return [
             'review_status' => ['required', Rule::in(['approved', 'rejected', 'needs_info'])],
-            'notes' => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'required_if:review_status,rejected,needs_info', 'string', 'max:2000'],
         ];
     }
 }

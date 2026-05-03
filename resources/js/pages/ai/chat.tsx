@@ -11,7 +11,14 @@ import { ResizablePanels } from '@/components/ui/resizable-panels';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    Fragment,
+    type ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 
 type Conversation = {
     id: number;
@@ -27,6 +34,13 @@ type AiMessage = {
     conversation_id: number;
     role: 'user' | 'assistant' | 'system' | 'tool';
     content: string;
+    metadata?: {
+        context_sources?: Array<{
+            key: string;
+            label: string;
+            fields?: string[];
+        }>;
+    };
     created_at?: string | null;
 };
 
@@ -48,6 +62,158 @@ function getCsrfToken() {
 
 function isAbortError(error: unknown) {
     return error instanceof Error && error.name === 'AbortError';
+}
+
+function renderInlineMessageText(text: string): ReactNode[] {
+    const nodes: ReactNode[] = [];
+    const pattern = /(\*\*([^*]+?)\*\*|\*([^*\n]+?)\*)/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            nodes.push(text.slice(lastIndex, match.index));
+        }
+
+        const boldText = match[2];
+        const italicText = match[3];
+
+        nodes.push(
+            boldText ? (
+                <strong
+                    key={`bold-${match.index}`}
+                    className="font-semibold text-current"
+                >
+                    {boldText}
+                </strong>
+            ) : (
+                <em key={`italic-${match.index}`} className="italic">
+                    {italicText}
+                </em>
+            ),
+        );
+
+        lastIndex = pattern.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+        nodes.push(text.slice(lastIndex));
+    }
+
+    return nodes.length > 0 ? nodes : [text];
+}
+
+function MessageTextLines({ lines }: { lines: string[] }) {
+    return (
+        <>
+            {lines.map((line, index) => (
+                <Fragment key={`${line}-${index}`}>
+                    {index > 0 ? <br /> : null}
+                    {renderInlineMessageText(line)}
+                </Fragment>
+            ))}
+        </>
+    );
+}
+
+function MessageContent({ content }: { content: string }) {
+    const blocks = content
+        .replace(/\r\n/g, '\n')
+        .trim()
+        .split(/\n{2,}/)
+        .map((block) => block.trim())
+        .filter(Boolean);
+
+    if (blocks.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-3 break-words leading-7">
+            {blocks.map((block, blockIndex) => {
+                const lines = block
+                    .split('\n')
+                    .map((line) => line.trim())
+                    .filter(Boolean);
+                const groups = lines.reduce<
+                    Array<{ type: 'paragraph' | 'ordered' | 'unordered'; lines: string[] }>
+                >((grouped, line) => {
+                    const type = /^\d+[.)]\s+/.test(line)
+                        ? 'ordered'
+                        : /^[-*\u2022]\s+/.test(line)
+                          ? 'unordered'
+                          : 'paragraph';
+                    const previous = grouped[grouped.length - 1];
+
+                    if (previous?.type === type) {
+                        previous.lines.push(line);
+                    } else {
+                        grouped.push({ type, lines: [line] });
+                    }
+
+                    return grouped;
+                }, []);
+
+                return (
+                    <Fragment key={blockIndex}>
+                        {groups.map((group, groupIndex) => {
+                            if (group.type === 'ordered') {
+                                return (
+                                    <ol
+                                        key={groupIndex}
+                                        className="list-decimal space-y-2 pl-5"
+                                    >
+                                        {group.lines.map((line, lineIndex) => (
+                                            <li
+                                                key={`${line}-${lineIndex}`}
+                                                className="pl-1"
+                                            >
+                                                {renderInlineMessageText(
+                                                    line.replace(
+                                                        /^\d+[.)]\s+/,
+                                                        '',
+                                                    ),
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ol>
+                                );
+                            }
+
+                            if (group.type === 'unordered') {
+                                return (
+                                    <ul
+                                        key={groupIndex}
+                                        className="list-disc space-y-2 pl-5"
+                                    >
+                                        {group.lines.map((line, lineIndex) => (
+                                            <li
+                                                key={`${line}-${lineIndex}`}
+                                                className="pl-1"
+                                            >
+                                                {renderInlineMessageText(
+                                                    line.replace(
+                                                        /^[-*\u2022]\s+/,
+                                                        '',
+                                                    ),
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                );
+                            }
+
+                            return (
+                                <p key={groupIndex}>
+                                    <MessageTextLines lines={group.lines} />
+                                </p>
+                            );
+                        })}
+                    </Fragment>
+                );
+            })}
+        </div>
+    );
 }
 
 export default function AiChatPage() {
@@ -322,6 +488,30 @@ export default function AiChatPage() {
         [messages, pendingBubbles],
     );
 
+    function contextSourceLabel(message: AiMessage | PendingBubble) {
+        if (message.role !== 'assistant' || !('metadata' in message)) {
+            return null;
+        }
+
+        const sources = Array.isArray(message.metadata?.context_sources)
+            ? message.metadata.context_sources
+            : [];
+
+        const labels = sources
+            .filter(
+                (source) =>
+                    Array.isArray(source.fields) && source.fields.length > 0,
+            )
+            .map((source) => source.label)
+            .slice(0, 4);
+
+        if (labels.length === 0) {
+            return null;
+        }
+
+        return `Loaded context: ${labels.join(', ')}`;
+    }
+
     return (
         <>
             <Head title="AI Coach" />
@@ -354,7 +544,7 @@ export default function AiChatPage() {
                 ) : null}
 
                 {isAdmin ? (
-                    <section className="grid gap-4 lg:grid-cols-3">
+                    <div className="grid gap-4 lg:grid-cols-3">
                         <div className="rounded-3xl border bg-card p-4">
                             <div className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                                 Triage
@@ -395,7 +585,7 @@ export default function AiChatPage() {
                                 </ProductButton>
                             </div>
                         </div>
-                    </section>
+                        </div>
                 ) : null}
 
                 <ResizablePanels
@@ -466,7 +656,7 @@ export default function AiChatPage() {
                                                         {conversation.last_message_excerpt ??
                                                             'No messages yet'}
                                                     </div>
-                                                    <div className="mt-2 text-[11px] text-muted-foreground">
+                                                    <div className="mt-2 text-xs text-muted-foreground">
                                                         {conversation.last_message_at
                                                             ? new Date(
                                                                   conversation.last_message_at,
@@ -482,7 +672,7 @@ export default function AiChatPage() {
                         </aside>
                     }
                     right={
-                        <section className="flex min-h-[72vh] flex-col overflow-hidden rounded-3xl border bg-card">
+                        <div className="flex min-h-[72vh] flex-col overflow-hidden rounded-3xl border bg-card">
                             <div className="border-b px-5 py-4">
                                 <div className="text-base font-semibold">
                                     {activeConversation?.title ??
@@ -557,6 +747,8 @@ export default function AiChatPage() {
                                                 'created_at' in message
                                                     ? message.created_at
                                                     : null;
+                                            const sourceLabel =
+                                                contextSourceLabel(message);
 
                                             return (
                                                 <div
@@ -570,7 +762,7 @@ export default function AiChatPage() {
                                                 >
                                                     <div
                                                         className={
-                                                            'max-w-[88%] rounded-3xl px-4 py-3 text-sm shadow-sm sm:max-w-[72%] ' +
+                                                            'max-w-[92%] rounded-3xl px-5 py-4 text-[15px] leading-7 shadow-sm sm:max-w-[78%] sm:text-base ' +
                                                             (mine
                                                                 ? 'bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
                                                                 : 'border bg-background text-foreground') +
@@ -579,7 +771,7 @@ export default function AiChatPage() {
                                                                 : '')
                                                         }
                                                     >
-                                                        <div className="mb-1 text-[11px] opacity-70">
+                                                        <div className="mb-2 text-xs opacity-70">
                                                             <div className="flex items-center gap-2">
                                                                 <span>
                                                                     {mine
@@ -605,14 +797,14 @@ export default function AiChatPage() {
                                                                 </span>
                                                             </div>
                                                         ) : (
-                                                            <div className="break-words whitespace-pre-wrap">
-                                                                {
+                                                            <MessageContent
+                                                                content={
                                                                     message.content
                                                                 }
-                                                            </div>
+                                                            />
                                                         )}
 
-                                                        <div className="mt-2 text-[11px] opacity-70">
+                                                        <div className="mt-3 text-xs leading-5 opacity-70">
                                                             {isPending
                                                                 ? mine
                                                                     ? 'Sending...'
@@ -623,6 +815,12 @@ export default function AiChatPage() {
                                                                     ).toLocaleString()
                                                                   : ''}
                                                         </div>
+                                                        {!mine &&
+                                                        sourceLabel ? (
+                                                            <div className="mt-3 border-t border-current/10 pt-3 text-xs leading-5 opacity-70">
+                                                                {sourceLabel}
+                                                            </div>
+                                                        ) : null}
                                                     </div>
                                                 </div>
                                             );
@@ -634,10 +832,10 @@ export default function AiChatPage() {
 
                             <div className="border-t px-4 py-4">
                                 <div className="mb-3 flex flex-wrap gap-2">
-                                    <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
+                                    <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
                                         Follow-ups stay in context
                                     </span>
-                                    <span className="rounded-full border px-3 py-1 text-[11px] text-muted-foreground">
+                                    <span className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
                                         Saved profile data is only used when
                                         relevant
                                     </span>
@@ -678,7 +876,7 @@ export default function AiChatPage() {
                                     for the best context.
                                 </p>
                             </div>
-                        </section>
+                        </div>
                     }
                 />
             </ProductPageShell>

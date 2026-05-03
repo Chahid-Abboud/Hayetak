@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Ai;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Models\NutritionPlan;
 use App\Models\WorkoutPlan;
 use App\Services\Ai\Audit\PlannerAuditExecutionMode;
 use App\Services\Ai\Audit\PlannerAuditGpuLoad;
 use App\Services\Ai\PlannerService;
+use App\Services\Ai\ProgressPredictionTimelineService;
 use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -20,6 +21,7 @@ class PlannerPageController extends Controller
     public function __construct(
         private readonly PlannerService $planner,
         private readonly UserFacingAiPayloadSanitizer $sanitizer,
+        private readonly ProgressPredictionTimelineService $predictionTimeline,
     ) {}
 
     public function show(Request $request): Response
@@ -102,6 +104,8 @@ class PlannerPageController extends Controller
             'defaults' => $defaults,
             'isAdmin' => $isAdmin,
             'latestAuditRun' => $latestAuditRun ? $this->presentAuditRun($latestAuditRun) : null,
+            'predictionTrend' => $this->predictionTimeline->recentPredictionTrend((int) $user->id, 10),
+            'weightHistory' => $this->predictionTimeline->weightHistory((int) $user->id),
         ]);
     }
 
