@@ -1,12 +1,33 @@
-import mapboxgl, { LngLatLike, Map } from 'mapbox-gl';
+import mapboxgl, { LngLatLike, Map as MapboxMap } from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import {
+    Circle,
+    Cross,
+    Dumbbell,
+    FlaskConical,
+    Utensils,
+    type LucideIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+
+(
+    mapboxgl as typeof mapboxgl & {
+        setTelemetryEnabled?: (enabled: boolean) => void;
+    }
+).setTelemetryEnabled?.(false);
 
 export type Place = {
     id: string | number;
     name: string;
     lat: number;
     lon: number;
-    type?: 'gym' | 'nutritionist' | 'other';
+    type?:
+        | 'gym'
+        | 'nutritionist'
+        | 'hospital'
+        | 'medical_lab'
+        | 'other';
     category?: string | null;
     address?: string | null;
     city?: string | null;
@@ -32,8 +53,10 @@ type Props = {
     onRadiusChange?: (km: number) => void;
     showGym?: boolean;
     showNutritionist?: boolean;
+    showHealthcare?: boolean;
     onToggleGym?: (v: boolean) => void;
     onToggleNutritionist?: (v: boolean) => void;
+    onToggleHealthcare?: (v: boolean) => void;
     onResults?: (items: Place[]) => void;
     onLoadingChange?: (loading: boolean) => void;
     onErrorChange?: (message: string | null) => void;
@@ -49,8 +72,10 @@ export default function NearbyMap({
     radiusKm,
     showGym = true,
     showNutritionist = true,
+    showHealthcare = true,
     onToggleGym,
     onToggleNutritionist,
+    onToggleHealthcare,
     onResults,
     onLoadingChange,
     onErrorChange,
@@ -64,7 +89,7 @@ export default function NearbyMap({
             ?.getAttribute('content') ||
         '';
 
-    const mapRef = useRef<Map | null>(null);
+    const mapRef = useRef<MapboxMap | null>(null);
     const divRef = useRef<HTMLDivElement | null>(null);
     const initialCenterRef = useRef(initialCenter);
     const initialZoomRef = useRef(initialZoom);
@@ -80,6 +105,9 @@ export default function NearbyMap({
     const [error, setError] = useState<string | null>(null);
 
     const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+    const placeMarkersRef = useRef<
+        globalThis.Map<string, { marker: mapboxgl.Marker; root: Root }>
+    >(new globalThis.Map());
     const userSetRef = useRef(false);
 
     const popupRef = useRef<mapboxgl.Popup | null>(null);
@@ -88,8 +116,9 @@ export default function NearbyMap({
         const t: string[] = [];
         if (showGym) t.push('gym');
         if (showNutritionist) t.push('nutritionist');
+        if (showHealthcare) t.push('hospital', 'medical_lab');
         return t.join(',');
-    }, [showGym, showNutritionist]);
+    }, [showGym, showHealthcare, showNutritionist]);
 
     const fetchController = useRef<AbortController | null>(null);
 
@@ -104,7 +133,7 @@ export default function NearbyMap({
                 offset: 16,
             });
         }
-        const typeLabel = (data.category ?? data.type ?? 'other').toUpperCase();
+        const typeLabel = formatCategoryLabel(data.category ?? data.type ?? 'other');
         const details = [data.address, data.city].filter(Boolean).join(', ');
         const distanceLabel =
             typeof data.distanceM === 'number'
@@ -122,55 +151,57 @@ export default function NearbyMap({
             .setHTML(
                 `
         <div style="
-          background:white;
+          background:var(--card);
+          color:var(--foreground);
+          border:1px solid var(--border);
           border-radius:12px;
           padding:10px 12px 8px 12px;
           box-shadow:0 12px 30px rgba(0,0,0,0.18);
           min-width:160px;
         ">
-          <div style="font-weight:600; color:#0f172a; margin-bottom:2px;">
+          <div style="font-weight:600; color:var(--foreground); margin-bottom:2px;">
             ${escapeHtml(data.name || 'Unknown')}
           </div>
           ${
               details
-                  ? `<div style="font-size:12px; color:#475569; margin-bottom:4px;">
+                  ? `<div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">
                   ${escapeHtml(details)}
                  </div>`
                   : ''
           }
           ${
               distanceLabel
-                  ? `<div style="font-size:11px; color:#64748b; margin-bottom:6px;">
+                  ? `<div style="font-size:11px; color:var(--muted-foreground); margin-bottom:6px;">
                   ${escapeHtml(distanceLabel)}
                  </div>`
                   : ''
           }
           ${
               typeLabel
-                  ? `<span style="display:inline-block;font-size:10px;font-weight:600;background:#e2fff4;color:#047857;border-radius:9999px;padding:2px 10px;">
+                  ? `<span style="display:inline-block;font-size:10px;font-weight:600;background:var(--secondary);color:var(--secondary-foreground);border-radius:9999px;padding:2px 10px;">
                   ${escapeHtml(typeLabel)}
                  </span>`
                   : ''
           }
           ${
               description
-                  ? `<div style="font-size:12px; color:#334155; margin-top:8px; line-height:1.4;">
+                  ? `<div style="font-size:12px; color:var(--foreground); margin-top:8px; line-height:1.4;">
                   ${escapeHtml(description)}
                  </div>`
                   : ''
           }
-          ${phone ? `<div style="font-size:12px; color:#334155; margin-top:8px;">Phone: ${phone}</div>` : ''}
+          ${phone ? `<div style="font-size:12px; color:var(--foreground); margin-top:8px;">Phone: ${phone}</div>` : ''}
           ${
               mapsUrl || websiteUrl
                   ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
                   ${
                       mapsUrl
-                          ? `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#0369a1;text-decoration:underline;">Open map</a>`
+                          ? `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--info);text-decoration:underline;">Open map</a>`
                           : ''
                   }
                   ${
                       websiteUrl
-                          ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#0369a1;text-decoration:underline;">Website</a>`
+                          ? `<a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--info);text-decoration:underline;">Website</a>`
                           : ''
                   }
                  </div>`
@@ -239,6 +270,7 @@ export default function NearbyMap({
 
         if (!tokenRef.current) console.warn('Mapbox token missing.');
         mapboxgl.accessToken = tokenRef.current;
+        const markerRegistry = placeMarkersRef.current;
 
         const m = new mapboxgl.Map({
             container: divRef.current,
@@ -256,44 +288,18 @@ export default function NearbyMap({
         m.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         m.on('load', () => {
-            addMarkerImages(m);
             addSourcesAndLayers(m);
             drawRadiusCircle(
                 m,
                 initialCenterRef.current,
                 initialRadiusRef.current,
             );
-            updatePlacesLayer(m, placesRef.current);
-        });
-
-        // click on a place on the map
-        m.on('click', 'places-unclustered', (e) => {
-            const feat = e.features?.[0];
-            if (!feat) return;
-            const props = asRecord(feat.properties);
-            const coords = getPointCoordinates(feat.geometry);
-            if (!coords) return;
-            const category =
-                readString(props.category) ?? readString(props.type) ?? '';
-            const coerced = normalizePlaceType(category);
-            showPopupAt(coords[0], coords[1], {
-                id: readId(props.id) ?? `${coords[1]},${coords[0]}`,
-                name: readString(props.name) || 'Unknown',
-                lat: coords[1],
-                lon: coords[0],
-                type: coerced,
-                category: category || coerced,
-                address: readString(props.address) || '',
-                city: readString(props.city) || null,
-                distanceM:
-                    readNumber(props.distance_m) ??
-                    readNumber(props.distance) ??
-                    null,
-                description: readString(props.description) || null,
-                googleMapsLink: readString(props.google_maps_link) || null,
-                website: readString(props.website) || null,
-                phone: readString(props.phone) || null,
-            });
+            updatePlaceMarkers(
+                m,
+                placesRef.current,
+                markerRegistry,
+                showPopupAt,
+            );
         });
 
         m.on('moveend', () => {
@@ -302,6 +308,7 @@ export default function NearbyMap({
         });
 
         return () => {
+            clearPlaceMarkers(markerRegistry);
             m.remove();
             mapRef.current = null;
         };
@@ -349,26 +356,8 @@ export default function NearbyMap({
         const m = mapRef.current;
         if (!m) return;
         placesRef.current = places;
-        updatePlacesLayer(m, places);
-    }, [places]);
-
-    /* ---------- visibility toggle ---------- */
-    useEffect(() => {
-        const m = mapRef.current;
-        if (!m) return;
-        const types: string[] = [];
-        if (showGym) types.push('gym');
-        if (showNutritionist) types.push('nutritionist');
-        if (m.getLayer('places-unclustered')) {
-            m.setFilter('places-unclustered', [
-                'match',
-                ['get', 'type'],
-                types.length ? types : [''],
-                true,
-                false,
-            ]);
-        }
-    }, [showGym, showNutritionist]);
+        updatePlaceMarkers(m, places, placeMarkersRef.current, showPopupAt);
+    }, [places, showPopupAt]);
 
     /* ---------- focus from list ---------- */
     useEffect(() => {
@@ -397,7 +386,7 @@ export default function NearbyMap({
                     onClick={() => onToggleGym?.(!showGym)}
                     className={`rounded-lg border px-2 py-1 text-xs font-medium ${
                         showGym
-                            ? 'border-emerald-600 bg-emerald-500 text-white'
+                            ? 'border-primary/60 bg-primary text-primary-foreground'
                             : 'border-border bg-background text-foreground'
                     }`}
                 >
@@ -408,11 +397,22 @@ export default function NearbyMap({
                     onClick={() => onToggleNutritionist?.(!showNutritionist)}
                     className={`rounded-lg border px-2 py-1 text-xs font-medium ${
                         showNutritionist
-                            ? 'border-blue-700 bg-blue-600 text-white'
+                            ? 'border-info/60 bg-info text-info-foreground'
                             : 'border-border bg-background text-foreground'
                     }`}
                 >
                     Nutrition centers
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onToggleHealthcare?.(!showHealthcare)}
+                    className={`rounded-lg border px-2 py-1 text-xs font-medium ${
+                        showHealthcare
+                            ? 'border-primary/60 bg-primary/15 text-foreground'
+                            : 'border-border bg-background text-foreground'
+                    }`}
+                >
+                    Healthcare
                 </button>
             </div>
 
@@ -434,51 +434,31 @@ export default function NearbyMap({
             <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-2">
                     <span className="inline-flex items-center gap-2">
-                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fcb3f]/40 bg-[#223726] text-[#8fcb3f]">
-                            <svg
-                                viewBox="0 0 16 16"
-                                aria-hidden="true"
-                                className="h-3 w-3"
-                            >
-                                <g
-                                    stroke="currentColor"
-                                    strokeWidth="1.6"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    fill="none"
-                                >
-                                    <path d="M4 8h8" />
-                                    <path d="M2.7 5.6v4.8M4.2 6.2v3.6M11.8 6.2v3.6M13.3 5.6v4.8" />
-                                </g>
-                            </svg>
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-primary">
+                            <Dumbbell className="h-3 w-3" aria-hidden />
                         </span>
                         Gym
                     </span>
                     <span className="inline-flex items-center gap-2">
-                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fcb3f]/40 bg-[#223726] text-[#8fcb3f]">
-                            <svg
-                                viewBox="0 0 16 16"
-                                aria-hidden="true"
-                                className="h-3 w-3"
-                            >
-                                <g
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    fill="none"
-                                >
-                                    <path d="M5.5 3.5v9" />
-                                    <path d="M4 3.5v3M5.5 3.5v3M7 3.5v3" />
-                                    <path d="M10.5 3.5v9" />
-                                    <path d="M10.5 3.5l2 2.7" />
-                                </g>
-                            </svg>
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-info/40 bg-info/10 text-info">
+                            <Utensils className="h-3 w-3" aria-hidden />
                         </span>
                         Nutrition center / Dietitian
                     </span>
                     <span className="inline-flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-cyan-500/70" />
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-primary">
+                            <Cross className="h-3 w-3" aria-hidden />
+                        </span>
+                        Hospital
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-warning/40 bg-warning/10 text-warning">
+                            <FlaskConical className="h-3 w-3" aria-hidden />
+                        </span>
+                        Medical lab
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-info/70" />
                         Search radius
                     </span>
                 </div>
@@ -614,44 +594,23 @@ function normalizeFeature(raw: unknown): Place {
     };
 }
 
-function normalizePlaceType(value: string): 'gym' | 'nutritionist' | 'other' {
+function normalizePlaceType(
+    value: string,
+):
+    | 'gym'
+    | 'nutritionist'
+    | 'hospital'
+    | 'medical_lab'
+    | 'other' {
     const v = (value || '').toLowerCase();
     if (v.includes('gym')) return 'gym';
     if (v.includes('nutri') || v.includes('diet')) return 'nutritionist';
+    if (v.includes('hospital')) return 'hospital';
+    if (v.includes('lab') || v.includes('diagnostic')) return 'medical_lab';
     return 'other';
 }
 
-function addSourcesAndLayers(map: Map) {
-    // no clustering
-    if (!map.getSource('places')) {
-        map.addSource('places', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-            cluster: false,
-        });
-    }
-
-    if (!map.getLayer('places-unclustered')) {
-        map.addLayer({
-            id: 'places-unclustered',
-            type: 'symbol',
-            source: 'places',
-            layout: {
-                'icon-image': [
-                    'match',
-                    ['get', 'type'],
-                    'gym',
-                    'marker-gym-logo',
-                    'nutritionist',
-                    'marker-nutrition-logo',
-                    'marker-other-logo',
-                ],
-                'icon-size': 0.92,
-                'icon-allow-overlap': true,
-            },
-        });
-    }
-
+function addSourcesAndLayers(map: MapboxMap) {
     if (!map.getSource('radius')) {
         map.addSource('radius', {
             type: 'geojson',
@@ -664,7 +623,7 @@ function addSourcesAndLayers(map: Map) {
             type: 'fill',
             source: 'radius',
             paint: {
-                'fill-color': '#22d3ee',
+                'fill-color': cssVar('--info', '#4f8df7'),
                 'fill-opacity': 0.12,
             },
         });
@@ -675,147 +634,121 @@ function addSourcesAndLayers(map: Map) {
             type: 'line',
             source: 'radius',
             paint: {
-                'line-color': '#06b6d4',
+                'line-color': cssVar('--info', '#4f8df7'),
                 'line-width': 2,
             },
         });
     }
 }
 
-function addMarkerImages(map: Map) {
-    if (!map.hasImage('marker-gym-logo')) {
-        map.addImage('marker-gym-logo', createLogoMarkerImage('gym'), {
-            pixelRatio: 2,
-        });
-    }
+function cssVar(name: string, fallback: string): string {
+    if (typeof document === 'undefined') return fallback;
+    const value = getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim();
 
-    if (!map.hasImage('marker-nutrition-logo')) {
-        map.addImage(
-            'marker-nutrition-logo',
-            createLogoMarkerImage('nutritionist'),
-            { pixelRatio: 2 },
-        );
-    }
+    return value || fallback;
+}
 
-    if (!map.hasImage('marker-other-logo')) {
-        map.addImage('marker-other-logo', createLogoMarkerImage('other'), {
-            pixelRatio: 2,
+function updatePlaceMarkers(
+    map: MapboxMap,
+    list: Place[],
+    registry: globalThis.Map<string, { marker: mapboxgl.Marker; root: Root }>,
+    showPopupAt: (lng: number, lat: number, data: Place) => void,
+) {
+    clearPlaceMarkers(registry);
+
+    for (const place of list) {
+        if (!Number.isFinite(place.lat) || !Number.isFinite(place.lon)) {
+            continue;
+        }
+
+        const key = String(place.id);
+        const element = document.createElement('button');
+        element.type = 'button';
+        element.className =
+            'group flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card text-foreground shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none';
+        element.style.boxShadow = '0 16px 32px rgba(0,0,0,0.28)';
+        element.setAttribute('aria-label', `Show ${place.name} on map`);
+        element.addEventListener('click', (event) => {
+            event.stopPropagation();
+            showPopupAt(place.lon, place.lat, place);
         });
+
+        const root = createRoot(element);
+        root.render(<MapPlaceMarkerIcon type={placeKind(place)} />);
+
+        const marker = new mapboxgl.Marker({
+            element,
+            anchor: 'center',
+        })
+            .setLngLat([place.lon, place.lat])
+            .addTo(map);
+
+        registry.set(key, { marker, root });
     }
 }
 
-function createLogoMarkerImage(
-    kind: 'gym' | 'nutritionist' | 'other',
-): ImageData {
-    const size = 64;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-
-    const context = canvas.getContext('2d');
-    if (!context) {
-        throw new Error('Could not create map marker canvas context.');
+function clearPlaceMarkers(
+    registry: globalThis.Map<string, { marker: mapboxgl.Marker; root: Root }>,
+) {
+    for (const { marker, root } of registry.values()) {
+        root.unmount();
+        marker.remove();
     }
 
-    context.clearRect(0, 0, size, size);
-
-    const badgeColor = '#223726';
-    const glyphColor = '#8fcb3f';
-
-    context.beginPath();
-    context.arc(size / 2, size / 2, 16, 0, Math.PI * 2);
-    context.fillStyle = badgeColor;
-    context.fill();
-
-    context.beginPath();
-    context.arc(size / 2, size / 2, 16, 0, Math.PI * 2);
-    context.lineWidth = 1.8;
-    context.strokeStyle = 'rgba(143,203,63,0.28)';
-    context.stroke();
-
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    context.strokeStyle = glyphColor;
-    context.fillStyle = glyphColor;
-
-    if (kind === 'gym') {
-        // Dumbbell icon (angled)
-        context.lineWidth = 2.6;
-        context.beginPath();
-        context.moveTo(23, 36);
-        context.lineTo(41, 28);
-        context.stroke();
-
-        context.lineWidth = 3;
-        context.beginPath();
-        context.moveTo(19, 33);
-        context.lineTo(21.5, 38.5);
-        context.moveTo(22.2, 30.8);
-        context.lineTo(24.2, 35.5);
-        context.moveTo(39.8, 28.5);
-        context.lineTo(41.8, 33.2);
-        context.moveTo(42.5, 25.8);
-        context.lineTo(45, 31.2);
-        context.stroke();
-    } else if (kind === 'nutritionist') {
-        // Fork + knife icon
-        context.lineWidth = 2.4;
-        context.beginPath();
-        context.moveTo(24, 24);
-        context.lineTo(24, 40);
-        context.moveTo(20.5, 24);
-        context.lineTo(20.5, 30);
-        context.moveTo(24, 24);
-        context.lineTo(24, 30);
-        context.moveTo(27.5, 24);
-        context.lineTo(27.5, 30);
-        context.stroke();
-
-        context.lineWidth = 2.8;
-        context.beginPath();
-        context.moveTo(36, 24);
-        context.lineTo(36, 40);
-        context.moveTo(36, 24);
-        context.lineTo(40.5, 30);
-        context.stroke();
-    } else {
-        context.beginPath();
-        context.arc(size / 2, size / 2, 5, 0, Math.PI * 2);
-        context.fill();
-    }
-
-    return context.getImageData(0, 0, size, size);
+    registry.clear();
 }
 
-function updatePlacesLayer(map: Map, list: Place[]) {
-    const src = map.getSource('places') as mapboxgl.GeoJSONSource | undefined;
-    if (!src) return;
-    src.setData({
-        type: 'FeatureCollection',
-        features: list.map((p) => ({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-            properties: {
-                id: p.id,
-                name: p.name,
-                type: p.type ?? 'other',
-                category: p.category ?? p.type ?? 'other',
-                address: p.address ?? '',
-                city: p.city ?? '',
-                distance_m: p.distanceM ?? null,
-                description: p.description ?? '',
-                google_maps_link: p.googleMapsLink ?? '',
-                website: p.website ?? '',
-                phone: p.phone ?? '',
-                rating: p.rating ?? null,
-                primary_image_url: p.primaryImageUrl ?? '',
-            },
-        })),
-    } as GeoJSON.FeatureCollection);
+function MapPlaceMarkerIcon({
+    type,
+}: {
+    type: NonNullable<Place['type']>;
+}) {
+    const Icon = markerIcon(type);
+    const tone = markerTone(type);
+
+    return (
+        <span
+            className={`flex h-7 w-7 items-center justify-center rounded-full border ${tone}`}
+        >
+            <Icon className="h-4 w-4" aria-hidden strokeWidth={2.5} />
+        </span>
+    );
+}
+
+function placeKind(place: Place): NonNullable<Place['type']> {
+    return normalizePlaceType((place.category ?? place.type ?? 'other').toString());
+}
+
+function markerIcon(type: NonNullable<Place['type']>): LucideIcon {
+    if (type === 'gym') return Dumbbell;
+    if (type === 'nutritionist') return Utensils;
+    if (type === 'medical_lab') return FlaskConical;
+    if (type === 'hospital') return Cross;
+
+    return Circle;
+}
+
+function markerTone(type: NonNullable<Place['type']>): string {
+    if (type === 'nutritionist') {
+        return 'border-info/40 bg-info/10 text-info';
+    }
+    if (type === 'medical_lab') {
+        return 'border-warning/40 bg-warning/10 text-warning';
+    }
+    if (type === 'hospital') {
+        return 'border-primary/40 bg-primary/15 text-primary';
+    }
+    if (type === 'other') {
+        return 'border-muted-foreground/30 bg-muted text-muted-foreground';
+    }
+
+    return 'border-primary/40 bg-primary/15 text-primary';
 }
 
 function drawRadiusCircle(
-    map: Map,
+    map: MapboxMap,
     center: { lat: number; lon: number },
     radiusKm: number,
 ) {
@@ -878,6 +811,12 @@ function escapeHtml(s: string) {
 function truncate(value: string, maxLen: number): string {
     if (value.length <= maxLen) return value;
     return `${value.slice(0, Math.max(0, maxLen - 1)).trim()}...`;
+}
+
+function formatCategoryLabel(value: string): string {
+    return value
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function safeHttpUrl(value?: string | null): string | null {

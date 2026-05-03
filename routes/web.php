@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminActionLogController;
+use App\Http\Controllers\Admin\AdminAssignmentController;
+use App\Http\Controllers\Admin\AdminExerciseController;
 use App\Http\Controllers\Admin\AdminMealController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPlaceLocalController;
 use App\Http\Controllers\Admin\AdminProfessionalController;
 use App\Http\Controllers\Admin\AdminProfessionalVerificationController;
 use App\Http\Controllers\Admin\AdminProgressController;
+use App\Http\Controllers\Admin\AdminSafetyProfileController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Ai\ChatController;
 use App\Http\Controllers\Ai\PlanGenerationController;
@@ -36,7 +39,6 @@ use App\Http\Controllers\WaterIntakeController;
 use App\Http\Controllers\Workout\WorkoutLogController;
 use App\Http\Controllers\Workout\WorkoutPlanController;
 use Illuminate\Support\Facades\Route;
-// ✅ ADD THIS
 use Inertia\Inertia;
 
 /*
@@ -153,6 +155,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dietitian.clients.index');
 
     Route::middleware('role:admin')->group(function () {
+        Route::get('/admin', fn () => Inertia::render('admin/overview/index'))->name('admin.overview.index');
+        Route::get('/admin/people', fn () => Inertia::render('admin/people/index'))->name('admin.people.index');
+        Route::get('/admin/verifications', fn () => Inertia::render('admin/professional-verifications/index'))->name('admin.verifications.index');
+        Route::get('/admin/health-data', fn () => Inertia::render('admin/health-data/index'))->name('admin.health-data.index');
+        Route::get('/admin/communications', fn () => Inertia::render('admin/communications/index'))->name('admin.communications.index');
+        Route::get('/admin/ai-review', fn () => Inertia::render('admin/ai-review/index'))->name('admin.ai-review.index');
+        Route::get('/admin/logs-diagnostics', fn () => Inertia::render('admin/logs-diagnostics/index'))->name('admin.logs-diagnostics.index');
+        Route::get('/admin/settings', fn () => Inertia::render('admin/settings/index'))->name('admin.settings.index');
         Route::get('/admin/users', fn () => Inertia::render('admin/users/index'))->name('admin.users.index');
         Route::get('/admin/users/{user}', fn ($user) => Inertia::render('admin/users/show', ['userId' => (int) $user]))->name('admin.users.show');
         Route::get('/admin/logs', fn () => Inertia::render('admin/logs/index'))->name('admin.logs.index');
@@ -168,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/admin/privacy-compliance', fn () => Inertia::render('admin/privacy-compliance/index'))->name('admin.privacy-compliance.index');
         Route::get('/admin/settings-feature-flags', fn () => Inertia::render('admin/settings-feature-flags/index'))->name('admin.settings-feature-flags.index');
         Route::get('/admin/ai-rollouts', fn () => Inertia::render('admin/ai-rollouts/index'))->name('admin.ai-rollouts.index');
+        Route::get('/admin/ai/planner', fn () => Inertia::render('admin/ai/planner/index'))->name('admin.ai.planner.index');
+        Route::get('/admin/ai/coach', fn () => Inertia::render('admin/ai/coach/index'))->name('admin.ai.coach.index');
         Route::get('/admin/notifications', fn () => Inertia::render('admin/notifications/index'))->name('admin.notifications.index');
         Route::get('/admin/professional-verifications', fn () => Inertia::render('admin/professional-verifications/index'))->name('admin.professional-verifications.index');
         Route::get('/admin/professionals', fn () => Inertia::render('admin/professionals/index'))->name('admin.professionals.index');
@@ -224,7 +236,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
             Route::get('/admin/notifications', [AdminNotificationController::class, 'index']);
             Route::post('/admin/notifications', [AdminNotificationController::class, 'store']);
+            Route::post('/admin/notifications/{adminActionLog}/resend-failed', [AdminNotificationController::class, 'resendFailed']);
             Route::get('/admin/action-logs', [AdminActionLogController::class, 'index']);
+            Route::get('/admin/assignments', [AdminAssignmentController::class, 'index']);
+            Route::post('/admin/assignments', [AdminAssignmentController::class, 'store']);
+            Route::delete('/admin/assignments/{assignment}', [AdminAssignmentController::class, 'destroy']);
             Route::get('/admin/professional-verifications', [AdminProfessionalVerificationController::class, 'index']);
             Route::patch('/admin/professional-verifications/{professionalVerification}/review', [AdminProfessionalVerificationController::class, 'review']);
 
@@ -235,20 +251,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/admin/foods', [AdminMealController::class, 'foods']);
             Route::post('/admin/foods', [AdminMealController::class, 'upsertFood']);
             Route::put('/admin/foods/{food}', [AdminMealController::class, 'upsertFood']);
+            Route::patch('/admin/foods/{food}/hide', [AdminMealController::class, 'hideFood']);
+            Route::post('/admin/foods/{food}/merge', [AdminMealController::class, 'mergeFood']);
             Route::delete('/admin/foods/{food}', [AdminMealController::class, 'destroyFood']);
             Route::get('/admin/meal-entries', [AdminMealController::class, 'mealEntries']);
             Route::put('/admin/meal-entries/{mealEntry}', [AdminMealController::class, 'updateMealEntry']);
             Route::delete('/admin/meal-entries/{mealEntry}', [AdminMealController::class, 'destroyMealEntry']);
 
+            Route::get('/admin/exercises', [AdminExerciseController::class, 'index']);
+            Route::post('/admin/exercises', [AdminExerciseController::class, 'upsert']);
+            Route::put('/admin/exercises/{exercise}', [AdminExerciseController::class, 'upsert']);
+            Route::patch('/admin/exercises/{exercise}/hide', [AdminExerciseController::class, 'hide']);
+            Route::post('/admin/exercises/{exercise}/alternatives', [AdminExerciseController::class, 'addAlternative']);
+            Route::post('/admin/exercises/{exercise}/restrictions', [AdminExerciseController::class, 'markUnsafe']);
+
             Route::get('/admin/places-local', [AdminPlaceLocalController::class, 'index']);
             Route::post('/admin/places-local', [AdminPlaceLocalController::class, 'store']);
             Route::put('/admin/places-local/{placeLocal}', [AdminPlaceLocalController::class, 'update']);
+            Route::patch('/admin/places-local/{placeLocal}/hide', [AdminPlaceLocalController::class, 'hide']);
+            Route::post('/admin/places-local/{placeLocal}/validate-coordinates', [AdminPlaceLocalController::class, 'validateCoordinates']);
             Route::delete('/admin/places-local/{placeLocal}', [AdminPlaceLocalController::class, 'destroy']);
 
             Route::get('/admin/progress', [AdminProgressController::class, 'index']);
             Route::post('/admin/progress', [AdminProgressController::class, 'store']);
             Route::put('/admin/progress/{measurement}', [AdminProgressController::class, 'update']);
+            Route::post('/admin/progress/{measurement}/outlier', [AdminProgressController::class, 'markOutlier']);
             Route::delete('/admin/progress/{measurement}', [AdminProgressController::class, 'destroy']);
+
+            Route::get('/admin/safety-profiles', [AdminSafetyProfileController::class, 'index']);
         });
     });
 });
@@ -261,10 +291,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware('auth')->prefix('/api')->group(function () {
     Route::get('/ai/conversations', [ChatController::class, 'index']);
     Route::get('/ai/conversations/{conversation}/messages', [ChatController::class, 'messages']);
-    Route::post('/ai/plan', [PlanGenerationController::class, 'store'])->middleware('ai.rate_limit:plan');
+
+    Route::post('/ai/plan', [PlanGenerationController::class, 'store'])
+        ->middleware('ai.rate_limit:plan');
+
+    Route::post('/ai/plan/background', [PlanGenerationController::class, 'generate'])
+        ->middleware('ai.rate_limit:plan');
+
     Route::get('/ai/plan/health', PlannerHealthController::class);
-    Route::post('/ai/chat', [ChatController::class, 'store'])->middleware('ai.rate_limit:chat');
-    Route::post('/ai/chat/stream', [ChatController::class, 'stream'])->middleware('ai.rate_limit:chat');
+
+    Route::post('/ai/chat', [ChatController::class, 'store'])
+        ->middleware('ai.rate_limit:chat');
+
+    Route::post('/ai/chat/stream', [ChatController::class, 'stream'])
+        ->middleware('ai.rate_limit:chat');
 });
 
 /*
@@ -272,12 +312,15 @@ Route::middleware('auth')->prefix('/api')->group(function () {
 | Public APIs
 |--------------------------------------------------------------------------
 */
+Route::get('/csrf-token', fn () => response()->json([
+    'csrf_token' => csrf_token(),
+]))->name('csrf-token');
+
 Route::get('/api/places', [PlacesController::class, 'index'])
     ->middleware('throttle:60,1')
     ->name('api.places');
 
 Route::get('/api/places-local', [PlacesLocalController::class, 'index'])->name('api.places.local');
-Route::middleware('auth:sanctum')->post('/ai/generate-plans', [PlanGenerationController::class, 'generate']);
 
 /*
 |--------------------------------------------------------------------------

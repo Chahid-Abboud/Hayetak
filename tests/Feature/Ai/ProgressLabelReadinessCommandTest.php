@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Ai\AiRequest;
+use App\Models\AiRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

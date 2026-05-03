@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Ai\AiRequest;
+use App\Models\AiRequest;
 use App\Models\Exercise;
 use App\Models\User;
 use App\Models\WorkoutPlan;

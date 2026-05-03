@@ -54,7 +54,10 @@ class PlacesLocalController extends Controller
         foreach ($rows as $row) {
             $placeLat = (float) $row->lat;
             $placeLng = (float) $row->lng;
-            $category = $this->normalizeCategory((string) ($row->category ?? ''));
+            $category = $this->normalizeCategory(
+                (string) ($row->category ?? ''),
+                $this->parseMeta($row->meta ?? null)
+            );
 
             if (! $this->matchesType($category, $types)) {
                 continue;
@@ -146,7 +149,7 @@ class PlacesLocalController extends Controller
         $radius = min(max($radius, 100.0), 50000.0);
 
         if ($typesRaw === null) {
-            $typesRaw = 'gym,nutritionist';
+            $typesRaw = 'gym,nutritionist,hospital,medical_lab';
         }
 
         return [$lat, $lng, $radius, $this->parseTypes((string) $typesRaw), $hasExplicitTypes];
@@ -161,20 +164,34 @@ class PlacesLocalController extends Controller
         return array_values(array_unique($parts));
     }
 
-    private function normalizeCategory(string $rawCategory): string
+    private function normalizeCategory(string $rawCategory, array $meta = []): string
     {
         $category = strtolower(trim($rawCategory));
+        $osmHealthcare = strtolower(trim((string) ($meta['healthcare'] ?? '')));
+        $osmAmenity = strtolower(trim((string) ($meta['amenity'] ?? '')));
 
+        if ($category === '') {
+            $category = $osmHealthcare !== '' ? $osmHealthcare : $osmAmenity;
+        }
         if ($category === '') {
             return 'other';
         }
         if (str_contains($category, 'gym')) {
             return 'gym';
         }
+        if (str_contains($category, 'hospital')) {
+            return 'hospital';
+        }
+        if (
+            str_contains($category, 'lab') ||
+            str_contains($category, 'laboratory') ||
+            str_contains($category, 'diagnostic')
+        ) {
+            return 'medical_lab';
+        }
         if (
             str_contains($category, 'nutri') ||
-            str_contains($category, 'diet') ||
-            str_contains($category, 'clinic')
+            str_contains($category, 'diet')
         ) {
             return 'nutritionist';
         }
@@ -192,9 +209,31 @@ class PlacesLocalController extends Controller
                 $type === 'nutritionist' &&
                 (
                     str_contains($category, 'nutri') ||
-                    str_contains($category, 'diet') ||
-                    str_contains($category, 'clinic')
+                    str_contains($category, 'diet')
                 )
+            ) {
+                return true;
+            }
+            if ($type === 'hospital' && str_contains($category, 'hospital')) {
+                return true;
+            }
+            if (
+                $type === 'medical_lab' &&
+                (
+                    str_contains($category, 'medical_lab') ||
+                    str_contains($category, 'lab') ||
+                    str_contains($category, 'laboratory') ||
+                    str_contains($category, 'diagnostic')
+                )
+            ) {
+                return true;
+            }
+            if (
+                $type === 'healthcare' &&
+                in_array($category, [
+                    'hospital',
+                    'medical_lab',
+                ], true)
             ) {
                 return true;
             }

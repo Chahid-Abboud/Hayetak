@@ -23,6 +23,7 @@ export default function NavHeader() {
     const userName =
         auth.user?.first_name ?? auth.user?.name ?? auth.user?.email ?? 'User';
     const accountHref = '/settings/profile';
+    const homeHref = role === 'admin' ? '/admin' : '/dashboard';
     const initials = userName
         .split(' ')
         .filter(Boolean)
@@ -33,9 +34,11 @@ export default function NavHeader() {
     const primaryItems: NavLinkItem[] =
         role === 'admin'
             ? [
-                  { href: '/dashboard', label: 'Overview' },
-                  { href: '/coach', label: 'Coach' },
-                  { href: '/ai/planner', label: 'AI Planner' },
+                  { href: '/admin', label: 'Overview' },
+                  { href: '/admin/people', label: 'People' },
+                  { href: '/admin/verifications', label: 'Verifications' },
+                  { href: '/admin/health-data', label: 'Health Data' },
+                  { href: '/admin/ai-review', label: 'AI Review' },
               ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
@@ -84,29 +87,34 @@ export default function NavHeader() {
         if (role === 'admin') {
             return [
                 {
-                    label: 'Admin Workspace',
+                    label: 'Command',
+                    items: [{ href: '/admin', label: 'Overview' }],
+                },
+                {
+                    label: 'Workspaces',
                     items: [
-                        { href: '/admin/users', label: 'All Users' },
+                        { href: '/admin/people', label: 'People' },
                         {
-                            href: '/admin/professionals',
-                            label: 'Professionals',
-                        },
-                        {
-                            href: '/admin/professional-verifications',
+                            href: '/admin/verifications',
                             label: 'Verifications',
                         },
-                        { href: '/admin/meals', label: 'Meals' },
-                        { href: '/admin/progress', label: 'Progress' },
+                        { href: '/admin/health-data', label: 'Health Data' },
                         { href: '/admin/places', label: 'Places' },
-                        { href: '/admin/notifications', label: 'Alerts' },
-                        { href: '/admin/logs', label: 'Admin Logs' },
+                        {
+                            href: '/admin/communications',
+                            label: 'Communications',
+                        },
+                        { href: '/admin/ai-review', label: 'AI Review' },
                     ],
                 },
                 {
-                    label: 'AI',
+                    label: 'System',
                     items: [
-                        { href: '/ai/planner', label: 'AI Planner' },
-                        { href: '/coach', label: 'Coach' },
+                        {
+                            href: '/admin/logs-diagnostics',
+                            label: 'Logs & Diagnostics',
+                        },
+                        { href: '/admin/settings', label: 'Settings' },
                     ],
                 },
             ];
@@ -126,6 +134,72 @@ export default function NavHeader() {
     );
 
     const isActive = (href: string) => {
+        if (role === 'admin') {
+            if (href === '/admin') {
+                return pathname === '/admin';
+            }
+
+            if (href === '/admin/people') {
+                return (
+                    pathname.startsWith('/admin/people') ||
+                    pathname.startsWith('/admin/users') ||
+                    pathname.startsWith('/admin/professionals') ||
+                    pathname.startsWith('/admin/safety-profiles') ||
+                    pathname.startsWith('/admin/assignments')
+                );
+            }
+
+            if (href === '/admin/verifications') {
+                return (
+                    pathname.startsWith('/admin/verifications') ||
+                    pathname.startsWith('/admin/professional-verifications')
+                );
+            }
+
+            if (href === '/admin/health-data') {
+                return (
+                    pathname.startsWith('/admin/health-data') ||
+                    pathname.startsWith('/admin/meals') ||
+                    pathname.startsWith('/admin/meal-logs') ||
+                    pathname.startsWith('/admin/exercises') ||
+                    pathname.startsWith('/admin/progress')
+                );
+            }
+
+            if (href === '/admin/communications') {
+                return (
+                    pathname.startsWith('/admin/communications') ||
+                    pathname.startsWith('/admin/notifications')
+                );
+            }
+
+            if (href === '/admin/ai-review') {
+                return (
+                    pathname.startsWith('/admin/ai-review') ||
+                    pathname.startsWith('/admin/ai/') ||
+                    pathname.startsWith('/admin/safety-rules') ||
+                    pathname.startsWith('/admin/ai-rollouts')
+                );
+            }
+
+            if (href === '/admin/logs-diagnostics') {
+                return (
+                    pathname.startsWith('/admin/logs-diagnostics') ||
+                    pathname.startsWith('/admin/logs') ||
+                    pathname.startsWith('/admin/diagnostics')
+                );
+            }
+
+            if (href === '/admin/settings') {
+                return (
+                    pathname.startsWith('/admin/settings') ||
+                    pathname.startsWith('/admin/roles-permissions') ||
+                    pathname.startsWith('/admin/settings-feature-flags') ||
+                    pathname.startsWith('/admin/privacy-compliance')
+                );
+            }
+        }
+
         if (
             href === '/workouts' ||
             href === '/workouts/log' ||
@@ -252,7 +326,7 @@ export default function NavHeader() {
                         <div className="px-4 py-3 sm:px-5 lg:px-6">
                             <div className="flex items-center gap-3">
                                 <Link
-                                    href="/dashboard"
+                                    href={homeHref}
                                     className="flex min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/10"
                                 >
                                     <AppLogoIcon className="h-8 w-8" />

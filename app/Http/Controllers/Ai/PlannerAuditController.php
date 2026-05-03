@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Ai\StorePlannerAuditRequest;
 use App\Http\Requests\Ai\UpdatePlannerAuditLoadRequest;
 use App\Jobs\Ai\RunPlannerAudit;
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Services\Ai\Audit\PlannerAuditExecutionMode;
 use App\Services\Ai\Audit\PlannerAuditGpuLoad;
 use Carbon\CarbonImmutable;

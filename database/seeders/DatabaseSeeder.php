@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Database\Seeders\Ai\AiProfileDiversitySeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -51,6 +50,7 @@ class DatabaseSeeder extends Seeder
             ImportFoodsFromCsvSeeder::class,
             ImportExercisesFromJsonSeeder::class,
             PlacesLocalSeeder::class,
+            MountLebanonHealthcarePlacesSeeder::class,
             RbacDemoSeeder::class,
             ProfessionalClientsDemoSeeder::class,
             AiProfileDiversitySeeder::class,

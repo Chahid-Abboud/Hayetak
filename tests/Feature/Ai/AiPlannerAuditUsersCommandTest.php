@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Models\User;
 use App\Services\Ai\Audit\PlannerAuditRunner;
 use Illuminate\Foundation\Testing\RefreshDatabase;

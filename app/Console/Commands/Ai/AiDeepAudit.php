@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiRequest;
+use App\Models\AiConversation;
+use App\Models\AiRequest;
 use App\Models\Measurement;
 use App\Models\User;
 use App\Services\Ai\Chat\ChatOrchestrator;

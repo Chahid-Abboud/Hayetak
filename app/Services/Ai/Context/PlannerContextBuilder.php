@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Context;
 
-use App\Models\Ai\AiPlan;
+use App\Models\AiPlan;
 use App\Models\Exercise;
 use App\Models\User;
 use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;

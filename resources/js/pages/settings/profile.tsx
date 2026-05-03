@@ -1,14 +1,8 @@
 import AppearanceTabs from '@/components/appearance-tabs';
-import {
-    ProductBanner,
-    ProductSection,
-    ProductStatCard,
-    ProductStatGrid,
-} from '@/components/product/page';
+import { ProductBanner, ProductSection } from '@/components/product/page';
 import { ProductButton } from '@/components/product/product-ui';
 import SettingsLayout from '@/layouts/settings/layout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type NumericLike = number | string;
@@ -180,7 +174,6 @@ export default function ProfilePage() {
         providedProfile ?? DEFAULT_PROFILE;
     const prefs = (page.prefs ?? DEFAULT_PREFS) as NonNullable<Prefs>;
     const email = authUser?.email ?? 'Not available';
-    const twoFactorEnabled = Boolean(authUser?.two_factor_enabled);
     const weightHistory = useMemo(
         () => (Array.isArray(page.weightHistory) ? page.weightHistory : []),
         [page.weightHistory],
@@ -388,132 +381,8 @@ export default function ProfilePage() {
                 ) : null}
 
                 <ProductSection
-                    title="Profile overview"
-                    description="Everything important is grouped into larger, easier-to-read cards so your details, restrictions, and progress stay simple to manage."
-                >
-                    <div className="space-y-5">
-                        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_320px]">
-                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-5">
-                                <div className="flex flex-wrap items-start justify-between gap-4">
-                                    <div>
-                                        <div className="text-sm font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                            Account snapshot
-                                        </div>
-                                        <div className="mt-2 text-3xl font-semibold text-foreground">
-                                            {displayName}
-                                        </div>
-                                        <div className="mt-3 text-base text-muted-foreground">
-                                            {email}
-                                        </div>
-                                    </div>
-                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] border border-border/70 bg-card/80 text-foreground">
-                                        <UserRound className="h-5 w-5" />
-                                    </span>
-                                </div>
-
-                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                                    <InfoTile
-                                        label="Diet setup"
-                                        value={dietSummary}
-                                    />
-                                    <InfoTile
-                                        label="Workout setup"
-                                        value={
-                                            workoutLocation
-                                                ? `${workoutLocation} - ${workoutDaysPerWeek || '0'} days`
-                                                : `${workoutDaysPerWeek || '0'} days per week`
-                                        }
-                                    />
-                                    <InfoTile
-                                        label="Allergy count"
-                                        value={String(allergies.length)}
-                                    />
-                                    <InfoTile
-                                        label="Two-factor"
-                                        value={
-                                            twoFactorEnabled
-                                                ? 'Enabled'
-                                                : 'Not enabled'
-                                        }
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <QuickActionCard
-                                    title="Security"
-                                    description="Passwords, sessions, and two-factor live in the dedicated security area."
-                                    icon={<ShieldCheck className="h-5 w-5" />}
-                                    action={
-                                        <ProductButton
-                                            asChild
-                                            emphasis="secondary"
-                                        >
-                                            <Link href="/settings/security">
-                                                Open security
-                                            </Link>
-                                        </ProductButton>
-                                    }
-                                />
-                                <QuickActionCard
-                                    title="AI planner"
-                                    description="Jump straight into the plan generator with your saved profile context."
-                                    icon={<Sparkles className="h-5 w-5" />}
-                                    action={
-                                        <ProductButton
-                                            asChild
-                                            emphasis="secondary"
-                                        >
-                                            <Link href="/ai/planner">
-                                                Open AI planner
-                                            </Link>
-                                        </ProductButton>
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        <ProductStatGrid>
-                            <ProductStatCard
-                                label="Current weight"
-                                value={
-                                    latestWeight !== null
-                                        ? `${latestWeight} kg`
-                                        : 'Not logged'
-                                }
-                                helper="Your latest saved weight entry."
-                            />
-                            <ProductStatCard
-                                label="Current height"
-                                value={
-                                    latestHeight !== null
-                                        ? `${latestHeight} cm`
-                                        : heightCm
-                                          ? `${heightCm} cm`
-                                          : 'Not logged'
-                                }
-                                helper="Height history appears here when available."
-                            />
-                            <ProductStatCard
-                                label="Fitness goals"
-                                value={fitnessGoals.length}
-                                helper="Use multiple goal chips to shape AI guidance."
-                            />
-                            <ProductStatCard
-                                label="Safety notes"
-                                value={
-                                    injuryHistory.length +
-                                    medicalConditions.length
-                                }
-                                helper="Medical and injury information is preserved for safer recommendations."
-                            />
-                        </ProductStatGrid>
-                    </div>
-                </ProductSection>
-
-                <ProductSection
                     title="Personal details"
-                    description="Names, age, and body measurements are editable here with larger inputs for easier reading."
+                    description={`${displayName} - ${email}`}
                 >
                     <div className="space-y-5">
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -574,7 +443,9 @@ export default function ProfilePage() {
 
                 <ProductSection
                     title="Nutrition and safety preferences"
-                    description="Diet, goals, allergies, injuries, and medical information are separated into clean blocks so nothing feels cramped."
+                    description={`Diet: ${dietSummary}. Allergies: ${allergies.length}. Safety notes: ${
+                        injuryHistory.length + medicalConditions.length
+                    }.`}
                 >
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="space-y-5">
@@ -723,7 +594,9 @@ export default function ProfilePage() {
 
                 <ProductSection
                     title="Workout setup"
-                    description="Training location, weekly cadence, preferred days, and available equipment stay together in a clear planning block."
+                    description={`Current setup: ${
+                        workoutLocation || 'location not set'
+                    }, ${workoutDaysPerWeek || '0'} days per week.`}
                 >
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="space-y-5">
@@ -822,7 +695,17 @@ export default function ProfilePage() {
 
                 <ProductSection
                     title="Measurements and appearance"
-                    description="Progress logging and interface comfort stay in one clean section with larger inputs and readable history cards."
+                    description={`Latest weight: ${
+                        latestWeight !== null
+                            ? `${latestWeight} kg`
+                            : 'not logged'
+                    }. Latest height: ${
+                        latestHeight !== null
+                            ? `${latestHeight} cm`
+                            : heightCm
+                              ? `${heightCm} cm`
+                              : 'not logged'
+                    }.`}
                 >
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="space-y-5">
@@ -893,7 +776,7 @@ export default function ProfilePage() {
 
                         <SurfaceCard
                             title="Appearance"
-                            description="Theme controls remain available here so comfort settings stay close to the rest of your profile."
+                            description="Choose light, dark, or system theme."
                         >
                             <AppearanceTabs />
                         </SurfaceCard>
@@ -901,50 +784,6 @@ export default function ProfilePage() {
                 </ProductSection>
             </SettingsLayout>
         </>
-    );
-}
-
-function InfoTile({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-[20px] border border-border/70 bg-card/80 p-4">
-            <div className="text-sm font-semibold text-muted-foreground">
-                {label}
-            </div>
-            <div className="mt-2 text-base font-semibold text-foreground">
-                {value}
-            </div>
-        </div>
-    );
-}
-
-function QuickActionCard({
-    title,
-    description,
-    icon,
-    action,
-}: {
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    action: React.ReactNode;
-}) {
-    return (
-        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <div className="text-lg font-semibold text-foreground">
-                        {title}
-                    </div>
-                    <div className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {description}
-                    </div>
-                </div>
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-[18px] border border-border/70 bg-card/80 text-foreground">
-                    {icon}
-                </span>
-            </div>
-            <div className="mt-4">{action}</div>
-        </div>
     );
 }
 

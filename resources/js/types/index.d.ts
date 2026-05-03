@@ -126,7 +126,13 @@ export type ConversationContextPayload = {
     };
 };
 
-export type AdminBulkUserAction = 'verify' | 'unverify' | 'set_status';
+export type AdminBulkUserAction =
+    | 'verify'
+    | 'unverify'
+    | 'suspend'
+    | 'reactivate'
+    | 'delete'
+    | 'set_status';
 
 export type AdminBulkUsersPayload = {
     user_ids: number[];

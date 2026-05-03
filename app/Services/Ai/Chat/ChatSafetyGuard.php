@@ -194,10 +194,7 @@ class ChatSafetyGuard
                 $looksLikeFoodSuggestion &&
                 $this->answerContainsUnsafeFoodRecommendation($clean, $allergy)
             ) {
-                $clean = sprintf(
-                    'I removed one suggested item because it conflicts with your saved allergy (%s). I can suggest a safer alternative that avoids it.',
-                    $allergy,
-                );
+                $clean = $this->safeFoodReplacementAnswer($question, $context, $allergy);
                 $warnings[] = 'Removed a food suggestion that matched the allergy list.';
                 break;
             }
@@ -441,6 +438,67 @@ class ChatSafetyGuard
         return false;
     }
 
+    private function safeFoodReplacementAnswer(string $question, array $context, string $allergy): string
+    {
+        $dietType = mb_strtolower(trim((string) ($context['restrictions']['diet_type'] ?? '')));
+        $allergyLabel = $this->displayAllergyLabel($context, $allergy);
+
+        if ($this->containsAny($question, ['high calorie', 'high-calorie', 'calorie dense', 'calorie-dense', 'gain weight', 'bulk'])) {
+            if ($dietType === 'vegan') {
+                return sprintf(
+                    'The original suggestion included %s, which conflicts with your saved allergy, so use this safer high-calorie vegan snack instead: oatmeal with peanut butter or another tolerated seed/nut butter, banana, and soy milk. Approximate macros: 520 kcal, 18 g protein, 67 g carbs, and 22 g fat. Keep it free of %s and any other saved allergens.',
+                    $allergyLabel,
+                    $allergyLabel,
+                );
+            }
+
+            return sprintf(
+                'The original suggestion included %s, which conflicts with your saved allergy, so use this safer high-calorie snack instead: Greek yogurt with banana, oats, honey, and walnuts. Approximate macros: 560 kcal, 28 g protein, 72 g carbs, and 18 g fat. Keep it free of %s and any other saved allergens.',
+                $allergyLabel,
+                $allergyLabel,
+            );
+        }
+
+        if ($this->containsAny($question, ['snack'])) {
+            return sprintf(
+                'The original snack idea included %s, which conflicts with your saved allergy. A safer snack option is Greek yogurt with berries, oats, and chia. Approximate macros: 340 kcal, 25 g protein, 42 g carbs, and 8 g fat. Keep it free of %s and any other saved allergens.',
+                $allergyLabel,
+                $allergyLabel,
+            );
+        }
+
+        if ($this->containsAny($question, ['meal', 'breakfast', 'lunch', 'dinner', 'recipe', 'eat'])) {
+            return sprintf(
+                'The original food suggestion included %s, which conflicts with your saved allergy. A safer option is a protein-forward bowl with rice or potatoes, vegetables, and a tolerated protein source. Approximate macros will depend on portions, but a balanced serving can land around 450-650 kcal with 25-40 g protein. Keep it free of %s and any other saved allergens.',
+                $allergyLabel,
+                $allergyLabel,
+            );
+        }
+
+        return sprintf(
+            'The original suggestion included %s, which conflicts with your saved allergy. Choose an alternative that is clearly free of %s and your other saved allergens; I can still help tailor the calories, protein, carbs, and fat to your goal.',
+            $allergyLabel,
+            $allergyLabel,
+        );
+    }
+
+    private function displayAllergyLabel(array $context, string $matchedAllergy): string
+    {
+        $normalized = mb_strtolower(trim($matchedAllergy));
+        $allergies = is_array($context['restrictions']['allergies'] ?? null)
+            ? $context['restrictions']['allergies']
+            : [];
+
+        foreach ($allergies as $allergy) {
+            $label = trim((string) $allergy);
+            if ($label !== '' && mb_strtolower($label) === $normalized) {
+                return $label;
+            }
+        }
+
+        return $matchedAllergy;
+    }
+
     private function containsWholeWord(string $text, string $term): bool
     {
         $candidate = trim($term);
@@ -490,6 +548,7 @@ class ChatSafetyGuard
         $clean = $answer;
 
         $replacements = [
+            '/\b(you(?:\'re| are) welcome),\s*hayetak[.!]?/i' => '$1!',
             '/\bbased on your PERSONAL_CONTEXT\b/i' => 'based on your profile',
             '/\bBased on your PERSONAL_CONTEXT\b/i' => 'Based on your profile',
             '/\bThis information comes directly from your user profile\b/i' => 'This is based on your saved profile',

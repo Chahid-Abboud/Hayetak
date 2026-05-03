@@ -14,7 +14,6 @@ import {
     AdminToolbarGroup,
 } from '@/components/admin/admin-ui';
 import {
-    AdminSplitView,
     EntityDetailDrawer,
     RiskBannerStack,
     StatusChip,
@@ -49,10 +48,13 @@ import {
     ArrowUpRight,
     Brain,
     CalendarDays,
+    Dumbbell,
     RefreshCcw,
     Settings2,
     ShieldAlert,
+    ShieldCheck,
     SlidersHorizontal,
+    Trash2,
     UtensilsCrossed,
 } from 'lucide-react';
 import {
@@ -137,6 +139,31 @@ type UserDetailResponse = {
         notes?: string | null;
     } | null;
     recent: {
+        notifications: Array<{
+            id: number;
+            title?: string | null;
+            body?: string | null;
+            created_at?: string | null;
+        }>;
+        meal_entries: Array<{
+            id: number;
+            meal_type?: string | null;
+            servings?: string | number | null;
+            eaten_at?: string | null;
+            food?: { name?: string | null } | null;
+        }>;
+        meal_logs: Array<{
+            id: number;
+            consumed_at?: string | null;
+            created_at?: string | null;
+            items?: unknown[];
+        }>;
+        workout_logs: Array<{
+            id: number;
+            performed_at?: string | null;
+            mood?: string | null;
+            sets?: unknown[];
+        }>;
         appointments: Array<{
             id: number;
             scheduled_at?: string | null;
@@ -317,6 +344,52 @@ function ContextRow({
     );
 }
 
+function SignalList({
+    items,
+    emptyText,
+}: {
+    items: Array<{
+        id: string | number;
+        title: ReactNode;
+        description?: ReactNode;
+        meta?: ReactNode;
+    }>;
+    emptyText: string;
+}) {
+    if (items.length === 0) {
+        return (
+            <div className="rounded-[18px] border border-dashed border-border/60 bg-background/50 px-3 py-3 text-sm text-muted-foreground">
+                {emptyText}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-2">
+            {items.map((item) => (
+                <div
+                    key={item.id}
+                    className="rounded-[18px] border border-border/55 bg-background/68 px-3 py-3"
+                >
+                    <div className="text-sm font-medium text-foreground">
+                        {item.title}
+                    </div>
+                    {item.description ? (
+                        <div className="mt-1 text-sm leading-5 text-muted-foreground">
+                            {item.description}
+                        </div>
+                    ) : null}
+                    {item.meta ? (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            {item.meta}
+                        </div>
+                    ) : null}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function UserInvestigationPanel({
     detail,
     loading,
@@ -429,6 +502,17 @@ function UserInvestigationPanel({
     const latestAppointment = detail.recent.appointments[0];
     const latestConversation = detail.recent.ai_conversations[0];
     const latestPlannerRun = detail.recent.planner_feedback[0];
+    const latestMealEntries = (detail.recent.meal_entries ?? []).slice(0, 3);
+    const latestWorkoutLogs = (detail.recent.workout_logs ?? []).slice(0, 3);
+    const allergies = detail.user.allergies ?? [];
+    const planStatus = [
+        detail.recent.plan_diffs.diet?.has_current ? 'Diet plan active' : null,
+        detail.recent.plan_diffs.workout?.has_current
+            ? 'Workout plan active'
+            : null,
+    ]
+        .filter(Boolean)
+        .join(' / ');
 
     return (
         <div className="space-y-4">
@@ -484,12 +568,11 @@ function UserInvestigationPanel({
                     />
                     <ContextRow
                         icon={<ShieldAlert className="h-4 w-4" />}
-                        label="Program focus"
+                        label="Account state"
                         value={
-                            detail.user.fitness_goal ||
-                            'No fitness goal recorded'
+                            detail.user.status || 'No explicit status set'
                         }
-                        meta={`Appointments ${detail.summary.appointments} • Plans ${detail.summary.ai_plans}`}
+                        meta={`Verified ${detail.user.verified ? 'yes' : 'no'} / Email ${detail.user.email}`}
                     />
                 </div>
             </div>
@@ -502,6 +585,57 @@ function UserInvestigationPanel({
                     quick view.
                 </AdminNotice>
             )}
+
+            <AdminPanel
+                title="Safety profile summary"
+                description="Readable constraints that must be respected by planner, coach, and admin edits."
+            >
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <ContextRow
+                        icon={<ShieldAlert className="h-4 w-4" />}
+                        label="Allergies"
+                        value={
+                            allergies.length > 0
+                                ? allergies.join(', ')
+                                : 'No allergies recorded'
+                        }
+                        meta="Hard exclusion for food and recipe suggestions"
+                    />
+                    <ContextRow
+                        icon={<UtensilsCrossed className="h-4 w-4" />}
+                        label="Diet type"
+                        value={
+                            detail.user.diet_name ||
+                            detail.user.dietary_goal ||
+                            'No diet type recorded'
+                        }
+                        meta="Use when reviewing meals, plans, and coach answers"
+                    />
+                    <ContextRow
+                        icon={<ShieldAlert className="h-4 w-4" />}
+                        label="Medical / injury signals"
+                        value={
+                            detail.user.has_medical_history
+                                ? detail.user.medical_history ||
+                                  'Medical history present'
+                                : 'No medical history recorded'
+                        }
+                        meta="Review before training or nutrition changes"
+                    />
+                    <ContextRow
+                        icon={<Dumbbell className="h-4 w-4" />}
+                        label="Workout setup"
+                        value={
+                            detail.user.workout_location ||
+                            'No workout location recorded'
+                        }
+                        meta={
+                            detail.user.fitness_goal ||
+                            'No fitness goal recorded'
+                        }
+                    />
+                </div>
+            </AdminPanel>
 
             <AdminPanel
                 title="Recent operating context"
@@ -518,7 +652,7 @@ function UserInvestigationPanel({
                         }
                         meta={
                             latestAppointment
-                                ? `${latestAppointment.status ?? 'status unknown'}${latestAppointment.professional_role ? ` • ${latestAppointment.professional_role}` : ''}`
+                                ? `${latestAppointment.status ?? 'status unknown'}${latestAppointment.professional_role ? ` / ${latestAppointment.professional_role}` : ''}`
                                 : undefined
                         }
                     />
@@ -531,7 +665,7 @@ function UserInvestigationPanel({
                         }
                         meta={
                             latestConversation
-                                ? `${latestConversation.messages_count ?? 0} messages • ${formatDateTime(latestConversation.last_message_at)}`
+                                ? `${latestConversation.messages_count ?? 0} messages / ${formatDateTime(latestConversation.last_message_at)}`
                                 : undefined
                         }
                     />
@@ -545,7 +679,7 @@ function UserInvestigationPanel({
                         }
                         meta={
                             latestPlannerRun
-                                ? `${latestPlannerRun.feedback_applied ? 'Feedback adjustment applied' : 'Base prediction only'}${latestPlannerRun.confidence ? ` • ${latestPlannerRun.confidence} confidence` : ''}`
+                                ? `${latestPlannerRun.feedback_applied ? 'Feedback adjustment applied' : 'Base prediction only'}${latestPlannerRun.confidence ? ` / ${latestPlannerRun.confidence} confidence` : ''}`
                                 : undefined
                         }
                     />
@@ -553,10 +687,16 @@ function UserInvestigationPanel({
             </AdminPanel>
 
             <AdminPanel
-                title="Plan change watch"
-                description="Fast diff signals so admins can spot plan churn before opening the full editor."
+                title="Plan status"
+                description="Fast plan signals so admins can spot plan churn before opening the full editor."
             >
                 <div className="space-y-3">
+                    <ContextRow
+                        icon={<ShieldCheck className="h-4 w-4" />}
+                        label="Current plan state"
+                        value={planStatus || 'No generated plans found'}
+                        meta={`AI plans ${detail.summary.ai_plans} / Planner feedback ${detail.recent.planner_feedback.length}`}
+                    />
                     <PlanWatchCard
                         title="Diet plan"
                         diff={detail.recent.plan_diffs.diet}
@@ -568,10 +708,84 @@ function UserInvestigationPanel({
                 </div>
             </AdminPanel>
 
+            <AdminPanel
+                title="Recent meals and workouts"
+                description="Compact activity signals only; open the full record for edits."
+            >
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <SignalList
+                        emptyText="No recent meal signals."
+                        items={latestMealEntries.map((entry) => ({
+                            id: `meal-${entry.id}`,
+                            title:
+                                entry.food?.name ||
+                                entry.meal_type ||
+                                'Meal entry',
+                            description: `${entry.meal_type ?? 'Meal'} / ${entry.servings ?? '-'} serving(s)`,
+                            meta: formatDateTime(entry.eaten_at),
+                        }))}
+                    />
+                    <SignalList
+                        emptyText="No recent workout signals."
+                        items={latestWorkoutLogs.map((log) => ({
+                            id: `workout-${log.id}`,
+                            title: `${log.sets?.length ?? 0} logged set(s)`,
+                            description: log.mood || 'Workout session',
+                            meta: formatDateTime(log.performed_at),
+                        }))}
+                    />
+                </div>
+            </AdminPanel>
+
+            <AdminPanel
+                title="AI activity"
+                description="Coach and planner signals are summarized here; raw prompts and traces stay in diagnostics."
+            >
+                <SignalList
+                    emptyText="No recent AI activity."
+                    items={[
+                        ...(detail.recent.ai_conversations ?? [])
+                            .slice(0, 3)
+                            .map((conversation) => ({
+                                id: `ai-chat-${conversation.id}`,
+                                title:
+                                    conversation.title ||
+                                    'Untitled coach conversation',
+                                description: `${conversation.messages_count ?? 0} messages`,
+                                meta: formatDateTime(
+                                    conversation.last_message_at,
+                                ),
+                            })),
+                        ...(detail.recent.planner_feedback ?? [])
+                            .slice(0, 2)
+                            .map((run) => ({
+                                id: `planner-${run.ai_request_id}`,
+                                title: `Planner request #${run.ai_request_id}`,
+                                description: run.feedback_applied
+                                    ? 'Feedback adjustment applied'
+                                    : 'Base prediction only',
+                                meta: formatDateTime(run.generated_at),
+                            })),
+                    ]}
+                />
+            </AdminPanel>
+
             <div className="flex flex-wrap gap-2">
                 <Button asChild>
                     <Link href={`/admin/users/${detail.user.id}`}>
                         Open full record
+                        <ArrowUpRight className="h-4 w-4" />
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/admin/logs">
+                        <Settings2 className="h-4 w-4" />
+                        Linked logs
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/admin/diagnostics">
+                        Diagnostics
                         <ArrowUpRight className="h-4 w-4" />
                     </Link>
                 </Button>
@@ -800,6 +1014,15 @@ export default function AdminUsersIndex() {
             return;
         }
 
+        if (
+            bulkAction === 'delete' &&
+            !window.confirm(
+                `Delete ${selectedUserIds.length} selected user(s)? This writes admin audit entries.`,
+            )
+        ) {
+            return;
+        }
+
         setBulkBusy(true);
         setError(null);
         setBulkFeedback(null);
@@ -849,9 +1072,158 @@ export default function AdminUsersIndex() {
         }
     }
 
+    async function runUserAction(
+        user: AdminUser,
+        action: 'verify' | 'suspend' | 'reactivate' | 'delete',
+    ) {
+        const confirmed =
+            action !== 'delete' ||
+            window.confirm(
+                `Delete ${formatUserName(user)}? This writes an admin audit entry.`,
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setError(null);
+        setBulkFeedback(null);
+
+        try {
+            let response: Response;
+
+            if (action === 'verify') {
+                response = await fetch(
+                    `/api/admin/users/${user.id}/verification`,
+                    jsonRequestInit('PATCH', { verified: true }),
+                );
+            } else if (action === 'delete') {
+                response = await fetch(
+                    `/api/admin/users/${user.id}`,
+                    jsonRequestInit('DELETE', {
+                        reason: 'Quick delete from admin users workspace.',
+                    }),
+                );
+            } else {
+                response = await fetch(
+                    `/api/admin/users/${user.id}`,
+                    jsonRequestInit('PUT', {
+                        status:
+                            action === 'suspend' ? 'suspended' : 'active',
+                    }),
+                );
+            }
+
+            if (!response.ok) {
+                const json = await response.json().catch(() => null);
+                throw new Error(
+                    typeof json?.message === 'string'
+                        ? json.message
+                        : 'Could not update the user.',
+                );
+            }
+
+            setBulkFeedback(`${formatUserName(user)} updated.`);
+            await loadUsers();
+
+            if (selectedUserId === user.id && action !== 'delete') {
+                await loadDetail(user.id);
+            } else if (selectedUserId === user.id) {
+                selectUser(null);
+            }
+        } catch (actionError) {
+            setError(
+                actionError instanceof Error
+                    ? actionError.message
+                    : 'Could not update the user.',
+            );
+        }
+    }
+
     const drawerTitle = detail?.user
         ? formatUserName(detail.user)
         : 'User context';
+
+    const userFiltersToolbar = (
+        <AdminToolbar>
+            <AdminToolbarGroup grow>
+                <AdminField
+                    label="Search"
+                    className="sm:min-w-[20rem] xl:flex-1"
+                >
+                    <AdminSearchInput
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search by name, email, username, or city"
+                    />
+                </AdminField>
+
+                <AdminField label="Role" className="sm:w-52">
+                    <AdminNativeSelect
+                        value={role}
+                        onChange={(event) => setRole(event.target.value)}
+                    >
+                        <option value="all">All roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="client">Client</option>
+                        <option value="trainer">Trainer</option>
+                        <option value="nutritionist">Nutritionist</option>
+                    </AdminNativeSelect>
+                </AdminField>
+
+                <AdminField label="Verification" className="sm:w-52">
+                    <AdminNativeSelect
+                        value={verified}
+                        onChange={(event) => setVerified(event.target.value)}
+                    >
+                        <option value="all">All accounts</option>
+                        <option value="true">Verified</option>
+                        <option value="false">Not verified</option>
+                    </AdminNativeSelect>
+                </AdminField>
+
+                <AdminField label="Rows per page" className="sm:w-44">
+                    <AdminNativeSelect
+                        value={perPage}
+                        onChange={(event) => setPerPage(event.target.value)}
+                    >
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </AdminNativeSelect>
+                </AdminField>
+
+                <AdminField label="Status" className="sm:w-52">
+                    <AdminNativeSelect
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value)}
+                    >
+                        <option value="all">All statuses</option>
+                        <option value="active">active</option>
+                        <option value="pending">pending</option>
+                        <option value="needs_review">needs_review</option>
+                        <option value="needs_info">needs_info</option>
+                        <option value="rejected">rejected</option>
+                        <option value="suspended">suspended</option>
+                    </AdminNativeSelect>
+                </AdminField>
+
+                <AdminField label="Scope" className="sm:w-52">
+                    <AdminNativeSelect
+                        value={includeDeleted ? 'include_deleted' : 'active_only'}
+                        onChange={(event) =>
+                            setIncludeDeleted(
+                                event.target.value === 'include_deleted',
+                            )
+                        }
+                    >
+                        <option value="active_only">Active only</option>
+                        <option value="include_deleted">Include deleted</option>
+                    </AdminNativeSelect>
+                </AdminField>
+            </AdminToolbarGroup>
+        </AdminToolbar>
+    );
 
     return (
         <>
@@ -1006,154 +1378,6 @@ export default function AdminUsersIndex() {
                         </AdminSection>
 
                         <AdminSection
-                            title="Filter & actions toolbar"
-                            description="Filter by role or verification and search by name, email, username, or city."
-                        >
-                            <AdminToolbar>
-                                <AdminToolbarGroup grow>
-                                    <AdminField
-                                        label="Search"
-                                        className="xl:min-w-[320px] xl:flex-1"
-                                    >
-                                        <AdminSearchInput
-                                            value={search}
-                                            onChange={(event) =>
-                                                setSearch(event.target.value)
-                                            }
-                                            placeholder="Search by name, email, username, or city"
-                                        />
-                                    </AdminField>
-
-                                    <AdminField
-                                        label="Role"
-                                        className="sm:w-52"
-                                    >
-                                        <AdminNativeSelect
-                                            value={role}
-                                            onChange={(event) =>
-                                                setRole(event.target.value)
-                                            }
-                                        >
-                                            <option value="all">
-                                                All roles
-                                            </option>
-                                            <option value="admin">Admin</option>
-                                            <option value="client">
-                                                Client
-                                            </option>
-                                            <option value="trainer">
-                                                Trainer
-                                            </option>
-                                            <option value="nutritionist">
-                                                Nutritionist
-                                            </option>
-                                        </AdminNativeSelect>
-                                    </AdminField>
-
-                                    <AdminField
-                                        label="Verification"
-                                        className="sm:w-52"
-                                    >
-                                        <AdminNativeSelect
-                                            value={verified}
-                                            onChange={(event) =>
-                                                setVerified(event.target.value)
-                                            }
-                                        >
-                                            <option value="all">
-                                                All accounts
-                                            </option>
-                                            <option value="true">
-                                                Verified
-                                            </option>
-                                            <option value="false">
-                                                Not verified
-                                            </option>
-                                        </AdminNativeSelect>
-                                    </AdminField>
-
-                                    <AdminField
-                                        label="Rows per page"
-                                        className="sm:w-44"
-                                    >
-                                        <AdminNativeSelect
-                                            value={perPage}
-                                            onChange={(event) =>
-                                                setPerPage(event.target.value)
-                                            }
-                                        >
-                                            <option value="20">20</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                        </AdminNativeSelect>
-                                    </AdminField>
-
-                                    <AdminField
-                                        label="Status"
-                                        className="sm:w-52"
-                                    >
-                                        <AdminNativeSelect
-                                            value={statusFilter}
-                                            onChange={(event) =>
-                                                setStatusFilter(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        >
-                                            <option value="all">
-                                                All statuses
-                                            </option>
-                                            <option value="active">
-                                                active
-                                            </option>
-                                            <option value="pending">
-                                                pending
-                                            </option>
-                                            <option value="needs_review">
-                                                needs_review
-                                            </option>
-                                            <option value="needs_info">
-                                                needs_info
-                                            </option>
-                                            <option value="rejected">
-                                                rejected
-                                            </option>
-                                            <option value="suspended">
-                                                suspended
-                                            </option>
-                                        </AdminNativeSelect>
-                                    </AdminField>
-
-                                    <AdminField
-                                        label="Scope"
-                                        className="sm:w-52"
-                                    >
-                                        <AdminNativeSelect
-                                            value={
-                                                includeDeleted
-                                                    ? 'include_deleted'
-                                                    : 'active_only'
-                                            }
-                                            onChange={(event) =>
-                                                setIncludeDeleted(
-                                                    event.target.value ===
-                                                        'include_deleted',
-                                                )
-                                            }
-                                        >
-                                            <option value="active_only">
-                                                Active only
-                                            </option>
-                                            <option value="include_deleted">
-                                                Include deleted
-                                            </option>
-                                        </AdminNativeSelect>
-                                    </AdminField>
-                                </AdminToolbarGroup>
-                            </AdminToolbar>
-                        </AdminSection>
-
-                        <AdminSection
                             title="Operations Workspace"
                             description={
                                 from && to
@@ -1172,6 +1396,24 @@ export default function AdminUsersIndex() {
                             {error ? (
                                 <AdminNotice tone="danger">{error}</AdminNotice>
                             ) : null}
+
+                            <AdminScrollArea
+                                className="mb-4"
+                                maxHeightClassName="max-h-[56vh]"
+                            >
+                                <UserInvestigationPanel
+                                    detail={detail}
+                                    loading={detailLoading}
+                                    error={detailError}
+                                    onRefresh={() => {
+                                        if (selectedUserId) {
+                                            void loadDetail(selectedUserId);
+                                        }
+                                    }}
+                                />
+                            </AdminScrollArea>
+
+                            <div className="mb-4">{userFiltersToolbar}</div>
 
                             <div className="dashboard-surface mb-4 rounded-[24px] p-4">
                                 <AdminToolbar variant="plain">
@@ -1211,6 +1453,15 @@ export default function AdminUsersIndex() {
                                                 </option>
                                                 <option value="unverify">
                                                     Unverify
+                                                </option>
+                                                <option value="suspend">
+                                                    Suspend
+                                                </option>
+                                                <option value="reactivate">
+                                                    Reactivate
+                                                </option>
+                                                <option value="delete">
+                                                    Delete
                                                 </option>
                                                 <option value="set_status">
                                                     Set status
@@ -1278,9 +1529,7 @@ export default function AdminUsersIndex() {
                                 ) : null}
                             </div>
 
-                            <AdminSplitView
-                                list={
-                                    <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
+                            <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
                                         <AdminDataTable>
                                             <ProductTableHead>
                                                 <tr>
@@ -1315,7 +1564,7 @@ export default function AdminUsersIndex() {
                                                     <ProductTableHeaderCell>
                                                         Activity
                                                     </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell className="w-44">
+                                                    <ProductTableHeaderCell className="w-80">
                                                         Actions
                                                     </ProductTableHeaderCell>
                                                 </tr>
@@ -1425,10 +1674,10 @@ export default function AdminUsersIndex() {
                                                                 Meals{' '}
                                                                 {user.meal_entries_count ??
                                                                     0}
-                                                                {' • '}Workouts{' '}
+                                                                {' / '}Workouts{' '}
                                                                 {user.workout_logs_count ??
                                                                     0}
-                                                                {' • '}AI{' '}
+                                                                {' / '}AI{' '}
                                                                 {user.ai_conversations_count ??
                                                                     0}
                                                             </ProductTableCell>
@@ -1449,6 +1698,51 @@ export default function AdminUsersIndex() {
                                                                     >
                                                                         Inspect
                                                                     </Button>
+                                                                    {!user.verified ? (
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() =>
+                                                                                void runUserAction(
+                                                                                    user,
+                                                                                    'verify',
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Verify
+                                                                        </Button>
+                                                                    ) : null}
+                                                                    {user.status ===
+                                                                    'suspended' ? (
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() =>
+                                                                                void runUserAction(
+                                                                                    user,
+                                                                                    'reactivate',
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Reactivate
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            onClick={() =>
+                                                                                void runUserAction(
+                                                                                    user,
+                                                                                    'suspend',
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Suspend
+                                                                        </Button>
+                                                                    )}
                                                                     <Button
                                                                         size="sm"
                                                                         asChild
@@ -1458,6 +1752,20 @@ export default function AdminUsersIndex() {
                                                                         >
                                                                             Open
                                                                         </Link>
+                                                                    </Button>
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="destructive"
+                                                                        onClick={() =>
+                                                                            void runUserAction(
+                                                                                user,
+                                                                                'delete',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                        Delete
                                                                     </Button>
                                                                 </div>
                                                             </ProductTableCell>
@@ -1474,21 +1782,7 @@ export default function AdminUsersIndex() {
                                                 ) : null}
                                             </ProductTableBody>
                                         </AdminDataTable>
-                                    </AdminScrollArea>
-                                }
-                                detail={
-                                    <UserInvestigationPanel
-                                        detail={detail}
-                                        loading={detailLoading}
-                                        error={detailError}
-                                        onRefresh={() => {
-                                            if (selectedUserId) {
-                                                void loadDetail(selectedUserId);
-                                            }
-                                        }}
-                                    />
-                                }
-                            />
+                            </AdminScrollArea>
 
                             <AdminPagination
                                 currentPage={currentPage}

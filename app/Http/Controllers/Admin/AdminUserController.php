@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminBulkUpdateUsersRequest;
 use App\Http\Requests\AdminUpdateUserRequest;
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiPlan;
-use App\Models\Ai\AiRequest;
+use App\Models\AiConversation;
+use App\Models\AiPlan;
+use App\Models\AiRequest;
 use App\Models\Appointment;
 use App\Models\Measurement;
 use App\Models\ProfessionalClientAssignment;
@@ -248,10 +248,48 @@ class AdminUserController extends Controller
                     'status' => $user->status,
                 ];
 
+                if ($action === 'delete') {
+                    if ($user->trashed()) {
+                        $results->push([
+                            'user_id' => $user->id,
+                            'updated' => false,
+                            'reason' => 'already_deleted',
+                            'before' => $before,
+                            'after' => $before,
+                        ]);
+
+                        continue;
+                    }
+
+                    $user->delete();
+                    $updatedCount++;
+
+                    $this->logger->log($actorId, 'admin.user.bulk_delete_item', $user, [
+                        'action' => $action,
+                        'before' => $before,
+                    ]);
+
+                    $results->push([
+                        'user_id' => $user->id,
+                        'updated' => true,
+                        'before' => $before,
+                        'after' => [
+                            ...$before,
+                            'deleted' => true,
+                        ],
+                    ]);
+
+                    continue;
+                }
+
                 if ($action === 'verify') {
                     $user->verified = true;
                 } elseif ($action === 'unverify') {
                     $user->verified = false;
+                } elseif ($action === 'suspend') {
+                    $user->status = 'suspended';
+                } elseif ($action === 'reactivate') {
+                    $user->status = 'active';
                 } else {
                     $user->status = $status;
                 }

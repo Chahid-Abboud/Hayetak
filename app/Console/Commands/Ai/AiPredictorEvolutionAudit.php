@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\Ai\AiRequest;
+use App\Models\AiRequest;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;

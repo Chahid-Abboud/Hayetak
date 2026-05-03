@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\Ai\AiRequest;
+use App\Models\AiRequest;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 

@@ -19,7 +19,7 @@ import type {
 } from 'react';
 
 const controlClassName =
-    'dashboard-surface-soft h-10 rounded-xl border-border/60 bg-background/82 shadow-[0_12px_30px_-26px_rgba(15,23,42,0.42)] focus-visible:ring-2 focus-visible:ring-ring/35';
+    'dashboard-surface-soft h-10 min-w-0 rounded-xl border-border/60 bg-background/82 text-sm leading-normal shadow-[0_12px_30px_-26px_rgba(15,23,42,0.42)] placeholder:text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-ring/35';
 
 export function AdminNotice({
     children,
@@ -73,13 +73,13 @@ export function AdminField({
     className?: string;
 }) {
     return (
-        <label className={cn('space-y-2.5', className)}>
-            <span className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+        <label className={cn('min-w-0 space-y-2.5', className)}>
+            <span className="block max-w-full truncate text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
                 {label}
             </span>
             {children}
             {helper ? (
-                <span className="block text-xs leading-5 text-muted-foreground">
+                <span className="block text-xs leading-5 break-words text-muted-foreground">
                     {helper}
                 </span>
             ) : null}
@@ -124,7 +124,7 @@ export function AdminToolbar({
                 className,
             )}
         >
-            <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="flex w-full min-w-0 flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
                 {children}
             </div>
         </ProductFilterRow>
@@ -143,7 +143,7 @@ export function AdminToolbarGroup({
     return (
         <div
             className={cn(
-                'flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end',
+                'flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end',
                 grow && 'xl:flex-1',
                 className,
             )}
@@ -161,7 +161,7 @@ export function AdminInput({
         <ProductInput
             {...props}
             className={cn(
-                'dashboard-surface-soft h-10 rounded-xl border-border/60 bg-background/82 shadow-[0_12px_30px_-26px_rgba(15,23,42,0.42)]',
+                'dashboard-surface-soft h-10 min-w-0 rounded-xl border-border/60 bg-background/82 text-sm leading-normal shadow-[0_12px_30px_-26px_rgba(15,23,42,0.42)] placeholder:text-muted-foreground/80',
                 className,
             )}
         />
@@ -173,7 +173,7 @@ export function AdminSearchInput({
     ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
     return (
-        <div className="relative">
+        <div className="relative min-w-0">
             <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <AdminInput {...props} className={cn('pl-11', className)} />
         </div>
@@ -240,12 +240,12 @@ export function AdminNativeSelect({
     ...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
     return (
-        <div className="relative">
+        <div className="relative min-w-0">
             <select
                 {...props}
                 className={cn(
                     controlClassName,
-                    'w-full appearance-none pr-10 text-sm outline-none',
+                    'w-full appearance-none truncate pr-10 text-sm outline-none',
                     className,
                 )}
             >

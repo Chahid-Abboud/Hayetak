@@ -46,61 +46,8 @@ export default function Security({
             <SettingsLayout>
                 <div className="space-y-6">
                     <ProductSection
-                        title="Security overview"
-                        description="Manage sign-in protection in one place, including password updates and two-factor authentication."
-                    >
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl border border-border/70 bg-muted/20 p-5">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-sm font-semibold text-foreground">
-                                            Password
-                                        </div>
-                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                            Use a long, unique password for your
-                                            Hayetak account.
-                                        </p>
-                                    </div>
-                                    <Badge
-                                        variant="outline"
-                                        className="rounded-full px-3 py-1"
-                                    >
-                                        Active
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-border/70 bg-muted/20 p-5">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-sm font-semibold text-foreground">
-                                            Two-factor authentication
-                                        </div>
-                                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                            Add an authenticator code during
-                                            sign-in for extra protection.
-                                        </p>
-                                    </div>
-                                    <Badge
-                                        variant={
-                                            twoFactorEnabled
-                                                ? 'default'
-                                                : 'outline'
-                                        }
-                                        className="rounded-full px-3 py-1"
-                                    >
-                                        {twoFactorEnabled
-                                            ? 'Enabled'
-                                            : 'Optional'}
-                                    </Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </ProductSection>
-
-                    <ProductSection
                         title="Update password"
-                        description="Change your password here without leaving the security workspace."
+                        description="Change your password."
                     >
                         <Form
                             {...PasswordController.update.form()}
@@ -220,7 +167,7 @@ export default function Security({
 
                     <ProductSection
                         title="Two-factor authentication"
-                        description="Enable, continue, or disable 2FA from the same security page."
+                        description="Add an authenticator code during sign-in."
                     >
                         <div className="space-y-6">
                             <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/20 p-5 sm:flex-row sm:items-start sm:justify-between">
