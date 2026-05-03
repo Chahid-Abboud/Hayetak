@@ -517,7 +517,6 @@ export default function TrackMealsPage() {
 
             <ProductPageShell width="wide">
                 <ProductHero
-                    eyebrow="Meal Tracker"
                     title={
                         mode === 'follow-plan'
                             ? "Follow today's plan"
