@@ -50,6 +50,16 @@ type PendingBubble = {
     content: string;
 };
 
+<<<<<<< HEAD
+type RetryState = {
+    conversationId: number | null;
+    message: string;
+};
+
+const SEND_TIMEOUT_MS = 45_000;
+
+=======
+>>>>>>> origin/main
 function getCsrfToken() {
     return (
         (
@@ -231,8 +241,15 @@ export default function AiChatPage() {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pendingBubbles, setPendingBubbles] = useState<PendingBubble[]>([]);
+<<<<<<< HEAD
+    const [retryState, setRetryState] = useState<RetryState | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesRequestRef = useRef<AbortController | null>(null);
+    const sendRequestRef = useRef<AbortController | null>(null);
+=======
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const messagesRequestRef = useRef<AbortController | null>(null);
+>>>>>>> origin/main
 
     async function loadConversations(): Promise<number | null> {
         setLoadingConversations(true);
@@ -355,11 +372,19 @@ export default function AiChatPage() {
     useEffect(() => {
         return () => {
             messagesRequestRef.current?.abort();
+<<<<<<< HEAD
+            sendRequestRef.current?.abort();
+=======
+>>>>>>> origin/main
         };
     }, []);
 
     useEffect(() => {
         setPendingBubbles([]);
+<<<<<<< HEAD
+        setRetryState(null);
+=======
+>>>>>>> origin/main
     }, [activeConversationId]);
 
     const activeConversation = useMemo(
@@ -370,13 +395,26 @@ export default function AiChatPage() {
         [activeConversationId, conversations],
     );
 
+<<<<<<< HEAD
+    async function send(seedText?: string, forcedConversationId?: number | null) {
+=======
     async function send(seedText?: string) {
+>>>>>>> origin/main
         const message = (seedText ?? text).trim();
         if (!message || sending) return;
 
         const pendingUserId = `pending-user-${Date.now()}`;
         const pendingAssistantId = `pending-assistant-${Date.now() + 1}`;
+<<<<<<< HEAD
+        const conversationIdAtSend = forcedConversationId ?? activeConversationId;
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
+        sendRequestRef.current?.abort();
+        sendRequestRef.current = controller;
+=======
+
+>>>>>>> origin/main
         setPendingBubbles([
             { id: pendingUserId, role: 'user', content: message },
             { id: pendingAssistantId, role: 'assistant', content: '' },
@@ -384,6 +422,10 @@ export default function AiChatPage() {
         setText('');
         setSending(true);
         setError(null);
+<<<<<<< HEAD
+        setRetryState(null);
+=======
+>>>>>>> origin/main
         try {
             const response = await fetch('/api/ai/chat', {
                 method: 'POST',
@@ -395,10 +437,18 @@ export default function AiChatPage() {
                 },
                 body: JSON.stringify({
                     message,
+<<<<<<< HEAD
+                    conversation_id: conversationIdAtSend,
+                    screen_context: 'coach',
+                    include_last_7_days: true,
+                }),
+                signal: controller.signal,
+=======
                     conversation_id: activeConversationId,
                     screen_context: 'coach',
                     include_last_7_days: true,
                 }),
+>>>>>>> origin/main
             });
 
             if (!response.ok) {
@@ -445,22 +495,49 @@ export default function AiChatPage() {
         } catch (err) {
             setPendingBubbles([]);
             setText(message);
+<<<<<<< HEAD
+            setRetryState({
+                conversationId: conversationIdAtSend,
+                message,
+            });
+            setError(
+                isAbortError(err)
+                    ? 'The AI coach took too long to answer. Retry the message or start a new chat.'
+                    : err instanceof Error
+                      ? err.message
+                      : 'The AI coach could not answer right now.',
+            );
+        } finally {
+            window.clearTimeout(timeoutId);
+            if (sendRequestRef.current === controller) {
+                sendRequestRef.current = null;
+            }
+=======
             setError(
                 err instanceof Error
                     ? err.message
                     : 'The AI coach could not answer right now.',
             );
         } finally {
+>>>>>>> origin/main
             setSending(false);
         }
     }
 
     function startNewChat() {
+<<<<<<< HEAD
+        sendRequestRef.current?.abort();
+=======
+>>>>>>> origin/main
         setActiveConversationId(null);
         setMessages([]);
         setPendingBubbles([]);
         setText('');
         setError(null);
+<<<<<<< HEAD
+        setRetryState(null);
+=======
+>>>>>>> origin/main
     }
 
     const promptSuggestions = isAdmin
@@ -539,7 +616,31 @@ export default function AiChatPage() {
 
                 {error ? (
                     <ProductBanner tone="danger" role="alert">
+<<<<<<< HEAD
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span>{error}</span>
+                            {retryState ? (
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setActiveConversationId(
+                                            retryState.conversationId,
+                                        );
+                                        void send(
+                                            retryState.message,
+                                            retryState.conversationId,
+                                        );
+                                    }}
+                                >
+                                    Retry last message
+                                </ProductButton>
+                            ) : null}
+                        </div>
+=======
                         {error}
+>>>>>>> origin/main
                     </ProductBanner>
                 ) : null}
 

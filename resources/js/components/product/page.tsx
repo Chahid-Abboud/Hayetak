@@ -297,7 +297,13 @@ export function ProductFilterRow({
                 className,
             )}
         >
+<<<<<<< HEAD
+            <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
+                {children}
+            </div>
+=======
             <div className="flex flex-wrap items-end gap-3">{children}</div>
+>>>>>>> origin/main
         </div>
     );
 }

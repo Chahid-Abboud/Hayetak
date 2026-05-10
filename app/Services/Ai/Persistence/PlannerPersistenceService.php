@@ -15,6 +15,10 @@ use App\Models\WorkoutPlanDay;
 use App\Models\WorkoutPlanExercise;
 use App\Services\Ai\Exercises\PlannerExerciseCatalogSyncService;
 use App\Services\Ai\Seed\SeededPlanCleanupService;
+<<<<<<< HEAD
+use App\Services\MealTrackerService;
+=======
+>>>>>>> origin/main
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +28,10 @@ class PlannerPersistenceService
     public function __construct(
         private readonly PlannerExerciseCatalogSyncService $exerciseCatalogSync,
         private readonly SeededPlanCleanupService $planCleanup,
+<<<<<<< HEAD
+        private readonly MealTrackerService $mealTracker,
+=======
+>>>>>>> origin/main
     ) {}
 
     public function persist(
@@ -123,7 +131,11 @@ class PlannerPersistenceService
         $diet = $fullPlan['diet'];
         $days = is_array($diet['days'] ?? null) ? $diet['days'] : [];
         $start = Carbon::today();
+<<<<<<< HEAD
+        $foods = Food::query()->select(['id', 'name', 'serving_size', 'serving_unit'])->orderBy('name')->get();
+=======
         $foods = Food::query()->select(['id', 'name'])->orderBy('name')->get();
+>>>>>>> origin/main
         $foodMap = $foods->mapWithKeys(fn (Food $food) => [$this->normalizeKey($food->name) => $food->id])->all();
 
         $plan = NutritionPlan::query()->create([
@@ -183,7 +195,11 @@ class PlannerPersistenceService
 
                     $foodId = $this->matchFoodId($name, $foods, $foodMap);
                     $portion = (string) ($item['portion'] ?? '');
+<<<<<<< HEAD
+                    $parsedPortion = $this->parsePortion($portion, $foodId !== null ? $foods->firstWhere('id', $foodId) : null);
+=======
                     $parsedPortion = $this->parsePortion($portion);
+>>>>>>> origin/main
                     $itemNote = $this->joinNotes([
                         (string) ($item['recipe_note'] ?? ''),
                         ! empty($item['alternatives']) ? 'Alternatives: '.implode(', ', (array) $item['alternatives']) : '',
@@ -353,6 +369,11 @@ class PlannerPersistenceService
             str_contains($meal, 'break') => 'breakfast',
             str_contains($meal, 'lunch') => 'lunch',
             str_contains($meal, 'dinner') => 'dinner',
+<<<<<<< HEAD
+            str_contains($meal, 'drink'), str_contains($meal, 'beverage'), str_contains($meal, 'smoothie'), str_contains($meal, 'shake'), str_contains($meal, 'juice') => 'drink',
+            str_contains($meal, 'snack') => 'snack',
+=======
+>>>>>>> origin/main
             default => 'snack',
         };
     }
@@ -374,7 +395,11 @@ class PlannerPersistenceService
         return [8, 12];
     }
 
+<<<<<<< HEAD
+    private function parsePortion(string $portion, ?Food $food = null): array
+=======
     private function parsePortion(string $portion): array
+>>>>>>> origin/main
     {
         $portion = trim($portion);
 
@@ -385,6 +410,33 @@ class PlannerPersistenceService
             ];
         }
 
+<<<<<<< HEAD
+        if (preg_match('/(\d+(?:\.\d+)?)\s*(ml|milliliters?|l|liters?)\b/i', $portion, $matches)) {
+            $amount = (float) $matches[1];
+            $unit = strtolower($matches[2]);
+            $milliliters = in_array($unit, ['l', 'liter', 'liters'], true)
+                ? $amount * 1000
+                : $amount;
+
+            if ($food) {
+                return [
+                    'grams' => null,
+                    'servings' => $this->mealTracker->resolveLoggedServings(
+                        $food,
+                        ['milliliters' => $milliliters],
+                        'drink'
+                    ),
+                ];
+            }
+
+            return [
+                'grams' => null,
+                'servings' => round(max(0.01, $milliliters / 250), 4),
+            ];
+        }
+
+=======
+>>>>>>> origin/main
         if (preg_match('/(\d+(?:\.\d+)?)/', $portion, $matches)) {
             return [
                 'grams' => null,

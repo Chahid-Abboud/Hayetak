@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 class AiBackfillSeededPredictorRequests extends Command
 {
     protected $signature = 'ai:backfill-seeded-predictor-requests
+        {--anchor-date=2026-05-11 : Shared seeded planner baseline date (YYYY-MM-DD)}
         {--dry-run=0 : Preview changes without saving them}
     ';
 
@@ -21,6 +22,10 @@ class AiBackfillSeededPredictorRequests extends Command
     public function handle(ProgressLabelReadinessService $readiness): int
     {
         $dryRun = ((int) $this->option('dry-run')) === 1;
+        $anchorDate = CarbonImmutable::parse(
+            trim((string) $this->option('anchor-date')),
+            config('app.timezone', 'UTC')
+        )->startOfDay();
         $updated = 0;
         $skippedUsers = 0;
 
@@ -28,39 +33,37 @@ class AiBackfillSeededPredictorRequests extends Command
         $users = User::query()
             ->where('role', '!=', User::ROLE_ADMIN)
             ->orderBy('id')
-            ->get(['id', 'email', 'role']);
+            ->get(['id', 'email', 'role', 'data_origin']);
 
         foreach ($users as $user) {
-            if (! $this->isSeededDemoUser((string) $user->email)) {
+            if (! $this->isSeededDemoUser($user)) {
+                continue;
+            }
+            if ($this->isImportedPlannerDatasetUser((int) $user->id)) {
                 continue;
             }
 
-            $latestMeasurementDate = DB::table('measurements')
+            $hasMeasurement = DB::table('measurements')
                 ->where('user_id', $user->id)
                 ->whereNotNull('weight_kg')
-                ->orderByDesc('measured_at')
-                ->value('measured_at');
+                ->exists();
 
-            if (! is_string($latestMeasurementDate) || trim($latestMeasurementDate) === '') {
+            if (! $hasMeasurement) {
                 $skippedUsers++;
 
                 continue;
             }
 
-            $latestMeasurement = CarbonImmutable::parse($latestMeasurementDate)->startOfDay();
             $requests = $this->requestsByHorizon($user, $readiness);
 
-            foreach ([14 => 0, 21 => 5, 28 => 10] as $horizon => $endOffsetDays) {
+            foreach ([14, 21, 28] as $horizon) {
                 /** @var AiRequest|null $request */
                 $request = $requests->get($horizon);
                 if (! $request) {
                     continue;
                 }
 
-                $targetEnd = $latestMeasurement->subDays($endOffsetDays);
-                $targetCreatedAt = $targetEnd
-                    ->subDays($horizon - 1)
-                    ->setTime(9, 0);
+                $targetCreatedAt = $anchorDate->setTime(9, 0);
 
                 if ($dryRun) {
                     $this->line(sprintf(
@@ -118,15 +121,42 @@ class AiBackfillSeededPredictorRequests extends Command
             });
     }
 
-    private function isSeededDemoUser(string $email): bool
+    private function isSeededDemoUser(User $user): bool
     {
-        $email = strtolower(trim($email));
+        $origin = strtolower(trim((string) ($user->data_origin ?? '')));
+        if ($origin !== '') {
+            return in_array($origin, [
+                User::DATA_ORIGIN_SEEDED_DEMO,
+                User::DATA_ORIGIN_TEST,
+            ], true);
+        }
+
+        $email = strtolower(trim((string) $user->email));
 
         return $email !== '' && (
             str_contains($email, 'hayetak.local')
             || str_contains($email, '@clients.')
             || str_contains($email, 'example.')
         );
+    }
+
+    private function isImportedPlannerDatasetUser(int $userId): bool
+    {
+        $settings = DB::table('user_prefs')
+            ->where('user_id', $userId)
+            ->value('settings');
+
+        if (is_array($settings)) {
+            $decoded = $settings;
+        } elseif (is_string($settings)) {
+            $decoded = json_decode($settings, true);
+        } else {
+            $decoded = null;
+        }
+
+        $importSource = is_array($decoded) ? trim((string) ($decoded['import_source'] ?? '')) : '';
+
+        return $importSource !== '';
     }
 
     /**

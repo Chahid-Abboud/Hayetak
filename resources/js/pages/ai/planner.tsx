@@ -10,8 +10,11 @@ import {
     ProductHero,
     ProductPageShell,
     ProductSection,
+<<<<<<< HEAD
+=======
     ProductStatCard,
     ProductStatGrid,
+>>>>>>> origin/main
     ProductStickyActions,
 } from '@/components/product/page';
 import {
@@ -29,7 +32,11 @@ import {
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { RefreshCw } from 'lucide-react';
+<<<<<<< HEAD
+import { useEffect, useMemo, useRef, useState } from 'react';
+=======
 import { useEffect, useMemo, useState } from 'react';
+>>>>>>> origin/main
 
 type PlannerGeneration = {
     ok: boolean;
@@ -202,6 +209,20 @@ type PlannerAuditRunState = {
 
 type AuditGpuLoad = 'low' | 'medium' | 'high';
 
+<<<<<<< HEAD
+type PendingGenerationPoll = {
+    previousGenerationId: string | null;
+    previousNutritionPlanId: number | null;
+    previousWorkoutPlanId: number | null;
+    scope: {
+        diet: boolean;
+        workout: boolean;
+    };
+    startedAt: number;
+};
+
+=======
+>>>>>>> origin/main
 type PageProps = {
     generation?: PlannerGeneration | null;
     nutritionPlan?: LitePlan | null;
@@ -210,16 +231,29 @@ type PageProps = {
     isAdmin: boolean;
     latestAuditRun?: PlannerAuditRunState | null;
     predictionTrend?: PredictionTrendPoint[];
+<<<<<<< HEAD
+    comparisonWeights?: PredictorMeasurement[];
+    predictionSummary?: {
+        prediction_only: boolean;
+        real_weight_history_count: number;
+        synthetic_weight_history_count: number;
+        actual_comparison_available: boolean;
+    };
+=======
     weightHistory?: PredictorMeasurement[];
+>>>>>>> origin/main
     defaults: {
         plan_horizon_days: number;
     };
 };
 
+<<<<<<< HEAD
+=======
 function planStatusLabel(plan?: LitePlan | null) {
     return plan ? 'Ready' : 'Not ready';
 }
 
+>>>>>>> origin/main
 function cleanPlannerName(name?: string | null) {
     return (
         name
@@ -231,6 +265,8 @@ function cleanPlannerName(name?: string | null) {
     );
 }
 
+<<<<<<< HEAD
+=======
 function safetyProfileLabel(profile?: ProfileConstraints | null) {
     const hasSafetyInputs = Boolean(
         profile?.allergies?.length ||
@@ -242,12 +278,15 @@ function safetyProfileLabel(profile?: ProfileConstraints | null) {
     return hasSafetyInputs ? 'Applied' : 'Basic';
 }
 
+>>>>>>> origin/main
 function clampPlanHorizonDays(days: number) {
     if (days <= 14) return 14;
     if (days <= 21) return 21;
     return 28;
 }
 
+<<<<<<< HEAD
+=======
 type PlannerAuditResult = {
     calorieIssues: string[];
     servingIssues: string[];
@@ -259,6 +298,7 @@ type PlannerAuditResult = {
     }>;
 };
 
+>>>>>>> origin/main
 type DietMealOptionGroup = {
     mealCode: string;
     title: string;
@@ -275,6 +315,8 @@ type DietMealOptionGroup = {
     }>;
 };
 
+<<<<<<< HEAD
+=======
 function mealNameNeedlesByDietType(dietType: string) {
     const normalized = dietType.toLowerCase();
 
@@ -404,6 +446,7 @@ function assessPlannerPlan(
 
     return { calorieIssues, servingIssues, safetyIssues, varietyStats };
 }
+>>>>>>> origin/main
 
 function humanizeMealCode(mealCode: string) {
     return mealCode.charAt(0).toUpperCase() + mealCode.slice(1);
@@ -640,11 +683,19 @@ export default function AiPlannerPage() {
         nutritionPlan,
         workoutPlan,
         defaults,
+<<<<<<< HEAD
+        isAdmin,
+        latestAuditRun,
+        predictionTrend,
+        comparisonWeights,
+        predictionSummary,
+=======
         profileConstraints,
         isAdmin,
         latestAuditRun,
         predictionTrend,
         weightHistory,
+>>>>>>> origin/main
     } = usePage<PageProps>().props;
 
     const [planHorizonDays, setPlanHorizonDays] = useState<number>(
@@ -661,7 +712,11 @@ export default function AiPlannerPage() {
     const workoutsPerPage = 4;
 
     const [status, setStatus] = useState<{
+<<<<<<< HEAD
+        tone: 'success' | 'danger' | 'warning';
+=======
         tone: 'success' | 'danger';
+>>>>>>> origin/main
         message: string;
     } | null>(null);
 
@@ -682,20 +737,137 @@ export default function AiPlannerPage() {
     const [lastPromptedAuditId, setLastPromptedAuditId] = useState<
         number | null
     >(null);
+<<<<<<< HEAD
+    const generationPollRef = useRef<number | null>(null);
+    const pendingGenerationRef = useRef<PendingGenerationPoll | null>(null);
+=======
+>>>>>>> origin/main
 
     const showAdminTools = false;
     const plan = generation?.plan ?? null;
 
     const canRenderPredictionTimeline = Boolean(
+<<<<<<< HEAD
+        (predictionTrend?.length ?? 0) > 0,
+    );
+
+    const stopGenerationPolling = () => {
+        if (generationPollRef.current !== null) {
+            window.clearInterval(generationPollRef.current);
+            generationPollRef.current = null;
+        }
+
+        pendingGenerationRef.current = null;
+    };
+
+    const reloadPlannerData = () => {
+        router.reload({
+            only: [
+                'generation',
+                'nutritionPlan',
+                'workoutPlan',
+                'latestAuditRun',
+                'predictionTrend',
+                'comparisonWeights',
+                'predictionSummary',
+            ],
+        });
+    };
+
+    const startGenerationPolling = (
+        scope: PendingGenerationPoll['scope'],
+        statusLabel: 'queued' | 'completed',
+    ) => {
+        stopGenerationPolling();
+        pendingGenerationRef.current = {
+            previousGenerationId: generation?.generation_id ?? null,
+            previousNutritionPlanId: nutritionPlan?.id ?? null,
+            previousWorkoutPlanId: workoutPlan?.id ?? null,
+            scope,
+            startedAt: Date.now(),
+        };
+
+        window.setTimeout(
+            reloadPlannerData,
+            statusLabel === 'completed' ? 250 : 3000,
+        );
+
+        generationPollRef.current = window.setInterval(() => {
+            const pending = pendingGenerationRef.current;
+
+            if (!pending) {
+                stopGenerationPolling();
+                return;
+            }
+
+            if (Date.now() - pending.startedAt > 90000) {
+                stopGenerationPolling();
+                setStatus({
+                    tone: 'warning',
+                    message:
+                        'Plan generation is taking longer than expected. Your request was saved, so refresh the planner in a moment if the new plan is not visible yet.',
+                });
+                return;
+            }
+
+            reloadPlannerData();
+        }, 5000);
+    };
+
+=======
         (predictionTrend?.length ?? 0) > 0 || (weightHistory?.length ?? 0) >= 2,
     );
 
+>>>>>>> origin/main
     useEffect(() => {
         setAuditRun(latestAuditRun ?? null);
         setAuditExecutionMode(latestAuditRun?.execution_mode ?? 'standard');
     }, [latestAuditRun]);
 
     useEffect(() => {
+<<<<<<< HEAD
+        const pending = pendingGenerationRef.current;
+
+        if (!pending) {
+            return;
+        }
+
+        const generationChanged =
+            (generation?.generation_id ?? null) !== pending.previousGenerationId;
+        const dietChanged =
+            (nutritionPlan?.id ?? null) !== pending.previousNutritionPlanId;
+        const workoutChanged =
+            (workoutPlan?.id ?? null) !== pending.previousWorkoutPlanId;
+        const generationReady =
+            generationChanged ||
+            (pending.scope.diet && dietChanged) ||
+            (pending.scope.workout && workoutChanged);
+
+        if (!generationReady) {
+            return;
+        }
+
+        stopGenerationPolling();
+        setStatus({
+            tone: 'success',
+            message:
+                pending.scope.diet && pending.scope.workout
+                    ? 'Diet and workout plans are ready.'
+                    : pending.scope.diet
+                      ? 'Diet plan is ready.'
+                      : 'Workout plan is ready.',
+        });
+    }, [generation?.generation_id, nutritionPlan?.id, workoutPlan?.id]);
+
+    useEffect(() => {
+        return () => {
+            stopGenerationPolling();
+        };
+    }, []);
+
+    useEffect(() => {
+=======
+>>>>>>> origin/main
         if (!auditDialogOpen) return;
 
         if (auditRun && ['queued', 'running'].includes(auditRun.status)) {
@@ -709,6 +881,8 @@ export default function AiPlannerPage() {
         setAuditExecutionMode(latestAuditRun?.execution_mode ?? 'standard');
     }, [auditDialogOpen, auditRun, latestAuditRun?.execution_mode]);
 
+<<<<<<< HEAD
+=======
     const summaryCards = useMemo(
         () => [
             {
@@ -736,6 +910,7 @@ export default function AiPlannerPage() {
         [plan, profileConstraints],
     );
 
+>>>>>>> origin/main
     const mealOptionGroups = useMemo(
         () =>
             buildDietMealOptionGroups(
@@ -841,17 +1016,42 @@ export default function AiPlannerPage() {
         setStatus(null);
 
         try {
+<<<<<<< HEAD
+            const response = await axios.post('/api/ai/plan/background', {
+=======
             await axios.post('/api/ai/plan/background', {
+>>>>>>> origin/main
                 regenerate: true,
                 reason: 'planner_page_manual_generation',
                 plan_horizon_days: planHorizonDays,
                 generate_diet: generateDiet,
                 generate_workout: generateWorkout,
             });
+<<<<<<< HEAD
+            const generationStatus =
+                response.data?.status === 'completed' ? 'completed' : 'queued';
+=======
+>>>>>>> origin/main
 
             setStatus({
                 tone: 'success',
                 message:
+<<<<<<< HEAD
+                    generationStatus === 'completed'
+                        ? 'Plan generation finished. Refreshing the planner now.'
+                        : generateDiet && generateWorkout
+                          ? 'Diet and workout generation started. You can keep using Hayetak while the plan is being prepared.'
+                          : generateDiet
+                            ? 'Diet generation started. You can keep using Hayetak while the diet plan is being prepared.'
+                            : 'Workout generation started. You can keep using Hayetak while the workout plan is being prepared.',
+            });
+            startGenerationPolling(
+                { diet: generateDiet, workout: generateWorkout },
+                generationStatus,
+            );
+        } catch (error: unknown) {
+            stopGenerationPolling();
+=======
                     generateDiet && generateWorkout
                         ? 'Diet and workout generation started. You can keep using Hayetak while the plan is being prepared.'
                         : generateDiet
@@ -872,6 +1072,7 @@ export default function AiPlannerPage() {
                 });
             }, 12000);
         } catch (error: unknown) {
+>>>>>>> origin/main
             const message =
                 axios.isAxiosError(error) &&
                 typeof error.response?.data?.message === 'string'
@@ -978,6 +1179,33 @@ export default function AiPlannerPage() {
             <ProductPageShell width="wide">
                 <ProductHero
                     eyebrow="Planner"
+<<<<<<< HEAD
+                    title="Planner and predictor"
+                    description="Generate your meal and workout plan, then track the projected check-in weight for each plan run."
+                    meta={
+                        <div className="grid gap-3 text-sm sm:grid-cols-2">
+                            <div className="rounded-[20px] border border-border/60 bg-card/80 p-4">
+                                <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                    Current plan
+                                </div>
+                                <div className="mt-2 font-medium text-foreground">
+                                    {cleanPlannerName(nutritionPlan?.name) ??
+                                        cleanPlannerName(workoutPlan?.name) ??
+                                        'No generated plan yet'}
+                                </div>
+                            </div>
+                            <div className="rounded-[20px] border border-border/60 bg-card/80 p-4">
+                                <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                    Review rhythm
+                                </div>
+                                <div className="mt-2 font-medium text-foreground">
+                                    {planHorizonDays}-day check-in window
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                    Predictor targets are anchored to the last
+                                    saved weight before each plan run.
+                                </div>
+=======
                     title="Plans, tips, and predictor"
                     description="Generate your meal and workout plan, then see the expected weight trend for the check-in window you choose."
                     meta={
@@ -995,10 +1223,155 @@ export default function AiPlannerPage() {
                             <div className="text-xs text-muted-foreground">
                                 After each check-in window, review progress and
                                 regenerate if needed.
+>>>>>>> origin/main
                             </div>
                         </div>
                     }
                     actions={
+<<<<<<< HEAD
+                        <div className="grid w-full gap-3">
+                            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+                                <label className="flex min-w-0 items-center justify-between gap-3 rounded-[20px] border border-border/70 bg-background/80 px-4 py-3 text-sm text-foreground">
+                                    <span className="font-medium">
+                                        Check-in window
+                                    </span>
+                                    <select
+                                        value={planHorizonDays}
+                                        onChange={(event) =>
+                                            setPlanHorizonDays(
+                                                clampPlanHorizonDays(
+                                                    Number(event.target.value),
+                                                ),
+                                            )
+                                        }
+                                        className="rounded-xl border border-border/70 bg-card px-3 py-2 text-sm"
+                                    >
+                                        {[14, 21, 28].map((days) => (
+                                            <option key={days} value={days}>
+                                                {days} days
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <div className="rounded-[20px] border border-border/70 bg-background/80 px-4 py-3 text-sm text-foreground">
+                                    <div className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                                        Generate
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <ProductModeButton
+                                            active={generateDiet}
+                                            onClick={() =>
+                                                setGenerateDiet(
+                                                    (current) => !current,
+                                                )
+                                            }
+                                            className="h-9 px-3 text-xs"
+                                        >
+                                            Diet
+                                        </ProductModeButton>
+
+                                        <ProductModeButton
+                                            active={generateWorkout}
+                                            onClick={() =>
+                                                setGenerateWorkout(
+                                                    (current) => !current,
+                                                )
+                                            }
+                                            className="h-9 px-3 text-xs"
+                                        >
+                                            Workout
+                                        </ProductModeButton>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                                <ProductButton
+                                    type="button"
+                                    onClick={generatePlan}
+                                    disabled={
+                                        generating ||
+                                        (!generateDiet && !generateWorkout)
+                                    }
+                                    className="gap-2"
+                                >
+                                    <RefreshCw
+                                        className={`h-4 w-4 ${
+                                            generating ? 'animate-spin' : ''
+                                        }`}
+                                    />
+                                    {generation
+                                        ? generateDiet && generateWorkout
+                                            ? 'Regenerate both'
+                                            : generateDiet
+                                              ? 'Regenerate diet'
+                                              : generateWorkout
+                                                ? 'Regenerate workout'
+                                                : 'Choose plan type'
+                                        : generateDiet && generateWorkout
+                                          ? 'Generate plan'
+                                          : generateDiet
+                                            ? 'Generate diet'
+                                            : generateWorkout
+                                              ? 'Generate workout'
+                                              : 'Choose plan type'}
+                                </ProductButton>
+
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    disabled={!plan?.diet}
+                                    onClick={() =>
+                                        exportPlanToPdf(
+                                            plan,
+                                            'diet',
+                                            planHorizonDays,
+                                        )
+                                    }
+                                >
+                                    Export diet PDF
+                                </ProductButton>
+
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    disabled={!plan?.workout}
+                                    onClick={() =>
+                                        exportPlanToPdf(
+                                            plan,
+                                            'workout',
+                                            planHorizonDays,
+                                        )
+                                    }
+                                >
+                                    Export workout PDF
+                                </ProductButton>
+
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    disabled={!plan?.diet && !plan?.workout}
+                                    onClick={() =>
+                                        exportPlanToPdf(
+                                            plan,
+                                            'both',
+                                            planHorizonDays,
+                                        )
+                                    }
+                                >
+                                    Export full plan
+                                </ProductButton>
+
+                                <ProductButton asChild emphasis="secondary">
+                                    <Link href="/track-meals">Track meals</Link>
+                                </ProductButton>
+
+                                <ProductButton asChild emphasis="secondary">
+                                    <Link href="/workouts/log">Workout log</Link>
+                                </ProductButton>
+                            </div>
+=======
                         <div className="flex flex-wrap items-center gap-3">
                             <label className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/80 px-3 py-2 text-sm text-foreground">
                                 <span>Check-in window</span>
@@ -1124,6 +1497,7 @@ export default function AiPlannerPage() {
                             <ProductButton asChild emphasis="secondary">
                                 <Link href="/workouts/log">Workout log</Link>
                             </ProductButton>
+>>>>>>> origin/main
                         </div>
                     }
                 />
@@ -1137,6 +1511,8 @@ export default function AiPlannerPage() {
                     </ProductBanner>
                 ) : null}
 
+<<<<<<< HEAD
+=======
                 <ProductStatGrid>
                     {summaryCards.map((card) => (
                         <ProductStatCard
@@ -1146,10 +1522,58 @@ export default function AiPlannerPage() {
                         />
                     ))}
                 </ProductStatGrid>
+>>>>>>> origin/main
 
                 {plan ? (
                     <ProductSection
                         title="Prediction if you follow this plan"
+<<<<<<< HEAD
+                        description={`This shows the projected weight trend across your ${planHorizonDays}-day check-in window.`}
+                    >
+                        <div className="rounded-[28px] border border-border/70 bg-background/72 p-5">
+                            {canRenderPredictionTimeline ? (
+                                <PredictorVsActualCard
+                                    trend={predictionTrend ?? []}
+                                    comparisonWeights={
+                                        comparisonWeights ?? []
+                                    }
+                                />
+                            ) : (
+                                <div className="rounded-[24px] border border-dashed border-border/70 bg-card/60 p-6 text-sm leading-6 text-muted-foreground">
+                                    Generate a plan to unlock the predictor
+                                    graph for your next {planHorizonDays}-day
+                                    check-in window.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-5 rounded-[28px] border border-border/70 bg-background/72 p-5">
+                            <div className="text-lg font-semibold text-foreground">
+                                What affects this prediction
+                            </div>
+                            <ul className="mt-3 space-y-2 text-sm text-foreground">
+                                <li>- Prediction is based on the generated diet/workout plan and safe estimated adherence.</li>
+                                <li>- Each point is anchored to the latest saved weight available when that specific plan was generated.</li>
+                                <li>- Real check-ins still improve future predictor calibration, but this view stays focused on the projected outcome only.</li>
+                                <li>
+                                    {plan.progress_prediction
+                                        ?.feedback_adjustment?.notes ??
+                                        'Prediction updates as you log more real results over time.'}
+                                </li>
+                                {predictionSummary &&
+                                predictionSummary.synthetic_weight_history_count >
+                                    0 &&
+                                predictionSummary.real_weight_history_count ===
+                                    0 ? (
+                                    <li>
+                                        - Demo or synthetic weigh-ins were
+                                        excluded from this chart so the
+                                        projection stays tied to trusted
+                                        measurements only.
+                                    </li>
+                                ) : null}
+                            </ul>
+=======
                         description={`This shows the expected weight trend across your ${planHorizonDays}-day check-in window.`}
                     >
                         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
@@ -1202,6 +1626,7 @@ export default function AiPlannerPage() {
                                     ]}
                                 />
                             </div>
+>>>>>>> origin/main
                         </div>
                     </ProductSection>
                 ) : null}
@@ -1240,6 +1665,8 @@ export default function AiPlannerPage() {
                     </ProductSection>
                 ) : null}
 
+<<<<<<< HEAD
+=======
                 {plan ? (
                     <ProductSection
                         title="Readiness checks"
@@ -1301,6 +1728,7 @@ export default function AiPlannerPage() {
                         </div>
                     </ProductSection>
                 ) : null}
+>>>>>>> origin/main
 
                 {!plan ? (
                     <ProductEmptyState
@@ -1334,6 +1762,166 @@ export default function AiPlannerPage() {
                             title="Meal plan"
                             description="Daily targets and meal options. Long lists are kept scrollable so the page stays readable."
                         >
+<<<<<<< HEAD
+                            <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="text-lg font-semibold text-foreground">
+                                        Daily targets
+                                    </div>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                    {Object.entries(
+                                        plan.diet?.daily_targets ?? {},
+                                    ).map(([key, value]) => (
+                                        <div
+                                            key={key}
+                                            className="rounded-[20px] border border-border/70 bg-card/80 p-3"
+                                        >
+                                            <div className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                                                {key.replaceAll('_', ' ')}
+                                            </div>
+                                            <div className="mt-2 text-lg font-semibold text-foreground">
+                                                {String(value)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                                <ScrollableListCard
+                                    title="Grocery list"
+                                    items={(
+                                        plan.diet?.grocery_list ?? []
+                                    ).map(
+                                        (item) =>
+                                            `${
+                                                item.category
+                                                    ? `${item.category}: `
+                                                    : ''
+                                            }${item.name ?? 'Item'}${
+                                                item.quantity
+                                                    ? ` (${item.quantity})`
+                                                    : ''
+                                            }`,
+                                    )}
+                                />
+                                <ScrollableListCard
+                                    title="Meal prep notes"
+                                    items={plan.diet?.meal_prep_notes ?? []}
+                                />
+                                <ScrollableListCard
+                                    title="Adherence notes"
+                                    items={plan.diet?.adherence_notes ?? []}
+                                />
+                            </div>
+
+                            <div className="mt-5 rounded-[24px] border border-border/70 bg-background/72 p-5">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-lg font-semibold text-foreground">
+                                            Meal options
+                                        </div>
+                                        <div className="mt-1 text-sm text-muted-foreground">
+                                            Showing page {mealPage} of{' '}
+                                            {totalMealPages}
+                                        </div>
+                                    </div>
+
+                                    <PaginationControls
+                                        page={mealPage}
+                                        totalPages={totalMealPages}
+                                        onPrevious={() =>
+                                            setMealPage((current) =>
+                                                Math.max(1, current - 1),
+                                            )
+                                        }
+                                        onNext={() =>
+                                            setMealPage((current) =>
+                                                Math.min(
+                                                    totalMealPages,
+                                                    current + 1,
+                                                ),
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                                    {paginatedMealOptionGroups.map(
+                                        (group) => (
+                                            <div
+                                                key={group.mealCode}
+                                                className="rounded-[22px] border border-border/70 bg-card/70 p-4"
+                                            >
+                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                    {humanizeMealCode(
+                                                        group.mealCode,
+                                                    )}
+                                                </div>
+                                                <div className="mt-1 text-base font-semibold text-foreground">
+                                                    {group.title}
+                                                </div>
+
+                                                <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-2">
+                                                    {group.options.map(
+                                                        (option) => {
+                                                            const showTarget =
+                                                                option.targetKcal > 0 &&
+                                                                Math.abs(
+                                                                    option.targetKcal -
+                                                                        option.caloriesKcal,
+                                                                ) >= 15;
+                                                            return (
+                                                                <div
+                                                                    key={option.key}
+                                                                    className="rounded-[18px] border border-border/60 bg-background/80 p-3"
+                                                                >
+                                                                    <div className="flex items-start justify-between gap-3">
+                                                                        <div className="min-w-0">
+                                                                            <div className="line-clamp-2 font-medium text-foreground">
+                                                                                {option.title}
+                                                                            </div>
+                                                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                                                {option.days.length
+                                                                                    ? `Days ${option.days.join(', ')}`
+                                                                                    : 'Flexible meal choice'}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="shrink-0 text-right text-xs text-muted-foreground">
+                                                                            <div>
+                                                                                {Math.round(option.caloriesKcal)} kcal
+                                                                            </div>
+                                                                            {showTarget ? (
+                                                                                <div>target {Math.round(option.targetKcal)} kcal</div>
+                                                                            ) : null}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                                        <span className="rounded-full border border-border/60 px-2 py-1">P {Math.round(option.proteinG)}g</span>
+                                                                        <span className="rounded-full border border-border/60 px-2 py-1">C {Math.round(option.carbsG)}g</span>
+                                                                        <span className="rounded-full border border-border/60 px-2 py-1">F {Math.round(option.fatG)}g</span>
+                                                                    </div>
+                                                                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                                                                        {option.items.slice(0, 4).map((item, itemIndex) => (
+                                                                            <li key={`${option.key}-${item.name}-${itemIndex}`}>
+                                                                                <span className="font-medium text-foreground">{item.name}</span>
+                                                                                {item.portion ? ` - ${item.portion}` : ''}
+                                                                            </li>
+                                                                        ))}
+                                                                        {option.items.length > 4 ? (
+                                                                            <li>+{option.items.length - 4} more items</li>
+                                                                        ) : null}
+                                                                    </ul>
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ),
+                                    )}
+=======
                             <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
                                 <div className="space-y-5">
                                     <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
@@ -1574,6 +2162,7 @@ export default function AiPlannerPage() {
                                         title="Adherence notes"
                                         items={plan.diet?.adherence_notes ?? []}
                                     />
+>>>>>>> origin/main
                                 </div>
                             </div>
                         </ProductSection>
@@ -1613,11 +2202,19 @@ export default function AiPlannerPage() {
                                         const hasExercises = Boolean(
                                             day.exercises?.length,
                                         );
+<<<<<<< HEAD
+                                        const isDaySeven = (day.day_index ?? -1) >= 7;
+=======
+>>>>>>> origin/main
 
                                         return (
                                             <div
                                                 key={`${day.day_index}-${day.focus}`}
+<<<<<<< HEAD
+                                                className={`rounded-[24px] border border-border/70 bg-background/72 p-5${isDaySeven ? ' lg:col-span-2' : ''}`}
+=======
                                                 className="rounded-[24px] border border-border/70 bg-background/72 p-5"
+>>>>>>> origin/main
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
@@ -2311,6 +2908,8 @@ function PaginationControls({
     );
 }
 
+<<<<<<< HEAD
+=======
 function CompactSignalCard({
     label,
     value,
@@ -2334,6 +2933,7 @@ function CompactSignalCard({
         </div>
     );
 }
+>>>>>>> origin/main
 
 function ScrollableListCard({
     title,
@@ -2380,4 +2980,8 @@ function SimpleListCard({ title, items }: { title: string; items: string[] }) {
             </ul>
         </div>
     );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

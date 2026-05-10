@@ -54,6 +54,17 @@ class CoachDeterministicResponder
             }
         }
 
+<<<<<<< HEAD
+        if ($this->isRecommendationFollowUp($normalizedQuestion)) {
+            $recommendationFollowUp = $this->recommendationFollowUpAnswer($context);
+
+            if ($recommendationFollowUp !== null) {
+                return $recommendationFollowUp;
+            }
+        }
+
+=======
+>>>>>>> origin/main
         if (($classification['scope'] ?? 'in_domain') === 'out_of_domain') {
             return [
                 'answer' => $this->outOfDomainAnswer($user, $normalizedQuestion),
@@ -80,7 +91,11 @@ class CoachDeterministicResponder
             ($classification['deterministic_action'] ?? null) === 'restriction_summary' ||
             $this->isRestrictionLookup($normalizedQuestion)
         ) {
+<<<<<<< HEAD
+            return $this->restrictionSummaryAnswer($context, $normalizedQuestion);
+=======
             return $this->restrictionSummaryAnswer($context);
+>>>>>>> origin/main
         }
 
         if (
@@ -692,7 +707,11 @@ class CoachDeterministicResponder
         ];
     }
 
+<<<<<<< HEAD
+    private function restrictionSummaryAnswer(array $context, string $question = ''): array
+=======
     private function restrictionSummaryAnswer(array $context): array
+>>>>>>> origin/main
     {
         $restrictions = is_array($context['restrictions'] ?? null) ? $context['restrictions'] : [];
         $allergies = is_array($restrictions['allergies'] ?? null) ? $restrictions['allergies'] : [];
@@ -700,6 +719,10 @@ class CoachDeterministicResponder
         $injuries = is_array($restrictions['injuries'] ?? null) ? $restrictions['injuries'] : [];
         $medicalConditions = is_array($restrictions['medical_conditions'] ?? null) ? $restrictions['medical_conditions'] : [];
         $avoidanceNotes = [];
+<<<<<<< HEAD
+        $focus = $this->restrictionSummaryFocus($question);
+=======
+>>>>>>> origin/main
 
         if ($allergies !== []) {
             $avoidanceNotes[] = 'avoid foods containing '.implode(', ', $allergies);
@@ -712,6 +735,30 @@ class CoachDeterministicResponder
             $avoidanceNotes[] = 'avoid meat and poultry';
         }
 
+<<<<<<< HEAD
+        $lines = match ($focus) {
+            'diet_type' => [
+                'Based on your profile, your saved diet type is: '.($dietType !== '' ? $dietType : 'none saved').'.',
+            ],
+            'allergies' => [
+                'Based on your profile, your saved allergies are: '.($allergies !== [] ? implode(', ', $allergies) : 'none saved').'.',
+            ],
+            'medical_conditions' => [
+                'Based on your profile, your saved medical conditions are: '.($medicalConditions !== [] ? implode(', ', $medicalConditions) : 'none saved').'.',
+            ],
+            'injuries' => [
+                'Based on your profile, your saved injury history is: '.($injuries !== [] ? implode(', ', $injuries) : 'none saved').'.',
+            ],
+            default => [
+                'Based on your profile, here are the health and diet details I can see for your account:',
+                'Diet type: '.($dietType !== '' ? $dietType : 'none saved'),
+                'Allergies: '.($allergies !== [] ? implode(', ', $allergies) : 'none saved'),
+                'Medical conditions: '.($medicalConditions !== [] ? implode(', ', $medicalConditions) : 'none saved'),
+                'Injuries: '.($injuries !== [] ? implode(', ', $injuries) : 'none saved'),
+                'Foods to avoid: '.($avoidanceNotes !== [] ? implode('; ', $avoidanceNotes).'.' : 'none explicitly saved.'),
+            ],
+        };
+=======
         $lines = [
             'Based on your profile, here are the health and diet details I can see for your account:',
             'Diet type: '.($dietType !== '' ? $dietType : 'none saved'),
@@ -720,6 +767,7 @@ class CoachDeterministicResponder
             'Injuries: '.($injuries !== [] ? implode(', ', $injuries) : 'none saved'),
             'Foods to avoid: '.($avoidanceNotes !== [] ? implode('; ', $avoidanceNotes).'.' : 'none explicitly saved.'),
         ];
+>>>>>>> origin/main
 
         return [
             'answer' => implode("\n", $lines),
@@ -1872,11 +1920,22 @@ class CoachDeterministicResponder
             'what are my dietary restrictions',
             'what diet type do i have',
             'what is my diet type',
+<<<<<<< HEAD
+            'what diet type do you have saved for me',
+            'what is my medical history',
+            'my medical history',
+            'what medical conditions do i have',
+            'what medical conditions do you have saved for me',
+            'what injuries do i have',
+            'what is my injury history',
+            'what injury history do you have saved for me',
+=======
             'what is my medical history',
             'my medical history',
             'what medical conditions do i have',
             'what injuries do i have',
             'what is my injury history',
+>>>>>>> origin/main
             'my injury history',
             'what about my allergens',
             'what about my allergies',
@@ -1889,6 +1948,26 @@ class CoachDeterministicResponder
         ]);
     }
 
+<<<<<<< HEAD
+    private function restrictionSummaryFocus(string $question): ?string
+    {
+        $mentionsDiet = $this->containsAny($question, ['diet type', 'dietary restrictions', 'restrictions']);
+        $mentionsAllergies = $this->containsAny($question, ['allergy', 'allergies', 'allergen', 'allergens']);
+        $mentionsMedical = $this->containsAny($question, ['medical history', 'medical condition', 'medical conditions']);
+        $mentionsInjuries = $this->containsAny($question, ['injury history', 'injuries', 'injury']);
+
+        $active = array_filter([
+            'diet_type' => $mentionsDiet,
+            'allergies' => $mentionsAllergies,
+            'medical_conditions' => $mentionsMedical,
+            'injuries' => $mentionsInjuries,
+        ]);
+
+        return count($active) === 1 ? array_key_first($active) : null;
+    }
+
+=======
+>>>>>>> origin/main
     private function isGratitudeOrClosing(string $question): bool
     {
         $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $question));
@@ -1995,6 +2074,43 @@ class CoachDeterministicResponder
 
     private function shortAffirmationFollowUpAnswer(array $context): ?array
     {
+<<<<<<< HEAD
+        return $this->offeredConversationFollowUpAnswer($context);
+    }
+
+    private function isRecommendationFollowUp(string $question): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $question));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '' || mb_strlen($normalized) > 90) {
+            return false;
+        }
+
+        return $this->containsAny($normalized, [
+            'recommendation',
+            'recommendations',
+            'can you give me recommendations',
+            'can you give me some recommendations',
+            'give me recommendations',
+            'give me some recommendations',
+            'what do you recommend',
+            'more ideas',
+            'some ideas',
+            'more options',
+            'some options',
+        ]);
+    }
+
+    private function recommendationFollowUpAnswer(array $context): ?array
+    {
+        return $this->offeredConversationFollowUpAnswer($context);
+    }
+
+    private function offeredConversationFollowUpAnswer(array $context): ?array
+    {
+=======
+>>>>>>> origin/main
         $lastAssistantTurn = mb_strtolower($this->lastAssistantTurn($context) ?? '');
         $offerText = $lastAssistantTurn !== '' ? $lastAssistantTurn : $this->recentContextText($context);
 

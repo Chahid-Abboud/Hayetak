@@ -5,6 +5,12 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+<<<<<<< HEAD
+import AuthCardLayout from '@/layouts/auth/auth-card-layout';
+import { login } from '@/routes';
+import { Form, Head } from '@inertiajs/react';
+import { ArrowLeft, LoaderCircle, Mail, Sparkles } from 'lucide-react';
+=======
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
@@ -15,19 +21,33 @@ import {
     ShieldCheck,
     Sparkles,
 } from 'lucide-react';
+>>>>>>> origin/main
 
 const fieldClass =
     'h-[52px] rounded-[20px] border-border/70 bg-background/78 px-4 text-sm shadow-[0_18px_40px_-30px_rgba(15,23,42,0.8)] placeholder:text-muted-foreground/70';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
+<<<<<<< HEAD
+        <AuthCardLayout
+            title="Reset your password"
+            description="Enter your email and we'll send a secure reset link so you can get back into your account."
+=======
         <AuthLayout
             title="Reset your password"
             description="Enter your email and we’ll send a secure reset link so you can get back to your plan safely."
+>>>>>>> origin/main
         >
             <Head title="Forgot password" />
 
             {status ? (
+<<<<<<< HEAD
+                <ProductBanner tone="success" className="mb-6">
+                    {status}
+                </ProductBanner>
+            ) : null}
+
+=======
                 <ProductBanner tone="success">{status}</ProductBanner>
             ) : null}
 
@@ -41,6 +61,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </div>
             </div>
 
+>>>>>>> origin/main
             <Form
                 {...PasswordResetLinkController.store.form()}
                 className="space-y-6"
@@ -94,6 +115,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     Back to sign in
                 </TextLink>
             </div>
-        </AuthLayout>
+        </AuthCardLayout>
     );
 }

@@ -11,12 +11,33 @@ import {
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
+<<<<<<< HEAD
+import {
+    ProductTableBody,
+    ProductTableCell,
+    ProductTableHead,
+    ProductTableHeaderCell,
+    ProductTableRow,
+} from '@/components/product/table';
+=======
+>>>>>>> origin/main
 import RoleGuard from '@/components/RoleGuard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
+<<<<<<< HEAD
+    ArrowRight,
+    BellRing,
+    ClipboardCheck,
+    Settings2,
+    ShieldAlert,
+    ShieldCheck,
+    Stethoscope,
+    Users,
+    UtensilsCrossed,
+=======
     AlertTriangle,
     ArrowRight,
     BellRing,
@@ -26,6 +47,7 @@ import {
     ShieldCheck,
     Sparkles,
     UserCheck,
+>>>>>>> origin/main
 } from 'lucide-react';
 
 type Tone = 'danger' | 'warning' | 'info' | 'success';
@@ -52,7 +74,11 @@ const stats = [
     {
         label: 'Total users',
         value: 248,
+<<<<<<< HEAD
+        helper: 'Accounts available through Users.',
+=======
         helper: 'Accounts available through People.',
+>>>>>>> origin/main
         tone: 'accent' as const,
     },
     {
@@ -63,6 +89,19 @@ const stats = [
     {
         label: 'Unread admin alerts',
         value: 5,
+<<<<<<< HEAD
+        helper: 'Messages and interventions in Notifications.',
+    },
+    {
+        label: 'Moderation queue',
+        value: 7,
+        helper: 'Flagged or escalated user message cases.',
+    },
+    {
+        label: 'Professional profiles',
+        value: 41,
+        helper: 'Trainer and dietitian records visible in Professionals.',
+=======
         helper: 'Messages and interventions in Communications.',
     },
     {
@@ -74,11 +113,14 @@ const stats = [
         label: 'Recent admin actions',
         value: 31,
         helper: 'Audit entries available in Logs & Diagnostics.',
+>>>>>>> origin/main
     },
 ];
 
 const highestPriorityQueue: QueueItem[] = [
     {
+<<<<<<< HEAD
+=======
         id: 'ai-flag-4029',
         title: 'Allergy conflict flagged in generated plan',
         description:
@@ -88,6 +130,7 @@ const highestPriorityQueue: QueueItem[] = [
         href: '/admin/ai-review',
     },
     {
+>>>>>>> origin/main
         id: 'verification-189',
         title: 'Trainer verification needs decision',
         description:
@@ -97,6 +140,42 @@ const highestPriorityQueue: QueueItem[] = [
         href: '/admin/verifications',
     },
     {
+<<<<<<< HEAD
+        id: 'profile-84',
+        title: 'Professional profile needs publishing check',
+        description:
+            'A new public-facing dietitian profile is ready for a final content pass before it appears in discovery.',
+        meta: 'Professionals - Record #84',
+        tone: 'info',
+        href: '/admin/professionals',
+    },
+    {
+        id: 'user-review-3912',
+        title: 'User account needs review',
+        description:
+            'Account state changed after a support note and now needs a quick admin confirmation.',
+        meta: 'User #3912 - 31 min ago',
+        tone: 'info',
+        href: '/admin/users',
+    },
+    {
+        id: 'moderation-18',
+        title: 'Escalated message needs a safety decision',
+        description:
+            'A user message was delivered but flagged because it may involve a sensitive medical or privacy risk.',
+        meta: 'Moderation queue - Open escalation',
+        tone: 'warning',
+        href: '/admin/message-moderations',
+    },
+    {
+        id: 'catalog-512',
+        title: 'Food catalog entry needs correction',
+        description:
+            'A meal item has incomplete allergen metadata and should be updated before the next planner run consumes it.',
+        meta: 'Catalog item #512 - Content review',
+        tone: 'info',
+        href: '/admin/meals',
+=======
         id: 'planner-fail-184',
         title: 'Planner run failed after schema validation',
         description:
@@ -113,11 +192,24 @@ const highestPriorityQueue: QueueItem[] = [
         meta: 'People safety - Coach context',
         tone: 'info',
         href: '/admin/people',
+>>>>>>> origin/main
     },
 ];
 
 const priorityCards: PriorityCard[] = [
     {
+<<<<<<< HEAD
+        title: 'Users',
+        value: '248',
+        description:
+            'Search, inspect, and update account state in one place.',
+        icon: Users,
+        href: '/admin/users',
+        items: [
+            { label: '12 users need account review', meta: 'Status queue' },
+            { label: '8 accounts have pending notes', meta: 'Support follow-up' },
+            { label: '4 soft-deleted accounts', meta: 'Restoration check' },
+=======
         title: 'People',
         value: '248',
         description:
@@ -128,6 +220,7 @@ const priorityCards: PriorityCard[] = [
             { label: '12 users need account review', meta: 'People tab' },
             { label: '6 safety profiles need review', meta: 'Safety tab' },
             { label: '4 assignment matches pending', meta: 'Assignments tab' },
+>>>>>>> origin/main
         ],
     },
     {
@@ -144,6 +237,44 @@ const priorityCards: PriorityCard[] = [
         ],
     },
     {
+<<<<<<< HEAD
+        title: 'Professionals',
+        value: '41',
+        description:
+            'Public directory records for trainers and dietitians.',
+        icon: Stethoscope,
+        href: '/admin/professionals',
+        items: [
+            { label: '9 profiles need biography polish', meta: 'Profile content' },
+            { label: '5 profiles missing specialties', meta: 'Metadata review' },
+            { label: '3 visibility changes pending', meta: 'Directory update' },
+        ],
+    },
+    {
+        title: 'Catalog',
+        value: '5',
+        description:
+            'Food, exercise, place, and progress data that shapes the product.',
+        icon: UtensilsCrossed,
+        href: '/admin/meals',
+        items: [
+            { label: '2 meal items need allergen checks', meta: 'Food catalog' },
+            { label: '1 exercise is hidden pending review', meta: 'Exercises' },
+            { label: '2 places need location updates', meta: 'Places' },
+        ],
+    },
+    {
+        title: 'Moderation',
+        value: '7',
+        description:
+            'Flagged user-to-user messages that need confirmation, dismissal, or follow-up.',
+        icon: ShieldAlert,
+        href: '/admin/message-moderations',
+        items: [
+            { label: '3 escalations are still open', meta: 'Needs review' },
+            { label: '2 hard blocks confirmed', meta: 'Policy enforcement' },
+            { label: '2 flagged messages await dismissal', meta: 'False-positive check' },
+=======
         title: 'Health Data',
         value: '4',
         description:
@@ -171,12 +302,36 @@ const priorityCards: PriorityCard[] = [
             },
             { label: '2 failed planner runs', meta: 'Fallback served' },
             { label: '1 context mismatch warning', meta: 'Coach review' },
+>>>>>>> origin/main
         ],
     },
 ];
 
 const healthItems = [
     {
+<<<<<<< HEAD
+        label: 'User queue',
+        value: 'Stable',
+        detail: 'Account reviews are moving without backlog growth.',
+        tone: 'info' as const,
+    },
+    {
+        label: 'Verification queue',
+        value: 'Active',
+        detail: 'Credential decisions remain the main daily review flow.',
+        tone: 'info' as const,
+    },
+    {
+        label: 'Catalog quality',
+        value: 'Healthy',
+        detail: 'Food and exercise records only show minor cleanup items.',
+        tone: 'success' as const,
+    },
+    {
+        label: 'Admin alerts',
+        value: 'Routed',
+        detail: 'Unread notices are visible and ready for follow-up.',
+=======
         label: 'Planner API',
         value: 'Degraded',
         detail: '2 failed runs; fallback responses available.',
@@ -198,6 +353,7 @@ const healthItems = [
         label: 'Admin alerts',
         value: 'Healthy',
         detail: 'Unread messages are visible and routed.',
+>>>>>>> origin/main
         tone: 'success' as const,
     },
 ];
@@ -327,7 +483,11 @@ export default function AdminOverviewIndex() {
 
                         <AdminSection
                             title="Workspace summaries"
+<<<<<<< HEAD
+                            description="Direct links into the main admin work areas."
+=======
                             description="Equal cards for People, Verifications, Health Data, and AI Review."
+>>>>>>> origin/main
                         >
                             <div className="grid gap-4 xl:grid-cols-4">
                                 {priorityCards.map((card) => (
@@ -389,7 +549,11 @@ export default function AdminOverviewIndex() {
 
                         <AdminSection
                             title="Operational health"
+<<<<<<< HEAD
+                            description="Simple status summaries for the queues and records you manage most often."
+=======
                             description="Health summaries for admin triage, not raw debugging output."
+>>>>>>> origin/main
                         >
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 {healthItems.map((item) => (
@@ -414,8 +578,11 @@ export default function AdminOverviewIndex() {
                                             >
                                                 {item.tone === 'success' ? (
                                                     <ShieldCheck className="h-4 w-4" />
+<<<<<<< HEAD
+=======
                                                 ) : item.tone === 'warning' ? (
                                                     <AlertTriangle className="h-4 w-4" />
+>>>>>>> origin/main
                                                 ) : (
                                                     <Activity className="h-4 w-4" />
                                                 )}
@@ -439,6 +606,40 @@ export default function AdminOverviewIndex() {
                             >
                                 <AdminScrollArea maxHeightClassName="max-h-[22rem]">
                                     <AdminDataTable tableClassName="min-w-[860px]">
+<<<<<<< HEAD
+                                        <ProductTableHead>
+                                            <ProductTableRow>
+                                                <ProductTableHeaderCell>When</ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>Action</ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>Actor</ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>Target</ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>Summary</ProductTableHeaderCell>
+                                            </ProductTableRow>
+                                        </ProductTableHead>
+                                        <ProductTableBody>
+                                            {recentActions.map((item) => (
+                                                <ProductTableRow
+                                                    key={`${item.action}-${item.time}`}
+                                                >
+                                                    <ProductTableCell className="text-sm text-muted-foreground">
+                                                        {item.time}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-sm font-medium text-foreground">
+                                                        {item.action}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-sm text-muted-foreground">
+                                                        {item.actor}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-sm text-muted-foreground">
+                                                        {item.target}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-sm text-muted-foreground">
+                                                        {item.summary}
+                                                    </ProductTableCell>
+                                                </ProductTableRow>
+                                            ))}
+                                        </ProductTableBody>
+=======
                                         <thead>
                                             <tr>
                                                 <th>When</th>
@@ -471,12 +672,54 @@ export default function AdminOverviewIndex() {
                                                 </tr>
                                             ))}
                                         </tbody>
+>>>>>>> origin/main
                                     </AdminDataTable>
                                 </AdminScrollArea>
                             </AdminPanel>
                         </AdminSection>
 
                         <AdminSection
+<<<<<<< HEAD
+                            title="Admin tools"
+                            description="The standard destinations for day-to-day admin work."
+                        >
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                <AdminNotice tone="info">
+                                    This overview stays focused on routine
+                                    operations. Detailed activity history lives
+                                    in audit logs, while user and catalog work
+                                    stays in their dedicated pages.
+                                </AdminNotice>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/logs">
+                                            <Settings2 className="h-4 w-4" />
+                                            Audit Logs
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/message-moderations">
+                                            <ShieldAlert className="h-4 w-4" />
+                                            Moderation
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/users">
+                                            <Users className="h-4 w-4" />
+                                            Users
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/notifications">
+                                            <BellRing className="h-4 w-4" />
+                                            Notifications
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/meals">
+                                            <UtensilsCrossed className="h-4 w-4" />
+                                            Meals
+=======
                             title="Diagnostics entry point"
                             description="Open technical investigation surfaces only when the summarized signals need deeper evidence."
                         >
@@ -510,6 +753,7 @@ export default function AdminOverviewIndex() {
                                         <Link href="/admin/ai-review">
                                             <Sparkles className="h-4 w-4" />
                                             AI Review
+>>>>>>> origin/main
                                         </Link>
                                     </Button>
                                 </div>

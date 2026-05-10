@@ -8,6 +8,7 @@ use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Services\AdminActionLogger;
+use App\Services\AppNotificationService;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +20,7 @@ class AppointmentController extends Controller
     public function __construct(
         private readonly ProfessionalAccessService $access,
         private readonly AdminActionLogger $logger,
+        private readonly AppNotificationService $notifications,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -107,6 +109,13 @@ class AppointmentController extends Controller
             'status' => $appointment->status,
         ]);
 
+        $this->notifications->appointmentRequested(
+            $client,
+            $professional,
+            (string) $appointment->scheduled_at,
+            $appointment->notes,
+        );
+
         return response()->json([
             'ok' => true,
             'appointment' => new AppointmentResource($appointment->load(['client', 'professional'])),
@@ -124,9 +133,52 @@ class AppointmentController extends Controller
             'after' => $appointment->only(['status', 'notes', 'scheduled_at']),
         ]);
 
+        $appointment->load(['client', 'professional']);
+        $actor = $request->user();
+        if ($appointment->client && $appointment->professional) {
+            $this->notifications->appointmentStatusChanged(
+                $actor,
+                $appointment->client,
+                $appointment->professional,
+                (string) $appointment->status,
+                (string) $appointment->scheduled_at,
+            );
+        }
+
         return response()->json([
             'ok' => true,
             'appointment' => new AppointmentResource($appointment->load(['client', 'professional'])),
+        ]);
+    }
+
+    public function requestCheckup(Request $request, Appointment $appointment): JsonResponse
+    {
+        $this->authorize('update', $appointment);
+
+        $actor = $request->user();
+        $isValidRole = $actor->hasRole(User::ROLE_NUTRITIONIST, User::ROLE_TRAINER)
+            && (int) $actor->id === (int) $appointment->professional_id;
+
+        abort_unless($isValidRole || $actor->isAdmin(), 403);
+
+        $notes = trim((string) $request->input('notes', ''));
+
+        if ($appointment->client && $appointment->professional) {
+            $this->notifications->checkupReminder(
+                $appointment->professional,
+                $appointment->client,
+                $notes,
+            );
+        }
+
+        $this->logger->log($actor->id, 'appointment.checkup_request', $appointment, [
+            'notes' => $notes,
+            'appointment_id' => $appointment->id,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Check-up reminder sent to client.',
         ]);
     }
 

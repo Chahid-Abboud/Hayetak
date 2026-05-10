@@ -13,10 +13,18 @@ import {
 } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
+<<<<<<< HEAD
+import { BarListCard } from '@/components/product/analytics';
+import { ProductPageShell } from '@/components/product/page';
+import WaterCard from '@/components/WaterCard';
+import { cn } from '@/lib/utils';
+import { cleanPlanName } from '@/lib/plan-utils';
+=======
 import { BarListCard, TrendCard } from '@/components/product/analytics';
 import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { cn } from '@/lib/utils';
+>>>>>>> origin/main
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -89,6 +97,1856 @@ type WeeklyWorkoutContext = {
     workout_count: number;
 };
 type ProgressViewMode = 'weight' | 'height' | 'gym';
+<<<<<<< HEAD
+
+// Plan types (from HomeController props)
+type FoodLite = {
+    id: number;
+    name: string;
+    category?: string | null;
+    serving_size?: number | string | null;
+    serving_unit?: string | null;
+    calories?: number | null;
+    protein_g?: number | null;
+    carbs_g?: number | null;
+    fat_g?: number | null;
+};
+
+type NutritionPlanItemLite = {
+    id: number;
+    food_id: number;
+    servings?: string | number | null;
+    grams?: string | number | null;
+    sort_order?: number | null;
+    notes?: string | null;
+    food?: FoodLite | null;
+};
+
+type NutritionPlanMealLite = {
+    id: number;
+    meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink' | string;
+    order: number;
+    notes?: string | null;
+    items: NutritionPlanItemLite[];
+};
+
+type NutritionPlanDayLite = {
+    id: number;
+    day_index: number;
+    date: string; // YYYY-MM-DD
+    notes?: string | null;
+    meals: NutritionPlanMealLite[];
+};
+
+type NutritionPlanLite = {
+    id: number;
+    name: string;
+    goal?: string | null;
+    start_date: string; // YYYY-MM-DD
+    duration_days: number;
+    is_active: boolean;
+    meta?: Record<string, unknown> | null;
+    days: NutritionPlanDayLite[];
+};
+
+type WorkoutExerciseLite = {
+    id: number;
+    name: string;
+    primary_muscle?: string | null;
+    equipment?: string | null;
+    difficulty?: string | null;
+    pivot?: {
+        workout_plan_day_id?: number;
+        exercise_id?: number;
+        order_index?: number | null;
+        sets?: number | null;
+        reps_min?: number | null;
+        reps_max?: number | null;
+        rest_seconds?: number | null;
+        notes?: string | null;
+    };
+};
+
+type WorkoutPlanDayLite = {
+    id: number;
+    workout_plan_id: number;
+    day_index: number;
+    name: string;
+    notes?: string | null;
+    exercises: WorkoutExerciseLite[];
+};
+
+type WorkoutPlanLite = {
+    id: number;
+    user_id: number;
+    name: string;
+    goal?: string | null;
+    start_date: string; // YYYY-MM-DD
+    duration_days: number;
+    is_active: boolean;
+    meta?: Record<string, unknown> | null;
+    days: WorkoutPlanDayLite[];
+};
+
+type PredictionTrendPoint = {
+    plan_date: string;
+    feedback_period_start_date: string;
+    feedback_period_end_date: string;
+    horizon_days: number;
+    baseline_weight_kg: number;
+    projected_before_feedback_kg: number;
+    projected_after_feedback_kg: number;
+    projected_weight_kg: number;
+    feedback_applied: boolean;
+    actual_weight_kg: number | null;
+    actual_weight_date: string | null;
+};
+
+type ProgressPredictionSummary = {
+    ai_request_id: number;
+    generated_at: string;
+    horizon_days: number;
+    baseline_weight_kg: number;
+    projected_body_weight_kg: number | null;
+    projected_before_feedback_kg: number | null;
+    projected_after_feedback_kg: number | null;
+    expected_weight_change_kg: number | null;
+    actual_weight_kg?: number | null;
+    actual_weight_date?: string | null;
+    feedback_applied: boolean;
+    strength_projection?: {
+        upper_body_compound_pct?: number | null;
+        lower_body_compound_pct?: number | null;
+    } | null;
+    feedback_adjustment?: {
+        base_weekly_weight_change_kg?: number | null;
+        adjusted_weekly_weight_change_kg?: number | null;
+        notes?: string | null;
+    } | null;
+} | null;
+
+type CoachSnapshot = {
+    title: string;
+    last_message_excerpt?: string | null;
+    last_message_at?: string | null;
+} | null;
+
+type HomeProps = {
+    auth: { user: AuthUser };
+    isGuest?: boolean;
+    userProfile: UserProfile;
+    water?: WaterState;
+
+    todayLog?: DayLog;
+    latestLog?: DayLog;
+    mealEntryPreviews?: TodayLogItem[] | null;
+
+    todayMacros?: {
+        date: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+    } | null;
+    mealTotals?: PerMealTotals | null;
+    weightHistory?: Measurement[];
+    heightHistory?: Measurement[];
+
+    nutritionPlan?: NutritionPlanLite | null;
+    workoutPlan?: WorkoutPlanLite | null;
+    coachSnapshot?: CoachSnapshot;
+    progressPrediction?: ProgressPredictionSummary;
+    predictionTrend?: PredictionTrendPoint[];
+} & Pick<SharedData, 'flash' | 'security'>;
+
+type VerificationArrival = NonNullable<
+    NonNullable<SharedData['flash']>['verificationArrival']
+>;
+
+type AdminListItem = {
+    id: number;
+    title?: string;
+    email?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    action?: string;
+    role?: string;
+    review_status?: string;
+    target_type?: string | null;
+    created_at?: string;
+    user?: {
+        id: number;
+        email?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+    };
+    target_user?: {
+        id: number;
+        email?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+    };
+};
+
+type AdminPlannerAuditRun = {
+    id: number;
+    status: 'queued' | 'running' | 'completed' | 'failed' | string;
+    percent_complete: number;
+    completed_runs: number;
+    failed_runs: number;
+    success_runs: number;
+    total_runs: number;
+    current_user_email?: string | null;
+    current_horizon_days?: number | null;
+    average_run_ms?: number | null;
+    started_at?: string | null;
+    finished_at?: string | null;
+    last_error?: string | null;
+};
+
+type AdminSignalTone = 'default' | 'accent' | 'warning' | 'info';
+
+const FOCUS_RING =
+    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+function ActionButton({
+    onClick,
+    children,
+    variant = 'primary',
+    className = '',
+    type = 'button',
+}: {
+    onClick: () => void;
+    children: React.ReactNode;
+    variant?: 'primary' | 'secondary' | 'soft';
+    className?: string;
+    type?: 'button' | 'submit';
+}) {
+    const base =
+        'inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 active:translate-y-0';
+    const styles: React.CSSProperties =
+        variant === 'primary'
+            ? {
+                  backgroundColor: 'var(--primary)',
+                  color: 'var(--primary-foreground)',
+              }
+            : variant === 'secondary'
+              ? {
+                    backgroundColor: 'var(--secondary)',
+                    color: 'var(--secondary-foreground)',
+                }
+              : {
+                    background:
+                        'color-mix(in oklab, var(--background) 78%, white)',
+                    color: 'var(--foreground)',
+                    border: '1px solid color-mix(in oklab, var(--border) 82%, transparent)',
+                };
+
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            className={`${base} ${FOCUS_RING} ${className}`}
+            style={styles}
+        >
+            {children}
+        </button>
+    );
+}
+
+function CardSection({
+    title,
+    description,
+    actions,
+    children,
+    'aria-labelledby': ariaLabelledby,
+}: {
+    title: string;
+    description?: string;
+    actions?: React.ReactNode;
+    children: React.ReactNode;
+    'aria-labelledby'?: string;
+}) {
+    const headingId =
+        ariaLabelledby ?? title.toLowerCase().replace(/\s+/g, '-');
+    return (
+        <section
+            className="haye-panel rounded-[30px] p-5 text-card-foreground lg:p-6"
+            aria-labelledby={headingId}
+        >
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                        {title}
+                    </h2>
+                    {description ? (
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                            {description}
+                        </p>
+                    ) : null}
+                </div>
+                {actions ? (
+                    <div className="flex flex-wrap gap-3">{actions}</div>
+                ) : null}
+            </div>
+
+            <div className="mt-5">{children}</div>
+        </section>
+    );
+}
+
+export default function Home() {
+    const {
+        auth,
+        flash,
+        security,
+        isGuest: isGuestProp,
+        userProfile,
+        water,
+        todayLog,
+        latestLog,
+        todayMacros,
+        mealTotals,
+        mealEntryPreviews,
+        weightHistory,
+        heightHistory,
+        nutritionPlan,
+        workoutPlan,
+        coachSnapshot,
+    } = usePage<HomeProps>().props;
+
+    const isGuest =
+        typeof isGuestProp === 'boolean' ? isGuestProp : !auth?.user;
+
+    const displayName =
+        auth?.user?.first_name ||
+        auth?.user?.username ||
+        auth?.user?.name ||
+        (isGuest ? 'guest' : 'there');
+    const userRole = auth?.user?.role ?? 'client';
+    const verificationArrival = flash?.verificationArrival as
+        | VerificationArrival
+        | null
+        | undefined;
+    const [showOptionalTwoFactorPrompt, setShowOptionalTwoFactorPrompt] =
+        useState(
+            Boolean(
+                flash?.showOptionalTwoFactorPrompt &&
+                    !auth?.user?.two_factor_enabled,
+            ),
+        );
+
+    useEffect(() => {
+        if (
+            flash?.showOptionalTwoFactorPrompt &&
+            !auth?.user?.two_factor_enabled
+        ) {
+            setShowOptionalTwoFactorPrompt(true);
+        }
+    }, [auth?.user?.two_factor_enabled, flash?.showOptionalTwoFactorPrompt]);
+
+    // Cleaned plan display names (hide version numbers)
+    const nutritionPlanDisplayName = nutritionPlan
+        ? cleanPlanName(nutritionPlan.name) || 'AI Diet Plan'
+        : null;
+    const workoutPlanDisplayName = workoutPlan
+        ? cleanPlanName(workoutPlan.name) || 'AI Workout Plan'
+        : null;
+
+    // --- BMI input coercion from DB/user profile ---
+    const profileSafe = useMemo(() => {
+        const hRaw = userProfile?.height_cm;
+        const wRaw = userProfile?.weight_kg;
+
+        const heightNum =
+            typeof hRaw === 'string'
+                ? Number(hRaw)
+                : typeof hRaw === 'number'
+                  ? hRaw
+                  : undefined;
+
+        const weightNum =
+            typeof wRaw === 'string'
+                ? Number(wRaw)
+                : typeof wRaw === 'number'
+                  ? wRaw
+                  : undefined;
+
+        if (
+            typeof heightNum === 'number' &&
+            isFinite(heightNum) &&
+            heightNum > 0 &&
+            typeof weightNum === 'number' &&
+            isFinite(weightNum) &&
+            weightNum > 0
+        ) {
+            return { height_cm: heightNum, weight_kg: weightNum };
+        }
+        return undefined;
+    }, [userProfile?.height_cm, userProfile?.weight_kg]);
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+
+    // --- Meal previews for the nutrition board ---
+    const mealPreviewItems =
+        Array.isArray(mealEntryPreviews) && mealEntryPreviews.length > 0
+            ? mealEntryPreviews
+            : (todayLog?.items ??
+              (latestLog?.consumed_at === todayISO ? latestLog.items : []));
+
+    // --- Macro summaries from backend (fallback to zeros) ---
+    const macros = todayMacros ?? {
+        date: '',
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+    };
+
+    const perMeal: PerMealTotals = mealTotals ?? {
+        breakfast: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        lunch: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        dinner: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        snack: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        drink: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    };
+    const mealOrder = [
+        'breakfast',
+        'lunch',
+        'dinner',
+        'snack',
+        'drink',
+    ] as const;
+    const mealDistribution = mealOrder.map((mealType) => ({
+        label: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+        value: Math.round(perMeal[mealType].calories),
+        formattedValue: `${Math.round(perMeal[mealType].calories)} kcal`,
+        tone:
+            mealType === 'dinner' || mealType === 'lunch'
+                ? ('accent' as const)
+                : ('default' as const),
+    }));
+    const round = (n: number) => Math.round(n);
+
+    const startTodayWorkout = () => {
+        router.post(
+            '/workouts/log/start',
+            { workout_date: todayISO, workout_plan_day_id: null },
+            {
+                preserveScroll: true,
+                onSuccess: () => router.visit('/workouts/log'),
+            },
+        );
+    };
+
+    const proteinTarget = profileSafe
+        ? Math.max(110, Math.round(profileSafe.weight_kg * 1.8))
+        : 150;
+    const proteinRemaining = Math.max(0, proteinTarget - round(macros.protein));
+    const completedMealCount = mealOrder.filter(
+        (mealType) => perMeal[mealType].calories > 0,
+    ).length;
+    const loggedItemCount = mealPreviewItems.length;
+    const waterState = water ?? { today_ml: 0, target_ml: 2000 };
+    const waterProgress = Math.min(
+        100,
+        Math.round(
+            (waterState.today_ml / Math.max(1, waterState.target_ml)) * 100,
+        ),
+    );
+    const todayWorkoutDay =
+        workoutPlan?.days?.find((d) => d.day_index === 1) ??
+        workoutPlan?.days?.[0];
+    const todayNutritionDay =
+        nutritionPlan?.days?.find((d) => d.date === todayISO) ??
+        nutritionPlan?.days?.find((d) => d.day_index === 1) ??
+        nutritionPlan?.days?.[0];
+    const weightEntries = (weightHistory ?? [])
+        .filter((item) => item.type === 'weight')
+        .slice()
+        .sort((left, right) => (left.date > right.date ? 1 : -1));
+    const weightLogCount = weightEntries.length;
+    const dominantMeal = mealDistribution.reduce(
+        (best, current) => (current.value > best.value ? current : best),
+        mealDistribution[0],
+    );
+    const recentMealPreview = mealPreviewItems.slice(0, 4);
+    const latestWeightEntry =
+        weightEntries.length > 0
+            ? weightEntries[weightEntries.length - 1]
+            : null;
+
+    if (userRole === 'admin') {
+        return (
+            <>
+                <Head title="Admin Dashboard" />
+                <OptionalTwoFactorPrompt
+                    open={showOptionalTwoFactorPrompt}
+                    onDismiss={() => setShowOptionalTwoFactorPrompt(false)}
+                    requiresConfirmation={
+                        security?.requiresTwoFactorConfirmation ?? false
+                    }
+                />
+                <AdminDashboard />
+            </>
+        );
+    }
+
+    return (
+        <>
+            <Head title="Home" />
+            <OptionalTwoFactorPrompt
+                open={showOptionalTwoFactorPrompt}
+                onDismiss={() => setShowOptionalTwoFactorPrompt(false)}
+                requiresConfirmation={
+                    security?.requiresTwoFactorConfirmation ?? false
+                }
+            />
+
+            <ProductPageShell width="wide" className="px-1 sm:px-2 xl:px-3">
+                <div className="space-y-14 sm:space-y-16 lg:space-y-18 xl:space-y-20">
+                    <section className="haye-panel rounded-[40px] px-6 py-7 lg:px-8 lg:py-8">
+                        <h1 className="sr-only">Hayetak dashboard</h1>
+                        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+                            <div className="max-w-3xl">
+                                <h2
+                                    className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
+                                    style={{
+                                        fontFamily: 'var(--font-display)',
+                                    }}
+                                >
+                                    {isGuest
+                                        ? 'Preview the new Hayetak flow.'
+                                        : verificationArrival
+                                            ? `Verified and in, ${displayName}.`
+                                            : `Welcome back, ${displayName}.`}
+                                </h2>
+                                <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
+                                    {verificationArrival
+                                        ? `Account #${verificationArrival.account_id} finished verification${verificationArrival.verified_at ? ` ${new Date(verificationArrival.verified_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ' just now'}. Your dashboard is live and ready for the next step.`
+                                        : 'A tighter look at what needs attention now, what is already on track, and the fastest place to act next.'}
+                                </p>
+                                {verificationArrival ? (
+                                    <div className="mt-6 rounded-[28px] border border-emerald-500/25 bg-emerald-500/8 px-5 py-4 text-sm text-emerald-950 shadow-[0_24px_60px_-42px_rgba(16,185,129,0.65)] dark:text-emerald-100">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-white uppercase">
+                                                Just verified
+                                            </span>
+                                            <span className="font-semibold">
+                                                {verificationArrival.headline ??
+                                                    'Account verified'}
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 leading-6 text-emerald-900/85 dark:text-emerald-100/90">
+                                            {verificationArrival.message ??
+                                                'Your email is confirmed and you have landed on the dashboard successfully.'}
+                                        </p>
+                                    </div>
+                                ) : null}
+                                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                                    <QuickActionCard
+                                        title="Log meal"
+                                        description="Open the quick diary."
+                                        onClick={() =>
+                                            router.visit('/track-meals')
+                                        }
+                                    />
+                                    <QuickActionCard
+                                        title="Start lift"
+                                        description="Jump into the live log."
+                                        onClick={startTodayWorkout}
+                                    />
+                                    <QuickActionCard
+                                        title="Ask coach"
+                                        description="Pick up your latest thread."
+                                        onClick={() => router.visit('/coach')}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="dashboard-surface rounded-[32px] p-5 shadow-[0_28px_65px_-48px_rgba(15,23,42,0.65)]">
+
+
+                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                    <MetricPill
+                                        label="Meals logged"
+                                        value={`${completedMealCount}/${mealOrder.length}`}
+                                    />
+                                    <MetricPill
+                                        label="Hydration"
+                                        value={`${waterProgress}%`}
+                                    />
+                                    <MetricPill
+                                        label="Protein left"
+                                        value={`${proteinRemaining} g`}
+                                    />
+                                    <MetricPill
+                                        label="Workout mode"
+                                        value={
+                                            todayWorkoutDay
+                                                ? `${todayWorkoutDay.exercises.length} planned`
+                                                : 'Freestyle'
+                                        }
+                                    />
+                                </div>
+
+                                <div className="mt-5 space-y-3">
+                                    <div className="dashboard-surface-soft rounded-[24px] px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-sm font-medium text-foreground">
+                                                Nutrition
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                {todayNutritionDay
+                                                    ? `${todayNutritionDay.meals.length} planned blocks`
+                                                    : 'Plan not loaded'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="dashboard-surface-soft rounded-[24px] px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-sm font-medium text-foreground">
+                                                Latest weigh-in
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                {latestWeightEntry
+                                                    ? `${latestWeightEntry.value.toFixed(1)} kg on ${formatShortDate(latestWeightEntry.date)}`
+                                                    : 'No weight logged yet'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="dashboard-surface-soft rounded-[24px] px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-sm font-medium text-foreground">
+                                                Tracking depth
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                                {loggedItemCount} nutrition
+                                                entries and {weightLogCount}{' '}
+                                                weigh-ins
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section className="grid gap-14 xl:grid-cols-2">
+                        <CardSection
+                            title="AI coach"
+                            description="Your latest coaching thread and the fastest next action for today."
+                            actions={
+                                <ActionButton
+                                    variant="primary"
+                                    onClick={() => router.visit('/coach')}
+                                >
+                                    Open AI Coach
+                                </ActionButton>
+                            }
+                        >
+                            <div className="space-y-4">
+                                {coachSnapshot ? (
+                                    <div className="dashboard-surface rounded-[24px] p-4">
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {coachSnapshot.title}
+                                        </p>
+                                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                            {coachSnapshot.last_message_excerpt ??
+                                                'Your last coach reply is saved here and ready for follow-up.'}
+                                        </p>
+                                        <p className="mt-3 text-xs text-muted-foreground">
+                                            {coachSnapshot.last_message_at
+                                                ? `Updated ${new Date(
+                                                      coachSnapshot.last_message_at,
+                                                  ).toLocaleString()}`
+                                                : 'Updated recently'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-[24px] border border-dashed border-border/60 bg-background/55 p-4 text-sm text-muted-foreground">
+                                        No coach thread yet. Start one question
+                                        and the coach will keep your follow-ups
+                                        in the same conversation.
+                                    </div>
+                                )}
+                            </div>
+                        </CardSection>
+
+                        <CardSection
+                            // title="Planner result"
+                            title="AI Planner"
+                            description="Clear status for your active AI nutrition and workout plans."
+                            actions={
+                                <>
+                                    <ActionButton
+                                        variant="primary"
+                                        onClick={() =>
+                                            router.visit('/ai/planner')
+                                        }
+                                    >
+                                        Open Planner
+                                    </ActionButton>
+                                    <ActionButton
+                                        variant="secondary"
+                                        onClick={() =>
+                                            router.visit('/workouts/log')
+                                        }
+                                    >
+                                        Log Workout
+                                    </ActionButton>
+                                </>
+                            }
+                        >
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="dashboard-surface rounded-[24px] p-4">
+                                    <p className="haye-kicker">
+                                        Nutrition plan
+                                    </p>
+                                    <p className="mt-2 text-xl font-semibold text-foreground">
+                                        {nutritionPlan ? 'Ready' : 'Not ready'}
+                                    </p>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        {nutritionPlan
+                                            ? `${nutritionPlanDisplayName} is active for your meal tracking.`
+                                            : 'Generate a plan to unlock guided meal follow mode.'}
+                                    </p>
+                                </div>
+                                <div className="dashboard-surface rounded-[24px] p-4">
+                                    <p className="haye-kicker">Workout plan</p>
+                                    <p className="mt-2 text-xl font-semibold text-foreground">
+                                        {workoutPlan ? 'Ready' : 'Not ready'}
+                                    </p>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        {workoutPlan
+                                            ? `${workoutPlanDisplayName} is ready for day-by-day logging.`
+                                            : 'Generate a plan to get guided workout days.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardSection>
+                    </section>
+
+                    {/* title="Predictor vs Actual trend" */}
+                    <CardSection
+                        title="Today's nutrition board"
+                        description="A broad daily snapshot so you can scan nutrition fast without recreating the full meal tracker."
+                        actions={
+                            <ActionButton
+                                variant="primary"
+                                onClick={() => router.visit('/track-meals')}
+                            >
+                                Open Meal Tracker
+                            </ActionButton>
+                        }
+                    >
+                        <div className="grid gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.95fr)]">
+                            <div className="space-y-4">
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                    <NutritionQuickStatCard
+                                        label="Calories"
+                                        value={`${round(macros.calories)} kcal`}
+                                        detail="Today's total intake"
+                                    />
+                                    <NutritionQuickStatCard
+                                        label="Meals hit"
+                                        value={`${completedMealCount}/${mealOrder.length}`}
+                                        detail="Meal blocks with calories"
+                                    />
+                                    <NutritionQuickStatCard
+                                        label="Protein left"
+                                        value={`${proteinRemaining} g`}
+                                        detail="Estimated remaining target"
+                                    />
+                                    <NutritionQuickStatCard
+                                        label="Plan status"
+                                        value={
+                                            todayNutritionDay
+                                                ? `${todayNutritionDay.meals.length} blocks ready`
+                                                : 'Quick log mode'
+                                        }
+                                        detail={
+                                            todayNutritionDay
+                                                ? 'Today has a mapped plan.'
+                                                : 'No active plan day loaded.'
+                                        }
+                                    />
+                                </div>
+
+                                <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(240px,0.8fr)]">
+                                    <div className="dashboard-surface rounded-[26px] p-5">
+                                        <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                            What stands out today
+                                        </h3>
+
+                                        <div className="mt-4 space-y-3">
+                                            <div className="dashboard-surface-soft rounded-[22px] px-4 py-3 text-sm text-foreground">
+                                                {loggedItemCount === 0
+                                                    ? 'Nothing is logged yet today, so this board will widen as soon as your first entry lands.'
+                                                    : `You have logged ${loggedItemCount} entries across ${completedMealCount} meal block${completedMealCount === 1 ? '' : 's'}.`}
+                                            </div>
+                                            <div className="dashboard-surface-soft rounded-[22px] px-4 py-3 text-sm text-foreground">
+                                                {dominantMeal.value > 0
+                                                    ? `${dominantMeal.label} is carrying the most calories so far at ${dominantMeal.formattedValue}.`
+                                                    : 'Calories are still open across the day, so the board is waiting for a stronger pattern.'}
+                                            </div>
+                                            <div className="dashboard-surface-soft rounded-[22px] px-4 py-3 text-sm text-foreground">
+                                                {proteinRemaining > 0
+                                                    ? `Protein is still the biggest gap, with about ${proteinRemaining} g remaining.`
+                                                    : 'Protein target looks covered for the day.'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="dashboard-surface rounded-[26px] p-5">
+                                        <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                            Latest logged foods
+                                        </h3>
+                                        <div className="mt-4 space-y-2">
+                                            {recentMealPreview.length > 0 ? (
+                                                recentMealPreview.map(
+                                                    (entry, index) => (
+                                                        <div
+                                                            key={`${entry.label}-${index}`}
+                                                            className="dashboard-surface-soft rounded-[20px] px-3 py-3"
+                                                        >
+                                                            <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                                                                {entry.category}
+                                                            </div>
+                                                            <div className="mt-1 text-sm font-medium text-foreground">
+                                                                {entry.label}
+                                                            </div>
+                                                        </div>
+                                                    ),
+                                                )
+                                            ) : (
+                                                <div className="rounded-[20px] border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+                                                    No entries yet. The detailed
+                                                    meal tracker is still one
+                                                    tap away when you want it.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-4">
+                                <NutritionMacroSnapshotCard
+                                    protein={round(macros.protein)}
+                                    carbs={round(macros.carbs)}
+                                    fat={round(macros.fat)}
+                                    proteinRemaining={proteinRemaining}
+                                />
+                                <CalorieDistributionGraphCard
+                                    title="Calorie distribution"
+                                    description="Where today's calories are concentrated."
+                                    items={mealDistribution}
+                                />
+                            </div>
+                        </div>
+                    </CardSection>
+                    {/* BMI + Water */}
+                    <section
+                        aria-label="Health stats"
+                        className="grid grid-cols-1 gap-14 md:grid-cols-2"
+                    >
+                        <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
+                            
+                            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                                BMI
+                            </h2>
+                            <div className="mt-4">
+                                <BmiCard
+                                    isGuest={isGuest}
+                                    profile={profileSafe}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
+                            
+                            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+                                Water intake
+                            </h2>
+                            <div className="mt-4">
+                                <WaterCard
+                                    isGuest={isGuest}
+                                    water={
+                                        water ?? {
+                                            today_ml: 0,
+                                            target_ml: 2000,
+                                        }
+                                    }
+                                    onQuickAdd={(ml: number) =>
+                                        router.post(
+                                            '/water',
+                                            { ml },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Progress */}
+                    <CardSection
+                        title="Progress center"
+                        description="One graph, three views: body weight, height, and gym output."
+                        actions={
+                            <>
+                                <ActionButton  
+                                    variant="primary"
+                                    onClick={startTodayWorkout}
+                                >
+                                    Start Today's Workout
+                                </ActionButton>
+                                <ActionButton
+                                    variant="secondary"
+                                    onClick={() => router.visit('/profile')}
+                                >
+                                    Add Measurements
+                                </ActionButton>
+                                <ActionButton
+                                    variant="soft"
+                                    onClick={() =>
+                                        router.visit('/workouts/log')
+                                    }
+                                >
+                                    Open Workout Log
+                                </ActionButton>
+                            </>
+                        }
+                        aria-labelledby="log-workouts"
+                    >
+                        <ProgressCenterCard
+                            weightHistory={weightHistory}
+                            heightHistory={heightHistory}
+                            weeks={12}
+                        />
+                    </CardSection>
+                </div>
+            </ProductPageShell>
+        </>
+    );
+}
+
+function chartPointsFromMeasurements(
+    measurements: Measurement[] | undefined,
+    metric: 'weight' | 'height',
+): ChartPoint[] {
+    const safe = Array.isArray(measurements) ? measurements : [];
+    return safe
+        .filter((item) => item.type === metric && Number.isFinite(item.value))
+        .slice()
+        .sort((a, b) => (a.date > b.date ? 1 : -1))
+        .map((item) => ({
+            xLabel: item.date,
+            xValue: isoDateToAxisValue(item.date),
+            yValue: item.value,
+        }));
+}
+
+function formatTrendChange(points: ChartPoint[], unit: string): string {
+    if (points.length < 2) return 'N/A';
+    const first = points[0];
+    const last = points[points.length - 1];
+    const delta = last.yValue - first.yValue;
+    return `${delta > 0 ? '+' : ''}${delta.toFixed(1)}${unit}`;
+}
+
+function NutritionQuickStatCard({
+    label,
+    value,
+    detail,
+}: {
+    label: string;
+    value: string;
+    detail: string;
+}) {
+    return (
+        <div className="dashboard-surface-soft rounded-[24px] p-4">
+            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+                {value}
+            </div>
+            <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                {detail}
+            </div>
+        </div>
+    );
+}
+
+function NutritionMacroSnapshotCard({
+    protein,
+    carbs,
+    fat,
+    proteinRemaining,
+}: {
+    protein: number;
+    carbs: number;
+    fat: number;
+    proteinRemaining: number;
+}) {
+    const macroItems = [
+        { label: 'Protein', value: `${protein} g` },
+        { label: 'Carbs', value: `${carbs} g` },
+        { label: 'Fat', value: `${fat} g` },
+    ];
+
+    return (
+        <div className="dashboard-surface rounded-[26px] p-5">
+            <div className="haye-kicker">Nutrition focus</div>
+            <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                Macro snapshot
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                The three main macro buckets, without the extra cadence chart.
+            </p>
+
+            <div className="mt-5 space-y-3">
+                {macroItems.map((item) => (
+                    <div
+                        key={item.label}
+                        className="dashboard-surface-soft flex items-center justify-between gap-3 rounded-[20px] px-4 py-3"
+                    >
+                        <span className="text-sm font-medium text-foreground">
+                            {item.label}
+                        </span>
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                            {item.value}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="dashboard-surface-soft mt-4 rounded-[20px] px-4 py-3 text-sm text-foreground">
+                {proteinRemaining > 0
+                    ? `${proteinRemaining} g of protein is still open today.`
+                    : 'Protein target is already covered for today.'}
+            </div>
+        </div>
+    );
+}
+
+function CalorieDistributionGraphCard({
+    title,
+    description,
+    items,
+}: {
+    title: string;
+    description: string;
+    items: Array<{
+        label: string;
+        value: number;
+        formattedValue: string;
+    }>;
+}) {
+    const totalValue = items.reduce((sum, item) => sum + item.value, 0);
+    const radius = 78;
+    const strokeWidth = 18;
+    const size = 190;
+    const center = size / 2;
+    const circumference = 2 * Math.PI * radius;
+    const toneForLabel = (label: string) => {
+        const map: Record<string, string> = {
+            Breakfast:
+                'color-mix(in oklab, var(--palette-primary-400) 88%, white 12%)',
+            Lunch: 'color-mix(in oklab, var(--info) 88%, white 12%)',
+            Dinner: 'color-mix(in oklab, var(--warning) 90%, white 10%)',
+            Snack: 'color-mix(in oklab, var(--destructive) 90%, white 10%)',
+            Drink: 'color-mix(in oklab, var(--success) 88%, white 12%)',
+        };
+
+        return map[label] ?? 'var(--foreground)';
+    };
+    let offsetCursor = 0;
+    const segments = items.map((item) => {
+        const ratio = totalValue > 0 ? item.value / totalValue : 0;
+        const segment = {
+            ...item,
+            ratio,
+            color: toneForLabel(item.label),
+            dashArray: `${Math.max(ratio * circumference, 0)} ${circumference}`,
+            dashOffset: -offsetCursor,
+        };
+        offsetCursor += ratio * circumference;
+        return segment;
+    });
+
+    return (
+        <div className="dashboard-surface rounded-[26px] p-5">
+            <div className="haye-kicker">Nutrition graph</div>
+            <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                {title}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {description}
+            </p>
+
+            <div className="mt-5 grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-center">
+                <div className="flex flex-col items-center justify-center gap-3">
+                    <svg
+                        viewBox={`0 0 ${size} ${size}`}
+                        role="img"
+                        aria-label="Calorie distribution donut chart"
+                        className="h-[190px] w-[190px]"
+                    >
+                        <circle
+                            cx={center}
+                            cy={center}
+                            r={radius}
+                            fill="none"
+                            stroke="color-mix(in oklab, var(--border) 74%, transparent)"
+                            strokeWidth={strokeWidth}
+                        />
+                        {segments.map((segment) => (
+                            <circle
+                                key={segment.label}
+                                cx={center}
+                                cy={center}
+                                r={radius}
+                                fill="none"
+                                stroke={segment.color}
+                                strokeWidth={strokeWidth}
+                                strokeLinecap="round"
+                                strokeDasharray={segment.dashArray}
+                                strokeDashoffset={segment.dashOffset}
+                                transform={`rotate(-90 ${center} ${center})`}
+                            />
+                        ))}
+                    </svg>
+                    <div className="text-center">
+                        <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                            Total calories
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-foreground">
+                            {Math.round(totalValue)} kcal
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    {segments.map((segment) => (
+                        <div
+                            key={segment.label}
+                            className="dashboard-surface-soft flex items-center justify-between gap-3 rounded-[20px] px-4 py-3"
+                        >
+                            <div className="flex min-w-0 items-center gap-3">
+                                <span
+                                    className="h-3 w-3 shrink-0 rounded-full"
+                                    style={{ backgroundColor: segment.color }}
+                                />
+                                <span className="truncate text-sm font-medium text-foreground">
+                                    {segment.label}
+                                </span>
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground tabular-nums">
+                                {segment.formattedValue}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ProgressCenterCard({
+    weightHistory,
+    heightHistory,
+    weeks,
+}: {
+    weightHistory?: Measurement[];
+    heightHistory?: Measurement[];
+    weeks: number;
+}) {
+    const [view, setView] = useState<ProgressViewMode>('weight');
+    const [gymSeries, setGymSeries] = useState<WeeklyWorkoutContext[]>([]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch(`/workouts/progress?weeks=${weeks}`, {
+            signal: controller.signal,
+        })
+            .then((response) => response.json())
+            .then((payload) =>
+                setGymSeries(
+                    Array.isArray(payload?.weekly_context)
+                        ? payload.weekly_context
+                        : [],
+                ),
+            )
+            .catch(() => setGymSeries([]));
+
+        return () => controller.abort();
+    }, [weeks]);
+
+    const weightPoints = useMemo(
+        () => chartPointsFromMeasurements(weightHistory, 'weight'),
+        [weightHistory],
+    );
+    const heightPoints = useMemo(
+        () => chartPointsFromMeasurements(heightHistory, 'height'),
+        [heightHistory],
+    );
+    const gymPoints = useMemo<ChartPoint[]>(
+        () =>
+            gymSeries.map((row, index) => ({
+                xLabel: row.week,
+                xValue: index,
+                yValue: row.top_set_kg,
+            })),
+        [gymSeries],
+    );
+
+    const activeConfig = useMemo(() => {
+        const latestWeight = weightPoints[weightPoints.length - 1];
+        const latestHeight = heightPoints[heightPoints.length - 1];
+        const latestGym = gymSeries[gymSeries.length - 1];
+        const firstGym = gymSeries[0];
+        const gymDelta =
+            latestGym && firstGym
+                ? latestGym.top_set_kg - firstGym.top_set_kg
+                : null;
+
+        const configs: Record<
+            ProgressViewMode,
+            {
+                title: string;
+                helper: string;
+                points: ChartPoint[];
+                seriesColor: string;
+                ySuffix: string;
+                xAxisLabel: string;
+                yAxisLabel: string;
+                emptyBody: string;
+                pills: Array<{ label: string; value: string }>;
+            }
+        > = {
+            weight: {
+                title: 'Weight progress',
+                helper: 'Every logged body-weight check-in stays on this graph so shifts are easy to spot.',
+                points: weightPoints,
+                seriesColor: 'color-mix(in oklab, var(--info) 86%, white 14%)',
+                ySuffix: ' kg',
+                xAxisLabel: 'Check-in date',
+                yAxisLabel: 'Weight (kg)',
+                emptyBody:
+                    'Log at least two weight entries from Profile to unlock this trend.',
+                pills: [
+                    {
+                        label: 'Latest',
+                        value: latestWeight
+                            ? `${latestWeight.yValue.toFixed(1)} kg`
+                            : 'N/A',
+                    },
+                    {
+                        label: 'Change',
+                        value: formatTrendChange(weightPoints, ' kg'),
+                    },
+                    {
+                        label: 'Entries',
+                        value: String(weightPoints.length),
+                    },
+                    {
+                        label: 'Last check-in',
+                        value: latestWeight
+                            ? formatShortDate(latestWeight.xLabel)
+                            : 'N/A',
+                    },
+                ],
+            },
+            height: {
+                title: 'Height progress',
+                helper: 'Height stays available here when you want a clean history without opening profile details.',
+                points: heightPoints,
+                seriesColor:
+                    'color-mix(in oklab, var(--warning) 84%, white 16%)',
+                ySuffix: ' cm',
+                xAxisLabel: 'Measurement date',
+                yAxisLabel: 'Height (cm)',
+                emptyBody:
+                    'Log at least two height entries from Profile to unlock this trend.',
+                pills: [
+                    {
+                        label: 'Latest',
+                        value: latestHeight
+                            ? `${latestHeight.yValue.toFixed(1)} cm`
+                            : 'N/A',
+                    },
+                    {
+                        label: 'Change',
+                        value: formatTrendChange(heightPoints, ' cm'),
+                    },
+                    {
+                        label: 'Entries',
+                        value: String(heightPoints.length),
+                    },
+                    {
+                        label: 'Last check-in',
+                        value: latestHeight
+                            ? formatShortDate(latestHeight.xLabel)
+                            : 'N/A',
+                    },
+                ],
+            },
+            gym: {
+                title: 'Gym progress',
+                helper: 'Weekly top-set load is paired with your latest reps, volume, and workout count.',
+                points: gymPoints,
+                seriesColor:
+                    'color-mix(in oklab, var(--success) 82%, white 18%)',
+                ySuffix: ' kg',
+                xAxisLabel: 'Training week',
+                yAxisLabel: 'Top set load (kg)',
+                emptyBody:
+                    'Log at least two weeks of workouts to see your gym progress trend.',
+                pills: [
+                    {
+                        label: 'Latest top set',
+                        value: latestGym
+                            ? `${latestGym.top_set_kg.toFixed(1)} kg`
+                            : 'N/A',
+                    },
+                    {
+                        label: 'Avg reps',
+                        value: latestGym
+                            ? `${latestGym.avg_reps.toFixed(1)}`
+                            : 'N/A',
+                    },
+                    {
+                        label: 'Volume',
+                        value: latestGym
+                            ? `${Math.round(latestGym.total_volume_kg)} kg`
+                            : 'N/A',
+                    },
+                    {
+                        label: 'Top-set change',
+                        value:
+                            gymDelta === null
+                                ? 'N/A'
+                                : `${gymDelta > 0 ? '+' : ''}${gymDelta.toFixed(1)} kg`,
+                    },
+                ],
+            },
+        };
+
+        return configs[view];
+    }, [gymPoints, gymSeries, heightPoints, view, weightPoints]);
+
+    const options: Array<{ id: ProgressViewMode; label: string }> = [
+        { id: 'weight', label: 'Weight' },
+        { id: 'height', label: 'Height' },
+        { id: 'gym', label: 'Gym' },
+    ];
+
+    return (
+        <div className="dashboard-surface rounded-[28px] p-5 lg:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+                        {activeConfig.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {activeConfig.helper}
+                    </p>
+                </div>
+                <div className="inline-flex rounded-full border border-border/70 bg-card p-1 text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                    {options.map((option) => (
+                        <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setView(option.id)}
+                            className={`rounded-full px-3 py-1 font-semibold transition ${view === option.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {activeConfig.pills.map((pill) => (
+                    <MetricPill
+                        key={`${view}-${pill.label}`}
+                        label={pill.label}
+                        value={pill.value}
+                    />
+                ))}
+            </div>
+
+            <div className="mt-5">
+                {activeConfig.points.length >= 2 ? (
+                    <SimpleLineChart
+                        title={activeConfig.title}
+                        points={activeConfig.points}
+                        ySuffix={activeConfig.ySuffix}
+                        xAxisLabel={activeConfig.xAxisLabel}
+                        yAxisLabel={activeConfig.yAxisLabel}
+                        seriesColor={activeConfig.seriesColor}
+                    />
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        {activeConfig.emptyBody}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="dashboard-surface-soft rounded-lg px-3 py-2">
+            <div className="text-[11px] tracking-wide text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-foreground tabular-nums">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function SimpleLineChart({
+    title,
+    points,
+    ySuffix,
+    xAxisLabel = 'Date',
+    yAxisLabel = 'Value',
+    seriesColor = 'color-mix(in oklab, var(--primary) 82%, white 18%)',
+}: {
+    title: string;
+    points: ChartPoint[];
+    ySuffix: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
+    seriesColor?: string;
+}) {
+    const width = 720;
+    const height = 240;
+    const padLeft = 56;
+    const padRight = 20;
+    const padTop = 18;
+    const padBottom = 72;
+
+    const xs = points.map((point) => point.xValue);
+    const ys = points.map((point) => point.yValue);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+
+    const toX = (x: number) =>
+        padLeft + ((x - minX) / spanX) * (width - padLeft - padRight);
+    const toY = (y: number) =>
+        height -
+        padBottom -
+        ((y - minY) / spanY) * (height - padTop - padBottom);
+
+    const d = points
+        .map(
+            (point, index) =>
+                `${index === 0 ? 'M' : 'L'} ${toX(point.xValue)} ${toY(point.yValue)}`,
+        )
+        .join(' ');
+
+    const yTicks = Array.from({ length: 5 }, (_, tickIndex) => {
+        const ratio = tickIndex / 4;
+        const value = maxY - ratio * spanY;
+        return {
+            y: toY(value),
+            label: `${value.toFixed(1)}${ySuffix}`,
+        };
+    });
+
+    const xLabelStep = Math.max(1, Math.ceil(points.length / 6));
+    const xTicks = points
+        .map((point, index) => ({
+            index,
+            x: toX(point.xValue),
+            label: compactAxisDateLabel(point.xLabel),
+        }))
+        .filter(
+            (tick) =>
+                tick.index % xLabelStep === 0 ||
+                tick.index === points.length - 1,
+        );
+
+    return (
+        <div>
+            <div className="overflow-x-auto">
+                <svg
+                    viewBox={`0 0 ${width} ${height}`}
+                    role="img"
+                    aria-label={`${title} line chart`}
+                    className="h-[240px] w-full min-w-[560px]"
+                >
+                    {yTicks.map((tick, tickIndex) => (
+                        <g key={`y-axis-tick-${tickIndex}`}>
+                            <line
+                                x1={padLeft}
+                                y1={tick.y}
+                                x2={width - padRight}
+                                y2={tick.y}
+                                stroke="var(--border)"
+                                strokeWidth="1"
+                                strokeDasharray="4 4"
+                            />
+                            <text
+                                x={padLeft - 8}
+                                y={tick.y + 4}
+                                textAnchor="end"
+                                fontSize="11"
+                                fill="var(--muted-foreground)"
+                            >
+                                {tick.label}
+                            </text>
+                        </g>
+                    ))}
+
+                    {xTicks.map((tick) => (
+                        <g key={`x-axis-tick-${tick.index}`}>
+                            <line
+                                x1={tick.x}
+                                y1={height - padBottom}
+                                x2={tick.x}
+                                y2={height - padBottom + 4}
+                                stroke="var(--border)"
+                                strokeWidth="1"
+                            />
+                            <text
+                                x={tick.x}
+                                y={height - padBottom + 24}
+                                textAnchor="end"
+                                fontSize="11"
+                                fill="var(--muted-foreground)"
+                                transform={`rotate(-28 ${tick.x} ${height - padBottom + 24})`}
+                            >
+                                {tick.label}
+                            </text>
+                        </g>
+                    ))}
+
+                    <line
+                        x1={padLeft}
+                        y1={padTop}
+                        x2={padLeft}
+                        y2={height - padBottom}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <line
+                        x1={padLeft}
+                        y1={height - padBottom}
+                        x2={width - padRight}
+                        y2={height - padBottom}
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                    />
+                    <path
+                        d={d}
+                        fill="none"
+                        stroke={seriesColor}
+                        strokeWidth="2.5"
+                    />
+                    {points.map((point, index) => (
+                        <circle
+                            key={`${point.xLabel}-${index}`}
+                            cx={toX(point.xValue)}
+                            cy={toY(point.yValue)}
+                            r={3.25}
+                            fill={seriesColor}
+                        />
+                    ))}
+                    <text
+                        x={padLeft - 44}
+                        y={padTop - 2}
+                        fontSize="11"
+                        fill="var(--muted-foreground)"
+                    >
+                        {yAxisLabel}
+                    </text>
+                    <text
+                        x={width - padRight}
+                        y={height - 10}
+                        textAnchor="end"
+                        fontSize="11"
+                        fill="var(--muted-foreground)"
+                    >
+                        {xAxisLabel}
+                    </text>
+                </svg>
+            </div>
+        </div>
+    );
+}
+
+// title="Predictor vs Actual trend"
+export function PredictorVsActualCard({
+    trend,
+    weighIns,
+}: {
+    trend: PredictionTrendPoint[];
+    weighIns: Measurement[];
+}) {
+    const rows = useMemo(
+        () =>
+            [...trend].sort((left, right) =>
+                left.feedback_period_end_date > right.feedback_period_end_date
+                    ? 1
+                    : -1,
+            ),
+        [trend],
+    );
+    const weightPoints = useMemo(
+        () => chartPointsFromMeasurements(weighIns, 'weight'),
+        [weighIns],
+    );
+    const rowsWithFeedback = useMemo(
+        () =>
+            rows.map((row) => ({
+                ...row,
+                dateKey: row.feedback_period_end_date,
+                xValue: isoDateToAxisValue(row.feedback_period_end_date),
+                feedback_unlocked:
+                    weightPoints.filter(
+                        (point) =>
+                            point.xValue <=
+                            isoDateToAxisValue(row.feedback_period_end_date),
+                    ).length >= 2,
+            })),
+        [rows, weightPoints],
+    );
+    const currentMonthKey = monthKeyFromDate(new Date());
+    const currentWeekKey = weekKeyFromDate(new Date());
+    const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+    const monthOptions = useMemo(() => {
+        const keys = Array.from(
+            new Set([
+                ...rowsWithFeedback.map((row) => monthKeyFromIso(row.dateKey)),
+                ...weightPoints.map((point) => monthKeyFromIso(point.xLabel)),
+            ]),
+        ).sort();
+
+        return keys.map((key) => ({
+            value: key,
+            label: formatMonthKeyLabel(key),
+        }));
+    }, [rowsWithFeedback, weightPoints]);
+    const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all');
+
+    useEffect(() => {
+        if (monthOptions.length === 0) {
+            setSelectedMonthKey('all');
+            return;
+        }
+
+        setSelectedMonthKey((current) => {
+            if (
+                current !== 'all' &&
+                monthOptions.some((option) => option.value === current)
+            ) {
+                return current;
+            }
+
+            if (
+                monthOptions.some((option) => option.value === currentMonthKey)
+            ) {
+                return currentMonthKey;
+            }
+
+            return monthOptions[monthOptions.length - 1]?.value ?? 'all';
+        });
+    }, [currentMonthKey, monthOptions]);
+
+    const weekOptions = useMemo(() => {
+        const filteredRows =
+            selectedMonthKey === 'all'
+                ? rowsWithFeedback
+                : rowsWithFeedback.filter(
+                      (row) =>
+                          monthKeyFromIso(row.dateKey) === selectedMonthKey,
+                  );
+        const filteredWeights =
+            selectedMonthKey === 'all'
+                ? weightPoints
+                : weightPoints.filter(
+                      (point) =>
+                          monthKeyFromIso(point.xLabel) === selectedMonthKey,
+                  );
+
+        const keys = Array.from(
+            new Set([
+                ...filteredRows.map((row) => weekKeyFromIso(row.dateKey)),
+                ...filteredWeights.map((point) => weekKeyFromIso(point.xLabel)),
+            ]),
+        ).sort();
+
+        return keys.map((key) => ({
+            value: key,
+            label: formatWeekKeyLabel(key),
+        }));
+    }, [rowsWithFeedback, selectedMonthKey, weightPoints]);
+    const [selectedWeekKey, setSelectedWeekKey] = useState<string>('all');
+
+    useEffect(() => {
+        if (weekOptions.length === 0) {
+            setSelectedWeekKey('all');
+            return;
+        }
+
+        setSelectedWeekKey((current) => {
+            if (
+                current !== 'all' &&
+                weekOptions.some((option) => option.value === current)
+            ) {
+                return current;
+            }
+
+            if (weekOptions.some((option) => option.value === currentWeekKey)) {
+                return currentWeekKey;
+            }
+
+            return weekOptions[weekOptions.length - 1]?.value ?? 'all';
+        });
+    }, [currentWeekKey, weekOptions]);
+
+    if (rowsWithFeedback.length === 0 && weightPoints.length < 2) {
+        return (
+            <p className="text-sm text-muted-foreground">
+                Keep logging plans and weigh-ins to unlock this shared
+                prediction timeline.
+            </p>
+        );
+    }
+
+    const visibleRows = rowsWithFeedback.filter((row) => {
+        const monthMatch =
+            selectedMonthKey === 'all' ||
+            monthKeyFromIso(row.dateKey) === selectedMonthKey;
+        const weekMatch =
+            viewMode !== 'week' ||
+            selectedWeekKey === 'all' ||
+            weekKeyFromIso(row.dateKey) === selectedWeekKey;
+
+        return monthMatch && weekMatch;
+    });
+    const visibleWeightPoints = weightPoints.filter((point) => {
+        const monthMatch =
+            selectedMonthKey === 'all' ||
+            monthKeyFromIso(point.xLabel) === selectedMonthKey;
+        const weekMatch =
+            viewMode !== 'week' ||
+            selectedWeekKey === 'all' ||
+            weekKeyFromIso(point.xLabel) === selectedWeekKey;
+
+        return monthMatch && weekMatch;
+    });
+
+    const width = 860;
+    const height = 300;
+    const padLeft = 60;
+    const padRight = 20;
+    const padTop = 18;
+    const padBottom = 72;
+
+    const actualSeries = visibleWeightPoints.map((point) => ({
+        xValue: point.xValue,
+        yValue: point.yValue,
+    }));
+
+    const chartValues = actualSeries
+        .map((point) => point.yValue)
+        .filter((value): value is number => typeof value === 'number');
+
+    if (chartValues.length === 0) {
+        return (
+            <p className="text-sm text-muted-foreground">
+                No prediction points or weigh-ins were logged in this selected{' '}
+                {viewMode}.
+            </p>
+        );
+    }
+
+    const allXValues = actualSeries
+        .map((point) => point.xValue)
+        .filter((value) => Number.isFinite(value));
+    const minX = Math.min(...allXValues);
+    const maxX = Math.max(...allXValues);
+    const spanX = Math.max(1, maxX - minX);
+
+    const rawMinY = Math.min(...chartValues);
+    const rawMaxY = Math.max(...chartValues);
+    const minY = rawMinY - 0.35;
+    const maxY = rawMaxY + 0.35;
+    const spanY = Math.max(1, maxY - minY);
+
+    const toX = (value: number) =>
+        padLeft + ((value - minX) / spanX) * (width - padLeft - padRight);
+    const toY = (value: number) =>
+        height -
+        padBottom -
+        ((value - minY) / spanY) * (height - padTop - padBottom);
+
+    const buildSegmentedPaths = (
+        values: Array<{ xValue: number; yValue: number | null }>,
+    ): string[] => {
+        const segments: string[] = [];
+        let currentSegment = '';
+
+        values.forEach((value) => {
+            if (typeof value.yValue !== 'number') {
+                if (currentSegment !== '') {
+                    segments.push(currentSegment.trim());
+                    currentSegment = '';
+                }
+                return;
+            }
+
+            const command = currentSegment === '' ? 'M' : 'L';
+            currentSegment += `${command} ${toX(value.xValue)} ${toY(value.yValue)} `;
+        });
+
+        if (currentSegment !== '') {
+            segments.push(currentSegment.trim());
+        }
+
+        return segments;
+    };
+
+    const actualPaths = buildSegmentedPaths(actualSeries);
+
+    const yTicks = Array.from({ length: 5 }, (_, tickIndex) => {
+        const ratio = tickIndex / 4;
+        const value = maxY - ratio * spanY;
+        return {
+            y: toY(value),
+            label: `${value.toFixed(1)} kg`,
+        };
+    });
+
+    const xTickValues = Array.from(new Set(allXValues))
+        .sort((left, right) => left - right)
+        .map((value) => ({
+            x: toX(value),
+            value,
+            label: formatShortDate(new Date(value).toISOString().slice(0, 10)),
+        }));
+    const xLabelStep = Math.max(1, Math.ceil(xTickValues.length / 6));
+    const xTicks = xTickValues.filter(
+        (tick, index) =>
+            index % xLabelStep === 0 || index === xTickValues.length - 1,
+    );
+
+=======
 
 // Plan types (from HomeController props)
 type FoodLite = {
@@ -1881,6 +3739,7 @@ function PredictorVsActualCard({
             index % xLabelStep === 0 || index === xTickValues.length - 1,
     );
 
+>>>>>>> origin/main
     const latestPrediction =
         visibleRows[visibleRows.length - 1] ??
         rowsWithFeedback[rowsWithFeedback.length - 1];

@@ -27,6 +27,8 @@ use App\Support\Ai\AiContextSyncDispatcher;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 
@@ -45,6 +47,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        VerifyEmail::createUrlUsing(function (object $notifiable): string {
+            return URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(60),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ],
+            );
+        });
+
         Gate::policy(DietPlan::class, DietPlanPolicy::class);
         Gate::policy(TrainerWorkoutPlan::class, TrainerWorkoutPlanPolicy::class);
         Gate::policy(TrainerProgressNote::class, TrainerProgressNotePolicy::class);

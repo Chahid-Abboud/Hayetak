@@ -1,7 +1,11 @@
+<<<<<<< HEAD
+import AppWordmark from '@/components/app-wordmark';
+=======
 import AppLogoIcon from '@/components/app-logo-icon';
 import CommandPalette, {
     type CommandPaletteItem,
 } from '@/components/command-palette';
+>>>>>>> origin/main
 import NotificationBell from '@/components/NotificationBell';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -11,6 +15,19 @@ import {
     Bell,
     CalendarDays,
     ClipboardCheck,
+<<<<<<< HEAD
+    FileSearch,
+    Dumbbell,
+    LayoutDashboard,
+    LogOut,
+    MapPin,
+    Menu,
+    MessageSquare,
+    ShieldAlert,
+    ShieldCheck,
+    Sparkles,
+    Stethoscope,
+=======
     Dumbbell,
     HeartPulse,
     LayoutDashboard,
@@ -24,6 +41,7 @@ import {
     ShieldCheck,
     Sparkles,
     UserRound,
+>>>>>>> origin/main
     Users,
     UtensilsCrossed,
     type LucideIcon,
@@ -142,7 +160,10 @@ function ShellSidebar({
     primaryNav,
     secondaryGroups,
     homeHref,
+<<<<<<< HEAD
+=======
     onOpenPalette,
+>>>>>>> origin/main
     onLogout,
     onNavigate,
     mobile,
@@ -154,7 +175,10 @@ function ShellSidebar({
     primaryNav: NavItem[];
     secondaryGroups: NavGroup[];
     homeHref: string;
+<<<<<<< HEAD
+=======
     onOpenPalette: () => void;
+>>>>>>> origin/main
     onLogout: () => void;
     onNavigate?: () => void;
     mobile?: boolean;
@@ -173,6 +197,16 @@ function ShellSidebar({
                     <Link
                         href={homeHref}
                         onClick={onNavigate}
+<<<<<<< HEAD
+                        className="flex min-w-0 items-center no-underline"
+                    >
+                        <span className="min-w-0">
+                            <AppWordmark
+                                className="max-w-full"
+                                iconClassName="size-[2.2rem]"
+                                textClassName="block truncate text-[1.52rem] text-[color:var(--sidebar-foreground)]"
+                            />
+=======
                         className="flex min-w-0 items-center gap-3 no-underline"
                     >
                         <AppLogoIcon className="h-8 w-8" />
@@ -183,12 +217,15 @@ function ShellSidebar({
                             >
                                 Hayetak
                             </span>
+>>>>>>> origin/main
                             <span className="mt-0.5 block text-[10px] font-semibold tracking-[0.22em] text-[color:var(--sidebar-foreground)]/56 uppercase">
                                 Daily health system
                             </span>
                         </span>
                     </Link>
                 </div>
+<<<<<<< HEAD
+=======
 
                 <button
                     type="button"
@@ -206,6 +243,7 @@ function ShellSidebar({
                         Ctrl K
                     </span>
                 </button>
+>>>>>>> origin/main
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-4">
@@ -311,7 +349,10 @@ export function AppProductShell({
             ? (page.url?.split('?')[0] ?? '/dashboard')
             : window.location.pathname;
     const [mobileOpen, setMobileOpen] = useState(false);
+<<<<<<< HEAD
+=======
     const [paletteOpen, setPaletteOpen] = useState(false);
+>>>>>>> origin/main
 
     const userName =
         user?.first_name ?? user?.name ?? user?.email ?? 'Hayetak User';
@@ -324,9 +365,15 @@ export function AppProductShell({
 
     const roleLabel =
         role === 'nutritionist'
+<<<<<<< HEAD
+            ? 'Dietitian'
+            : role === 'trainer'
+              ? 'Personal Trainer'
+=======
             ? 'Nutritionist'
             : role === 'trainer'
               ? 'Trainer'
+>>>>>>> origin/main
               : role === 'admin'
                 ? 'Admin'
                 : 'Client';
@@ -347,6 +394,31 @@ export function AppProductShell({
                     keywords: ['users', 'accounts', 'investigation'],
                 },
                 {
+<<<<<<< HEAD
+                    href: '/admin/verifications',
+                    label: 'Verify',
+                    icon: ShieldCheck,
+                    keywords: ['verifications', 'professional review'],
+                    match: ['/admin/professional-verifications'],
+                },
+                {
+                    href: '/admin/professionals',
+                    label: 'Professionals',
+                    icon: Stethoscope,
+                    keywords: ['professionals', 'trainers', 'dietitians'],
+                },
+                {
+                    href: '/admin/notifications',
+                    label: 'Notifications',
+                    icon: Bell,
+                    keywords: ['alerts', 'notifications', 'broadcasts'],
+                },
+                {
+                    href: '/admin/message-moderations',
+                    label: 'Moderation',
+                    icon: ShieldAlert,
+                    keywords: ['moderation', 'flagged messages', 'escalations'],
+=======
                     href: '/admin/professional-verifications',
                     label: 'Verify',
                     icon: ShieldCheck,
@@ -363,10 +435,35 @@ export function AppProductShell({
                     label: 'Diagnostics',
                     icon: Settings2,
                     keywords: ['diagnostics', 'logs', 'technical'],
+>>>>>>> origin/main
                 },
             ];
         }
 
+<<<<<<< HEAD
+        const professionalPrimaryItem =
+            role === 'trainer'
+                ? {
+                      href: '/trainer/clients',
+                      label: 'My Clients',
+                      icon: Users,
+                      keywords: ['clients', 'trainer clients', 'assigned clients'],
+                  }
+                : role === 'nutritionist'
+                  ? {
+                        href: '/dietitian/clients',
+                        label: 'My Clients',
+                        icon: Users,
+                        keywords: [
+                            'clients',
+                            'dietitian clients',
+                            'assigned clients',
+                        ],
+                    }
+                  : null;
+
+=======
+>>>>>>> origin/main
         return [
             {
                 href: '/dashboard',
@@ -374,6 +471,10 @@ export function AppProductShell({
                 icon: LayoutDashboard,
                 keywords: ['dashboard', 'home', 'overview'],
             },
+<<<<<<< HEAD
+            ...(professionalPrimaryItem ? [professionalPrimaryItem] : []),
+=======
+>>>>>>> origin/main
             {
                 href: '/coach',
                 label: 'AI Coach',
@@ -382,9 +483,15 @@ export function AppProductShell({
             },
             {
                 href: '/ai/planner',
+<<<<<<< HEAD
+                label: 'AI Planner',
+                icon: ClipboardCheck,
+                keywords: ['AI planner', 'ai plan', 'diet plan', 'workout plan'],
+=======
                 label: 'Planner',
                 icon: Sparkles,
                 keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
+>>>>>>> origin/main
                 match: ['/planner'],
             },
             {
@@ -407,6 +514,13 @@ export function AppProductShell({
         if (role === 'admin') {
             return [
                 {
+<<<<<<< HEAD
+                    label: 'Content',
+                    items: [
+                        {
+                            href: '/admin/meals',
+                            label: 'Meals',
+=======
                     label: 'People & Safety',
                     items: [
                         {
@@ -438,6 +552,7 @@ export function AppProductShell({
                         {
                             href: '/admin/meals',
                             label: 'Food Catalog',
+>>>>>>> origin/main
                             icon: UtensilsCrossed,
                         },
                         {
@@ -458,11 +573,28 @@ export function AppProductShell({
                         {
                             href: '/admin/progress',
                             label: 'Progress',
+<<<<<<< HEAD
+                            icon: Activity,
+=======
                             icon: Dumbbell,
+>>>>>>> origin/main
                         },
                     ],
                 },
                 {
+<<<<<<< HEAD
+                    label: 'System',
+                    items: [
+                        {
+                            href: '/admin/logs',
+                            label: 'Audit Logs',
+                            icon: FileSearch,
+                        },
+                        {
+                            href: '/admin/message-moderations',
+                            label: 'Moderation',
+                            icon: ShieldAlert,
+=======
                     label: 'AI Operations',
                     items: [
                         {
@@ -517,12 +649,27 @@ export function AppProductShell({
                             href: '/admin/roles-permissions',
                             label: 'Roles & Flags',
                             icon: LockKeyhole,
+>>>>>>> origin/main
                         },
                     ],
                 },
             ];
         }
 
+<<<<<<< HEAD
+        /*
+        const programItems: NavItem[] = [
+            { href: '/workouts/plan' },
+            { href: '/trainer/clients' },
+            { href: '/dietitian/clients' },
+            { href: '/settings/profile' },
+            { href: '/settings/security' },
+        ];
+        */
+        const groups: NavGroup[] = [];
+        groups.push({
+            label: 'Support',
+=======
         const programItems: NavItem[] = [
             {
                 href: '/workouts/plan',
@@ -559,6 +706,7 @@ export function AppProductShell({
         }
         groups.push({
             label: 'Care & Support',
+>>>>>>> origin/main
             items: [
                 {
                     href: '/nearby',
@@ -566,6 +714,15 @@ export function AppProductShell({
                     icon: MapPin,
                     keywords: ['nearby', 'gyms', 'nutritionists'],
                 },
+<<<<<<< HEAD
+            ],
+        });
+        
+        groups.push({
+            label: 'Connect',
+            items: [
+=======
+>>>>>>> origin/main
                 {
                     href: '/messages',
                     label: 'Messages',
@@ -580,6 +737,9 @@ export function AppProductShell({
                 },
             ],
         });
+<<<<<<< HEAD
+        
+=======
         groups.push({
             label: 'Plan tools',
             items: programItems,
@@ -600,6 +760,7 @@ export function AppProductShell({
                 },
             ],
         });
+>>>>>>> origin/main
 
         return groups;
     }, [role]);
@@ -616,6 +777,8 @@ export function AppProductShell({
         allNavItems.find((item) => matchesPath(pathname, item)) ??
         primaryNav[0];
 
+<<<<<<< HEAD
+=======
     const paletteItems = useMemo<CommandPaletteItem[]>(() => {
         const navigationItems = primaryNav.map((item) => ({
             id: item.href,
@@ -704,6 +867,7 @@ export function AppProductShell({
         ];
     }, [primaryNav, role, secondaryGroups]);
 
+>>>>>>> origin/main
     useEffect(() => {
         setMobileOpen(false);
     }, [page.url]);
@@ -741,19 +905,37 @@ export function AppProductShell({
                       icon: Users,
                   },
                   {
+<<<<<<< HEAD
+                      href: '/admin/verifications',
+=======
                       href: '/admin/professional-verifications',
+>>>>>>> origin/main
                       label: 'Verify',
                       icon: ShieldCheck,
                   },
                   {
+<<<<<<< HEAD
+                      href: '/admin/professionals',
+                      label: 'Pros',
+                      icon: Stethoscope,
+                  },
+                  {
+=======
+>>>>>>> origin/main
                       href: '/admin/notifications',
                       label: 'Alerts',
                       icon: Bell,
                   },
                   {
+<<<<<<< HEAD
+                      href: '/admin/message-moderations',
+                      label: 'Moderation',
+                      icon: ShieldAlert,
+=======
                       href: '/admin/logs',
                       label: 'Logs',
                       icon: Settings2,
+>>>>>>> origin/main
                   },
               ]
             : [
@@ -787,7 +969,10 @@ export function AppProductShell({
                             primaryNav={primaryNav}
                             secondaryGroups={secondaryGroups}
                             homeHref={role === 'admin' ? '/admin' : '/dashboard'}
+<<<<<<< HEAD
+=======
                             onOpenPalette={() => setPaletteOpen(true)}
+>>>>>>> origin/main
                             onLogout={() => router.post('/logout')}
                         />
                     </div>
@@ -812,10 +997,13 @@ export function AppProductShell({
                                 homeHref={
                                     role === 'admin' ? '/admin' : '/dashboard'
                                 }
+<<<<<<< HEAD
+=======
                                 onOpenPalette={() => {
                                     setPaletteOpen(true);
                                     setMobileOpen(false);
                                 }}
+>>>>>>> origin/main
                                 onLogout={() => {
                                     setMobileOpen(false);
                                     router.post('/logout');
@@ -843,6 +1031,15 @@ export function AppProductShell({
                             </button>
 
                             <div className="min-w-0 flex-1">
+<<<<<<< HEAD
+                                <AppWordmark
+                                    className="max-w-[10.5rem]"
+                                    iconClassName="size-[1.7rem]"
+                                    textClassName="text-[1.08rem] text-foreground"
+                                />
+                                <div
+                                    className="mt-1 truncate text-lg tracking-tight text-foreground"
+=======
                                 <div className="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
                                     Hayetak
                                 </div>
@@ -851,12 +1048,15 @@ export function AppProductShell({
                                     style={{
                                         fontFamily: 'var(--font-display)',
                                     }}
+>>>>>>> origin/main
                                 >
                                     {activeItem?.label ?? 'Dashboard'}
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2">
+<<<<<<< HEAD
+=======
                                 <button
                                     type="button"
                                     onClick={() => setPaletteOpen(true)}
@@ -868,6 +1068,7 @@ export function AppProductShell({
                                 >
                                     <Search className="h-4 w-4" />
                                 </button>
+>>>>>>> origin/main
                                 <NotificationBell compact />
                             </div>
                         </div>
@@ -885,12 +1086,15 @@ export function AppProductShell({
                     <MobileBottomNav items={bottomNav} pathname={pathname} />
                 </div>
             </div>
+<<<<<<< HEAD
+=======
 
             <CommandPalette
                 items={paletteItems}
                 open={paletteOpen}
                 onOpenChange={setPaletteOpen}
             />
+>>>>>>> origin/main
         </>
     );
 }

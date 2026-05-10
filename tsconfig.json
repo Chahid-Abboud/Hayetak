@@ -1,6 +1,10 @@
 {
     "compilerOptions": {
+<<<<<<< HEAD
+        "ignoreDeprecations": "5.0",
+=======
         "ignoreDeprecations": "6.0",
+>>>>>>> origin/main
         /* Visit https://aka.ms/tsconfig to read more about this file */
 
         /* Projects */

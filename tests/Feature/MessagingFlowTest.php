@@ -2,8 +2,16 @@
 
 use App\Models\AiPlan;
 use App\Models\Appointment;
+<<<<<<< HEAD
+use App\Models\Conversation;
 use App\Models\Food;
 use App\Models\MealEntry;
+use App\Models\Message;
+use App\Models\Notification;
+=======
+use App\Models\Food;
+use App\Models\MealEntry;
+>>>>>>> origin/main
 use App\Models\ProfessionalClientAssignment;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
@@ -73,11 +81,133 @@ test('clients can request appointments with approved professionals', function ()
             'professional_id' => $nutritionist->id,
             'professional_role' => User::ROLE_NUTRITIONIST,
             'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+<<<<<<< HEAD
+            'notes' => 'Can we focus on easy meal prep this week?',
+=======
+>>>>>>> origin/main
         ]);
 
     $response->assertCreated()
         ->assertJsonPath('appointment.professional.id', $nutritionist->id)
         ->assertJsonPath('appointment.client.id', $client->id);
+<<<<<<< HEAD
+
+    $conversation = Conversation::query()
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $client->id))
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $nutritionist->id))
+        ->withCount('participants')
+        ->get()
+        ->first(fn ($row) => (int) $row->participants_count === 2);
+
+    expect($conversation)->not->toBeNull()
+        ->and(
+            Message::query()
+                ->where('conversation_id', $conversation?->id)
+                ->latest('id')
+                ->value('body')
+        )->toContain('Note: Can we focus on easy meal prep this week?')
+        ->and(
+            Notification::query()
+                ->where('target_user_id', $nutritionist->id)
+                ->latest('id')
+                ->value('title')
+        )->toBe('New appointment request');
+});
+
+test('nutritionists notify assigned clients when saving a diet plan', function () {
+    $client = User::factory()->create(['role' => User::ROLE_CLIENT]);
+    $nutritionist = approvedProfessional(User::ROLE_NUTRITIONIST);
+
+    ProfessionalClientAssignment::query()->create([
+        'professional_id' => $nutritionist->id,
+        'client_id' => $client->id,
+        'professional_role' => User::ROLE_NUTRITIONIST,
+        'assigned_by' => $nutritionist->id,
+    ]);
+
+    $this->actingAs($nutritionist)
+        ->postJson('/api/diet-plans', [
+            'client_id' => $client->id,
+            'title' => 'Phase 1 Diet Plan',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDays(13)->toDateString(),
+            'notes' => 'Start with the breakfast routine first.',
+            'plan_json' => [],
+        ])
+        ->assertCreated();
+
+    $conversation = Conversation::query()
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $client->id))
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $nutritionist->id))
+        ->withCount('participants')
+        ->get()
+        ->first(fn ($row) => (int) $row->participants_count === 2);
+
+    expect($conversation)->not->toBeNull()
+        ->and(
+            Notification::query()
+                ->where('target_user_id', $client->id)
+                ->latest('id')
+                ->value('title')
+        )->toBe('New diet plan')
+        ->and(
+            Message::query()
+                ->where('conversation_id', $conversation?->id)
+                ->latest('id')
+                ->value('body')
+        )->toContain('I shared your diet plan: Phase 1 Diet Plan.');
+});
+
+test('trainers notify assigned clients when saving a workout program', function () {
+    $client = User::factory()->create(['role' => User::ROLE_CLIENT]);
+    $trainer = approvedProfessional(User::ROLE_TRAINER);
+
+    ProfessionalClientAssignment::query()->create([
+        'professional_id' => $trainer->id,
+        'client_id' => $client->id,
+        'professional_role' => User::ROLE_TRAINER,
+        'assigned_by' => $trainer->id,
+    ]);
+
+    $this->actingAs($trainer)
+        ->postJson('/api/trainer-workout-plans', [
+            'client_id' => $client->id,
+            'title' => 'Upper Lower Starter',
+            'notes' => 'Keep the first week light and focus on form.',
+            'plan_json' => [
+                [
+                    'label' => 'Day 1',
+                    'focus' => 'Upper body',
+                    'exercises' => [
+                        ['name' => 'Chest Press', 'sets' => '3', 'reps' => '10', 'notes' => 'Easy start'],
+                    ],
+                ],
+            ],
+        ])
+        ->assertCreated();
+
+    $conversation = Conversation::query()
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $client->id))
+        ->whereHas('participants', fn ($query) => $query->where('users.id', $trainer->id))
+        ->withCount('participants')
+        ->get()
+        ->first(fn ($row) => (int) $row->participants_count === 2);
+
+    expect($conversation)->not->toBeNull()
+        ->and(
+            Notification::query()
+                ->where('target_user_id', $client->id)
+                ->latest('id')
+                ->value('title')
+        )->toBe('New workout program')
+        ->and(
+            Message::query()
+                ->where('conversation_id', $conversation?->id)
+                ->latest('id')
+                ->value('body')
+        )->toContain('I shared your workout program: Upper Lower Starter.');
+=======
+>>>>>>> origin/main
 });
 
 test('conversation context endpoint returns coaching context for authorized participants', function () {

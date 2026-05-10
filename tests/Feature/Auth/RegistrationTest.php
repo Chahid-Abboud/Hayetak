@@ -3,8 +3,15 @@
 use App\Jobs\Ai\GeneratePlansForUser;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
+<<<<<<< HEAD
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
+=======
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
+>>>>>>> origin/main
 use Illuminate\Support\Facades\Storage;
 
 test('registration screen can be rendered', function () {
@@ -14,7 +21,12 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+<<<<<<< HEAD
+    Bus::fake([GeneratePlansForUser::class]);
+    Notification::fake();
+=======
     Bus::fake();
+>>>>>>> origin/main
 
     $response = $this->post(route('register.store'), [
         'first_name' => 'Test',
@@ -31,6 +43,13 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('verification.notice', absolute: false));
+<<<<<<< HEAD
+    Notification::assertSentTo(
+        User::query()->where('email', 'test@gmail.com')->firstOrFail(),
+        VerifyEmail::class,
+    );
+=======
+>>>>>>> origin/main
     Bus::assertDispatched(
         GeneratePlansForUser::class,
         fn (GeneratePlansForUser $job) => $job->reason === 'signup_initial_plan',
@@ -38,7 +57,11 @@ test('new users can register', function () {
 });
 
 test('professional users can register with verification documents', function () {
+<<<<<<< HEAD
+    Bus::fake([GeneratePlansForUser::class]);
+=======
     Bus::fake();
+>>>>>>> origin/main
     Storage::fake('private');
 
     $response = $this->post(route('register.store'), [

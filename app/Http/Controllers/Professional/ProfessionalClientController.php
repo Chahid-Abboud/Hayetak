@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
+use App\Models\DietPlan;
 use App\Models\MealEntry;
 use App\Models\Measurement;
 use App\Models\ProfessionalClientAssignment;
+use App\Models\TrainerWorkoutPlan;
 use App\Models\User;
 use App\Models\WorkoutLog;
 use Illuminate\Http\Request;
@@ -33,7 +35,8 @@ class ProfessionalClientController extends Controller
 
         $assignments = ProfessionalClientAssignment::query()
             ->with([
-                'client:id,first_name,last_name,name,email,username,age,height_cm,weight_kg',
+                'client:id,first_name,last_name,name,email,username,age,height_cm,weight_kg,allergies',
+                'client.dietaryRestrictions' => fn ($q) => $q->where('kind', 'allergy')->where('is_active', true),
             ])
             ->where('professional_id', $professional->id)
             ->where('professional_role', $role)
@@ -75,10 +78,28 @@ class ProfessionalClientController extends Controller
                 ->groupBy('user_id')
             : collect();
 
+        $dietPlansByClient = $role === User::ROLE_NUTRITIONIST
+            ? DietPlan::query()
+                ->whereIn('client_id', $clientIds)
+                ->get()
+                ->keyBy('client_id')
+            : collect();
+
+        $trainerWorkoutPlansByClient = $role === User::ROLE_TRAINER
+            ? TrainerWorkoutPlan::query()
+                ->whereIn('client_id', $clientIds)
+                ->latest('id')
+                ->get()
+                ->unique('client_id')
+                ->keyBy('client_id')
+            : collect();
+
         $clients = $assignments->map(function (ProfessionalClientAssignment $assignment) use (
             $measurementsByClient,
             $workoutsByClient,
             $recentMealEntriesByClient,
+            $dietPlansByClient,
+            $trainerWorkoutPlansByClient,
             $role
         ) {
             $client = $assignment->client;
@@ -107,6 +128,7 @@ class ProfessionalClientController extends Controller
                     'age' => $client->age,
                     'height_cm' => $client->height_cm !== null ? (int) $client->height_cm : null,
                     'weight_kg' => $client->weight_kg !== null ? (float) $client->weight_kg : null,
+                    'allergens' => $client->client_allergens ?? [],
                 ],
                 'progress' => [
                     'latest_weight_kg' => $latestMeasurement?->weight_kg !== null
@@ -136,6 +158,15 @@ class ProfessionalClientController extends Controller
                         'total_sets' => (int) $workouts->sum('sets_count'),
                     ],
                 ];
+
+                $trainerWorkoutPlan = $trainerWorkoutPlansByClient->get($client->id);
+
+                $payload['workout_plan'] = $trainerWorkoutPlan ? [
+                    'id' => $trainerWorkoutPlan->id,
+                    'title' => $trainerWorkoutPlan->title,
+                    'plan_json' => $trainerWorkoutPlan->plan_json,
+                    'notes' => $trainerWorkoutPlan->notes,
+                ] : null;
             }
 
             if ($role === User::ROLE_NUTRITIONIST) {
@@ -168,9 +199,20 @@ class ProfessionalClientController extends Controller
                     })
                     ->values();
 
+                $dietPlan = $dietPlansByClient->get($client->id);
+
                 $payload['nutrition'] = [
                     'weekly_days' => $dayWindow,
                 ];
+
+                $payload['diet_plan'] = $dietPlan ? [
+                    'id' => $dietPlan->id,
+                    'title' => $dietPlan->title,
+                    'start_date' => optional($dietPlan->start_date)->toDateString(),
+                    'end_date' => optional($dietPlan->end_date)->toDateString(),
+                    'plan_json' => $dietPlan->plan_json,
+                    'notes' => $dietPlan->notes,
+                ] : null;
             }
 
             return $payload;

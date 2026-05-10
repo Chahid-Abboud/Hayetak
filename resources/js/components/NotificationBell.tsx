@@ -1,7 +1,14 @@
+<<<<<<< HEAD
+import { useAppNotifications } from '@/components/app-notifications';
+=======
+>>>>>>> origin/main
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Bell, Check, X } from 'lucide-react';
+<<<<<<< HEAD
+import { useEffect, useState } from 'react';
+=======
 import { useEffect, useMemo, useState } from 'react';
 
 type NotificationItem = {
@@ -17,6 +24,7 @@ type NotificationItem = {
         email: string;
     } | null;
 };
+>>>>>>> origin/main
 
 export default function NotificationBell({
     fullWidth = false,
@@ -26,6 +34,16 @@ export default function NotificationBell({
     compact?: boolean;
 }) {
     const [open, setOpen] = useState(false);
+<<<<<<< HEAD
+    const { items, unreadCount, loading, error, refresh, markRead, dismiss } =
+        useAppNotifications();
+
+    useEffect(() => {
+        if (open) {
+            void refresh();
+        }
+    }, [open, refresh]);
+=======
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -115,6 +133,7 @@ export default function NotificationBell({
             setError('Could not dismiss that alert.');
         }
     }
+>>>>>>> origin/main
 
     return (
         <div className={cn('relative', fullWidth && 'w-full')}>
@@ -173,7 +192,11 @@ export default function NotificationBell({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+<<<<<<< HEAD
+                                onClick={() => void refresh()}
+=======
                                 onClick={() => void load()}
+>>>>>>> origin/main
                                 disabled={loading}
                             >
                                 Refresh

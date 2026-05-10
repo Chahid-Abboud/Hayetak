@@ -64,7 +64,11 @@ export function AdminWorkspaceHub({
     description,
     stats,
     tabs,
+<<<<<<< HEAD
+    diagnosticsHref = '/admin/logs',
+=======
     diagnosticsHref = '/admin/logs-diagnostics',
+>>>>>>> origin/main
 }: {
     headTitle: string;
     title: string;

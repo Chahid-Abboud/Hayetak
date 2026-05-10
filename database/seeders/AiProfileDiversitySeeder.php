@@ -319,6 +319,31 @@ class AiProfileDiversitySeeder extends Seeder
                 'diet_failure_reasons' => ['Lack of results', 'Confusing guidance'],
                 'diet_failure_other' => 'Previous plans did not account for shoulder flare-ups when training volume increased.',
             ],
+<<<<<<< HEAD
+            [
+                'email' => 'dania.younes+ai15@hayetak.local',
+                'first_name' => 'Dania',
+                'last_name' => 'Younes',
+                'username' => 'dania_younes_ai15',
+                'gender' => 'female',
+                'age' => 43,
+                'height_cm' => 165,
+                'weight_kg' => 68.2,
+                'dietary_goal' => 'Balanced Nutrition',
+                'fitness_goal' => 'Improve Endurance',
+                'diet_name' => 'Gluten-Free',
+                'allergies' => ['Peanut', 'Shrimp'],
+                'has_medical_history' => true,
+                'medical_history' => 'Celiac disease, rotator cuff irritation, and occasional plantar fasciitis after long walks.',
+                'activity_level' => 'Lightly Active',
+                'workout_days_per_week' => 3,
+                'workout_location' => 'both',
+                'tried_diet_before' => true,
+                'diet_failure_reasons' => ['Travel/routine changes', 'Too expensive'],
+                'diet_failure_other' => 'Restaurant meals often broke gluten-free consistency during work travel.',
+            ],
+=======
+>>>>>>> origin/main
         ];
 
         foreach ($profiles as $index => $profile) {

@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Ai;
 
 use App\Models\AiRequest;
+use App\Models\User;
 use App\Services\Ai\Training\ProgressLabelReadinessService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -22,8 +23,8 @@ class AiExportProgressPredictionData extends Command
         {--type=plan_generator : AiRequest type filter}
         {--status=completed : AiRequest status filter}
         {--include-unlabeled=0 : Keep rows that do not have an end-weight label}
-        {--exclude-synthetic=0 : Drop rows marked synthetic}
-        {--only-synthetic=0 : Keep only rows marked synthetic}
+        {--exclude-synthetic=0 : Drop rows with synthetic outcome labels}
+        {--only-synthetic=0 : Keep only rows with synthetic outcome labels}
     ';
 
     protected $description = 'Export supervised rows for the progress prediction model from planner generations + real outcomes';
@@ -126,13 +127,13 @@ class AiExportProgressPredictionData extends Command
                 if (! is_array($row)) {
                     continue;
                 }
-                $isSynthetic = (int) ($row['is_synthetic_row'] ?? 0) === 1;
-                if ($excludeSynthetic && $isSynthetic) {
+                $hasSyntheticOutcomeLabels = $this->rowHasSyntheticOutcomeLabels($row);
+                if ($excludeSynthetic && $hasSyntheticOutcomeLabels) {
                     $skippedSyntheticFilter++;
 
                     continue;
                 }
-                if ($onlySynthetic && ! $isSynthetic) {
+                if ($onlySynthetic && ! $hasSyntheticOutcomeLabels) {
                     $skippedSyntheticFilter++;
 
                     continue;
@@ -540,15 +541,38 @@ class AiExportProgressPredictionData extends Command
     private function isDemoUser(int $userId): bool
     {
         if (! array_key_exists($userId, $this->demoUserCache)) {
-            $email = strtolower(trim((string) DB::table('users')->where('id', $userId)->value('email')));
-            $this->demoUserCache[$userId] = $email !== '' && (
-                str_contains($email, 'hayetak.local')
-                || str_contains($email, '@clients.')
-                || str_contains($email, 'example.')
-            );
+            $user = DB::table('users')
+                ->where('id', $userId)
+                ->first(['email', 'data_origin']);
+
+            $origin = strtolower(trim((string) ($user->data_origin ?? '')));
+            $email = strtolower(trim((string) ($user->email ?? '')));
+
+            $this->demoUserCache[$userId] = match ($origin) {
+                User::DATA_ORIGIN_SEEDED_DEMO, User::DATA_ORIGIN_TEST => true,
+                User::DATA_ORIGIN_REAL, User::DATA_ORIGIN_IMPORTED_REAL => false,
+                default => $email !== '' && (
+                    str_contains($email, 'hayetak.local')
+                    || str_contains($email, '@clients.')
+                    || str_contains($email, 'example.')
+                ),
+            };
         }
 
         return $this->demoUserCache[$userId];
+    }
+
+    /**
+     * Treat export filtering as a weight-label quality gate, not a broad seeded-context gate.
+     *
+     * The current shipped predictor artifact is weight-only, so synthetic workout/strength
+     * labels should not block rows whose body-weight outcome is real.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function rowHasSyntheticOutcomeLabels(array $row): bool
+    {
+        return (int) ($row['is_synthetic_weight_label'] ?? 0) === 1;
     }
 
     /**

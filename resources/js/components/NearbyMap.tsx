@@ -50,6 +50,14 @@ type Props = {
     initialCenter?: { lat: number; lon: number };
     initialZoom?: number;
     radiusKm: number;
+<<<<<<< HEAD
+    showGym?: boolean;
+    showNutritionist?: boolean;
+    showHealthcare?: boolean;
+    onToggleGym?: (value: boolean) => void;
+    onToggleNutritionist?: (value: boolean) => void;
+    onToggleHealthcare?: (value: boolean) => void;
+=======
     onRadiusChange?: (km: number) => void;
     showGym?: boolean;
     showNutritionist?: boolean;
@@ -57,6 +65,7 @@ type Props = {
     onToggleGym?: (v: boolean) => void;
     onToggleNutritionist?: (v: boolean) => void;
     onToggleHealthcare?: (v: boolean) => void;
+>>>>>>> origin/main
     onResults?: (items: Place[]) => void;
     onLoadingChange?: (loading: boolean) => void;
     onErrorChange?: (message: string | null) => void;
@@ -73,9 +82,12 @@ export default function NearbyMap({
     showGym = true,
     showNutritionist = true,
     showHealthcare = true,
+<<<<<<< HEAD
+=======
     onToggleGym,
     onToggleNutritionist,
     onToggleHealthcare,
+>>>>>>> origin/main
     onResults,
     onLoadingChange,
     onErrorChange,
@@ -101,6 +113,10 @@ export default function NearbyMap({
 
     const [places, setPlaces] = useState<Place[]>([]);
     const placesRef = useRef<Place[]>([]);
+<<<<<<< HEAD
+    const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+=======
+>>>>>>> origin/main
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -151,6 +167,10 @@ export default function NearbyMap({
             .setHTML(
                 `
         <div style="
+<<<<<<< HEAD
+          font-family:var(--font-display), sans-serif;
+=======
+>>>>>>> origin/main
           background:var(--card);
           color:var(--foreground);
           border:1px solid var(--border);
@@ -213,6 +233,15 @@ export default function NearbyMap({
             .addTo(m);
     }, []);
 
+<<<<<<< HEAD
+    const activatePlace = useCallback(
+        (place: Place) => {
+            setSelectedPlace(place);
+            showPopupAt(place.lon, place.lat, place);
+        },
+        [showPopupAt],
+    );
+
     /* ---------- fetch places ---------- */
     const fetchPlaces = useCallback(
         async (origin: { lat: number; lon: number }, rKm: number) => {
@@ -231,6 +260,26 @@ export default function NearbyMap({
                 types: typesParam,
             }).toString();
 
+=======
+    /* ---------- fetch places ---------- */
+    const fetchPlaces = useCallback(
+        async (origin: { lat: number; lon: number }, rKm: number) => {
+            setLoading(true);
+            setError(null);
+            onLoadingChange?.(true);
+            onErrorChange?.(null);
+
+            fetchController.current?.abort();
+            fetchController.current = new AbortController();
+
+            const qs = new URLSearchParams({
+                lat: String(origin.lat),
+                lng: String(origin.lon),
+                radius: String(Math.round(rKm * 1000)),
+                types: typesParam,
+            }).toString();
+
+>>>>>>> origin/main
             try {
                 const res = await fetch(`/api/places-local?${qs}`, {
                     signal: fetchController.current.signal,
@@ -298,7 +347,11 @@ export default function NearbyMap({
                 m,
                 placesRef.current,
                 markerRegistry,
+<<<<<<< HEAD
+                activatePlace,
+=======
                 showPopupAt,
+>>>>>>> origin/main
             );
         });
 
@@ -312,7 +365,11 @@ export default function NearbyMap({
             m.remove();
             mapRef.current = null;
         };
+<<<<<<< HEAD
+    }, [activatePlace]);
+=======
     }, [showPopupAt]);
+>>>>>>> origin/main
 
     /* ---------- set user marker ---------- */
     useEffect(() => {
@@ -356,8 +413,13 @@ export default function NearbyMap({
         const m = mapRef.current;
         if (!m) return;
         placesRef.current = places;
+<<<<<<< HEAD
+        updatePlaceMarkers(m, places, placeMarkersRef.current, activatePlace);
+    }, [activatePlace, places]);
+=======
         updatePlaceMarkers(m, places, placeMarkersRef.current, showPopupAt);
     }, [places, showPopupAt]);
+>>>>>>> origin/main
 
     /* ---------- focus from list ---------- */
     useEffect(() => {
@@ -375,6 +437,23 @@ export default function NearbyMap({
             essential: true,
         });
 
+<<<<<<< HEAD
+        activatePlace(target);
+    }, [activatePlace, focusPlaceId, places]);
+
+    useEffect(() => {
+        if (
+            selectedPlace &&
+            !places.some((place) => String(place.id) === String(selectedPlace.id))
+        ) {
+            setSelectedPlace(null);
+        }
+    }, [places, selectedPlace]);
+
+    return (
+        <div className="relative flex h-full min-h-[520px] flex-col">
+            <div className="absolute top-3 right-3 z-10 rounded-xl border border-border/70 bg-card/92 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+=======
         showPopupAt(target.lon, target.lat, target);
     }, [focusPlaceId, places, showPopupAt]);
 
@@ -417,6 +496,7 @@ export default function NearbyMap({
             </div>
 
             <div className="absolute top-16 right-3 z-10 rounded-xl border border-border/70 bg-card/92 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+>>>>>>> origin/main
                 <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Current area
                 </div>
@@ -428,9 +508,50 @@ export default function NearbyMap({
 
             <div
                 ref={divRef}
+<<<<<<< HEAD
+                className="min-h-[520px] flex-1 rounded-[24px] border border-border/70 shadow-sm xl:min-h-0"
+            />
+
+            {selectedPlace ? (
+                <div
+                    className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-[320px] rounded-[22px] border border-border/70 bg-card/95 p-4 text-sm text-foreground shadow-xl backdrop-blur"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                >
+                    <div className="text-lg font-semibold">
+                        {selectedPlace.name}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        {formatCategoryLabel(
+                            selectedPlace.category ??
+                                selectedPlace.type ??
+                                'other',
+                        )}
+                    </div>
+                    {(selectedPlace.address || selectedPlace.city) && (
+                        <div className="mt-3 text-sm text-muted-foreground">
+                            {[selectedPlace.address, selectedPlace.city]
+                                .filter(Boolean)
+                                .join(', ')}
+                        </div>
+                    )}
+                    {typeof selectedPlace.distanceM === 'number' ? (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            {(selectedPlace.distanceM / 1000).toFixed(2)} km away
+                        </div>
+                    ) : null}
+                    {selectedPlace.description ? (
+                        <div className="mt-3 line-clamp-4 text-sm text-foreground/90">
+                            {selectedPlace.description}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
+
+=======
                 className="h-[520px] w-full rounded-[24px] border border-border/70 shadow-sm"
             />
 
+>>>>>>> origin/main
             <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-2">
                     <span className="inline-flex items-center gap-2">
@@ -654,7 +775,11 @@ function updatePlaceMarkers(
     map: MapboxMap,
     list: Place[],
     registry: globalThis.Map<string, { marker: mapboxgl.Marker; root: Root }>,
+<<<<<<< HEAD
+    activatePlace: (place: Place) => void,
+=======
     showPopupAt: (lng: number, lat: number, data: Place) => void,
+>>>>>>> origin/main
 ) {
     clearPlaceMarkers(registry);
 
@@ -667,12 +792,20 @@ function updatePlaceMarkers(
         const element = document.createElement('button');
         element.type = 'button';
         element.className =
+<<<<<<< HEAD
+            'group flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-card text-foreground shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none';
+=======
             'group flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card text-foreground shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none';
+>>>>>>> origin/main
         element.style.boxShadow = '0 16px 32px rgba(0,0,0,0.28)';
         element.setAttribute('aria-label', `Show ${place.name} on map`);
         element.addEventListener('click', (event) => {
             event.stopPropagation();
+<<<<<<< HEAD
+            activatePlace(place);
+=======
             showPopupAt(place.lon, place.lat, place);
+>>>>>>> origin/main
         });
 
         const root = createRoot(element);
@@ -710,9 +843,15 @@ function MapPlaceMarkerIcon({
 
     return (
         <span
+<<<<<<< HEAD
+            className={`flex h-6 w-6 items-center justify-center rounded-full border ${tone}`}
+        >
+            <Icon className="h-3.5 w-3.5" aria-hidden strokeWidth={2.4} />
+=======
             className={`flex h-7 w-7 items-center justify-center rounded-full border ${tone}`}
         >
             <Icon className="h-4 w-4" aria-hidden strokeWidth={2.5} />
+>>>>>>> origin/main
         </span>
     );
 }
@@ -814,9 +953,16 @@ function truncate(value: string, maxLen: number): string {
 }
 
 function formatCategoryLabel(value: string): string {
+<<<<<<< HEAD
+    const normalized = value.replace(/_/g, ' ').toLowerCase();
+    if (normalized.includes('nutritionist')) return 'Dietitian';
+    if (normalized.includes('trainer')) return 'Personal Trainer';
+    return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+=======
     return value
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (char) => char.toUpperCase());
+>>>>>>> origin/main
 }
 
 function safeHttpUrl(value?: string | null): string | null {

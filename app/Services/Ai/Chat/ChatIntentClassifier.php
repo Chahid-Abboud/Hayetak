@@ -11,14 +11,29 @@ class ChatIntentClassifier
         'exercice',
         'exercices',
         'train',
+<<<<<<< HEAD
+        'training',
         'gym',
         'cardio',
+        'strength',
+        'muscle',
+        'hypertrophy',
+        'conditioning',
+=======
+        'gym',
+        'cardio',
+>>>>>>> origin/main
         'sets',
         'reps',
         'legs',
         'push',
         'pull',
         'session',
+<<<<<<< HEAD
+        'beginner',
+        'beginners',
+=======
+>>>>>>> origin/main
     ];
 
     private const INGREDIENT_AUDIT_KEYWORDS = [
@@ -78,7 +93,11 @@ class ChatIntentClassifier
             'requested_day_offset' => $requestedDayOffset,
         ];
 
+<<<<<<< HEAD
+        if ($this->isLikelyOutOfDomain($text, $runtimeContext)) {
+=======
         if ($this->isLikelyOutOfDomain($text)) {
+>>>>>>> origin/main
             return [
                 'intent' => 'out_of_domain',
                 'feature' => 'out_of_scope',
@@ -88,7 +107,11 @@ class ChatIntentClassifier
             ];
         }
 
+<<<<<<< HEAD
+        if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'fats', 'macro', 'meal', 'meals', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack', 'food', 'eat', 'recipe', 'nutrition', 'plate', 'fiber', 'fibre', 'allergy', 'allergies', 'allergen', 'allergens', 'diet type', 'safe for me', 'under-eating', 'under eating', 'undereating', 'added sugar', 'sugar', 'grocery', 'shopping', 'mediterranean', 'keto', 'paleo', 'vegan', 'vegetarian', 'dash', 'whole30', 'fodmap'])) {
+=======
         if ($this->containsAny($text, ['protein', 'calories', 'calorie', 'carbs', 'fat', 'macro', 'meal', 'meals', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack', 'food', 'eat', 'recipe', 'nutrition', 'plate', 'fiber', 'fibre', 'allergy', 'allergies', 'allergen', 'allergens', 'diet type', 'safe for me'])) {
+>>>>>>> origin/main
             $intent = 'nutrition_help';
             $feature = 'nutrition';
             $flags['include_last_7_days'] = true;
@@ -208,7 +231,11 @@ class ChatIntentClassifier
         return false;
     }
 
+<<<<<<< HEAD
+    private function isLikelyOutOfDomain(string $text, array $runtimeContext = []): bool
+=======
     private function isLikelyOutOfDomain(string $text): bool
+>>>>>>> origin/main
     {
         if ($text === '') {
             return false;
@@ -267,6 +294,17 @@ class ChatIntentClassifier
             'global news',
             'latest news',
             'weather forecast',
+<<<<<<< HEAD
+            'rocket league',
+            'video game',
+            'video games',
+            'gaming',
+            'game meta',
+            'best car in',
+            'best gun in',
+            'best character in',
+=======
+>>>>>>> origin/main
             'diagnose this skin rash',
             'skin rash',
             'prescribe treatment',
@@ -313,6 +351,13 @@ class ChatIntentClassifier
             return true;
         }
 
+<<<<<<< HEAD
+        if ($this->isCoachFollowUpRequest($text, $runtimeContext)) {
+            return false;
+        }
+
+=======
+>>>>>>> origin/main
         if (! $this->hasCoachDomainSignal($text) && $this->hasGeneralTaskOrTriviaSignal($text)) {
             return true;
         }
@@ -469,17 +514,41 @@ class ChatIntentClassifier
             'protein',
             'carbs',
             'fat',
+<<<<<<< HEAD
+            'fats',
             'fiber',
             'nutrition',
             'diet',
+            'healthy',
+            'healthier',
+=======
+            'fiber',
+            'nutrition',
+            'diet',
+>>>>>>> origin/main
             'allergy',
             'allergies',
             'allergen',
             'workout',
             'exercise',
             'train',
+<<<<<<< HEAD
+            'training',
             'gym',
             'cardio',
+            'strength',
+            'muscle',
+            'endurance',
+            'hypertrophy',
+            'beginner',
+            'beginners',
+            'intermediate',
+            'lifter',
+            'lifters',
+=======
+            'gym',
+            'cardio',
+>>>>>>> origin/main
             'recovery',
             'sleep',
             'hydration',
@@ -487,6 +556,37 @@ class ChatIntentClassifier
             'rest day',
             'stretch',
             'stretches',
+<<<<<<< HEAD
+            'warm up',
+            'cool down',
+            'mobility',
+            'soreness',
+            'meal prep',
+            'grocery',
+            'shopping',
+            'sugar',
+            'added sugar',
+            'under-eating',
+            'under eating',
+            'undereating',
+            'eating enough',
+            'appetite',
+            'processed foods',
+            'mediterranean',
+            'keto',
+            'paleo',
+            'vegan',
+            'vegetarian',
+            'dash',
+            'whole30',
+            'fodmap',
+            'portion',
+            'restaurant',
+            'motivation',
+            'consistency',
+            'adherence',
+=======
+>>>>>>> origin/main
             'progress',
             'weight',
             'bmi',
@@ -504,10 +604,45 @@ class ChatIntentClassifier
         ]);
     }
 
+<<<<<<< HEAD
+    private function isCoachFollowUpRequest(string $text, array $runtimeContext): bool
+    {
+        if (($runtimeContext['screen_context'] ?? 'coach') !== 'coach') {
+            return false;
+        }
+
+        if ($text === '' || mb_strlen($text) > 90) {
+            return false;
+        }
+
+        return $this->containsAny($text, [
+            'recommendation',
+            'recommendations',
+            'can you give me recommendations',
+            'can you give me some recommendations',
+            'give me recommendations',
+            'give me some recommendations',
+            'what do you recommend',
+            'more ideas',
+            'some ideas',
+            'more options',
+            'some options',
+            'more examples',
+            'some examples',
+        ]);
+    }
+
+=======
+>>>>>>> origin/main
     private function hasGeneralTaskOrTriviaSignal(string $text): bool
     {
         return $this->containsAny($text, [
             'what is',
+<<<<<<< HEAD
+            'whats',
+            'what\'s',
+=======
+>>>>>>> origin/main
             'who is',
             'who won',
             'what are',
@@ -527,6 +662,10 @@ class ChatIntentClassifier
             'show me',
             'tell me',
             'list',
+<<<<<<< HEAD
+            'best',
+=======
+>>>>>>> origin/main
             'plan my',
         ]);
     }

@@ -206,6 +206,26 @@ class FeatureConfigResolver
     }
 
     /**
+<<<<<<< HEAD
+     * Allow local development to answer from the already-built prompt context without the extra vector lookup hop.
+     */
+    public function shouldUseDirectContextFastPath(): bool
+    {
+        if (! $this->usesSelfHostedChat()) {
+            return false;
+        }
+
+        if ((bool) config('ai.chat.self_hosted.direct_context_fast_path.force', false)) {
+            return true;
+        }
+
+        return app()->environment('local')
+            && (bool) config('ai.chat.self_hosted.direct_context_fast_path.enabled_in_local', true);
+    }
+
+    /**
+=======
+>>>>>>> origin/main
      * Resolve chat provider with auto-mode fallback rules.
      */
     private function resolveChatProvider(): string

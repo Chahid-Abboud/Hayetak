@@ -1,5 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-import { home } from '@/routes';
+import AppWordmark from '@/components/app-wordmark';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
@@ -14,7 +13,7 @@ export default function AuthSplitLayout({
     title,
     description,
 }: PropsWithChildren<AuthLayoutProps>) {
-    const { name, quote } = usePage<SharedData>().props;
+    const { quote } = usePage<SharedData>().props;
 
     return (
         <div className="relative grid min-h-svh bg-background px-4 py-6 sm:px-6 lg:max-w-none lg:grid-cols-2 lg:px-0 lg:py-0">
@@ -23,11 +22,21 @@ export default function AuthSplitLayout({
                 <div className="absolute inset-x-0 top-0 h-64 bg-primary/10" />
                 <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
                 <Link
+<<<<<<< HEAD
+                    href="/"
+                    className="relative z-20 inline-flex items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-lg font-medium backdrop-blur"
+                >
+                    <AppWordmark
+                        iconClassName="size-8"
+                        textClassName="text-[1.38rem] text-white"
+                    />
+=======
                     href={home()}
                     className="relative z-20 inline-flex items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-lg font-medium backdrop-blur"
                 >
                     <AppLogoIcon className="mr-2 size-8" />
                     {name}
+>>>>>>> origin/main
                 </Link>
 
                 <div className="relative z-20 mt-10 max-w-lg space-y-4">
@@ -81,6 +90,15 @@ export default function AuthSplitLayout({
             <div className="flex w-full items-center lg:p-8">
                 <div className="mx-auto flex w-full max-w-md flex-col justify-center space-y-6">
                     <Link
+<<<<<<< HEAD
+                        href="/"
+                        className="relative z-20 inline-flex items-center justify-center rounded-full border border-border/70 bg-card/72 px-4 py-2 shadow-sm backdrop-blur lg:hidden"
+                    >
+                        <AppWordmark
+                            iconClassName="size-8 sm:size-9"
+                            textClassName="text-[1.38rem] text-foreground"
+                        />
+=======
                         href={home()}
                         className="relative z-20 inline-flex items-center justify-center rounded-full border border-border/70 bg-card/72 px-4 py-2 shadow-sm backdrop-blur lg:hidden"
                     >
@@ -88,6 +106,7 @@ export default function AuthSplitLayout({
                         <span className="font-semibold tracking-tight text-foreground">
                             {name}
                         </span>
+>>>>>>> origin/main
                     </Link>
 
                     <div className="rounded-[30px] border border-border/70 bg-card/92 p-6 shadow-[0_35px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur sm:p-8">

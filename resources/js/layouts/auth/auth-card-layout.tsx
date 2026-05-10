@@ -1,4 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppWordmark from '@/components/app-wordmark';
 import {
     Card,
     CardContent,
@@ -6,7 +6,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
@@ -29,6 +28,15 @@ export default function AuthCardLayout({
 
             <div className="relative flex w-full max-w-md flex-col gap-6">
                 <Link
+<<<<<<< HEAD
+                    href="/"
+                    className="inline-flex items-center gap-3 self-center rounded-full border border-border/70 bg-card/72 px-4 py-2 font-medium shadow-sm backdrop-blur"
+                >
+                    <AppWordmark
+                        iconClassName="size-8"
+                        textClassName="text-[1.34rem] text-foreground"
+                    />
+=======
                     href={home()}
                     className="inline-flex items-center gap-3 self-center rounded-full border border-border/70 bg-card/72 px-4 py-2 font-medium shadow-sm backdrop-blur"
                 >
@@ -36,6 +44,7 @@ export default function AuthCardLayout({
                         <AppLogoIcon className="size-6" />
                     </div>
                     <span>Hayetak</span>
+>>>>>>> origin/main
                 </Link>
 
                 <div className="flex flex-col gap-6">

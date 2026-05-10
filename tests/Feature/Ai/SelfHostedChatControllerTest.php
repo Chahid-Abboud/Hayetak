@@ -155,6 +155,61 @@ it('uses personalized vector context for self-hosted chat when a relevant user m
     });
 });
 
+<<<<<<< HEAD
+it('uses the local direct-context fast path without embedding or vector lookup when forced', function () {
+    $user = User::factory()->create([
+        'weight_kg' => 82,
+        'fitness_goal' => 'muscle gain',
+        'activity_level' => 'Very Active',
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.chat.self_hosted.direct_context_fast_path.force', true);
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports(
+        function (HttpRequest $request) {
+            $content = (string) data_get($request->data(), 'messages.0.content', '');
+
+            expect($content)->toContain('If the personalization mode is `personalized`');
+            expect($content)->toContain('Current weight kg: 82');
+            expect($content)->toContain('Goal: muscle gain');
+            expect($content)->toContain('Use the saved profile, restrictions, logged activity, active plans, and current conversation blocks above as the personalized context for this answer.');
+
+            return Http::response([
+                'model' => 'llama3.1:8b',
+                'message' => [
+                    'role' => 'assistant',
+                    'content' => 'Based on your saved profile, a strong breakfast would be Greek yogurt, oats, berries, and eggs for a high-protein start.',
+                ],
+                'prompt_eval_count' => 120,
+                'eval_count' => 40,
+            ], 200);
+        },
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'Suggest a breakfast that fits my current weight and muscle gain goal.',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('provider', 'self_hosted')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    Http::assertSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/embed'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/embeddings'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+=======
+>>>>>>> origin/main
 it('reindexes updated weight data and uses the saved weight for protein recalculation', function () {
     $user = User::factory()->create([
         'weight_kg' => 82,
@@ -547,6 +602,39 @@ it('refuses out-of-scope questions without calling the self-hosted model', funct
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
+it('refuses rocket league trivia without calling the self-hosted model', function () {
+    $user = User::factory()->create();
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'whats the best car in rocket league',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'domain_guard');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('I can help with workouts, meals, macros, recovery, plans, progress')
+        ->not->toContain('Rocket League');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+=======
+>>>>>>> origin/main
 it('answers gratitude turns without using the model or calling the app name a user name', function () {
     $user = User::factory()->create([
         'name' => 'Maya Client',
@@ -673,6 +761,48 @@ it('resolves brief confirmations to offered food recommendations', function () {
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
+it('resolves recommendation follow-ups to offered vegan food recommendations', function () {
+    $user = User::factory()->create([
+        'diet_name' => 'Vegan',
+        'allergies' => ['Sesame'],
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can give you food recommendations and snack ideas that fit your restrictions. Would you like me to list them?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'can you give me some recommendations?',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_food_recommendations');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('quick vegan food options')
+        ->toContain('Lentil rice bowl')
+        ->not->toContain('Greek yogurt');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+=======
+>>>>>>> origin/main
 it('resolves brief confirmations to offered exercise substitutes', function () {
     $user = User::factory()->create([
         'medical_history' => 'knee pain',
@@ -831,6 +961,48 @@ it('resolves brief confirmations to an offered workout routine', function () {
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
+it('asks for clarification instead of guessing when a short confirmation follows a multi-option offer', function () {
+    $user = User::factory()->create([
+        'diet_name' => 'Mediterranean',
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'Based on your profile, I do not see any specific restrictions related to coffee. Would you like me to suggest some healthy coffee alternatives or provide more information about incorporating coffee into your daily routine?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'yes',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'ambiguous_affirmation_clarification');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('I do not want to guess from a short yes')
+        ->toContain('healthy coffee alternatives')
+        ->toContain('incorporating coffee into your daily routine')
+        ->not->toContain('lemon juice');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+=======
+>>>>>>> origin/main
 it('uses a privacy-specific boundary for exfiltration prompts without calling the self-hosted model', function () {
     $user = User::factory()->create();
 
@@ -1148,6 +1320,44 @@ it('answers recovery checklist prompts as general guidance when no user vector c
         ->toContain('sleep');
 });
 
+<<<<<<< HEAD
+it('answers regeneration logging questions with meals macros workouts adherence and weight check-ins', function () {
+    $user = User::factory()->create([
+        'weight_kg' => 78,
+        'fitness_goal' => 'fat loss',
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'What data should I log this week before regenerating?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'plan_regeneration_logging');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('meals and macros')
+        ->toContain('calories')
+        ->toContain('protein')
+        ->toContain('workouts and adherence')
+        ->toContain('body-weight check-ins');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+=======
+>>>>>>> origin/main
 it('normalizes internal ai wording into plain english before showing the chatbot reply', function () {
     $user = User::factory()->create([
         'weight_kg' => 61,

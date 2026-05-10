@@ -4,6 +4,10 @@ use App\Http\Controllers\Admin\AdminActionLogController;
 use App\Http\Controllers\Admin\AdminAssignmentController;
 use App\Http\Controllers\Admin\AdminExerciseController;
 use App\Http\Controllers\Admin\AdminMealController;
+<<<<<<< HEAD
+use App\Http\Controllers\Admin\AdminMessageModerationController;
+=======
+>>>>>>> origin/main
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPlaceLocalController;
 use App\Http\Controllers\Admin\AdminProfessionalController;
@@ -156,6 +160,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin', fn () => Inertia::render('admin/overview/index'))->name('admin.overview.index');
+<<<<<<< HEAD
+        Route::get('/admin/verifications', fn () => Inertia::render('admin/professional-verifications/index'))->name('admin.verifications.index');
+        Route::get('/admin/users', fn () => Inertia::render('admin/users/index'))->name('admin.users.index');
+        Route::get('/admin/users/{user}', fn ($user) => Inertia::render('admin/users/show', ['userId' => (int) $user]))->name('admin.users.show');
+        Route::get('/admin/logs', fn () => Inertia::render('admin/logs/index'))->name('admin.logs.index');
+        Route::get('/admin/meal-logs', fn () => Inertia::render('admin/meal-logs/index'))->name('admin.meal-logs.index');
+        Route::get('/admin/exercises', fn () => Inertia::render('admin/exercises/index'))->name('admin.exercises.index');
+=======
         Route::get('/admin/people', fn () => Inertia::render('admin/people/index'))->name('admin.people.index');
         Route::get('/admin/verifications', fn () => Inertia::render('admin/professional-verifications/index'))->name('admin.verifications.index');
         Route::get('/admin/health-data', fn () => Inertia::render('admin/health-data/index'))->name('admin.health-data.index');
@@ -180,12 +192,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/admin/ai-rollouts', fn () => Inertia::render('admin/ai-rollouts/index'))->name('admin.ai-rollouts.index');
         Route::get('/admin/ai/planner', fn () => Inertia::render('admin/ai/planner/index'))->name('admin.ai.planner.index');
         Route::get('/admin/ai/coach', fn () => Inertia::render('admin/ai/coach/index'))->name('admin.ai.coach.index');
+>>>>>>> origin/main
         Route::get('/admin/notifications', fn () => Inertia::render('admin/notifications/index'))->name('admin.notifications.index');
         Route::get('/admin/professional-verifications', fn () => Inertia::render('admin/professional-verifications/index'))->name('admin.professional-verifications.index');
         Route::get('/admin/professionals', fn () => Inertia::render('admin/professionals/index'))->name('admin.professionals.index');
         Route::get('/admin/meals', fn () => Inertia::render('admin/meals/index'))->name('admin.meals.index');
         Route::get('/admin/places', fn () => Inertia::render('admin/places/index'))->name('admin.places.index');
         Route::get('/admin/progress', fn () => Inertia::render('admin/progress/index'))->name('admin.progress.index');
+<<<<<<< HEAD
+        Route::get('/admin/message-moderations', fn () => Inertia::render('admin/message-moderations/index'))->name('admin.message-moderations.index');
+=======
+>>>>>>> origin/main
     });
 
     // RBAC APIs (session-authenticated)
@@ -203,6 +220,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/appointments', [AppointmentController::class, 'index']);
         Route::post('/appointments', [AppointmentController::class, 'store']);
         Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
+<<<<<<< HEAD
+        Route::post('/appointments/{appointment}/request-checkup', [AppointmentController::class, 'requestCheckup']);
+=======
+>>>>>>> origin/main
 
         Route::get('/assignments', [AssignmentController::class, 'index']);
         Route::post('/assignments', [AssignmentController::class, 'store'])->middleware('role:admin');
@@ -279,6 +300,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/admin/progress/{measurement}', [AdminProgressController::class, 'destroy']);
 
             Route::get('/admin/safety-profiles', [AdminSafetyProfileController::class, 'index']);
+<<<<<<< HEAD
+            Route::get('/admin/message-moderations', [AdminMessageModerationController::class, 'index']);
+            Route::patch('/admin/message-moderations/{messageModeration}/resolve', [AdminMessageModerationController::class, 'resolve']);
+=======
+>>>>>>> origin/main
         });
     });
 });

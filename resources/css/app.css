@@ -186,6 +186,15 @@
 
     --radius: 0.5rem;
 
+<<<<<<< HEAD
+    --sidebar: #f5f8ef;
+    --sidebar-foreground: #1d2a20;
+    --sidebar-primary: #7aac33;
+    --sidebar-primary-foreground: #f8fbf2;
+    --sidebar-accent: #e6efda;
+    --sidebar-accent-foreground: #20311f;
+    --sidebar-border: #d6e1cb;
+=======
     --sidebar: #1d2329;
     --sidebar-foreground: #f6f9f3;
     --sidebar-primary: #8fc73f;
@@ -193,6 +202,7 @@
     --sidebar-accent: #253127;
     --sidebar-accent-foreground: #eef8de;
     --sidebar-border: #37424b;
+>>>>>>> origin/main
     --sidebar-ring: #9ed24e;
 
     --font-display:

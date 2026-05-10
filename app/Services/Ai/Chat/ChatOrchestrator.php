@@ -96,6 +96,10 @@ class ChatOrchestrator
             'total_tokens' => 0,
         ];
         $providerRequestId = null;
+<<<<<<< HEAD
+        $latencyMs = null;
+=======
+>>>>>>> origin/main
 
         if ($answer === '') {
             if ($override !== null) {
@@ -141,6 +145,12 @@ class ChatOrchestrator
                     $model = (string) ($result['model'] ?? 'unknown-chat-model');
                     $usage = $result['usage'] ?? $usage;
                     $providerRequestId = $result['provider_request_id'] ?? null;
+<<<<<<< HEAD
+                    $latencyMs = is_numeric($result['latency_ms'] ?? null)
+                        ? (int) $result['latency_ms']
+                        : null;
+=======
+>>>>>>> origin/main
                     $chatPath = is_string($result['chat_path'] ?? null)
                         ? (string) $result['chat_path']
                         : null;
@@ -207,7 +217,11 @@ class ChatOrchestrator
             'chat',
             $usage,
             $model,
+<<<<<<< HEAD
+            $latencyMs,
+=======
             null,
+>>>>>>> origin/main
             $providerRequestId,
             [
                 'provider' => $provider,

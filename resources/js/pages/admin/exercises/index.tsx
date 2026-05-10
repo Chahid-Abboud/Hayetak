@@ -773,7 +773,11 @@ function ExerciseEditor({
                     </Button>
                 ) : null}
                 <Button asChild type="button" variant="outline">
+<<<<<<< HEAD
+                    <Link href="/admin/logs">Audit logs</Link>
+=======
                     <Link href="/admin/diagnostics">Diagnostics</Link>
+>>>>>>> origin/main
                 </Button>
             </AdminStickyBar>
         </div>
@@ -1160,12 +1164,21 @@ export default function AdminExercisesPage() {
                                     </div>
                                 </AdminPanel>
                                 <AdminPanel
+<<<<<<< HEAD
+                                    title="Audit trail stays separate"
+                                    description="This page keeps exercise editing focused and links out to audit logs instead of crowding the workspace with history detail."
+                                >
+                                    <Button asChild type="button" variant="outline">
+                                        <Link href="/admin/logs">
+                                            Open audit logs
+=======
                                     title="Diagnostics stay separate"
                                     description="This page summarizes planner quality and links to diagnostics instead of dumping raw audit data inline."
                                 >
                                     <Button asChild type="button" variant="outline">
                                         <Link href="/admin/diagnostics">
                                             Open diagnostics
+>>>>>>> origin/main
                                         </Link>
                                     </Button>
                                 </AdminPanel>

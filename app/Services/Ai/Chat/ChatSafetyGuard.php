@@ -204,10 +204,17 @@ class ChatSafetyGuard
         $meatTerms = ['chicken', 'beef', 'lamb', 'fish', 'tuna', 'turkey'];
 
         if ($dietType === 'vegan' && $this->containsAny($clean, array_merge($meatTerms, ['egg', 'eggs', 'yogurt', 'labneh', 'milk', 'cheese']))) {
+<<<<<<< HEAD
+            $clean = $this->dietTypeSafeReplacementAnswer($question, $context, 'vegan');
+            $warnings[] = 'Adjusted the reply to respect the saved diet type.';
+        } elseif ($dietType === 'vegetarian' && $this->containsAny($clean, $meatTerms)) {
+            $clean = $this->dietTypeSafeReplacementAnswer($question, $context, 'vegetarian');
+=======
             $clean = 'I kept the advice general because your diet type is vegan. Pick a vegan option that fits your target macros, such as legumes, tofu, grains, or plant-based dairy alternatives.';
             $warnings[] = 'Adjusted the reply to respect the saved diet type.';
         } elseif ($dietType === 'vegetarian' && $this->containsAny($clean, $meatTerms)) {
             $clean = 'I kept the advice general because your diet type is vegetarian. Choose a vegetarian protein source like eggs, dairy, legumes, tofu, or beans depending on your preferences.';
+>>>>>>> origin/main
             $warnings[] = 'Adjusted the reply to respect the saved diet type.';
         }
 
@@ -460,8 +467,21 @@ class ChatSafetyGuard
         }
 
         if ($this->containsAny($question, ['snack'])) {
+<<<<<<< HEAD
+            if ($dietType === 'vegan') {
+                return sprintf(
+                    'The original snack idea included %s, which conflicts with your saved allergy. A safer vegan snack option is a soy yogurt alternative with berries and chia, roasted edamame, or hummus with whole-grain crackers. A balanced serving can land around 260-340 kcal with 15-22 g protein depending on the option. Keep it free of %s and any other saved allergens.',
+                    $allergyLabel,
+                    $allergyLabel,
+                );
+            }
+
+            return sprintf(
+                'The original snack idea included %s, which conflicts with your saved allergy. A safer snack option is a dairy-free yogurt alternative with berries, oats, and chia or another tolerated protein-forward snack. Approximate macros: 260-340 kcal, 18-25 g protein, 30-42 g carbs, and 6-10 g fat depending on the option. Keep it free of %s and any other saved allergens.',
+=======
             return sprintf(
                 'The original snack idea included %s, which conflicts with your saved allergy. A safer snack option is Greek yogurt with berries, oats, and chia. Approximate macros: 340 kcal, 25 g protein, 42 g carbs, and 8 g fat. Keep it free of %s and any other saved allergens.',
+>>>>>>> origin/main
                 $allergyLabel,
                 $allergyLabel,
             );
@@ -482,6 +502,37 @@ class ChatSafetyGuard
         );
     }
 
+<<<<<<< HEAD
+    private function dietTypeSafeReplacementAnswer(string $question, array $context, string $dietType): string
+    {
+        $targetProtein = is_numeric(data_get($context, 'plans.nutrition_targets.protein_g'))
+            ? (int) round((float) data_get($context, 'plans.nutrition_targets.protein_g'))
+            : null;
+        $proteinHint = $targetProtein !== null
+            ? " Aim for choices that help you move toward roughly {$targetProtein} g protein across the day."
+            : '';
+
+        if ($dietType === 'vegan') {
+            if ($this->containsAny($question, ['snack', 'recommend', 'recommendation', 'suggest'])) {
+                return 'I swapped that to vegan-safe options because your diet type is vegan. Good high-protein snack choices are roasted edamame, soy yogurt with berries and chia, tofu pudding, or hummus with whole-grain crackers.' . $proteinHint;
+            }
+
+            if ($this->containsAny($question, ['breakfast', 'lunch', 'dinner', 'meal', 'recipe', 'eat'])) {
+                return 'I adjusted that to fit your vegan diet type. Build the meal around tofu, tempeh, beans, lentils, or soy yogurt alternatives, then add grains, fruit, or vegetables depending on the meal.' . $proteinHint;
+            }
+
+            return 'I kept that vegan-safe because your diet type is vegan. Choose legumes, tofu, tempeh, grains, and plant-based dairy alternatives that fit your goal and saved restrictions.' . $proteinHint;
+        }
+
+        if ($this->containsAny($question, ['snack', 'recommend', 'recommendation', 'suggest'])) {
+            return 'I adjusted that to fit your vegetarian diet type. Good protein-forward vegetarian snacks are Greek yogurt if tolerated, cottage cheese, eggs, tofu, edamame, or hummus with crackers.' . $proteinHint;
+        }
+
+        return 'I kept that vegetarian-safe because your diet type is vegetarian. Choose protein sources like eggs, dairy if tolerated, legumes, tofu, or beans depending on your preferences and saved restrictions.' . $proteinHint;
+    }
+
+=======
+>>>>>>> origin/main
     private function displayAllergyLabel(array $context, string $matchedAllergy): string
     {
         $normalized = mb_strtolower(trim($matchedAllergy));

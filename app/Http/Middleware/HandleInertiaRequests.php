@@ -42,6 +42,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $u->id,
                     'email' => $u->email,
                     'name' => $u->name ?? null,
+                    'email_verified_at' => $u->email_verified_at?->toISOString(),
                     'first_name' => $u->first_name ?? null,
                     'last_name' => $u->last_name ?? null,
                     'username' => $u->username ?? null,
@@ -76,6 +77,7 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'verificationArrival' => fn () => $request->session()->get('verificationArrival'),
                 'showOptionalTwoFactorPrompt' => (bool) $request->session()->pull('showOptionalTwoFactorPrompt', false),
             ],
         ]);

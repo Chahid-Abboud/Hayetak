@@ -55,6 +55,38 @@ type SearchFood = {
     serving_unit: string;
 };
 
+<<<<<<< HEAD
+type DietPlanFood = {
+    id: number;
+    name?: string;
+    servings?: number;
+};
+
+type DietPlanMeal = {
+    meal_type: string;
+    foods: DietPlanFood[];
+};
+
+type DietPlanDay = {
+    date: string;
+    meals: DietPlanMeal[];
+};
+
+type WorkoutPlanExercise = {
+    name: string;
+    sets: string;
+    reps: string;
+    notes: string;
+};
+
+type WorkoutPlanDay = {
+    label: string;
+    focus: string;
+    exercises: WorkoutPlanExercise[];
+};
+
+=======
+>>>>>>> origin/main
 type ClientCard = {
     assignment_id: number;
     notes?: string | null;
@@ -66,6 +98,10 @@ type ClientCard = {
         age?: number | null;
         height_cm?: number | null;
         weight_kg?: number | null;
+<<<<<<< HEAD
+        allergens?: string[];
+=======
+>>>>>>> origin/main
     };
     progress: {
         latest_weight_kg: number | null;
@@ -83,6 +119,23 @@ type ClientCard = {
     nutrition?: {
         weekly_days: WeeklyMealDay[];
     };
+<<<<<<< HEAD
+    diet_plan?: {
+        id: number;
+        title: string;
+        start_date?: string | null;
+        end_date?: string | null;
+        plan_json?: DietPlanDay[] | null;
+        notes?: string | null;
+    } | null;
+    workout_plan?: {
+        id: number;
+        title: string;
+        plan_json?: WorkoutPlanDay[] | null;
+        notes?: string | null;
+    } | null;
+=======
+>>>>>>> origin/main
 };
 
 type PageProps = SharedData & {
@@ -111,6 +164,37 @@ type MealNoteDialogState = {
     substituteError: string | null;
 };
 
+<<<<<<< HEAD
+type DietPlanDialogState = {
+    client: ClientCard['client'];
+    diet_plan?: ClientCard['diet_plan'];
+    title: string;
+    start_date: string;
+    end_date: string;
+    days: DietPlanDay[];
+    searchQuery: string;
+    searchMealType: string;
+    searchResults: SearchFood[];
+    searchLoading: boolean;
+    searchError: string | null;
+    saving: boolean;
+    saveError: string | null;
+    mealTypeToAdd: string;
+    showFoodSearchFor: { dayIndex: number; mealType: string } | null;
+};
+
+type WorkoutPlanDialogState = {
+    client: ClientCard['client'];
+    workout_plan?: ClientCard['workout_plan'];
+    title: string;
+    notes: string;
+    days: WorkoutPlanDay[];
+    saving: boolean;
+    saveError: string | null;
+};
+
+=======
+>>>>>>> origin/main
 type ClientFilter = 'all' | 'attention' | 'stable';
 
 function getCsrfToken() {
@@ -124,7 +208,11 @@ function getCsrfToken() {
 }
 
 function formatRoleLabel(role: 'trainer' | 'nutritionist') {
+<<<<<<< HEAD
+    return role === 'nutritionist' ? 'Dietitian' : 'Personal Trainer';
+=======
     return role === 'nutritionist' ? 'Dietitian' : 'Trainer';
+>>>>>>> origin/main
 }
 
 function formatDateTime(value?: string | null) {
@@ -322,6 +410,13 @@ export default function ProfessionalClientsPage() {
         useState<AppointmentDialogState | null>(null);
     const [mealNoteDialog, setMealNoteDialog] =
         useState<MealNoteDialogState | null>(null);
+<<<<<<< HEAD
+    const [dietPlanDialog, setDietPlanDialog] =
+        useState<DietPlanDialogState | null>(null);
+    const [workoutPlanDialog, setWorkoutPlanDialog] =
+        useState<WorkoutPlanDialogState | null>(null);
+=======
+>>>>>>> origin/main
     const mealNoteIsOpen = mealNoteDialog !== null;
     const mealNoteSubstituteQuery = mealNoteDialog?.substituteQuery ?? '';
     const mealNoteSelectedMealType = mealNoteDialog
@@ -660,6 +755,303 @@ export default function ProfessionalClientsPage() {
           )
         : null;
 
+<<<<<<< HEAD
+    function openDietPlanDialog(clientEntry: ClientCard) {
+        const existingPlan = clientEntry.diet_plan;
+
+        setDietPlanDialog({
+            client: clientEntry.client,
+            diet_plan: existingPlan,
+            title: existingPlan?.title ?? '',
+            start_date: existingPlan?.start_date ?? '',
+            end_date: existingPlan?.end_date ?? '',
+            days: existingPlan?.plan_json ?? [],
+            searchQuery: '',
+            searchMealType: 'breakfast',
+            searchResults: [],
+            searchLoading: false,
+            searchError: null,
+            saving: false,
+            saveError: null,
+            mealTypeToAdd: 'breakfast',
+            showFoodSearchFor: null,
+        });
+    }
+
+    async function submitDietPlan() {
+        if (!dietPlanDialog) return;
+
+        setDietPlanDialog((current) =>
+            current ? { ...current, saving: true, saveError: null } : null,
+        );
+        setBusyClientId(dietPlanDialog.client.id);
+
+        try {
+            const method = dietPlanDialog.diet_plan ? 'PUT' : 'POST';
+            const url = dietPlanDialog.diet_plan
+                ? `/api/diet-plans/${dietPlanDialog.diet_plan.id}`
+                : '/api/diet-plans';
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    client_id: dietPlanDialog.client.id,
+                    title: dietPlanDialog.title || 'Client diet plan',
+                    start_date: dietPlanDialog.start_date || null,
+                    end_date: dietPlanDialog.end_date || null,
+                    plan_json: dietPlanDialog.days,
+                }),
+            });
+
+            if (!response.ok) {
+                const json = await response.json().catch(() => ({}));
+                const message =
+                    Array.isArray(json?.errors?.plan_json) &&
+                    json.errors.plan_json.length > 0
+                        ? json.errors.plan_json[0]
+                        : json?.message || 'Failed to save diet plan';
+
+                throw new Error(message);
+            }
+
+            setBanner({
+                kind: 'success',
+                text: 'Diet plan saved successfully.',
+            });
+            setDietPlanDialog(null);
+        } catch (error) {
+            setDietPlanDialog((current) =>
+                current
+                    ? {
+                          ...current,
+                          saving: false,
+                          saveError:
+                              error instanceof Error
+                                  ? error.message
+                                  : 'Failed to save diet plan',
+                      }
+                    : null,
+            );
+        } finally {
+            setBusyClientId(null);
+        }
+    }
+
+    async function searchFoodsForDietPlan() {
+        if (!dietPlanDialog?.showFoodSearchFor) return;
+
+        const { mealType } = dietPlanDialog.showFoodSearchFor;
+
+        setDietPlanDialog((current) =>
+            current
+                ? { ...current, searchLoading: true, searchError: null }
+                : null,
+        );
+
+        try {
+            const params = new URLSearchParams({
+                q: dietPlanDialog.searchQuery,
+                meal_type: mealType,
+                exclude_allergens: 'true',
+                client_id: String(dietPlanDialog.client.id),
+                page: '1',
+            });
+
+            const response = await fetch(
+                `/api/foods/search?${params.toString()}`,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Search failed');
+            }
+
+            const json = await response.json();
+            setDietPlanDialog((current) =>
+                current
+                    ? {
+                          ...current,
+                          searchResults: json.data ?? [],
+                          searchLoading: false,
+                      }
+                    : null,
+            );
+        } catch (error) {
+            setDietPlanDialog((current) =>
+                current
+                    ? {
+                          ...current,
+                          searchLoading: false,
+                          searchError:
+                              error instanceof Error
+                                  ? error.message
+                                  : 'Search failed',
+                      }
+                    : null,
+            );
+        }
+    }
+
+    function addFoodToDietPlan(food: SearchFood) {
+        if (!dietPlanDialog?.showFoodSearchFor) return;
+
+        const { dayIndex, mealType } = dietPlanDialog.showFoodSearchFor;
+        setDietPlanDialog((current) => {
+            if (!current) return null;
+
+            const days = [...current.days];
+
+            if (!days[dayIndex]) {
+                days[dayIndex] = {
+                    date: new Date().toISOString().slice(0, 10),
+                    meals: [],
+                };
+            }
+
+            let meal = days[dayIndex].meals.find(
+                (item) => item.meal_type === mealType,
+            );
+
+            if (!meal) {
+                meal = { meal_type: mealType, foods: [] };
+                days[dayIndex].meals.push(meal);
+            }
+
+            meal.foods.push({ id: food.id, name: food.name });
+
+            return {
+                ...current,
+                days,
+                showFoodSearchFor: null,
+                searchResults: [],
+                searchQuery: '',
+            };
+        });
+    }
+
+    function openWorkoutPlanDialog(clientEntry: ClientCard) {
+        const existingPlan = clientEntry.workout_plan;
+
+        setWorkoutPlanDialog({
+            client: clientEntry.client,
+            workout_plan: existingPlan,
+            title: existingPlan?.title ?? '',
+            notes: existingPlan?.notes ?? '',
+            days:
+                existingPlan?.plan_json && existingPlan.plan_json.length > 0
+                    ? existingPlan.plan_json
+                    : [
+                          {
+                              label: 'Day 1',
+                              focus: '',
+                              exercises: [
+                                  {
+                                      name: '',
+                                      sets: '',
+                                      reps: '',
+                                      notes: '',
+                                  },
+                              ],
+                          },
+                      ],
+            saving: false,
+            saveError: null,
+        });
+    }
+
+    async function submitWorkoutPlan() {
+        if (!workoutPlanDialog) return;
+
+        setWorkoutPlanDialog((current) =>
+            current ? { ...current, saving: true, saveError: null } : null,
+        );
+        setBusyClientId(workoutPlanDialog.client.id);
+
+        try {
+            const method = workoutPlanDialog.workout_plan ? 'PUT' : 'POST';
+            const url = workoutPlanDialog.workout_plan
+                ? `/api/trainer-workout-plans/${workoutPlanDialog.workout_plan.id}`
+                : '/api/trainer-workout-plans';
+
+            const normalizedDays = workoutPlanDialog.days
+                .map((day) => ({
+                    label: day.label.trim(),
+                    focus: day.focus.trim(),
+                    exercises: day.exercises
+                        .map((exercise) => ({
+                            name: exercise.name.trim(),
+                            sets: exercise.sets.trim(),
+                            reps: exercise.reps.trim(),
+                            notes: exercise.notes.trim(),
+                        }))
+                        .filter((exercise) => exercise.name !== ''),
+                }))
+                .filter(
+                    (day) =>
+                        day.label !== '' ||
+                        day.focus !== '' ||
+                        day.exercises.length > 0,
+                );
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    client_id: workoutPlanDialog.client.id,
+                    title: workoutPlanDialog.title || 'Client workout plan',
+                    notes: workoutPlanDialog.notes || null,
+                    plan_json: normalizedDays,
+                }),
+            });
+
+            if (!response.ok) {
+                const json = await response.json().catch(() => ({}));
+                throw new Error(
+                    json?.message || 'Failed to save workout plan',
+                );
+            }
+
+            setBanner({
+                kind: 'success',
+                text: 'Workout plan saved successfully.',
+            });
+            setWorkoutPlanDialog(null);
+        } catch (error) {
+            setWorkoutPlanDialog((current) =>
+                current
+                    ? {
+                          ...current,
+                          saving: false,
+                          saveError:
+                              error instanceof Error
+                                  ? error.message
+                                  : 'Failed to save workout plan',
+                      }
+                    : null,
+            );
+        } finally {
+            setBusyClientId(null);
+        }
+    }
+
+=======
+>>>>>>> origin/main
     return (
         <>
             <Head title={pageTitle} />
@@ -693,6 +1085,1017 @@ export default function ProfessionalClientsPage() {
                     }
                 />
 
+<<<<<<< HEAD
+                {workoutPlanDialog ? (
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    >
+                        <div
+                            className="absolute inset-0 bg-black/40"
+                            onClick={() => setWorkoutPlanDialog(null)}
+                        />
+
+                        <div className="relative z-10 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card dark:text-white">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="text-sm font-medium">
+                                    {workoutPlanDialog.workout_plan
+                                        ? 'Edit'
+                                        : 'Create'}{' '}
+                                    Workout plan for{' '}
+                                    {workoutPlanDialog.client.name}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setWorkoutPlanDialog(null)}
+                                    className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            {workoutPlanDialog.saveError ? (
+                                <div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                                    {workoutPlanDialog.saveError}
+                                </div>
+                            ) : null}
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label
+                                        className="block text-sm"
+                                        htmlFor="workout-plan-title"
+                                    >
+                                        Title
+                                    </label>
+                                    <input
+                                        id="workout-plan-title"
+                                        type="text"
+                                        value={workoutPlanDialog.title}
+                                        onChange={(event) =>
+                                            setWorkoutPlanDialog((current) =>
+                                                current
+                                                    ? {
+                                                          ...current,
+                                                          title: event.target.value,
+                                                      }
+                                                    : null,
+                                            )
+                                        }
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                        placeholder="Strength and mobility plan"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        className="block text-sm"
+                                        htmlFor="workout-plan-notes"
+                                    >
+                                        Notes
+                                    </label>
+                                    <textarea
+                                        id="workout-plan-notes"
+                                        value={workoutPlanDialog.notes}
+                                        onChange={(event) =>
+                                            setWorkoutPlanDialog((current) =>
+                                                current
+                                                    ? {
+                                                          ...current,
+                                                          notes: event.target.value,
+                                                      }
+                                                    : null,
+                                            )
+                                        }
+                                        rows={3}
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                        placeholder="Programming notes, rest guidance, and progression cues"
+                                    />
+                                </div>
+
+                                <div className="border-t pt-3">
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <div className="text-sm font-medium">
+                                            Workout days
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setWorkoutPlanDialog(
+                                                    (current) =>
+                                                        current
+                                                            ? {
+                                                                  ...current,
+                                                                  days: [
+                                                                      ...current.days,
+                                                                      {
+                                                                          label: `Day ${current.days.length + 1}`,
+                                                                          focus: '',
+                                                                          exercises: [
+                                                                              {
+                                                                                  name: '',
+                                                                                  sets: '',
+                                                                                  reps: '',
+                                                                                  notes: '',
+                                                                              },
+                                                                          ],
+                                                                      },
+                                                                  ],
+                                                              }
+                                                            : null,
+                                                )
+                                            }
+                                            className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5"
+                                        >
+                                            Add day
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {workoutPlanDialog.days.map(
+                                            (day, dayIdx) => (
+                                                <div
+                                                    key={dayIdx}
+                                                    className="rounded-lg border border-border/50 p-3"
+                                                >
+                                                    <div className="mb-3 flex items-start justify-between gap-3">
+                                                        <div className="grid flex-1 gap-3 md:grid-cols-2">
+                                                            <input
+                                                                type="text"
+                                                                value={day.label}
+                                                                onChange={(event) =>
+                                                                    setWorkoutPlanDialog(
+                                                                        (
+                                                                            current,
+                                                                        ) => {
+                                                                            if (!current) {
+                                                                                return null;
+                                                                            }
+                                                                            const days = [
+                                                                                ...current.days,
+                                                                            ];
+                                                                            days[dayIdx] = {
+                                                                                ...days[
+                                                                                    dayIdx
+                                                                                ],
+                                                                                label: event.target.value,
+                                                                            };
+                                                                            return {
+                                                                                ...current,
+                                                                                days,
+                                                                            };
+                                                                        },
+                                                                    )
+                                                                }
+                                                                className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                placeholder="Day label"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={day.focus}
+                                                                onChange={(event) =>
+                                                                    setWorkoutPlanDialog(
+                                                                        (
+                                                                            current,
+                                                                        ) => {
+                                                                            if (!current) {
+                                                                                return null;
+                                                                            }
+                                                                            const days = [
+                                                                                ...current.days,
+                                                                            ];
+                                                                            days[dayIdx] = {
+                                                                                ...days[
+                                                                                    dayIdx
+                                                                                ],
+                                                                                focus: event.target.value,
+                                                                            };
+                                                                            return {
+                                                                                ...current,
+                                                                                days,
+                                                                            };
+                                                                        },
+                                                                    )
+                                                                }
+                                                                className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                placeholder="Focus, for example Upper body or Recovery"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setWorkoutPlanDialog(
+                                                                    (current) =>
+                                                                        current
+                                                                            ? {
+                                                                                  ...current,
+                                                                                  days: current.days.filter(
+                                                                                      (
+                                                                                          _,
+                                                                                          index,
+                                                                                      ) =>
+                                                                                          index !==
+                                                                                          dayIdx,
+                                                                                  ),
+                                                                              }
+                                                                            : null,
+                                                                )
+                                                            }
+                                                            className="text-xs text-destructive hover:underline"
+                                                        >
+                                                            Remove day
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        {day.exercises.map(
+                                                            (
+                                                                exercise,
+                                                                exerciseIdx,
+                                                            ) => (
+                                                                <div
+                                                                    key={
+                                                                        exerciseIdx
+                                                                    }
+                                                                    className="grid gap-2 rounded-lg border border-border/40 p-3 md:grid-cols-[minmax(0,2fr)_110px_110px_minmax(0,1.5fr)_auto]"
+                                                                >
+                                                                    <input
+                                                                        type="text"
+                                                                        value={
+                                                                            exercise.name
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setWorkoutPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].exercises[
+                                                                                        exerciseIdx
+                                                                                    ] = {
+                                                                                        ...days[
+                                                                                            dayIdx
+                                                                                        ]
+                                                                                            .exercises[
+                                                                                            exerciseIdx
+                                                                                        ],
+                                                                                        name: event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    };
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                        placeholder="Exercise name"
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={
+                                                                            exercise.sets
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setWorkoutPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].exercises[
+                                                                                        exerciseIdx
+                                                                                    ] = {
+                                                                                        ...days[
+                                                                                            dayIdx
+                                                                                        ]
+                                                                                            .exercises[
+                                                                                            exerciseIdx
+                                                                                        ],
+                                                                                        sets: event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    };
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                        placeholder="Sets"
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={
+                                                                            exercise.reps
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setWorkoutPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].exercises[
+                                                                                        exerciseIdx
+                                                                                    ] = {
+                                                                                        ...days[
+                                                                                            dayIdx
+                                                                                        ]
+                                                                                            .exercises[
+                                                                                            exerciseIdx
+                                                                                        ],
+                                                                                        reps: event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    };
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                        placeholder="Reps"
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={
+                                                                            exercise.notes
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setWorkoutPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].exercises[
+                                                                                        exerciseIdx
+                                                                                    ] = {
+                                                                                        ...days[
+                                                                                            dayIdx
+                                                                                        ]
+                                                                                            .exercises[
+                                                                                            exerciseIdx
+                                                                                        ],
+                                                                                        notes: event
+                                                                                            .target
+                                                                                            .value,
+                                                                                    };
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                                        placeholder="Notes"
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setWorkoutPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].exercises =
+                                                                                        days[
+                                                                                            dayIdx
+                                                                                        ].exercises.filter(
+                                                                                            (
+                                                                                                _,
+                                                                                                index,
+                                                                                            ) =>
+                                                                                                index !==
+                                                                                                exerciseIdx,
+                                                                                        );
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="text-xs text-destructive hover:underline"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setWorkoutPlanDialog(
+                                                                (current) => {
+                                                                    if (!current) {
+                                                                        return null;
+                                                                    }
+                                                                    const days =
+                                                                        [
+                                                                            ...current.days,
+                                                                        ];
+                                                                    days[
+                                                                        dayIdx
+                                                                    ].exercises.push(
+                                                                        {
+                                                                            name: '',
+                                                                            sets: '',
+                                                                            reps: '',
+                                                                            notes: '',
+                                                                        },
+                                                                    );
+                                                                    return {
+                                                                        ...current,
+                                                                        days,
+                                                                    };
+                                                                },
+                                                            )
+                                                        }
+                                                        className="mt-3 text-xs text-primary hover:underline"
+                                                    >
+                                                        + Add exercise
+                                                    </button>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setWorkoutPlanDialog(null)}
+                                    className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void submitWorkoutPlan()}
+                                    disabled={workoutPlanDialog.saving}
+                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-60"
+                                >
+                                    {workoutPlanDialog.saving
+                                        ? 'Saving...'
+                                        : 'Save plan'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
+                {dietPlanDialog ? (
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    >
+                        <div
+                            className="absolute inset-0 bg-black/40"
+                            onClick={() => setDietPlanDialog(null)}
+                        />
+
+                        <div className="relative z-10 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card dark:text-white">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="text-sm font-medium">
+                                    {dietPlanDialog.diet_plan ? 'Edit' : 'Create'}{' '}
+                                    Diet plan for {dietPlanDialog.client.name}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setDietPlanDialog(null)}
+                                    className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none dark:border-white/15 dark:hover:bg-white/10 dark:focus:ring-white/25"
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            <div className="mb-4">
+                                <div className="font-semibold">
+                                    {dietPlanDialog.client.name}
+                                </div>
+                                <div className="text-xs opacity-75">
+                                    Allergens:{' '}
+                                    {dietPlanDialog.client.allergens?.join(
+                                        ', ',
+                                    ) || 'None'}
+                                </div>
+                            </div>
+
+                            {dietPlanDialog.saveError ? (
+                                <div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                                    {dietPlanDialog.saveError}
+                                </div>
+                            ) : null}
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label
+                                        className="block text-sm"
+                                        htmlFor="diet-plan-title"
+                                    >
+                                        Title
+                                    </label>
+                                    <input
+                                        id="diet-plan-title"
+                                        type="text"
+                                        value={dietPlanDialog.title}
+                                        onChange={(event) =>
+                                            setDietPlanDialog((current) =>
+                                                current
+                                                    ? {
+                                                          ...current,
+                                                          title: event.target.value,
+                                                      }
+                                                    : null,
+                                            )
+                                        }
+                                        className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                        placeholder="Weekly meal plan"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label
+                                            className="block text-sm"
+                                            htmlFor="diet-plan-start"
+                                        >
+                                            Start date
+                                        </label>
+                                        <input
+                                            id="diet-plan-start"
+                                            type="date"
+                                            value={dietPlanDialog.start_date}
+                                            onChange={(event) =>
+                                                setDietPlanDialog((current) =>
+                                                    current
+                                                        ? {
+                                                              ...current,
+                                                              start_date:
+                                                                  event.target
+                                                                      .value,
+                                                          }
+                                                        : null,
+                                                )
+                                            }
+                                            className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            className="block text-sm"
+                                            htmlFor="diet-plan-end"
+                                        >
+                                            End date
+                                        </label>
+                                        <input
+                                            id="diet-plan-end"
+                                            type="date"
+                                            value={dietPlanDialog.end_date}
+                                            onChange={(event) =>
+                                                setDietPlanDialog((current) =>
+                                                    current
+                                                        ? {
+                                                              ...current,
+                                                              end_date:
+                                                                  event.target
+                                                                      .value,
+                                                          }
+                                                        : null,
+                                                )
+                                            }
+                                            className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="border-t pt-3">
+                                    <div className="mb-2 text-sm font-medium">
+                                        Meal plan days
+                                    </div>
+                                    {dietPlanDialog.days.length === 0 ? (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setDietPlanDialog((current) =>
+                                                    current
+                                                        ? {
+                                                              ...current,
+                                                              days: [
+                                                                  {
+                                                                      date: '',
+                                                                      meals: [
+                                                                          {
+                                                                              meal_type:
+                                                                                  'breakfast',
+                                                                              foods: [],
+                                                                          },
+                                                                          {
+                                                                              meal_type:
+                                                                                  'lunch',
+                                                                              foods: [],
+                                                                          },
+                                                                          {
+                                                                              meal_type:
+                                                                                  'dinner',
+                                                                              foods: [],
+                                                                          },
+                                                                      ],
+                                                                  },
+                                                              ],
+                                                          }
+                                                        : null,
+                                                )
+                                            }
+                                            className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5"
+                                        >
+                                            Add day 1
+                                        </button>
+                                    ) : null}
+
+                                    {dietPlanDialog.days.map((day, dayIdx) => (
+                                        <div
+                                            key={dayIdx}
+                                            className="mb-4 rounded-lg border border-border/50 p-3"
+                                        >
+                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                                <input
+                                                    type="date"
+                                                    value={day.date}
+                                                    onChange={(event) =>
+                                                        setDietPlanDialog(
+                                                            (current) => {
+                                                                if (!current) {
+                                                                    return null;
+                                                                }
+                                                                const days = [
+                                                                    ...current.days,
+                                                                ];
+                                                                days[dayIdx] = {
+                                                                    ...days[
+                                                                        dayIdx
+                                                                    ],
+                                                                    date: event
+                                                                        .target
+                                                                        .value,
+                                                                };
+                                                                return {
+                                                                    ...current,
+                                                                    days,
+                                                                };
+                                                            },
+                                                        )
+                                                    }
+                                                    className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card dark:text-white"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setDietPlanDialog(
+                                                            (current) =>
+                                                                current
+                                                                    ? {
+                                                                          ...current,
+                                                                          days: current.days.filter(
+                                                                              (
+                                                                                  _,
+                                                                                  index,
+                                                                              ) =>
+                                                                                  index !==
+                                                                                  dayIdx,
+                                                                          ),
+                                                                      }
+                                                                    : null,
+                                                        )
+                                                    }
+                                                    className="text-xs text-destructive hover:underline"
+                                                >
+                                                    Remove day
+                                                </button>
+                                            </div>
+
+                                            {day.meals.map((meal) => (
+                                                <div
+                                                    key={meal.meal_type}
+                                                    className="mb-3"
+                                                >
+                                                    <div className="text-xs font-semibold uppercase text-muted-foreground">
+                                                        {formatMealType(
+                                                            meal.meal_type,
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-1 space-y-1">
+                                                        {meal.foods.map(
+                                                            (food, foodIdx) => (
+                                                                <div
+                                                                    key={
+                                                                        foodIdx
+                                                                    }
+                                                                    className="flex items-center justify-between rounded bg-muted/30 px-2 py-1 text-sm"
+                                                                >
+                                                                    <span>
+                                                                        {
+                                                                            food.name
+                                                                        }
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setDietPlanDialog(
+                                                                                (
+                                                                                    current,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        !current
+                                                                                    ) {
+                                                                                        return null;
+                                                                                    }
+                                                                                    const days =
+                                                                                        [
+                                                                                            ...current.days,
+                                                                                        ];
+                                                                                    days[
+                                                                                        dayIdx
+                                                                                    ].meals =
+                                                                                        days[
+                                                                                            dayIdx
+                                                                                        ].meals.map(
+                                                                                            (
+                                                                                                item,
+                                                                                            ) =>
+                                                                                                item.meal_type ===
+                                                                                                meal.meal_type
+                                                                                                    ? {
+                                                                                                          ...item,
+                                                                                                          foods: item.foods.filter(
+                                                                                                              (
+                                                                                                                  _food,
+                                                                                                                  index,
+                                                                                                              ) =>
+                                                                                                                  index !==
+                                                                                                                  foodIdx,
+                                                                                                          ),
+                                                                                                      }
+                                                                                                    : item,
+                                                                                        );
+                                                                                    return {
+                                                                                        ...current,
+                                                                                        days,
+                                                                                    };
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        className="text-xs text-destructive hover:underline"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setDietPlanDialog(
+                                                                    (current) =>
+                                                                        current
+                                                                            ? {
+                                                                                  ...current,
+                                                                                  showFoodSearchFor:
+                                                                                      {
+                                                                                          dayIndex:
+                                                                                              dayIdx,
+                                                                                          mealType:
+                                                                                              meal.meal_type,
+                                                                                      },
+                                                                              }
+                                                                            : null,
+                                                                )
+                                                            }
+                                                            className="text-xs text-primary hover:underline"
+                                                        >
+                                                            + Add food
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setDietPlanDialog(null)}
+                                    className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5 focus:ring-2 focus:ring-ring/30 focus:outline-none"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void submitDietPlan()}
+                                    disabled={dietPlanDialog.saving}
+                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-60"
+                                >
+                                    {dietPlanDialog.saving
+                                        ? 'Saving...'
+                                        : 'Save plan'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
+                {dietPlanDialog?.showFoodSearchFor ? (
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                    >
+                        <div
+                            className="absolute inset-0 bg-black/40"
+                            onClick={() =>
+                                setDietPlanDialog((current) =>
+                                    current
+                                        ? {
+                                              ...current,
+                                              showFoodSearchFor: null,
+                                              searchResults: [],
+                                          }
+                                        : null,
+                                )
+                            }
+                        />
+                        <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card">
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="text-sm font-medium">
+                                    Search foods
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setDietPlanDialog((current) =>
+                                            current
+                                                ? {
+                                                      ...current,
+                                                      showFoodSearchFor: null,
+                                                      searchResults: [],
+                                                  }
+                                                : null,
+                                        )
+                                    }
+                                    className="rounded-lg border border-border px-2 py-1 text-xs"
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            <div className="mb-3 text-xs opacity-75">
+                                Foods containing saved allergens are excluded.
+                            </div>
+
+                            <input
+                                type="text"
+                                value={dietPlanDialog.searchQuery}
+                                onChange={(event) =>
+                                    setDietPlanDialog((current) =>
+                                        current
+                                            ? {
+                                                  ...current,
+                                                  searchQuery:
+                                                      event.target.value,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        void searchFoodsForDietPlan();
+                                    }
+                                }}
+                                placeholder="Search foods..."
+                                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30 dark:border-white/15 dark:bg-card"
+                            />
+
+                            <div className="mt-3 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        void searchFoodsForDietPlan()
+                                    }
+                                    className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-primary/5"
+                                >
+                                    Search
+                                </button>
+                            </div>
+
+                            {dietPlanDialog.searchLoading ? (
+                                <div className="mt-3 text-sm">Loading...</div>
+                            ) : dietPlanDialog.searchError ? (
+                                <div className="mt-3 text-sm text-red-600">
+                                    {dietPlanDialog.searchError}
+                                </div>
+                            ) : (
+                                <div className="mt-3 max-h-60 space-y-1 overflow-y-auto">
+                                    {dietPlanDialog.searchResults.map(
+                                        (food) => (
+                                            <button
+                                                key={food.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    addFoodToDietPlan(food)
+                                                }
+                                                className="w-full rounded-lg border border-border/50 px-3 py-2 text-left text-sm hover:bg-primary/5"
+                                            >
+                                                {food.name}
+                                            </button>
+                                        ),
+                                    )}
+                                    {dietPlanDialog.searchResults.length ===
+                                        0 &&
+                                    dietPlanDialog.searchQuery ? (
+                                        <div className="text-sm opacity-75">
+                                            No foods found.
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : null}
+
+=======
+>>>>>>> origin/main
                 {banner ? (
                     <ProductBanner
                         tone={banner.kind === 'success' ? 'success' : 'danger'}
@@ -706,9 +2109,15 @@ export default function ProfessionalClientsPage() {
                         No assigned clients found yet.
                     </div>
                 ) : (
+<<<<<<< HEAD
+                    <div className="grid gap-5 xl:h-[calc(100vh-13rem)] xl:grid-cols-[minmax(240px,0.72fr)_minmax(0,1.28fr)]">
+                        <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
+                            <div className="flex h-full min-h-0 flex-col space-y-4">
+=======
                     <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
                         <aside className="rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
                             <div className="space-y-4">
+>>>>>>> origin/main
                                 <ProductFilterRow>
                                     <label className="relative min-w-0 flex-1">
                                         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -750,7 +2159,11 @@ export default function ProfessionalClientsPage() {
                                     ))}
                                 </div>
 
+<<<<<<< HEAD
+                                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+=======
                                 <div className="space-y-2">
+>>>>>>> origin/main
                                     {filteredClients.length === 0 ? (
                                         <p className="rounded-2xl border border-dashed border-border/70 px-3 py-6 text-center text-sm text-muted-foreground">
                                             No matching clients for this filter.
@@ -805,12 +2218,27 @@ export default function ProfessionalClientsPage() {
                             </div>
                         </aside>
 
+<<<<<<< HEAD
+                        <div className="min-h-0 h-full overflow-hidden">
+=======
                         <div className="space-y-5">
+>>>>>>> origin/main
                             {filteredClients.length === 0 ? (
                                 <div className="rounded-3xl border border-dashed border-border/70 bg-card p-8 text-sm text-muted-foreground">
                                     No clients match this filter.
                                 </div>
                             ) : (
+<<<<<<< HEAD
+                                <div className="h-full overflow-y-auto pr-1">
+                                    {(activeEntry
+                                        ? [activeEntry]
+                                        : filteredClients
+                                    ).map((entry) => (
+                                        <div
+                                            key={entry.assignment_id}
+                                            className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
+                                        >
+=======
                                 (activeEntry
                                     ? [activeEntry]
                                     : filteredClients
@@ -819,6 +2247,7 @@ export default function ProfessionalClientsPage() {
                                     key={entry.assignment_id}
                                     className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
                                 >
+>>>>>>> origin/main
                                         <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-3">
@@ -891,11 +2320,51 @@ export default function ProfessionalClientsPage() {
                                                     Appointment
                                                 </button>
                                                 {roleMode === 'nutritionist' ? (
+<<<<<<< HEAD
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                            onClick={() =>
+                                                                openMealNoteDialog(
+                                                                    entry,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                busyClientId ===
+                                                                entry.client.id
+                                                            }
+                                                        >
+                                                            Meal note
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                            onClick={() =>
+                                                                openDietPlanDialog(
+                                                                    entry,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                busyClientId ===
+                                                                entry.client.id
+                                                            }
+                                                        >
+                                                            Diet plan
+                                                        </button>
+                                                    </>
+                                                ) : roleMode === 'trainer' ? (
+=======
+>>>>>>> origin/main
                                                     <button
                                                         type="button"
                                                         className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
                                                         onClick={() =>
+<<<<<<< HEAD
+                                                            openWorkoutPlanDialog(
+=======
                                                             openMealNoteDialog(
+>>>>>>> origin/main
                                                                 entry,
                                                             )
                                                         }
@@ -904,13 +2373,21 @@ export default function ProfessionalClientsPage() {
                                                             entry.client.id
                                                         }
                                                     >
+<<<<<<< HEAD
+                                                        Workout plan
+=======
                                                         Meal Note
+>>>>>>> origin/main
                                                     </button>
                                                 ) : null}
                                             </div>
                                         </div>
 
+<<<<<<< HEAD
+                                        <div className="mt-5 space-y-4">
+=======
                                         <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+>>>>>>> origin/main
                                             <div className="rounded-2xl border bg-background p-4">
                                                 <div className="mb-3 flex items-center justify-between gap-3">
                                                     <h3 className="text-sm font-semibold">
@@ -995,6 +2472,279 @@ export default function ProfessionalClientsPage() {
                                             </div>
 
                                             {roleMode === 'trainer' ? (
+<<<<<<< HEAD
+                                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                                                    <div className="rounded-2xl border bg-background p-4">
+                                                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                                            <h3 className="text-sm font-semibold">
+                                                                Workout progress
+                                                            </h3>
+                                                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                                <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                    Sessions:{' '}
+                                                                    {
+                                                                        entry
+                                                                            .training
+                                                                            ?.summary
+                                                                            .logged_sessions
+                                                                    }
+                                                                </span>
+                                                                <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                    Sets:{' '}
+                                                                    {
+                                                                        entry
+                                                                            .training
+                                                                            ?.summary
+                                                                            .total_sets
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {entry.training
+                                                            ?.recent_workouts
+                                                            .length ? (
+                                                            <div className="space-y-3">
+                                                                {entry.training.recent_workouts.map(
+                                                                    (
+                                                                        workout,
+                                                                    ) => (
+                                                                        <div
+                                                                            key={
+                                                                                workout.id
+                                                                            }
+                                                                            className="rounded-2xl border p-3"
+                                                                        >
+                                                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                                <div className="font-medium">
+                                                                                    {formatDateTime(
+                                                                                        workout.performed_at,
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {workout.duration_min
+                                                                                        ? `${workout.duration_min} min`
+                                                                                        : 'No duration'}
+                                                                                    {' - '}
+                                                                                    {
+                                                                                        workout.sets_count
+                                                                                    }{' '}
+                                                                                    sets
+                                                                                </div>
+                                                                            </div>
+                                                                            {workout.notes ? (
+                                                                                <p className="mt-2 text-sm text-muted-foreground">
+                                                                                    {
+                                                                                        workout.notes
+                                                                                    }
+                                                                                </p>
+                                                                            ) : null}
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm text-muted-foreground">
+                                                                No workout logs
+                                                                yet for this
+                                                                client.
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="rounded-2xl border bg-background p-4">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Assigned workout
+                                                            plan
+                                                        </h3>
+                                                        {entry.workout_plan ? (
+                                                            <div className="mt-3 space-y-3 text-sm">
+                                                                <div className="font-medium">
+                                                                    {
+                                                                        entry
+                                                                            .workout_plan
+                                                                            .title
+                                                                    }
+                                                                </div>
+                                                                {entry.workout_plan.notes ? (
+                                                                    <p className="text-muted-foreground">
+                                                                        {
+                                                                            entry
+                                                                                .workout_plan
+                                                                                .notes
+                                                                        }
+                                                                    </p>
+                                                                ) : null}
+                                                                <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                                                                    {entry.workout_plan.plan_json?.map(
+                                                                        (
+                                                                            day,
+                                                                            dayIdx,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={`${day.label}-${dayIdx}`}
+                                                                                className="rounded-xl border px-3 py-3"
+                                                                            >
+                                                                                <div className="font-medium">
+                                                                                    {day.label ||
+                                                                                        `Day ${dayIdx + 1}`}
+                                                                                </div>
+                                                                                {day.focus ? (
+                                                                                    <div className="text-xs text-muted-foreground">
+                                                                                        {
+                                                                                            day.focus
+                                                                                        }
+                                                                                    </div>
+                                                                                ) : null}
+                                                                                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                                                                                    {day.exercises?.length ? (
+                                                                                        day.exercises.map(
+                                                                                            (
+                                                                                                exercise,
+                                                                                                exerciseIdx,
+                                                                                            ) => (
+                                                                                                <div
+                                                                                                    key={`${exercise.name}-${exerciseIdx}`}
+                                                                                                >
+                                                                                                    <span className="font-medium text-foreground">
+                                                                                                        {
+                                                                                                            exercise.name
+                                                                                                        }
+                                                                                                    </span>
+                                                                                                    {(exercise.sets ||
+                                                                                                        exercise.reps) && (
+                                                                                                        <>
+                                                                                                            {' '}
+                                                                                                            <span>
+                                                                                                                {[
+                                                                                                                    exercise.sets
+                                                                                                                        ? `${exercise.sets} sets`
+                                                                                                                        : null,
+                                                                                                                    exercise.reps
+                                                                                                                        ? `${exercise.reps} reps`
+                                                                                                                        : null,
+                                                                                                                ]
+                                                                                                                    .filter(Boolean)
+                                                                                                                    .join(
+                                                                                                                        ' x ',
+                                                                                                                    )}
+                                                                                                            </span>
+                                                                                                        </>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            ),
+                                                                                        )
+                                                                                    ) : (
+                                                                                        <div>
+                                                                                            No
+                                                                                            exercises
+                                                                                            added.
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="mt-3 text-sm text-muted-foreground">
+                                                                No workout plan
+                                                                assigned yet.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                                                    <div className="rounded-2xl border bg-background p-4">
+                                                        <div className="mb-3 flex items-center justify-between gap-3">
+                                                            <h3 className="text-sm font-semibold">
+                                                                Weekly meals
+                                                            </h3>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                Last 7 days
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                                                            {entry.nutrition?.weekly_days.map(
+                                                                (day) => (
+                                                                    <div
+                                                                        key={
+                                                                            day.date
+                                                                        }
+                                                                        className="rounded-2xl border p-3"
+                                                                    >
+                                                                        <div className="mb-2 flex items-center justify-between gap-3">
+                                                                            <div className="font-medium">
+                                                                                {
+                                                                                    day.label
+                                                                                }
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {
+                                                                                    day.date
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {day.meals
+                                                                            .length ? (
+                                                                            <div className="space-y-2">
+                                                                                {day.meals.map(
+                                                                                    (
+                                                                                        meal,
+                                                                                    ) => (
+                                                                                        <div
+                                                                                            key={
+                                                                                                meal.meal_type
+                                                                                            }
+                                                                                            className="rounded-xl bg-muted/40 p-3"
+                                                                                        >
+                                                                                            <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                                                {formatMealType(
+                                                                                                    meal.meal_type,
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <div className="mt-2 space-y-1 text-sm">
+                                                                                                {meal.items.map(
+                                                                                                    (
+                                                                                                        item,
+                                                                                                    ) => (
+                                                                                                        <div
+                                                                                                            key={
+                                                                                                                item.id
+                                                                                                            }
+                                                                                                            className="flex items-center justify-between gap-3"
+                                                                                                        >
+                                                                                                            <span className="min-w-0 truncate">
+                                                                                                                {
+                                                                                                                    item.food_name
+                                                                                                                }
+                                                                                                            </span>
+                                                                                                            <span className="text-xs text-muted-foreground">
+                                                                                                                {item.servings !==
+                                                                                                                null
+                                                                                                                    ? `${item.servings} serving(s)`
+                                                                                                                    : ''}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ),
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <p className="text-sm text-muted-foreground">
+                                                                                No
+                                                                                meals
+                                                                                logged.
+                                                                            </p>
+                                                                        )}
+=======
                                                 <div className="rounded-2xl border bg-background p-4">
                                                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                                                         <h3 className="text-sm font-semibold">
@@ -1060,10 +2810,71 @@ export default function ProfessionalClientsPage() {
                                                                                 }
                                                                             </p>
                                                                         ) : null}
+>>>>>>> origin/main
                                                                     </div>
                                                                 ),
                                                             )}
                                                         </div>
+<<<<<<< HEAD
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        <div className="rounded-2xl border bg-background p-4">
+                                                            <h3 className="text-sm font-semibold">
+                                                                Assigned diet
+                                                                plan
+                                                            </h3>
+                                                            {entry.diet_plan ? (
+                                                                <div className="mt-3 space-y-2 text-sm">
+                                                                    <div className="font-medium">
+                                                                        {
+                                                                            entry
+                                                                                .diet_plan
+                                                                                .title
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-muted-foreground">
+                                                                        {entry.diet_plan.start_date ??
+                                                                            'No start date'}{' '}
+                                                                        to{' '}
+                                                                        {entry.diet_plan.end_date ??
+                                                                            'No end date'}
+                                                                    </div>
+                                                                    {entry.diet_plan.notes ? (
+                                                                        <p className="text-muted-foreground">
+                                                                            {
+                                                                                entry
+                                                                                    .diet_plan
+                                                                                    .notes
+                                                                            }
+                                                                        </p>
+                                                                    ) : null}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="mt-3 text-sm text-muted-foreground">
+                                                                    No diet plan
+                                                                    assigned yet.
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {entry.client.allergens
+                                                            ?.length ? (
+                                                            <div className="rounded-2xl border bg-background p-4">
+                                                                <h3 className="text-sm font-semibold">
+                                                                    Allergy
+                                                                    guardrails
+                                                                </h3>
+                                                                <p className="mt-3 text-sm text-muted-foreground">
+                                                                    Hidden from
+                                                                    food search:{' '}
+                                                                    {entry.client.allergens.join(
+                                                                        ', ',
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        ) : null}
+=======
                                                     ) : (
                                                         <p className="text-sm text-muted-foreground">
                                                             No workout logs yet
@@ -1162,12 +2973,19 @@ export default function ProfessionalClientsPage() {
                                                                 </div>
                                                             ),
                                                         )}
+>>>>>>> origin/main
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
+<<<<<<< HEAD
+                                        </div>
+                                    ))}
+                                </div>
+=======
                                     </div>
                                 ))
+>>>>>>> origin/main
                             )}
                         </div>
                     </div>
@@ -1304,7 +3122,11 @@ export default function ProfessionalClientsPage() {
                                 disabled={
                                     busyClientId === appointmentDialog.client.id
                                 }
+<<<<<<< HEAD
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+=======
                                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+>>>>>>> origin/main
                             >
                                 Send appointment
                             </button>
@@ -1648,7 +3470,11 @@ export default function ProfessionalClientsPage() {
                                         mealNoteDialog.weeklyDays,
                                     )
                                 }
+<<<<<<< HEAD
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+=======
                                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+>>>>>>> origin/main
                             >
                                 Send meal note
                             </button>

@@ -16,6 +16,12 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->hasValidSignature() || $request->hasValidRelativeSignature(),
+            403,
+            'Invalid signature.'
+        );
+
         $user = User::query()->findOrFail($request->route('id'));
 
         abort_unless(
@@ -35,6 +41,12 @@ class VerifyEmailController extends Controller
 
         return redirect()
             ->route('dashboard')
+            ->with('verificationArrival', [
+                'account_id' => (int) $user->id,
+                'verified_at' => now()->toIso8601String(),
+                'headline' => 'Account verified',
+                'message' => 'Your email has been confirmed and your dashboard is ready.',
+            ])
             ->with(
                 'showOptionalTwoFactorPrompt',
                 ! $user->hasEnabledTwoFactorAuthentication(),

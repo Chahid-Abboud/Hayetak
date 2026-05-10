@@ -13,9 +13,18 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CalendarDays, Search, Shuffle, UtensilsCrossed } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+<<<<<<< HEAD
+import { cleanPlanName } from '@/lib/plan-utils';
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink';
+type QuantityMode = 'servings' | 'grams' | 'milliliters';
+type QuantityDraft = { mode: QuantityMode; value: number };
+=======
+
+type Totals = { calories: number; protein: number; carbs: number; fat: number };
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink';
+>>>>>>> origin/main
 type Targets = Partial<Totals>;
 
 type SearchFood = {
@@ -152,6 +161,194 @@ function statusLabel(status: PlannedItem['status']) {
 function mealLabel(mealType: MealType) {
     return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 }
+<<<<<<< HEAD
+
+function isLiquidUnit(unit?: string | null) {
+    return ['ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters'].includes(
+        (unit ?? '').toLowerCase().trim(),
+    );
+}
+
+function isDrinkFood(
+    food: { serving_unit: string },
+    mealType?: MealType | null,
+) {
+    return mealType === 'drink' || isLiquidUnit(food.serving_unit);
+}
+
+function normalizeServingBase(
+    food: { serving_size: number; serving_unit: string },
+    mode: 'grams' | 'milliliters',
+) {
+    let size = Number(food.serving_size) || 0;
+    const unit = food.serving_unit.toLowerCase().trim();
+
+    if (mode === 'milliliters') {
+        if (unit === 'l' || unit === 'liter' || unit === 'liters') {
+            size *= 1000;
+        }
+
+        return size > 0 ? size : 250;
+    }
+
+    if (unit === 'kg' || unit === 'kilogram' || unit === 'kilograms') {
+        size *= 1000;
+    }
+
+    return size > 0 ? size : 100;
+}
+
+function roundQuantity(value: number, precision = 2) {
+    const factor = 10 ** precision;
+    return Math.round(value * factor) / factor;
+}
+
+function safeQuantity(value: number, fallback = 1) {
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function quantityToServings(
+    food: { serving_size: number; serving_unit: string },
+    draft: QuantityDraft,
+) {
+    const amount = safeQuantity(draft.value, draft.mode === 'servings' ? 1 : 100);
+
+    if (draft.mode === 'servings') {
+        return amount;
+    }
+
+    const base = normalizeServingBase(
+        food,
+        draft.mode === 'milliliters' ? 'milliliters' : 'grams',
+    );
+
+    return roundQuantity(Math.max(0.01, amount / Math.max(1, base)), 4);
+}
+
+function quantityModeOptions(
+    food: { serving_unit: string },
+    mealType?: MealType | null,
+): QuantityMode[] {
+    return isDrinkFood(food, mealType)
+        ? ['servings', 'milliliters']
+        : ['servings', 'grams'];
+}
+
+function quantityModeLabel(mode: QuantityMode) {
+    if (mode === 'grams') return 'Grams';
+    if (mode === 'milliliters') return 'Milliliters';
+    return 'Servings';
+}
+
+function quantityStep(mode: QuantityMode) {
+    return mode === 'servings' ? 0.25 : 1;
+}
+
+function quantityMin(mode: QuantityMode) {
+    return mode === 'servings' ? 0.25 : 1;
+}
+
+function servingReferenceText(
+    food: { serving_size: number; serving_unit: string },
+    mealType?: MealType | null,
+) {
+    if (isDrinkFood(food, mealType)) {
+        return `1 serving = ${roundQuantity(
+            normalizeServingBase(food, 'milliliters'),
+            0,
+        )} ml`;
+    }
+
+    const unit = food.serving_unit?.trim();
+    if (unit && !['g', 'kg'].includes(unit.toLowerCase())) {
+        return `1 serving = ${food.serving_size} ${unit}`;
+    }
+
+    return `1 serving = ${roundQuantity(
+        normalizeServingBase(food, 'grams'),
+        0,
+    )} g`;
+}
+
+function plannedItemQuantityDraft(
+    item: PlannedItem,
+    food: { serving_size: number; serving_unit: string } = item.food,
+): QuantityDraft {
+    const drink = isDrinkFood(food, item.meal_type);
+    const loggedServings = item.logged_entry?.servings ?? null;
+
+    if (drink) {
+        return {
+            mode: 'milliliters',
+            value: roundQuantity(
+                safeQuantity(
+                    (loggedServings ?? item.default_servings) *
+                        normalizeServingBase(food, 'milliliters'),
+                    normalizeServingBase(food, 'milliliters'),
+                ),
+                0,
+            ),
+        };
+    }
+
+    if (loggedServings !== null && loggedServings > 0 && item.grams) {
+        return {
+            mode: 'grams',
+            value: roundQuantity(
+                loggedServings * normalizeServingBase(food, 'grams'),
+                0,
+            ),
+        };
+    }
+
+    if (item.grams && item.grams > 0) {
+        return {
+            mode: 'grams',
+            value: roundQuantity(item.grams, 0),
+        };
+    }
+
+    return {
+        mode: 'servings',
+        value: safeQuantity(loggedServings ?? item.default_servings, 1),
+    };
+}
+
+function defaultQuantityDraftForFood(
+    food: SearchFood,
+    mealType: MealType,
+    plannedItem?: PlannedItem | null,
+): QuantityDraft {
+    if (plannedItem) {
+        return plannedItemQuantityDraft(plannedItem, food);
+    }
+
+    if (isDrinkFood(food, mealType)) {
+        return {
+            mode: 'milliliters',
+            value: roundQuantity(
+                normalizeServingBase(food, 'milliliters'),
+                0,
+            ),
+        };
+    }
+
+    return { mode: 'servings', value: 1 };
+}
+
+function quantityDraftPayload(draft: QuantityDraft) {
+    if (draft.mode === 'grams') {
+        return { grams: safeQuantity(draft.value, 100) };
+    }
+
+    if (draft.mode === 'milliliters') {
+        return { milliliters: safeQuantity(draft.value, 250) };
+    }
+
+    return { servings: safeQuantity(draft.value, 1) };
+}
+=======
+>>>>>>> origin/main
 
 export default function TrackMealsPage() {
     const props = usePage<PageProps>().props;
@@ -187,6 +384,13 @@ export default function TrackMealsPage() {
         tone: 'default' | 'danger' | 'success';
         message: string;
     } | null>(null);
+<<<<<<< HEAD
+    const [dialogStatus, setDialogStatus] = useState<{
+        tone: 'default' | 'danger' | 'success';
+        message: string;
+    } | null>(null);
+=======
+>>>>>>> origin/main
     const [selectedPlannedItem, setSelectedPlannedItem] =
         useState<PlannedItem | null>(null);
     const [substituteModalOpen, setSubstituteModalOpen] = useState(false);
@@ -194,6 +398,20 @@ export default function TrackMealsPage() {
         null,
     );
     const [plannedLogModalOpen, setPlannedLogModalOpen] = useState(false);
+<<<<<<< HEAD
+    const [plannedLogDraft, setPlannedLogDraft] = useState<QuantityDraft>({
+        mode: 'servings',
+        value: 1,
+    });
+    const [openAdd, setOpenAdd] = useState(false);
+    const [selectedFood, setSelectedFood] = useState<SearchFood | null>(null);
+    const [logDraft, setLogDraft] = useState<QuantityDraft>({
+        mode: 'servings',
+        value: 1,
+    });
+    const debounceRef = useRef<number | null>(null);
+    const searchRequestKeyRef = useRef(0);
+=======
     const [plannedLogServings, setPlannedLogServings] = useState(1);
     const [plannedServingInput, setPlannedServingInput] = useState<
         Record<number, string>
@@ -202,6 +420,7 @@ export default function TrackMealsPage() {
     const [selectedFood, setSelectedFood] = useState<SearchFood | null>(null);
     const [portionCount, setPortionCount] = useState(1);
     const debounceRef = useRef<number | null>(null);
+>>>>>>> origin/main
 
     useEffect(() => {
         const token = (
@@ -228,6 +447,34 @@ export default function TrackMealsPage() {
         setPlannedLogModalOpen(false);
     }, [date]);
 
+<<<<<<< HEAD
+    const fetchDay = async (nextDate: string) => {
+        const response = await axios.get<DayResponse>('/api/meal-tracker/day', {
+            params: { date: nextDate, meal_type: mealType },
+        });
+        setDay(response.data);
+    };
+
+    useEffect(() => {
+        void fetchDay(date);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [date, mealType]);
+
+    useEffect(() => {
+        if (
+            mode === 'follow-plan' &&
+            (!selectedPlannedItem || !substituteModalOpen)
+        ) {
+            searchRequestKeyRef.current += 1;
+            setResults([]);
+            setLoading(false);
+            return;
+        }
+
+        if (debounceRef.current) window.clearTimeout(debounceRef.current);
+        debounceRef.current = window.setTimeout(async () => {
+            const requestKey = ++searchRequestKeyRef.current;
+=======
     useEffect(() => {
         const plannedItems =
             day.plannedDay?.meals.flatMap((meal) => meal.items) ?? [];
@@ -285,6 +532,7 @@ export default function TrackMealsPage() {
 
         if (debounceRef.current) window.clearTimeout(debounceRef.current);
         debounceRef.current = window.setTimeout(async () => {
+>>>>>>> origin/main
             setLoading(true);
             try {
                 const response = await axios.get('/api/foods/search', {
@@ -303,15 +551,32 @@ export default function TrackMealsPage() {
                                   meal_type: mealType,
                               },
                 });
+<<<<<<< HEAD
+                if (requestKey !== searchRequestKeyRef.current) {
+                    return;
+                }
+=======
+>>>>>>> origin/main
                 setResults(
                     Array.isArray(response.data?.data)
                         ? response.data.data
                         : [],
                 );
             } catch {
+<<<<<<< HEAD
+                if (requestKey !== searchRequestKeyRef.current) {
+                    return;
+                }
+                setResults([]);
+            } finally {
+                if (requestKey === searchRequestKeyRef.current) {
+                    setLoading(false);
+                }
+=======
                 setResults([]);
             } finally {
                 setLoading(false);
+>>>>>>> origin/main
             }
         }, 250);
 
@@ -320,6 +585,19 @@ export default function TrackMealsPage() {
         };
     }, [mode, selectedPlannedItem, substituteModalOpen, query, page, mealType]);
 
+<<<<<<< HEAD
+    const openAddDialog = (food: SearchFood) => {
+        setDialogStatus(null);
+        setStatus(null);
+        setSelectedFood(food);
+        setLogDraft(
+            defaultQuantityDraftForFood(
+                food,
+                selectedPlannedItem?.meal_type ?? mealType,
+                selectedPlannedItem,
+            ),
+        );
+=======
     const plannedServingValue = (item: PlannedItem) => {
         const raw = plannedServingInput[item.id];
         const parsed = Number(raw);
@@ -350,12 +628,19 @@ export default function TrackMealsPage() {
         } else {
             setPortionCount(1);
         }
+>>>>>>> origin/main
         setOpenAdd(true);
     };
 
     const closeAddDialog = () => {
+<<<<<<< HEAD
+        setDialogStatus(null);
+        setSelectedFood(null);
+        setLogDraft({ mode: 'servings', value: 1 });
+=======
         setSelectedFood(null);
         setPortionCount(1);
+>>>>>>> origin/main
         setOpenAdd(false);
         if (mode === 'follow-plan') {
             setSelectedPlannedItem(null);
@@ -363,23 +648,39 @@ export default function TrackMealsPage() {
     };
 
     const openPlannedLogModal = (item: PlannedItem) => {
+<<<<<<< HEAD
+        setPlannedLogItem(item);
+        setPlannedLogDraft(plannedItemQuantityDraft(item));
+=======
         const servingAmount = plannedServingValue(item);
         setPlannedLogItem(item);
         setPlannedLogServings(servingAmount > 0 ? servingAmount : 1);
+>>>>>>> origin/main
         setPlannedLogModalOpen(true);
     };
 
     const closePlannedLogModal = () => {
         setPlannedLogModalOpen(false);
         setPlannedLogItem(null);
+<<<<<<< HEAD
+        setPlannedLogDraft({ mode: 'servings', value: 1 });
+=======
+>>>>>>> origin/main
     };
 
     const confirmAdd = async () => {
         if (!selectedFood) return;
+<<<<<<< HEAD
+        if (!Number.isFinite(logDraft.value) || logDraft.value <= 0) {
+            setDialogStatus({
+                tone: 'danger',
+                message: 'Enter a quantity greater than zero.',
+=======
         if (!Number.isFinite(portionCount) || portionCount <= 0) {
             setStatus({
                 tone: 'danger',
                 message: 'Enter a serving amount greater than zero.',
+>>>>>>> origin/main
             });
             return;
         }
@@ -390,7 +691,11 @@ export default function TrackMealsPage() {
                     `/api/meal-tracker/planned-items/${selectedPlannedItem.id}/log`,
                     {
                         food_id: selectedFood.id,
+<<<<<<< HEAD
+                        ...quantityDraftPayload(logDraft),
+=======
                         servings: portionCount,
+>>>>>>> origin/main
                         eaten_at: date,
                     },
                 );
@@ -398,7 +703,11 @@ export default function TrackMealsPage() {
                 await axios.post('/meal-entries', {
                     food_id: selectedFood.id,
                     meal_type: mealType,
+<<<<<<< HEAD
+                    ...quantityDraftPayload(logDraft),
+=======
                     servings: portionCount,
+>>>>>>> origin/main
                     eaten_at: date,
                 });
             }
@@ -420,18 +729,32 @@ export default function TrackMealsPage() {
                 typeof error.response?.data?.message === 'string'
                     ? error.response.data.message
                     : 'Could not save this meal right now.';
+<<<<<<< HEAD
+            setDialogStatus({ tone: 'danger', message });
+=======
             setStatus({ tone: 'danger', message });
+>>>>>>> origin/main
         }
     };
 
     const confirmPlannedMealLog = async () => {
         if (!plannedLogItem) return;
+<<<<<<< HEAD
+        if (
+            !Number.isFinite(plannedLogDraft.value) ||
+            plannedLogDraft.value <= 0
+        ) {
+            setStatus({
+                tone: 'danger',
+                message: 'Enter a quantity greater than zero.',
+=======
         const servings = plannedLogServings;
 
         if (!Number.isFinite(servings) || servings <= 0) {
             setStatus({
                 tone: 'danger',
                 message: 'Enter a serving amount greater than zero.',
+>>>>>>> origin/main
             });
             return;
         }
@@ -441,11 +764,18 @@ export default function TrackMealsPage() {
                 `/api/meal-tracker/planned-items/${plannedLogItem.id}/log`,
                 {
                     food_id: plannedLogItem.food.id,
+<<<<<<< HEAD
+                    ...quantityDraftPayload(plannedLogDraft),
+                    eaten_at: date,
+                },
+            );
+=======
                     servings,
                     eaten_at: date,
                 },
             );
             updatePlannedServingInput(plannedLogItem.id, String(servings));
+>>>>>>> origin/main
             closePlannedLogModal();
             setStatus({
                 tone: 'success',
@@ -465,9 +795,16 @@ export default function TrackMealsPage() {
     };
 
     const openSubstituteModal = (item: PlannedItem) => {
+<<<<<<< HEAD
+        setDialogStatus(null);
+        setStatus(null);
+        setMode('follow-plan');
+        setSelectedPlannedItem(item);
+=======
         setMode('follow-plan');
         setSelectedPlannedItem(item);
         setPortionCount(plannedServingValue(item));
+>>>>>>> origin/main
         setQuery('');
         setPage(1);
         setResults([]);
@@ -475,6 +812,10 @@ export default function TrackMealsPage() {
     };
 
     const closeSubstituteModal = () => {
+<<<<<<< HEAD
+        setDialogStatus(null);
+=======
+>>>>>>> origin/main
         setSubstituteModalOpen(false);
         setSelectedPlannedItem(null);
         setQuery('');
@@ -496,6 +837,21 @@ export default function TrackMealsPage() {
     };
 
     const plannedMealPreviewTotals = plannedLogItem
+<<<<<<< HEAD
+        ? (() => {
+              const servings = quantityToServings(
+                  plannedLogItem.food,
+                  plannedLogDraft,
+              );
+
+              return {
+                  calories: Math.round(plannedLogItem.food.calories * servings),
+                  protein: Math.round(plannedLogItem.food.protein * servings),
+                  carbs: Math.round(plannedLogItem.food.carbs * servings),
+                  fat: Math.round(plannedLogItem.food.fat * servings),
+              };
+          })()
+=======
         ? {
               calories: Math.round(
                   plannedLogItem.food.calories * plannedLogServings,
@@ -506,6 +862,7 @@ export default function TrackMealsPage() {
               carbs: Math.round(plannedLogItem.food.carbs * plannedLogServings),
               fat: Math.round(plannedLogItem.food.fat * plannedLogServings),
           }
+>>>>>>> origin/main
         : null;
 
     const entries = day.entries ?? [];
@@ -527,8 +884,13 @@ export default function TrackMealsPage() {
                         <div className="space-y-2 text-sm">
                             <div className="font-medium text-foreground">
                                 {day.plannedDay
+<<<<<<< HEAD
+                                    ? (cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)
+                                    : (cleanPlanName(props.dietName) || props.dietName || 'Meal tracking')}
+=======
                                     ? day.plannedDay.plan.name
                                     : props.dietName || 'Meal tracking'}
+>>>>>>> origin/main
                             </div>
                             <div className="text-muted-foreground">
                                 Date: {date}
@@ -570,6 +932,633 @@ export default function TrackMealsPage() {
                         </div>
                     }
                 />
+<<<<<<< HEAD
+
+                {status ? (
+                    <ProductBanner
+                        tone={status.tone}
+                        role={status.tone === 'danger' ? 'alert' : 'status'}
+                    >
+                        {status.message}
+                    </ProductBanner>
+                ) : null}
+
+                {mode === 'follow-plan' ? (
+                    day.plannedDay ? (
+                        <ProductSection
+                            title="Today's planned meals"
+                            description="Open any planned item, choose the quantity you need, and log it or swap with a safe substitute."
+                        >
+                            <div className="space-y-6">
+                                <MacroCard
+                                    title="Daily totals"
+                                    totals={day.dailyTotals}
+                                    targets={day.targets ?? null}
+                                    remaining={day.remaining ?? null}
+                                    mealTotals={day.mealTotals}
+                                    entries={entries}
+                                />
+                                <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                    <div className="text-lg font-semibold text-foreground">
+                                        Today's plan details
+                                    </div>
+                                    <div className="mt-3 text-sm text-muted-foreground">
+                                        {(cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)} - Day{' '}
+                                        {day.plannedDay.day.day_index}
+                                    </div>
+                                    <div className="mt-3 text-sm text-foreground">
+                                        {day.plannedDay.day.notes ??
+                                            'No extra notes for this day.'}
+                                    </div>
+                                </div>
+
+                                {plannedMeals.map((meal) => (
+                                    <div
+                                        key={meal.id}
+                                        className="rounded-[26px] border border-border/70 bg-background/72 p-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                    {meal.meal_type}
+                                                </div>
+                                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                                    {meal.title}
+                                                </div>
+                                            </div>
+                                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                                        </div>
+
+                                        <div className="mt-4 space-y-3">
+                                            {meal.items.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                                >
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div>
+                                                            <div className="font-medium text-foreground">
+                                                                {item.food.name}
+                                                            </div>
+                                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                                {Math.round(
+                                                                    item.food
+                                                                        .calories,
+                                                                )}{' '}
+                                                                kcal per serving
+                                                            </div>
+                                                        </div>
+                                                        <span className="haye-chip">
+                                                            {statusLabel(
+                                                                item.status,
+                                                            )}
+                                                        </span>
+                                                    </div>
+
+                                                    {item.logged_entry ? (
+                                                        <div className="mt-3 rounded-[18px] border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
+                                                            Logged as{' '}
+                                                            {
+                                                                item
+                                                                    .logged_entry
+                                                                    .food.name
+                                                            }
+                                                        </div>
+                                                    ) : null}
+
+                                                    <div className="mt-4 rounded-[20px] border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
+                                                        Pick the quantity inside
+                                                        the log dialog so macros
+                                                        and units stay focused
+                                                        on the action you are
+                                                        taking.
+                                                    </div>
+
+                                                    <div className="mt-4 flex flex-wrap gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                openPlannedLogModal(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            className="inline-flex h-10 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                                                        >
+                                                            {item.logged_entry
+                                                                ? 'Update logged meal'
+                                                                : 'Log planned meal'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                openSubstituteModal(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            className="inline-flex h-10 items-center gap-2 rounded-2xl border border-border/70 bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card"
+                                                        >
+                                                            <Shuffle className="h-4 w-4" />
+                                                            Choose substitute
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </ProductSection>
+                    ) : (
+                        <ProductEmptyState
+                            title="No planned meals for this date"
+                            description="Switch to Quick Log for a flexible day, or generate a plan from the AI Planner page."
+                            action={
+                                <Link
+                                    href="/ai/planner"
+                                    className="inline-flex h-11 items-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground no-underline transition hover:bg-primary/90"
+                                >
+                                    Open AI Planner
+                                </Link>
+                            }
+                        />
+                    )
+                ) : null}
+
+                {mode === 'quick-log' ? (
+                    <ProductSection
+                        title="Quick log search"
+                        description="Search foods and log meals for flexible days."
+                    >
+                        <div className="space-y-6">
+                            <MacroCard
+                                title="Daily totals"
+                                totals={day.dailyTotals}
+                                targets={day.targets ?? null}
+                                remaining={day.remaining ?? null}
+                                mealTotals={day.mealTotals}
+                                entries={entries}
+                            />
+
+                            <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                                <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                                    <Search className="h-4 w-4" />
+                                    Search foods
+                                </div>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    {MEALS.map((type) => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            onClick={() => setMealType(type)}
+                                            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                                                mealType === type
+                                                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                                                    : 'border-border/70 bg-card text-foreground hover:bg-background'
+                                            }`}
+                                        >
+                                            {mealLabel(type)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <input
+                                    value={query}
+                                    onChange={(event) => {
+                                        setQuery(event.target.value);
+                                        setPage(1);
+                                    }}
+                                    placeholder="Search by name"
+                                    className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
+                                />
+
+                                <div className="mt-4 space-y-3">
+                                    {loading ? (
+                                        <div className="text-sm text-muted-foreground">
+                                            Searching...
+                                        </div>
+                                    ) : results.length === 0 ? (
+                                        <div className="rounded-[18px] border border-dashed border-border/70 bg-card/60 px-4 py-5 text-sm text-muted-foreground">
+                                            {query.trim()
+                                                ? `No ${mealLabel(mealType).toLowerCase()} matches found. Try a simpler food name.`
+                                                : `Search to log a ${mealLabel(mealType).toLowerCase()}.`}
+                                        </div>
+                                    ) : (
+                                        results.map((food) => (
+                                            <div
+                                                key={food.id}
+                                                className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <div className="font-medium text-foreground">
+                                                            {food.name}
+                                                        </div>
+                                                        <div className="mt-1 text-xs text-muted-foreground">
+                                                            {food.category ??
+                                                                'Food'}
+                                                            {' - '}
+                                                            {Math.round(
+                                                                food.calories ??
+                                                                    0,
+                                                            )}{' '}
+                                                            kcal
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            openAddDialog(food)
+                                                        }
+                                                        className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </ProductSection>
+                ) : null}
+
+                <ProductSection
+                    title="Today's entries"
+                    description="Daily timeline of logged meals, including exact and substitute plan matches."
+                >
+                    <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
+                        <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                            <UtensilsCrossed className="h-4 w-4" />
+                            Logged meals
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            {entries.length ? (
+                                entries.map((entry) => (
+                                    <div
+                                        key={entry.id}
+                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                    >
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div>
+                                                <div className="font-medium text-foreground">
+                                                    {entry.food.name}
+                                                </div>
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {mealLabel(
+                                                        entry.meal_type,
+                                                    )}{' '}
+                                                    -{' '}
+                                                    {entry.servings} servings
+                                                </div>
+                                                {entry.plan_tracking ? (
+                                                    <div className="mt-2 text-xs text-foreground/80">
+                                                        Linked to planned item:{' '}
+                                                        {
+                                                            entry.plan_tracking
+                                                                .planned_food_name
+                                                        }
+                                                        {' - '}
+                                                        {statusLabel(
+                                                            entry.plan_tracking
+                                                                .status,
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    void removeEntry(entry.id)
+                                                }
+                                                className="rounded-full border border-red-500/20 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-500/10"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <ProductEmptyState
+                                    title="Nothing logged yet"
+                                    description="Your timeline appears after the first log entry."
+                                />
+                            )}
+                        </div>
+                    </div>
+                </ProductSection>
+            </ProductPageShell>
+            {plannedLogModalOpen && plannedLogItem ? (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={closePlannedLogModal}
+                    />
+                    <div className="haye-panel relative z-10 w-full max-w-md rounded-[30px] p-5 text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    Log planned meal
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                    {plannedLogItem.food.name}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closePlannedLogModal}
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
+                            {servingReferenceText(
+                                plannedLogItem.food,
+                                plannedLogItem.meal_type,
+                            )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {quantityModeOptions(
+                                plannedLogItem.food,
+                                plannedLogItem.meal_type,
+                            ).map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() =>
+                                        setPlannedLogDraft((current) => ({
+                                            ...current,
+                                            mode: option,
+                                        }))
+                                    }
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                        plannedLogDraft.mode === option
+                                            ? 'border-primary/30 bg-primary/10 text-foreground'
+                                            : 'border-border/70 bg-background text-muted-foreground'
+                                    }`}
+                                >
+                                    {quantityModeLabel(option)}
+                                </button>
+                            ))}
+                        </div>
+
+                        <label className="mt-4 block text-sm font-medium text-foreground">
+                            {quantityModeLabel(plannedLogDraft.mode)}
+                            <input
+                                type="number"
+                                min={quantityMin(plannedLogDraft.mode)}
+                                step={quantityStep(plannedLogDraft.mode)}
+                                value={plannedLogDraft.value}
+                                onChange={(event) =>
+                                    setPlannedLogDraft((current) => ({
+                                        ...current,
+                                        value:
+                                            Number(event.target.value) ||
+                                            quantityMin(current.mode),
+                                    }))
+                                }
+                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                            />
+                        </label>
+
+                        {plannedMealPreviewTotals ? (
+                            <div className="mt-4 rounded-[22px] border border-border/70 bg-card/80 p-4 text-sm text-foreground">
+                                Approximate totals:{' '}
+                                {plannedMealPreviewTotals.calories} kcal
+                                {' - '}P {plannedMealPreviewTotals.protein}
+                                {' - '}C {plannedMealPreviewTotals.carbs}
+                                {' - '}F {plannedMealPreviewTotals.fat}
+                            </div>
+                        ) : null}
+
+                        <div className="mt-5 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={closePlannedLogModal}
+                                className="rounded-full border border-border/70 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-background"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void confirmPlannedMealLog()}
+                                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                            >
+                                {plannedLogItem.logged_entry
+                                    ? 'Update logged meal'
+                                    : 'Log planned meal'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+            {substituteModalOpen && selectedPlannedItem ? (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={closeSubstituteModal}
+                    />
+                    <div className="haye-panel relative z-10 w-full max-w-2xl rounded-[30px] p-5 text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    Choose substitute
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                    Replace {selectedPlannedItem.food.name}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeSubstituteModal}
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-3 rounded-[22px] border border-border/70 bg-background/72 p-3 text-xs text-muted-foreground">
+                            Planned quantities carry over automatically so logging
+                            stays fast.
+                        </div>
+
+                        <input
+                            value={query}
+                            onChange={(event) => {
+                                setQuery(event.target.value);
+                                setPage(1);
+                            }}
+                            placeholder="Search substitute foods"
+                            className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-3 py-2 text-sm"
+                        />
+
+                        <div className="mt-4 max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+                            {loading ? (
+                                <div className="text-sm text-muted-foreground">
+                                    Searching...
+                                </div>
+                            ) : results.length ? (
+                                results.map((food) => (
+                                    <div
+                                        key={food.id}
+                                        className="rounded-[22px] border border-border/70 bg-card/80 p-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div className="font-medium text-foreground">
+                                                    {food.name}
+                                                </div>
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                    {food.category ?? 'Food'}
+                                                    {' - '}
+                                                    {Math.round(
+                                                        food.calories ?? 0,
+                                                    )}{' '}
+                                                    kcal
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSubstituteModalOpen(
+                                                        false,
+                                                    );
+                                                    openAddDialog(food);
+                                                }}
+                                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                                            >
+                                                Use substitute
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <ProductEmptyState
+                                    title="No matches yet"
+                                    description="Try a different ingredient name or category."
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+            {openAdd && selectedFood ? (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={closeAddDialog}
+                    />
+                    <div className="haye-panel relative z-10 w-full max-w-md rounded-[30px] p-5 text-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    {mode === 'follow-plan'
+                                        ? 'Substitute planned meal'
+                                        : `Add to ${mealType}`}
+                                </div>
+                                <div className="mt-1 text-lg font-semibold text-foreground">
+                                    {selectedFood.name}
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeAddDialog}
+                                className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-background"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mt-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
+                            {servingReferenceText(
+                                selectedFood,
+                                selectedPlannedItem?.meal_type ?? mealType,
+                            )}
+                        </div>
+                        {mode === 'follow-plan' && selectedPlannedItem ? (
+                            <div className="mt-3 rounded-[22px] border border-border/70 bg-card/80 p-3 text-xs text-muted-foreground">
+                                Replacing: {selectedPlannedItem.food.name}
+                            </div>
+                        ) : null}
+                        {dialogStatus ? (
+                            <ProductBanner
+                                tone={dialogStatus.tone}
+                                role={
+                                    dialogStatus.tone === 'danger'
+                                        ? 'alert'
+                                        : 'status'
+                                }
+                                className="mt-3"
+                            >
+                                {dialogStatus.message}
+                            </ProductBanner>
+                        ) : null}
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {quantityModeOptions(
+                                selectedFood,
+                                selectedPlannedItem?.meal_type ?? mealType,
+                            ).map((option) => (
+                                    <button
+                                        key={option}
+                                        type="button"
+                                        onClick={() =>
+                                            setLogDraft((current) => ({
+                                                ...current,
+                                                mode: option,
+                                            }))
+                                        }
+                                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                            logDraft.mode === option
+                                                ? 'border-primary/30 bg-primary/10 text-foreground'
+                                                : 'border-border/70 bg-background text-muted-foreground'
+                                        }`}
+                                    >
+                                        {quantityModeLabel(option)}
+                                    </button>
+                                ),
+                            )}
+                        </div>
+
+                        <label className="mt-4 block text-sm font-medium text-foreground">
+                            {quantityModeLabel(logDraft.mode)}
+                            <input
+                                type="number"
+                                min={quantityMin(logDraft.mode)}
+                                step={quantityStep(logDraft.mode)}
+                                value={logDraft.value}
+                                onChange={(event) =>
+                                    setLogDraft((current) => ({
+                                        ...current,
+                                        value:
+                                            Number(event.target.value) ||
+                                            quantityMin(current.mode),
+                                    }))
+                                }
+                                className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
+                            />
+                        </label>
+
+                        <div className="mt-4 rounded-[22px] border border-border/70 bg-card/80 p-4 text-sm text-foreground">
+                            Approximate totals:{' '}
+                            {Math.round(
+                                (selectedFood.calories ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
+=======
 
                 {status ? (
                     <ProductBanner
@@ -1213,10 +2202,25 @@ export default function TrackMealsPage() {
                             Approximate totals:{' '}
                             {Math.round(
                                 (selectedFood.calories ?? 0) * portionCount,
+>>>>>>> origin/main
                             )}{' '}
                             kcal
                             {' - '}P{' '}
                             {Math.round(
+<<<<<<< HEAD
+                                (selectedFood.protein_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
+                            )}
+                            {' - '}C{' '}
+                            {Math.round(
+                                (selectedFood.carbs_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
+                            )}
+                            {' - '}F{' '}
+                            {Math.round(
+                                (selectedFood.fat_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
+=======
                                 (selectedFood.protein_g ?? 0) * portionCount,
                             )}
                             {' - '}C{' '}
@@ -1226,6 +2230,7 @@ export default function TrackMealsPage() {
                             {' - '}F{' '}
                             {Math.round(
                                 (selectedFood.fat_g ?? 0) * portionCount,
+>>>>>>> origin/main
                             )}
                         </div>
 

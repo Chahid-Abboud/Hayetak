@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;
 use App\Services\Ai\Seed\SeededPlanCleanupService;
 use App\Services\Ai\Seed\SeedUserProfileTargetsService;
+use App\Services\Ai\Training\ImportedPlannerIdentityService;
 use Carbon\CarbonImmutable;
 use Database\Seeders\UserHistoryBackfillSeeder;
 use Illuminate\Console\Command;
@@ -23,9 +24,9 @@ class AiHydrateImportedPlannerUsers extends Command
         {--without-meals-only=0 : Only hydrate matched users that do not yet have meal entries}
         {--shared-password= : Shared password to set on hydrated users}
         {--history-start=2025-12-18 : Start date for generated meal/workout/water history}
-        {--history-end=2026-05-18 : End date for generated meal/workout/water history}
+        {--history-end=2026-06-08 : End date for generated meal/workout/water history}
         {--measurement-start=2025-12-18 : Start date for generated measurements}
-        {--measurement-end=2026-05-18 : End date for generated measurements}
+        {--measurement-end=2026-06-08 : End date for generated measurements}
         {--history-window-days=70 : Meal/workout history window size in days}
         {--export-credentials= : Optional CSV path to export email/password pairs}
         {--dry-run=0 : Preview only}
@@ -37,7 +38,7 @@ class AiHydrateImportedPlannerUsers extends Command
 
     private \ReflectionClass $seederReflection;
 
-    public function handle(): int
+    public function handle(ImportedPlannerIdentityService $identities): int
     {
         $dryRun = ((int) $this->option('dry-run')) === 1;
         $emailLike = trim((string) $this->option('email-like'));
@@ -100,7 +101,7 @@ class AiHydrateImportedPlannerUsers extends Command
                 continue;
             }
 
-            DB::transaction(function () use ($user, $today, $measurementStart, $measurementEnd, $sharedPassword, &$summary): void {
+            DB::transaction(function () use ($user, $today, $measurementStart, $measurementEnd, $sharedPassword, $identities, &$summary): void {
                 $createdAt = $user->created_at ? CarbonImmutable::parse($user->created_at) : $today;
                 if ($createdAt->greaterThan($today)) {
                     $createdAt = $today;
@@ -116,6 +117,14 @@ class AiHydrateImportedPlannerUsers extends Command
                     'verified' => true,
                     'status' => 'active',
                 ];
+
+                if ($identities->shouldReplacePlaceholder($user)) {
+                    $profileId = $identities->profileIdFromEmail((string) $user->email);
+                    if ($profileId !== null) {
+                        $identity = $identities->identityForProfile($profileId, (string) $user->gender);
+                        $updates = array_merge($updates, $identity);
+                    }
+                }
 
                 if ($sharedPassword !== '') {
                     $updates['password'] = Hash::make($sharedPassword);

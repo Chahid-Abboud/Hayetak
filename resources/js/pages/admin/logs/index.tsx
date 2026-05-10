@@ -140,7 +140,11 @@ function inferTargetHref(log: AdminActionLog) {
     }
     if (log.target_type.endsWith('Notification')) return '/admin/notifications';
     if (log.target_type.endsWith('ProfessionalClientAssignment')) {
+<<<<<<< HEAD
+        return '/admin/professionals';
+=======
         return '/admin/assignments';
+>>>>>>> origin/main
     }
 
     return null;

@@ -3,6 +3,18 @@ import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import {
     Activity,
+<<<<<<< HEAD
+    FileSearch,
+    type LucideIcon,
+    Dumbbell,
+    MapPin,
+    MessageSquareText,
+    ShieldAlert,
+    ShieldCheck,
+    Stethoscope,
+    Users,
+    UtensilsCrossed,
+=======
     Database,
     FileSearch,
     type LucideIcon,
@@ -12,6 +24,7 @@ import {
     ShieldCheck,
     Sparkles,
     Users,
+>>>>>>> origin/main
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -44,6 +57,15 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
         ],
     },
     {
+<<<<<<< HEAD
+        label: 'Accounts',
+        description: 'Core account and trust workflows.',
+        links: [
+            {
+                href: '/admin/users',
+                label: 'Users',
+                icon: Users,
+=======
         label: 'Workspaces',
         description: 'Human review flows with guided detail panels.',
         links: [
@@ -57,6 +79,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                     '/admin/safety-profiles',
                     '/admin/assignments',
                 ],
+>>>>>>> origin/main
             },
             {
                 href: '/admin/verifications',
@@ -65,6 +88,39 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 matchPaths: ['/admin/professional-verifications'],
             },
             {
+<<<<<<< HEAD
+                href: '/admin/professionals',
+                label: 'Professionals',
+                icon: Stethoscope,
+            },
+            {
+                href: '/admin/notifications',
+                label: 'Notifications',
+                icon: MessageSquareText,
+            },
+           
+            // Shared coach shortcut expectation: href: '/coach', label: 'AI Coach'
+        ],
+    },
+    {
+        label: 'Content',
+        description: 'Catalog and history records that affect the product.',
+        links: [
+            {
+                href: '/admin/meals',
+                label: 'Meals',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/admin/meal-logs',
+                label: 'Meal Logs',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/admin/exercises',
+                label: 'Exercises',
+                icon: Dumbbell,
+=======
                 href: '/admin/health-data',
                 label: 'Health Data',
                 icon: Database,
@@ -74,6 +130,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                     '/admin/exercises',
                     '/admin/progress',
                 ],
+>>>>>>> origin/main
             },
             {
                 href: '/admin/places',
@@ -81,6 +138,11 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 icon: MapPin,
             },
             {
+<<<<<<< HEAD
+                href: '/admin/progress',
+                label: 'Progress',
+                icon: Activity,
+=======
                 href: '/admin/communications',
                 label: 'Communications',
                 icon: MessageSquareText,
@@ -96,11 +158,25 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                     '/admin/safety-rules',
                     '/admin/ai-rollouts',
                 ],
+>>>>>>> origin/main
             },
         ],
     },
     {
         label: 'System',
+<<<<<<< HEAD
+        description: 'Traceability for administrator actions.',
+        links: [
+            {
+                href: '/admin/logs',
+                label: 'Audit Logs',
+                icon: FileSearch,
+            },
+            {
+                href: '/admin/message-moderations',
+                label: 'Moderation',
+                icon: ShieldAlert,
+=======
         description: 'Technical detail and rare high-risk controls.',
         links: [
             {
@@ -118,6 +194,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                     '/admin/settings-feature-flags',
                     '/admin/privacy-compliance',
                 ],
+>>>>>>> origin/main
             },
         ],
     },

@@ -4,20 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Food;
 use App\Models\NutritionPlanItem;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class FoodController extends Controller
 {
     public function search(Request $request)
     {
-        // ✅ Intelephense-friendly: $request is typed, user is known
-        $user = $request->user(); // or Auth::user()
+        $user = $request->user();
+        $driver = Food::query()->getConnection()->getDriverName();
 
         $q = trim((string) $request->query('q', ''));
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 15;
 
-        // Optional filters: meal type (breakfast, lunch, dinner, snack, drink)
         $mealType = $request->query('meal_type') ?? $request->query('category') ?? $request->query('mealType');
         $mealType = is_string($mealType) ? strtolower(trim($mealType)) : null;
         $validMealTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
@@ -29,8 +29,23 @@ class FoodController extends Controller
 
         $excludeAllergens = (bool) $request->boolean('exclude_allergens', false);
         $userAllergens = [];
-        if ($excludeAllergens && $user) {
-            $userAllergens = (array) ($user->allergies ?? []);
+        $clientId = (int) $request->query('client_id', 0);
+
+        if ($excludeAllergens) {
+            if ($clientId > 0) {
+                $client = User::query()
+                    ->with(['dietaryRestrictions' => fn ($q) => $q->where('kind', 'allergy')->where('is_active', true)])
+                    ->find($clientId);
+
+                if ($client) {
+                    $userAllergens = array_unique(array_merge(
+                        array_map('strtolower', (array) ($client->allergies ?? [])),
+                        $client->dietaryRestrictions->pluck('value')->map(fn ($v) => strtolower($v))->toArray()
+                    ));
+                }
+            } elseif ($user) {
+                $userAllergens = (array) ($user->allergies ?? []);
+            }
         }
 
         if ($context === 'plan_substitution' && $plannedItemId > 0) {
@@ -58,11 +73,24 @@ class FoodController extends Controller
             ])
             ->when($q !== '', fn ($qq) => $qq->where('name', 'ilike', "%{$q}%"))
             ->when($mealType, function ($qq) use ($mealType) {
-                // Works for text[] and mealtypeenum[]: unnest and compare as text
+                $queryDriver = $qq->getModel()->getConnection()->getDriverName();
+
+                if ($queryDriver === 'sqlite') {
+                    $qq->whereRaw(
+                        "EXISTS (
+                            SELECT 1
+                            FROM json_each(COALESCE(meal_types, '[]'))
+                            WHERE lower(json_each.value) = lower(?)
+                        )",
+                        [$mealType]
+                    );
+
+                    return;
+                }
+
                 $qq->whereRaw('? IN (SELECT unnest(meal_types)::text)', [$mealType]);
             });
 
-        // Exclude foods that contain any of the user's allergens
         if ($excludeAllergens && ! empty($userAllergens)) {
             foreach ($userAllergens as $allergen) {
                 $query->where(function ($sub) use ($allergen) {
@@ -76,12 +104,34 @@ class FoodController extends Controller
 
             $dietName = $user?->diet_name ? strtolower(trim((string) $user->diet_name)) : null;
             if ($dietName) {
-                $query->where(function ($sub) use ($dietName) {
+                $query->where(function ($sub) use ($dietName, $driver) {
+                    $sub->whereNull('diets_allowed');
+
+                    if ($driver === 'sqlite') {
+                        $sub
+                            ->orWhereRaw("json_array_length(COALESCE(diets_allowed, '[]')) = 0")
+                            ->orWhereRaw(
+                                "EXISTS (
+                                    SELECT 1
+                                    FROM json_each(COALESCE(diets_allowed, '[]'))
+                                    WHERE lower(json_each.value) = lower(?)
+                                )",
+                                [$dietName]
+                            );
+
+                        return;
+                    }
+
                     $sub
-                        ->whereNull('diets_allowed')
-                        ->orWhereJsonContains('diets_allowed', $dietName)
-                        ->orWhereJsonContains('diets_allowed', ucfirst($dietName))
-                        ->orWhereJsonContains('diets_allowed', ucwords($dietName));
+                        ->orWhereRaw("jsonb_array_length(COALESCE(diets_allowed, '[]'::jsonb)) = 0")
+                        ->orWhereRaw(
+                            "EXISTS (
+                                SELECT 1
+                                FROM jsonb_array_elements_text(COALESCE(diets_allowed, '[]'::jsonb)) AS d(val)
+                                WHERE lower(d.val) = lower(?)
+                            )",
+                            [$dietName]
+                        );
                 });
             }
 

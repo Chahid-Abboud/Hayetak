@@ -106,7 +106,9 @@ class MealTrackerApiController extends Controller
 
         $data = $request->validate([
             'food_id' => ['required', 'integer', 'exists:foods,id'],
-            'servings' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            'servings' => ['nullable', 'numeric', 'gt:0', 'max:1000', 'required_without_all:grams,milliliters'],
+            'grams' => ['nullable', 'numeric', 'gt:0', 'max:100000', 'required_without_all:servings,milliliters'],
+            'milliliters' => ['nullable', 'numeric', 'gt:0', 'max:100000', 'required_without_all:servings,grams'],
             'eaten_at' => ['nullable', 'date'],
         ]);
 
@@ -123,6 +125,18 @@ class MealTrackerApiController extends Controller
         }
 
         $food = Food::query()->findOrFail((int) $data['food_id']);
+        try {
+            $servings = $this->svc->resolveLoggedServings(
+                $food,
+                $data,
+                (string) ($nutritionPlanItem->meal?->meal_type ?? 'snack')
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json([
+                'ok' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
         $violations = $this->validateFoodSafety($user?->id ?? 0, $food);
         if ($violations !== []) {
             return response()->json([
@@ -140,7 +154,7 @@ class MealTrackerApiController extends Controller
             [
                 'food_id' => $food->id,
                 'meal_type' => (string) ($nutritionPlanItem->meal?->meal_type ?? 'snack'),
-                'servings' => (float) $data['servings'],
+                'servings' => $servings,
             ]
         );
 

@@ -2,6 +2,10 @@
 
 namespace App\Services\Ai\Training;
 
+<<<<<<< HEAD
+use App\Models\AiRequest;
+=======
+>>>>>>> origin/main
 use App\Models\Measurement;
 use App\Models\User;
 use App\Models\UserDietaryRestriction;
@@ -15,6 +19,13 @@ use Illuminate\Support\Str;
 
 class PlannerProfileDatasetUserImporter
 {
+<<<<<<< HEAD
+    public function __construct(
+        private readonly ImportedPlannerIdentityService $identities,
+    ) {}
+
+=======
+>>>>>>> origin/main
     /**
      * @return array<string, mixed>
      */
@@ -83,6 +94,10 @@ class PlannerProfileDatasetUserImporter
             'medical_rows_written' => 0,
             'measurement_rows_written' => 0,
             'pref_rows_written' => 0,
+<<<<<<< HEAD
+            'ai_request_rows_written' => 0,
+=======
+>>>>>>> origin/main
         ];
 
         foreach ($profiles as $profile) {
@@ -91,7 +106,12 @@ class PlannerProfileDatasetUserImporter
                 continue;
             }
 
+<<<<<<< HEAD
+            $profilePlanRuns = $planRunsByProfile[$profileId] ?? [];
+            $latestRun = $this->latestRunForProfile($profilePlanRuns);
+=======
             $latestRun = $this->latestRunForProfile($planRunsByProfile[$profileId] ?? []);
+>>>>>>> origin/main
             $email = $this->emailForProfile($profileId);
             $existing = User::withTrashed()->where('email', $email)->first();
 
@@ -108,6 +128,10 @@ class PlannerProfileDatasetUserImporter
             DB::transaction(function () use (
                 $profile,
                 $source,
+<<<<<<< HEAD
+                $profilePlanRuns,
+=======
+>>>>>>> origin/main
                 $latestRun,
                 $outcomesByRun,
                 $existing,
@@ -128,7 +152,17 @@ class PlannerProfileDatasetUserImporter
                     $user,
                     $profile,
                     $source,
+<<<<<<< HEAD
+                    $this->measurementsForProfile($profile, $profilePlanRuns, $outcomesByRun)
+                );
+                $summary['ai_request_rows_written'] += $this->syncImportedPlannerRequests(
+                    $user,
+                    $profile,
+                    $source,
+                    $profilePlanRuns
+=======
                     $this->measurementsForProfile($profile, $latestRun, $outcomesByRun)
+>>>>>>> origin/main
                 );
 
                 $this->refreshUserCurrentWeight($user);
@@ -203,6 +237,18 @@ class PlannerProfileDatasetUserImporter
         $injuries = $this->normalizeValues($this->parseJsonList((string) ($profile['injury_history_json'] ?? '')));
         $email = $this->emailForProfile($profileId);
         $username = 'planner_'.Str::lower($profileId);
+<<<<<<< HEAD
+        $gender = $this->mapGender((string) ($profile['sex'] ?? ''));
+        $identity = $this->identities->identityForProfile($profileId, $gender);
+        $workoutDays = max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3)));
+
+        $payload = [
+            'name' => $identity['name'],
+            'first_name' => $identity['first_name'],
+            'last_name' => $identity['last_name'],
+            'username' => $username,
+            'gender' => $gender,
+=======
         $firstName = 'Planner';
         $lastName = Str::upper($profileId);
         $workoutDays = max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3)));
@@ -213,6 +259,7 @@ class PlannerProfileDatasetUserImporter
             'last_name' => $lastName,
             'username' => $username,
             'gender' => $this->mapGender((string) ($profile['sex'] ?? '')),
+>>>>>>> origin/main
             'age' => (int) round((float) ($profile['age'] ?? 0)),
             'height_cm' => (int) round((float) ($profile['height_cm'] ?? 0)),
             'weight_kg' => round((float) ($profile['start_weight_kg'] ?? 0), 2),
@@ -232,6 +279,10 @@ class PlannerProfileDatasetUserImporter
             'role' => User::ROLE_CLIENT,
             'verified' => true,
             'status' => 'active',
+<<<<<<< HEAD
+            'data_origin' => User::DATA_ORIGIN_IMPORTED_REAL,
+=======
+>>>>>>> origin/main
             'email_verified_at' => $createdAt,
             'created_at' => $existing?->created_at ?? $createdAt,
             'updated_at' => now(),
@@ -398,11 +449,19 @@ class PlannerProfileDatasetUserImporter
     }
 
     /**
+<<<<<<< HEAD
+     * @param  list<array<string, string>>  $planRuns
+     * @param  array<string, list<array<string, string>>>  $outcomesByRun
+     * @return list<array<string, mixed>>
+     */
+    private function measurementsForProfile(array $profile, array $planRuns, array $outcomesByRun): array
+=======
      * @param  array<string, string>|null  $latestRun
      * @param  array<string, list<array<string, string>>>  $outcomesByRun
      * @return list<array<string, mixed>>
      */
     private function measurementsForProfile(array $profile, ?array $latestRun, array $outcomesByRun): array
+>>>>>>> origin/main
     {
         $measurements = [];
         $createdAt = $this->parseTimestamp((string) ($profile['created_at_utc'] ?? ''));
@@ -416,10 +475,20 @@ class PlannerProfileDatasetUserImporter
             ];
         }
 
+<<<<<<< HEAD
+        foreach ($planRuns as $planRun) {
+            $planRunId = trim((string) ($planRun['plan_run_id'] ?? ''));
+            if ($planRunId === '') {
+                continue;
+            }
+
+            foreach ($outcomesByRun[$planRunId] ?? [] as $outcome) {
+=======
         $profileRuns = $latestRun ? [$latestRun] : [];
         if ($profileRuns !== []) {
             $latestPlanRunId = trim((string) ($latestRun['plan_run_id'] ?? ''));
             foreach ($outcomesByRun[$latestPlanRunId] ?? [] as $outcome) {
+>>>>>>> origin/main
                 $date = $this->parseTimestamp((string) ($outcome['checkpoint_date_utc'] ?? ''));
                 $weight = $this->toFloat($outcome['weight_kg'] ?? null);
                 if (! $date || $weight === null) {
@@ -461,12 +530,158 @@ class PlannerProfileDatasetUserImporter
         }
     }
 
+<<<<<<< HEAD
+    /**
+     * @param  list<array<string, string>>  $planRuns
+     */
+    private function syncImportedPlannerRequests(User $user, array $profile, string $source, array $planRuns): int
+    {
+        $existingImported = AiRequest::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'plan_generator')
+            ->get()
+            ->filter(function (AiRequest $request) use ($source): bool {
+                $usage = is_array($request->usage_json) ? $request->usage_json : [];
+
+                return trim((string) ($usage['import_source'] ?? '')) === $source
+                    && trim((string) ($usage['imported_plan_run_id'] ?? '')) !== '';
+            })
+            ->keyBy(function (AiRequest $request): string {
+                $usage = is_array($request->usage_json) ? $request->usage_json : [];
+
+                return trim((string) ($usage['imported_plan_run_id'] ?? ''));
+            });
+
+        $written = 0;
+
+        foreach ($planRuns as $planRun) {
+            $planRunId = trim((string) ($planRun['plan_run_id'] ?? ''));
+            $generatedAt = $this->parseTimestamp((string) ($planRun['generated_at_utc'] ?? ''));
+            if ($planRunId === '' || ! $generatedAt) {
+                continue;
+            }
+
+            $request = $existingImported->get($planRunId) ?? new AiRequest([
+                'user_id' => $user->id,
+                'type' => 'plan_generator',
+            ]);
+
+            $request->forceFill([
+                'user_id' => $user->id,
+                'type' => 'plan_generator',
+                'status' => 'completed',
+                'provider' => trim((string) ($planRun['provider'] ?? '')) ?: 'dataset_import',
+                'model' => trim((string) ($planRun['model'] ?? '')) ?: null,
+                'prompt_version' => trim((string) ($planRun['prompt_version'] ?? '')) ?: 'dataset_import',
+                'schema_version' => 'planner_dataset_import_v1',
+                'input_context_json' => $this->importedPlanInputContext($profile, $planRun, $source),
+                'output_json' => $this->importedPlanOutput($profile, $planRun),
+                'usage_json' => [
+                    'import_source' => $source,
+                    'imported_plan_run_id' => $planRunId,
+                    'imported_at_utc' => now('UTC')->toIso8601String(),
+                ],
+                'created_at' => $generatedAt,
+                'updated_at' => $generatedAt,
+            ])->save();
+
+            $written++;
+        }
+
+        return $written;
+    }
+
+=======
+>>>>>>> origin/main
     private function emailForProfile(string $profileId): string
     {
         return 'planner+'.Str::lower($profileId).'@hayetak.local';
     }
 
     /**
+<<<<<<< HEAD
+     * @param  array<string, string>  $planRun
+     * @return array<string, mixed>
+     */
+    private function importedPlanInputContext(array $profile, array $planRun, string $source): array
+    {
+        return [
+            'schema_version' => 'planner_dataset_import_context_v1',
+            'import_source' => $source,
+            'profile' => [
+                'weight_kg' => $this->toFloat($profile['start_weight_kg'] ?? null),
+                'age' => (int) round((float) ($profile['age'] ?? 0)),
+                'gender' => $this->mapGender((string) ($profile['sex'] ?? '')),
+                'height_cm' => (int) round((float) ($profile['height_cm'] ?? 0)),
+                'diet_type' => $this->humanizeToken((string) ($profile['diet_type'] ?? 'balanced')),
+                'workout_location' => Str::lower(trim((string) ($profile['workout_location'] ?? 'home'))),
+                'workout_days_per_week' => max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3))),
+                'dietary_goal' => $this->mapDietaryGoal((string) ($profile['goal_primary'] ?? '')),
+                'fitness_goal' => $this->mapFitnessGoal((string) ($profile['goal_primary'] ?? '')),
+                'allergies' => $this->normalizeValues($this->parseJsonList((string) ($profile['allergies_json'] ?? ''))),
+                'medical_conditions' => $this->normalizeValues($this->parseJsonList((string) ($profile['medical_history_json'] ?? ''))),
+                'injury_history' => $this->normalizeValues($this->parseJsonList((string) ($profile['injury_history_json'] ?? ''))),
+                'available_equipment' => $this->normalizeValues($this->parseJsonList((string) ($profile['equipment_json'] ?? ''))),
+            ],
+            'planning_constraints' => [
+                'plan_horizon_days' => max(1, (int) round((float) ($planRun['horizon_days'] ?? 14))),
+                'target_training_days_per_week' => max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3))),
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $planRun
+     * @return array<string, mixed>
+     */
+    private function importedPlanOutput(array $profile, array $planRun): array
+    {
+        $output = $this->loadJsonFile((string) ($planRun['plan_json_path'] ?? ''));
+
+        $dailyTargets = is_array(data_get($output, 'diet.daily_targets')) ? data_get($output, 'diet.daily_targets') : [];
+        data_set($output, 'diet.daily_targets', [
+            'calories_kcal' => $this->toInt($planRun['calorie_target'] ?? null),
+            'protein_g' => $this->toInt($planRun['protein_target_g'] ?? null),
+            'carbs_g' => $this->toInt($planRun['carbs_target_g'] ?? null),
+            'fat_g' => $this->toInt($planRun['fat_target_g'] ?? null),
+        ] + $dailyTargets);
+
+        if (! is_array(data_get($output, 'diet.days'))) {
+            data_set($output, 'diet.days', []);
+        }
+
+        if (! is_array(data_get($output, 'workout.weekly_schedule'))) {
+            data_set($output, 'workout.weekly_schedule', []);
+        }
+
+        if (trim((string) ($planRun['workout_split'] ?? '')) !== '') {
+            data_set($output, 'workout.split', trim((string) ($planRun['workout_split'] ?? '')));
+        }
+
+        $grocery = $this->loadJsonFile((string) ($planRun['grocery_list_json_path'] ?? ''));
+        if ($grocery !== []) {
+            data_set($output, 'diet.grocery_list', $grocery);
+        }
+
+        $safetyFlags = $this->decodeJsonArray((string) ($planRun['safety_flags_json'] ?? ''));
+        if ($safetyFlags !== []) {
+            data_set($output, 'safety.imported_flags', $safetyFlags);
+        }
+
+        $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : [];
+        data_set($output, 'progress_prediction', $prediction + [
+            'horizon_days' => max(1, (int) round((float) ($planRun['horizon_days'] ?? 14))),
+            'baseline_weight_kg' => $this->toFloat($profile['start_weight_kg'] ?? null),
+            'inference_source' => 'planner_dataset_import',
+            'model_name' => trim((string) ($planRun['model'] ?? '')) ?: 'dataset_import',
+        ]);
+
+        return $output;
+    }
+
+    /**
+=======
+>>>>>>> origin/main
      * @return list<string>
      */
     private function parseJsonList(string $value): array
@@ -599,4 +814,41 @@ class PlannerProfileDatasetUserImporter
 
         return is_numeric($value) ? (float) $value : null;
     }
+<<<<<<< HEAD
+
+    private function toInt(mixed $value): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        return is_numeric($value) ? (int) round((float) $value) : null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function loadJsonFile(string $path): array
+    {
+        $absolutePath = $this->resolvePath(trim($path));
+        if ($absolutePath === '' || ! File::exists($absolutePath)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) File::get($absolutePath), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeJsonArray(string $value): array
+    {
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+=======
+>>>>>>> origin/main
 }
