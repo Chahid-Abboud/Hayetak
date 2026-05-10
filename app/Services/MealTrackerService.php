@@ -151,6 +151,7 @@ class MealTrackerService
         return is_string($dietName) && trim($dietName) !== '' ? trim($dietName) : null;
     }
 
+<<<<<<< HEAD
     /**
      * @throws \InvalidArgumentException
      */
@@ -211,6 +212,8 @@ class MealTrackerService
         return in_array($unit, ['ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters'], true);
     }
 
+=======
+>>>>>>> origin/main
     public function daySummary(int $userId, string $dateYmd): array
     {
         $date = Carbon::parse($dateYmd)->toDateString();

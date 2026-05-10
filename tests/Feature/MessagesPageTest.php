@@ -2,12 +2,15 @@
 
 use App\Models\Conversation;
 use App\Models\Message;
+<<<<<<< HEAD
 use App\Models\MessageModeration;
 use App\Models\AiPlan;
 use App\Models\Appointment;
 use App\Models\Food;
 use App\Models\MealEntry;
 use App\Models\ProfessionalClientAssignment;
+=======
+>>>>>>> origin/main
 use App\Models\ProfessionalVerification;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -135,15 +138,22 @@ test('sending a message returns the created message and updates the conversation
 
     $response->assertCreated()
         ->assertJsonPath('message.body', 'Here is my latest update.')
+<<<<<<< HEAD
         ->assertJsonPath('message.sender_id', $client->id)
         ->assertJsonPath('moderation.decision', 'allow');
 
     expect($conversation->fresh()->updated_at->greaterThan($originalUpdatedAt))->toBeTrue();
     expect(MessageModeration::query()->count())->toBe(1);
+=======
+        ->assertJsonPath('message.sender_id', $client->id);
+
+    expect($conversation->fresh()->updated_at->greaterThan($originalUpdatedAt))->toBeTrue();
+>>>>>>> origin/main
 
     Carbon::setTestNow();
 });
 
+<<<<<<< HEAD
 test('blocked messages are rejected and logged in moderation records', function () {
     $client = User::factory()->create();
     $professional = createApprovedProfessional(User::ROLE_TRAINER);
@@ -230,6 +240,8 @@ test('repeated identical messages escalate and then hard block', function () {
         ->assertJsonPath('moderation.decision', 'hard_block');
 });
 
+=======
+>>>>>>> origin/main
 test('starting a conversation with the same participant reuses the existing thread', function () {
     $client = User::factory()->create();
     $professional = createApprovedProfessional(User::ROLE_NUTRITIONIST);
@@ -250,6 +262,7 @@ test('starting a conversation with the same participant reuses the existing thre
     expect(Conversation::query()->count())->toBe(1);
 });
 
+<<<<<<< HEAD
 test('conversation context gives professionals a safe client snapshot', function () {
     $professional = createApprovedProfessional(User::ROLE_NUTRITIONIST);
     $client = User::factory()->create([
@@ -349,6 +362,8 @@ test('conversation context gives clients a professional summary', function () {
         ->assertJsonMissingPath('data.peer.email');
 });
 
+=======
+>>>>>>> origin/main
 test('users cannot read or send messages in conversations they do not belong to', function () {
     $owner = User::factory()->create();
     $other = createApprovedProfessional(User::ROLE_TRAINER);

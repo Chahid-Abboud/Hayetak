@@ -1,9 +1,30 @@
+<<<<<<< HEAD
 import { useAppNotifications } from '@/components/app-notifications';
+=======
+>>>>>>> origin/main
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Bell, Check, X } from 'lucide-react';
+<<<<<<< HEAD
 import { useEffect, useState } from 'react';
+=======
+import { useEffect, useMemo, useState } from 'react';
+
+type NotificationItem = {
+    id: number;
+    title: string;
+    body: string;
+    read_at: string | null;
+    dismissed_at: string | null;
+    created_at: string;
+    creator?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+};
+>>>>>>> origin/main
 
 export default function NotificationBell({
     fullWidth = false,
@@ -13,6 +34,7 @@ export default function NotificationBell({
     compact?: boolean;
 }) {
     const [open, setOpen] = useState(false);
+<<<<<<< HEAD
     const { items, unreadCount, loading, error, refresh, markRead, dismiss } =
         useAppNotifications();
 
@@ -21,6 +43,97 @@ export default function NotificationBell({
             void refresh();
         }
     }, [open, refresh]);
+=======
+    const [items, setItems] = useState<NotificationItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    async function load() {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const res = await fetch('/api/notifications?per_page=20');
+
+            if (!res.ok) {
+                throw new Error('Could not load notifications.');
+            }
+
+            const json = await res.json();
+            const data = Array.isArray(json?.data) ? json.data : [];
+            setItems(data);
+        } catch (loadError) {
+            setError(
+                loadError instanceof Error
+                    ? loadError.message
+                    : 'Could not load notifications.',
+            );
+        } finally {
+            setLoading(false);
+        }
+    }
+
+  useEffect(() => {
+    void load();
+
+    const interval = window.setInterval(() => {
+        void load();
+    }, 5000);
+
+    return () => {
+        window.clearInterval(interval);
+    };
+}, []);
+
+    useEffect(() => {
+        if (open) {
+            void load();
+        }
+    }, [open]);
+
+    const unreadCount = useMemo(
+        () => items.filter((notification) => !notification.read_at).length,
+        [items],
+    );
+
+    async function markRead(id: number) {
+        const previous = items;
+        setItems((current) =>
+            current.map((notification) =>
+                notification.id === id
+                    ? {
+                          ...notification,
+                          read_at:
+                              notification.read_at ?? new Date().toISOString(),
+                      }
+                    : notification,
+            ),
+        );
+
+        const res = await fetch(`/api/notifications/${id}/read`, {
+            method: 'POST',
+        });
+        if (!res.ok) {
+            setItems(previous);
+            setError('Could not mark that alert as read.');
+        }
+    }
+
+    async function dismiss(id: number) {
+        const previous = items;
+        setItems((current) =>
+            current.filter((notification) => notification.id !== id),
+        );
+
+        const res = await fetch(`/api/notifications/${id}/dismiss`, {
+            method: 'POST',
+        });
+        if (!res.ok) {
+            setItems(previous);
+            setError('Could not dismiss that alert.');
+        }
+    }
+>>>>>>> origin/main
 
     return (
         <div className={cn('relative', fullWidth && 'w-full')}>
@@ -79,7 +192,11 @@ export default function NotificationBell({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
+<<<<<<< HEAD
                                 onClick={() => void refresh()}
+=======
+                                onClick={() => void load()}
+>>>>>>> origin/main
                                 disabled={loading}
                             >
                                 Refresh

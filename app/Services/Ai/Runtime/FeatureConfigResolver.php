@@ -206,6 +206,7 @@ class FeatureConfigResolver
     }
 
     /**
+<<<<<<< HEAD
      * Allow local development to answer from the already-built prompt context without the extra vector lookup hop.
      */
     public function shouldUseDirectContextFastPath(): bool
@@ -223,6 +224,8 @@ class FeatureConfigResolver
     }
 
     /**
+=======
+>>>>>>> origin/main
      * Resolve chat provider with auto-mode fallback rules.
      */
     private function resolveChatProvider(): string

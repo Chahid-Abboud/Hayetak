@@ -5,7 +5,10 @@ use App\Models\AiRequest;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\MealEntry;
+<<<<<<< HEAD
 use App\Models\Measurement;
+=======
+>>>>>>> origin/main
 use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
 use App\Models\NutritionPlanItem;
@@ -14,8 +17,11 @@ use App\Models\User;
 use App\Models\WorkoutLog;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
+<<<<<<< HEAD
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+=======
+>>>>>>> origin/main
 use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -117,9 +123,12 @@ it('hides technical planner metadata on non-admin ai planner and dashboard paylo
             ->missing('defaults.model')
             ->missing('defaults.prompt_version')
             ->missing('defaults.schema_version')
+<<<<<<< HEAD
             ->missing('weightHistory')
             ->has('predictionSummary')
             ->has('comparisonWeights')
+=======
+>>>>>>> origin/main
         );
 
     $this->actingAs($user)
@@ -355,6 +364,7 @@ it('logs planned meal substitutions and reports their status through the meal tr
             ->etc()
         );
 });
+<<<<<<< HEAD
 
 it('accepts grams for foods and milliliters for drinks when logging meals', function () {
     $user = User::factory()->create();
@@ -664,3 +674,5 @@ it('excludes synthetic weigh-ins from planner predictor comparisons and summary 
             ->where('predictionSummary.actual_comparison_available', true)
         );
 });
+=======
+>>>>>>> origin/main

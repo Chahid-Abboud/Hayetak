@@ -25,6 +25,7 @@ class AutoPlanGenerationService
             $days = 28;
         }
 
+<<<<<<< HEAD
         GeneratePlansForUser::dispatch(
             userId: $user->id,
             days: $days,
@@ -33,6 +34,27 @@ class AutoPlanGenerationService
             generateDiet: true,
             generateWorkout: true,
         );
+=======
+        if (app()->runningUnitTests()) {
+            GeneratePlansForUser::dispatch(
+                userId: $user->id,
+                days: $days,
+                regenerate: true,
+                reason: $reason,
+                generateDiet: true,
+                generateWorkout: true,
+            );
+        } else {
+            GeneratePlansForUser::dispatchAfterResponse(
+                userId: $user->id,
+                days: $days,
+                regenerate: true,
+                reason: $reason,
+                generateDiet: true,
+                generateWorkout: true,
+            );
+        }
+>>>>>>> origin/main
 
         return true;
     }

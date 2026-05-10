@@ -32,6 +32,7 @@ class ProgressPredictionModel
         $adherenceMultiplier = $this->adherenceMultiplier($context, $plan, $profile);
         $adjustedWeeklyRate = $baseWeeklyRate * $adherenceMultiplier;
 
+<<<<<<< HEAD
         $feedbackStats = $this->recentPredictionFeedback($user, 2);
         $feedbackDelta = $feedbackStats['error_kg_per_week'] ?? null;
         $feedbackSampleCount = (int) ($feedbackStats['sample_count'] ?? 0);
@@ -40,6 +41,21 @@ class ProgressPredictionModel
             // Adapt only after real check-in matches exist. One check-in nudges gently; two check-ins trust the user-specific pattern more.
             $feedbackWeight = $feedbackSampleCount >= 2 ? 0.45 : 0.28;
             $adjustedWeeklyRate += ($feedbackDelta * $feedbackWeight);
+=======
+        $feedbackDelta = $this->recentPredictionErrorPerWeek($user);
+        if ($feedbackDelta === null) {
+            $previous = $this->latestPreviousPrediction($user);
+            if (is_array($previous)) {
+                $priorProjected = (float) ($previous['projected_body_weight_kg'] ?? $currentWeight);
+                $priorWeeks = max(1.0, ((int) ($previous['horizon_days'] ?? 14)) / 7.0);
+                // Positive value means user changed less than predicted.
+                $feedbackDelta = ($currentWeight - $priorProjected) / $priorWeeks;
+            }
+        }
+        if ($feedbackDelta !== null) {
+            // Move the next projection in the same direction as observed real-world error.
+            $adjustedWeeklyRate += ($feedbackDelta * 0.35);
+>>>>>>> origin/main
         }
 
         $strengthGainWeekly = $this->strengthWeeklyGainPercent($goalMode, $adherenceMultiplier);
@@ -120,9 +136,13 @@ class ProgressPredictionModel
                 'base_weekly_weight_change_kg' => round($baseWeeklyRate, 2),
                 'adjusted_weekly_weight_change_kg' => round($adjustedWeeklyRate, 2),
                 'last_prediction_error_kg_per_week' => $feedbackDelta !== null ? round($feedbackDelta, 2) : null,
+<<<<<<< HEAD
                 'feedback_sample_count' => $feedbackSampleCount,
                 'adapted_after_check_ins' => $feedbackSampleCount > 0,
                 'notes' => $this->feedbackNotes($guardrailNote, $feedbackSampleCount),
+=======
+                'notes' => $this->feedbackNotes($guardrailNote),
+>>>>>>> origin/main
             ],
         ];
     }
@@ -248,11 +268,17 @@ class ProgressPredictionModel
     /**
      * Describe how feedback and guardrails affected the final projection.
      */
+<<<<<<< HEAD
     private function feedbackNotes(?string $guardrailNote = null, int $feedbackSampleCount = 0): string
     {
         $base = $feedbackSampleCount > 0
             ? 'Prediction adjusted after comparing projected weight with '.$feedbackSampleCount.' real check-in'.($feedbackSampleCount === 1 ? '' : 's').'.'
             : 'Prediction is using the selected check-in window and will adapt after 1–2 real weigh-in check-ins.';
+=======
+    private function feedbackNotes(?string $guardrailNote = null): string
+    {
+        $base = 'Prediction auto-adjusts using adherence signals and measured real-world error when available.';
+>>>>>>> origin/main
         if ($guardrailNote === null || trim($guardrailNote) === '') {
             return $base;
         }
@@ -794,12 +820,16 @@ class ProgressPredictionModel
     /**
      * Estimate weighted weekly prediction error from recent completed plan runs.
      */
+<<<<<<< HEAD
     /**
      * Estimate user-specific weekly prediction error from the latest completed check-ins.
      *
      * @return array{error_kg_per_week: float|null, sample_count: int}
      */
     private function recentPredictionFeedback(User $user, int $maxSamples = 2): array
+=======
+    private function recentPredictionErrorPerWeek(User $user): ?float
+>>>>>>> origin/main
     {
         $rows = AiRequest::query()
             ->where('user_id', $user->id)
@@ -807,25 +837,43 @@ class ProgressPredictionModel
             ->where('status', 'completed')
             ->whereNotNull('output_json')
             ->latest('id')
+<<<<<<< HEAD
             ->limit(12)
             ->get(['id', 'created_at', 'output_json']);
 
         if ($rows->isEmpty()) {
             return ['error_kg_per_week' => null, 'sample_count' => 0];
+=======
+            ->limit(8)
+            ->get(['id', 'created_at', 'output_json']);
+
+        if ($rows->isEmpty()) {
+            return null;
+>>>>>>> origin/main
         }
 
         $weightedError = 0.0;
         $weightTotal = 0.0;
+<<<<<<< HEAD
         $sampleCount = 0;
+=======
+        $index = 0;
+>>>>>>> origin/main
 
         foreach ($rows as $row) {
             $output = is_array($row->output_json) ? $row->output_json : null;
             $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : null;
             if (! is_array($prediction)) {
+<<<<<<< HEAD
+=======
+                $index++;
+
+>>>>>>> origin/main
                 continue;
             }
 
             $horizonDays = $this->normalizePlanHorizonDays((int) ($prediction['horizon_days'] ?? 14));
+<<<<<<< HEAD
             $expectedChange = $this->toFloatOrNull($prediction['expected_weight_change_kg'] ?? null);
             if ($expectedChange === null) {
                 continue;
@@ -840,12 +888,29 @@ class ProgressPredictionModel
             $endWeight = $this->weightNearTargetDate($user->id, $endDate);
 
             if ($baseline === null || $endWeight === null || $baseline <= 0) {
+=======
+            $expectedChange = (float) ($prediction['expected_weight_change_kg'] ?? 0.0);
+            $predictedWeekly = ($expectedChange / $horizonDays) * 7.0;
+
+            $startDate = CarbonImmutable::parse((string) $row->created_at)->startOfDay();
+            $endDate = $startDate->addDays($horizonDays - 1);
+
+            $baseline = is_numeric($prediction['baseline_weight_kg'] ?? null)
+                ? (float) $prediction['baseline_weight_kg']
+                : $this->weightOnOrBefore($user->id, $startDate);
+            $endWeight = $this->weightNearTargetDate($user->id, $endDate);
+
+            if ($baseline === null || $endWeight === null || $baseline <= 0) {
+                $index++;
+
+>>>>>>> origin/main
                 continue;
             }
 
             $actualWeekly = (($endWeight - $baseline) / $horizonDays) * 7.0;
             $errorWeekly = $actualWeekly - $predictedWeekly;
 
+<<<<<<< HEAD
             // Latest matched check-ins matter most. Stop at one or two real feedback windows.
             $recencyWeight = $sampleCount === 0 ? 1.0 : 0.7;
             $weightedError += $errorWeekly * $recencyWeight;
@@ -865,6 +930,20 @@ class ProgressPredictionModel
             'error_kg_per_week' => $weightedError / $weightTotal,
             'sample_count' => $sampleCount,
         ];
+=======
+            // More recent plans get higher influence.
+            $recencyWeight = max(0.3, 1.0 - ($index * 0.1));
+            $weightedError += $errorWeekly * $recencyWeight;
+            $weightTotal += $recencyWeight;
+            $index++;
+        }
+
+        if ($weightTotal <= 0) {
+            return null;
+        }
+
+        return $weightedError / $weightTotal;
+>>>>>>> origin/main
     }
 
     /**

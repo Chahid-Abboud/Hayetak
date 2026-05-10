@@ -23,7 +23,10 @@ import {
     Search,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+<<<<<<< HEAD
 import { cleanPlanName } from '@/lib/plan-utils';
+=======
+>>>>>>> origin/main
 
 type Exercise = {
     id: number;
@@ -365,9 +368,16 @@ export default function WorkoutLogPage() {
                                 </div>
                                 <div className="mt-2 text-base text-muted-foreground">
                                     {mode === 'follow-ai'
+<<<<<<< HEAD
                                         ? (cleanPlanName(aiPlan?.name) || 'AI workout plan')
                                         : mode === 'my-plan'
                                           ? (cleanPlanName(manualPlan?.name) || 'My workout draft')
+=======
+                                        ? (aiPlan?.name ?? 'AI workout plan')
+                                        : mode === 'my-plan'
+                                          ? (manualPlan?.name ??
+                                            'My workout draft')
+>>>>>>> origin/main
                                           : 'Freestyle logging'}
                                 </div>
                             </div>

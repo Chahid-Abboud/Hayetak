@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import {
     Activity,
+<<<<<<< HEAD
     FileSearch,
     type LucideIcon,
     Dumbbell,
@@ -13,6 +14,17 @@ import {
     Stethoscope,
     Users,
     UtensilsCrossed,
+=======
+    Database,
+    FileSearch,
+    type LucideIcon,
+    MapPin,
+    MessageSquareText,
+    Settings2,
+    ShieldCheck,
+    Sparkles,
+    Users,
+>>>>>>> origin/main
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -45,6 +57,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
         ],
     },
     {
+<<<<<<< HEAD
         label: 'Accounts',
         description: 'Core account and trust workflows.',
         links: [
@@ -52,6 +65,21 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 href: '/admin/users',
                 label: 'Users',
                 icon: Users,
+=======
+        label: 'Workspaces',
+        description: 'Human review flows with guided detail panels.',
+        links: [
+            {
+                href: '/admin/people',
+                label: 'People',
+                icon: Users,
+                matchPaths: [
+                    '/admin/users',
+                    '/admin/professionals',
+                    '/admin/safety-profiles',
+                    '/admin/assignments',
+                ],
+>>>>>>> origin/main
             },
             {
                 href: '/admin/verifications',
@@ -60,6 +88,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 matchPaths: ['/admin/professional-verifications'],
             },
             {
+<<<<<<< HEAD
                 href: '/admin/professionals',
                 label: 'Professionals',
                 icon: Stethoscope,
@@ -91,6 +120,17 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 href: '/admin/exercises',
                 label: 'Exercises',
                 icon: Dumbbell,
+=======
+                href: '/admin/health-data',
+                label: 'Health Data',
+                icon: Database,
+                matchPaths: [
+                    '/admin/meals',
+                    '/admin/meal-logs',
+                    '/admin/exercises',
+                    '/admin/progress',
+                ],
+>>>>>>> origin/main
             },
             {
                 href: '/admin/places',
@@ -98,14 +138,33 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 icon: MapPin,
             },
             {
+<<<<<<< HEAD
                 href: '/admin/progress',
                 label: 'Progress',
                 icon: Activity,
+=======
+                href: '/admin/communications',
+                label: 'Communications',
+                icon: MessageSquareText,
+                matchPaths: ['/admin/notifications'],
+            },
+            {
+                href: '/admin/ai-review',
+                label: 'AI Review',
+                icon: Sparkles,
+                matchPaths: [
+                    '/admin/ai/planner',
+                    '/admin/ai/coach',
+                    '/admin/safety-rules',
+                    '/admin/ai-rollouts',
+                ],
+>>>>>>> origin/main
             },
         ],
     },
     {
         label: 'System',
+<<<<<<< HEAD
         description: 'Traceability for administrator actions.',
         links: [
             {
@@ -117,6 +176,25 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 href: '/admin/message-moderations',
                 label: 'Moderation',
                 icon: ShieldAlert,
+=======
+        description: 'Technical detail and rare high-risk controls.',
+        links: [
+            {
+                href: '/admin/logs-diagnostics',
+                label: 'Logs & Diagnostics',
+                icon: FileSearch,
+                matchPaths: ['/admin/logs', '/admin/diagnostics'],
+            },
+            {
+                href: '/admin/settings',
+                label: 'Settings',
+                icon: Settings2,
+                matchPaths: [
+                    '/admin/roles-permissions',
+                    '/admin/settings-feature-flags',
+                    '/admin/privacy-compliance',
+                ],
+>>>>>>> origin/main
             },
         ],
     },

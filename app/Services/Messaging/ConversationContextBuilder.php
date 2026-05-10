@@ -22,14 +22,20 @@ class ConversationContextBuilder
         if (! $peer) {
             return [
                 'conversation_id' => $conversation->id,
+<<<<<<< HEAD
                 'context_mode' => 'client_summary',
+=======
+>>>>>>> origin/main
                 'peer' => null,
                 'relationship' => null,
                 'safety' => [
                     'badges' => [],
                 ],
+<<<<<<< HEAD
                 'client_snapshot' => null,
                 'professional_snapshot' => null,
+=======
+>>>>>>> origin/main
                 'activity' => [
                     'today' => [],
                     'last_7_days' => [],
@@ -44,6 +50,7 @@ class ConversationContextBuilder
 
         $today = Carbon::today();
         $sevenDaysAgo = Carbon::today()->subDays(6);
+<<<<<<< HEAD
         $peerIsProfessional = in_array($peer->role, [User::ROLE_NUTRITIONIST, User::ROLE_TRAINER], true);
 
         $todayMeals = collect();
@@ -82,6 +89,37 @@ class ConversationContextBuilder
                 ->latest('id')
                 ->first();
         }
+=======
+
+        $todayMeals = MealEntry::query()
+            ->with('food:id,calories')
+            ->where('user_id', $peer->id)
+            ->whereDate('eaten_at', $today->toDateString())
+            ->get();
+
+        $last7Meals = MealEntry::query()
+            ->with('food:id,calories')
+            ->where('user_id', $peer->id)
+            ->whereDate('eaten_at', '>=', $sevenDaysAgo->toDateString())
+            ->get();
+
+        $todayWorkouts = WorkoutLog::query()
+            ->withCount('sets')
+            ->where('user_id', $peer->id)
+            ->whereDate('performed_at', $today->toDateString())
+            ->get();
+
+        $last7Workouts = WorkoutLog::query()
+            ->withCount('sets')
+            ->where('user_id', $peer->id)
+            ->whereDate('performed_at', '>=', $sevenDaysAgo->toDateString())
+            ->get();
+
+        $latestPlan = AiPlan::query()
+            ->where('user_id', $peer->id)
+            ->latest('id')
+            ->first();
+>>>>>>> origin/main
 
         $nextAppointment = Appointment::query()
             ->where(function ($query) use ($actor, $peer) {
@@ -145,10 +183,17 @@ class ConversationContextBuilder
 
         return [
             'conversation_id' => $conversation->id,
+<<<<<<< HEAD
             'context_mode' => $peerIsProfessional ? 'professional_summary' : 'client_summary',
             'peer' => [
                 'id' => $peer->id,
                 'name' => $peer->display_name,
+=======
+            'peer' => [
+                'id' => $peer->id,
+                'name' => $peer->display_name,
+                'email' => $peer->email,
+>>>>>>> origin/main
                 'role' => $peer->role,
                 'city' => $peer->city,
                 'verified' => (bool) $peer->verified,
@@ -162,6 +207,7 @@ class ConversationContextBuilder
             'safety' => [
                 'allergies' => $allergies,
                 'has_medical_history' => (bool) $peer->has_medical_history,
+<<<<<<< HEAD
                 'diet_name' => $peer->diet_name,
                 'dietary_goal' => $peer->dietary_goal,
                 'fitness_goal' => $peer->fitness_goal,
@@ -185,6 +231,14 @@ class ConversationContextBuilder
                 'city' => $peer->city,
                 'verified' => (bool) $peer->verified,
             ] : null,
+=======
+                'medical_history' => $peer->medical_history,
+                'diet_name' => $peer->diet_name,
+                'dietary_goal' => $peer->dietary_goal,
+                'fitness_goal' => $peer->fitness_goal,
+                'badges' => $badges,
+            ],
+>>>>>>> origin/main
             'activity' => [
                 'today' => [
                     'meals_logged' => $todayMeals->count(),
@@ -231,6 +285,7 @@ class ConversationContextBuilder
 
         return $total;
     }
+<<<<<<< HEAD
 
     private function roleLabel(?string $role): string
     {
@@ -240,4 +295,6 @@ class ConversationContextBuilder
             default => ucfirst((string) ($role ?? 'Professional')),
         };
     }
+=======
+>>>>>>> origin/main
 }

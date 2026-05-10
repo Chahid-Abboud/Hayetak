@@ -23,7 +23,11 @@ import {
     Trash2,
     WandSparkles,
 } from 'lucide-react';
+<<<<<<< HEAD
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+=======
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+>>>>>>> origin/main
 
 type Exercise = {
     id: number;
@@ -331,21 +335,35 @@ export default function WorkoutPlannerPage() {
         );
     };
 
+<<<<<<< HEAD
     const applyDraftDays = useCallback((nextDays: DayDraft[]) => {
+=======
+    const applyDraftDays = (nextDays: DayDraft[]) => {
+>>>>>>> origin/main
         const normalized = normalizeDayIndexes(nextDays);
         setDraftDays(normalized);
         setSelectedDay(normalized[0]?.day_index ?? 1);
         setStatus(null);
         setErrors({});
+<<<<<<< HEAD
     }, []);
 
     const applyPlanToDraft = useCallback((plan: WorkoutPlan, label: string) => {
+=======
+    };
+
+    const applyPlanToDraft = (plan: WorkoutPlan, label: string) => {
+>>>>>>> origin/main
         const nextDays = toDraftDays(plan);
         setDraftName(`${plan.name} Copy`);
         applyDraftDays(nextDays);
         setMode('build-own');
         setStatus(`${label} loaded into your draft editor.`);
+<<<<<<< HEAD
     }, [applyDraftDays]);
+=======
+    };
+>>>>>>> origin/main
 
     const templateSources = useMemo(() => {
         const sources: Array<{
@@ -380,7 +398,11 @@ export default function WorkoutPlannerPage() {
         }
 
         return sources;
+<<<<<<< HEAD
     }, [activeAiPlan, applyPlanToDraft, premadePlans]);
+=======
+    }, [activeAiPlan, premadePlans]);
+>>>>>>> origin/main
 
     const totalTemplatePages = Math.max(
         1,
@@ -593,6 +615,7 @@ export default function WorkoutPlannerPage() {
                                 title="Today and the rest of the week"
                                 description="Start with the recommended day, then scan the full structure without hunting through dense blocks."
                             >
+<<<<<<< HEAD
                                 <div className="grid items-start gap-4 xl:grid-cols-3">
                                     <AiFocusCard
                                         day={aiRecommendedDay}
@@ -607,6 +630,25 @@ export default function WorkoutPlannerPage() {
                                             }
                                         />
                                     ))}
+=======
+                                <div className="grid items-start gap-5 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
+                                    <AiFocusCard day={aiRecommendedDay} />
+
+                                    <div className="grid content-start items-start gap-4 md:grid-cols-2">
+                                        {(activeAiPlan.days ?? []).map(
+                                            (day) => (
+                                                <AiDayCard
+                                                    key={day.id}
+                                                    day={day}
+                                                    highlighted={
+                                                        aiRecommendedDay?.id ===
+                                                        day.id
+                                                    }
+                                                />
+                                            ),
+                                        )}
+                                    </div>
+>>>>>>> origin/main
                                 </div>
                             </ProductSection>
 
@@ -1185,6 +1227,7 @@ function BuilderCard({
     );
 }
 
+<<<<<<< HEAD
 function AiFocusCard({
     day,
     className = '',
@@ -1192,6 +1235,9 @@ function AiFocusCard({
     day: PlanDay | null;
     className?: string;
 }) {
+=======
+function AiFocusCard({ day }: { day: PlanDay | null }) {
+>>>>>>> origin/main
     if (!day) {
         return (
             <ProductEmptyState
@@ -1214,9 +1260,13 @@ function AiFocusCard({
     const hasExercises = day.exercises.length > 0;
 
     return (
+<<<<<<< HEAD
         <div
             className={`rounded-[28px] border border-primary/25 bg-primary/10 p-6 ${className}`}
         >
+=======
+        <div className="rounded-[28px] border border-primary/25 bg-primary/10 p-6">
+>>>>>>> origin/main
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <div className="text-sm font-semibold text-muted-foreground">
@@ -1349,6 +1399,153 @@ function AiDayCard({
             )}
         </div>
     );
+<<<<<<< HEAD
+}
+
+function MetaListCard({ title, items }: { title: string; items: string[] }) {
+    return (
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+            <div className="flex items-center gap-3 text-lg font-semibold text-foreground">
+                <ListChecks className="h-5 w-5" />
+                {title}
+            </div>
+            <div className="mt-4 space-y-3">
+                {items.length ? (
+                    items.map((item) => (
+                        <div
+                            key={item}
+                            className="rounded-[18px] border border-border/70 bg-card/80 px-4 py-3 text-sm leading-6 text-foreground"
+                        >
+                            {item}
+                        </div>
+                    ))
+                ) : (
+                    <div className="rounded-[18px] border border-dashed border-border/70 bg-background/65 px-4 py-4 text-sm text-muted-foreground">
+                        Nothing has been recorded here yet.
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function SelectedExerciseCard({
+    exercise,
+    draft,
+    onSetsChange,
+    onRepsChange,
+    onRemove,
+}: {
+    exercise: Exercise;
+    draft: DraftExercise;
+    onSetsChange: (value: number) => void;
+    onRepsChange: (value: number) => void;
+    onRemove: () => void;
+}) {
+    return (
+        <div className="rounded-[24px] border border-border/70 bg-card/80 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div className="text-base font-semibold text-foreground">
+                        {exercise.name}
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                        {exercise.primary_muscle}
+                        {exercise.equipment ? ` - ${exercise.equipment}` : ''}
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    className="inline-flex items-center rounded-full border border-border/70 px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-background"
+                >
+                    Remove
+                </button>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="block">
+                    <span className="text-sm font-semibold text-foreground">
+                        Target sets
+                    </span>
+                    <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={draft.target_sets}
+                        onChange={(event) =>
+                            onSetsChange(Number(event.target.value) || 1)
+                        }
+                        className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-background px-4 text-base text-foreground"
+                    />
+                </label>
+                <label className="block">
+                    <span className="text-sm font-semibold text-foreground">
+                        Target reps
+                    </span>
+                    <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={draft.target_reps}
+                        onChange={(event) =>
+                            onRepsChange(Number(event.target.value) || 1)
+                        }
+                        className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-background px-4 text-base text-foreground"
+                    />
+                </label>
+            </div>
+        </div>
+    );
+}
+
+function TemplateSourceCard({
+    title,
+    description,
+    badge,
+    onClick,
+}: {
+    title: string;
+    description: string;
+    badge: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="rounded-[22px] border border-border/70 bg-background/72 p-4 text-left transition hover:bg-card"
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                    <div className="line-clamp-2 text-base font-semibold text-foreground">
+                        {title}
+                    </div>
+                    <div className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+                        {description}
+                    </div>
+                </div>
+                <Sparkles className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+                <PlanChip label={badge} />
+                <div className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                    Load
+                    <ChevronRight className="h-4 w-4" />
+                </div>
+            </div>
+        </button>
+    );
+}
+
+function PlanChip({ label }: { label: string }) {
+    return (
+        <span className="inline-flex items-center rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-semibold text-foreground">
+            {label}
+        </span>
+    );
+=======
+>>>>>>> origin/main
 }
 
 function MetaListCard({ title, items }: { title: string; items: string[] }) {

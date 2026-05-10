@@ -58,6 +58,7 @@ it('resolves diet, allergy, medical, and injury facts from normalized profile ta
     expect($resolved['injuries'])->toContain('ankle sprain', 'shoulder impingement');
     expect($resolved['available_equipment'])->toContain('dumbbell');
 });
+<<<<<<< HEAD
 
 it('splits legacy combined medical and injury summaries without duplicating mixed strings', function () {
     $user = User::factory()->create([
@@ -93,3 +94,5 @@ it('splits legacy combined medical and injury summaries without duplicating mixe
     expect($resolved['injuries'])->toContain('Shoulder Impingement History', 'Shoulder Impingement')
         ->not->toContain('Medical: Prediabetes. Injuries: Shoulder Impingement History');
 });
+=======
+>>>>>>> origin/main

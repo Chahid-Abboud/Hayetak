@@ -61,6 +61,7 @@ class SelfHostedContextAwareChatService
         $limit = (int) $retrievalSettings['limit'];
         $maxCharacters = (int) $retrievalSettings['max_context_characters'];
 
+<<<<<<< HEAD
         if ($this->features->shouldUseDirectContextFastPath()) {
             return [
                 'path' => 'personalized',
@@ -72,6 +73,8 @@ class SelfHostedContextAwareChatService
             ];
         }
 
+=======
+>>>>>>> origin/main
         try {
             // Embed the incoming question, then search only within the requesting user's payloads.
             $embedding = $this->ollama->embed(FeatureConfigResolver::FEATURE_CHAT, trim($question));

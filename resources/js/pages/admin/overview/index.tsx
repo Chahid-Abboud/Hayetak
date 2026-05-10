@@ -11,6 +11,7 @@ import {
     AdminStatCard,
     AdminStatsGrid,
 } from '@/components/admin/AdminShell';
+<<<<<<< HEAD
 import {
     ProductTableBody,
     ProductTableCell,
@@ -18,12 +19,15 @@ import {
     ProductTableHeaderCell,
     ProductTableRow,
 } from '@/components/product/table';
+=======
+>>>>>>> origin/main
 import RoleGuard from '@/components/RoleGuard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
+<<<<<<< HEAD
     ArrowRight,
     BellRing,
     ClipboardCheck,
@@ -33,6 +37,17 @@ import {
     Stethoscope,
     Users,
     UtensilsCrossed,
+=======
+    AlertTriangle,
+    ArrowRight,
+    BellRing,
+    ClipboardCheck,
+    HeartPulse,
+    Settings2,
+    ShieldCheck,
+    Sparkles,
+    UserCheck,
+>>>>>>> origin/main
 } from 'lucide-react';
 
 type Tone = 'danger' | 'warning' | 'info' | 'success';
@@ -59,7 +74,11 @@ const stats = [
     {
         label: 'Total users',
         value: 248,
+<<<<<<< HEAD
         helper: 'Accounts available through Users.',
+=======
+        helper: 'Accounts available through People.',
+>>>>>>> origin/main
         tone: 'accent' as const,
     },
     {
@@ -70,6 +89,7 @@ const stats = [
     {
         label: 'Unread admin alerts',
         value: 5,
+<<<<<<< HEAD
         helper: 'Messages and interventions in Notifications.',
     },
     {
@@ -81,11 +101,36 @@ const stats = [
         label: 'Professional profiles',
         value: 41,
         helper: 'Trainer and dietitian records visible in Professionals.',
+=======
+        helper: 'Messages and interventions in Communications.',
+    },
+    {
+        label: 'AI warnings',
+        value: 6,
+        helper: 'Planner and coach safety items in AI Review.',
+    },
+    {
+        label: 'Recent admin actions',
+        value: 31,
+        helper: 'Audit entries available in Logs & Diagnostics.',
+>>>>>>> origin/main
     },
 ];
 
 const highestPriorityQueue: QueueItem[] = [
     {
+<<<<<<< HEAD
+=======
+        id: 'ai-flag-4029',
+        title: 'Allergy conflict flagged in generated plan',
+        description:
+            'Planner safety audit flagged a nut-allergy conflict in a sampled meal plan. Keep raw prompt traces in diagnostics.',
+        meta: 'AI safety - User #4029 - 12 min ago',
+        tone: 'danger',
+        href: '/admin/ai-review',
+    },
+    {
+>>>>>>> origin/main
         id: 'verification-189',
         title: 'Trainer verification needs decision',
         description:
@@ -95,6 +140,7 @@ const highestPriorityQueue: QueueItem[] = [
         href: '/admin/verifications',
     },
     {
+<<<<<<< HEAD
         id: 'profile-84',
         title: 'Professional profile needs publishing check',
         description:
@@ -129,11 +175,30 @@ const highestPriorityQueue: QueueItem[] = [
         meta: 'Catalog item #512 - Content review',
         tone: 'info',
         href: '/admin/meals',
+=======
+        id: 'planner-fail-184',
+        title: 'Planner run failed after schema validation',
+        description:
+            'The user-facing fallback was served; investigate summarized failure context before restarting the run.',
+        meta: 'Planner audit #184 - 31 min ago',
+        tone: 'warning',
+        href: '/admin/ai-review',
+    },
+    {
+        id: 'support-77',
+        title: 'Risky profile issue needs review',
+        description:
+            'Client reported conflicting coach guidance after a back-injury update. Review profile safety state first.',
+        meta: 'People safety - Coach context',
+        tone: 'info',
+        href: '/admin/people',
+>>>>>>> origin/main
     },
 ];
 
 const priorityCards: PriorityCard[] = [
     {
+<<<<<<< HEAD
         title: 'Users',
         value: '248',
         description:
@@ -144,6 +209,18 @@ const priorityCards: PriorityCard[] = [
             { label: '12 users need account review', meta: 'Status queue' },
             { label: '8 accounts have pending notes', meta: 'Support follow-up' },
             { label: '4 soft-deleted accounts', meta: 'Restoration check' },
+=======
+        title: 'People',
+        value: '248',
+        description:
+            'Users, professionals, safety profiles, and assignments in one workspace.',
+        icon: UserCheck,
+        href: '/admin/people',
+        items: [
+            { label: '12 users need account review', meta: 'People tab' },
+            { label: '6 safety profiles need review', meta: 'Safety tab' },
+            { label: '4 assignment matches pending', meta: 'Assignments tab' },
+>>>>>>> origin/main
         ],
     },
     {
@@ -160,6 +237,7 @@ const priorityCards: PriorityCard[] = [
         ],
     },
     {
+<<<<<<< HEAD
         title: 'Professionals',
         value: '41',
         description:
@@ -196,12 +274,42 @@ const priorityCards: PriorityCard[] = [
             { label: '3 escalations are still open', meta: 'Needs review' },
             { label: '2 hard blocks confirmed', meta: 'Policy enforcement' },
             { label: '2 flagged messages await dismissal', meta: 'False-positive check' },
+=======
+        title: 'Health Data',
+        value: '4',
+        description:
+            'Catalog and history correction workflows that affect AI context.',
+        icon: HeartPulse,
+        href: '/admin/health-data',
+        items: [
+            { label: 'Foods catalog', meta: 'Macros and allergens' },
+            { label: 'Meal logs', meta: 'Corrections and AI context' },
+            { label: 'Exercises and progress', meta: 'Safety and trends' },
+        ],
+    },
+    {
+        title: 'AI Review',
+        value: '6',
+        description:
+            'Planner, coach, and safety warning queues without raw payloads first.',
+        icon: Sparkles,
+        href: '/admin/ai-review',
+        items: [
+            {
+                label: '4 unsafe coach/planner flags',
+                meta: 'Review before diagnostics',
+                tone: 'danger',
+            },
+            { label: '2 failed planner runs', meta: 'Fallback served' },
+            { label: '1 context mismatch warning', meta: 'Coach review' },
+>>>>>>> origin/main
         ],
     },
 ];
 
 const healthItems = [
     {
+<<<<<<< HEAD
         label: 'User queue',
         value: 'Stable',
         detail: 'Account reviews are moving without backlog growth.',
@@ -223,6 +331,29 @@ const healthItems = [
         label: 'Admin alerts',
         value: 'Routed',
         detail: 'Unread notices are visible and ready for follow-up.',
+=======
+        label: 'Planner API',
+        value: 'Degraded',
+        detail: '2 failed runs; fallback responses available.',
+        tone: 'warning' as const,
+    },
+    {
+        label: 'Coach safety',
+        value: 'Watching',
+        detail: 'Unsafe flags remain below intervention threshold.',
+        tone: 'info' as const,
+    },
+    {
+        label: 'Queues',
+        value: 'Open',
+        detail: 'Verification and AI review queues are the current bottleneck.',
+        tone: 'warning' as const,
+    },
+    {
+        label: 'Admin alerts',
+        value: 'Healthy',
+        detail: 'Unread messages are visible and routed.',
+>>>>>>> origin/main
         tone: 'success' as const,
     },
 ];
@@ -352,7 +483,11 @@ export default function AdminOverviewIndex() {
 
                         <AdminSection
                             title="Workspace summaries"
+<<<<<<< HEAD
                             description="Direct links into the main admin work areas."
+=======
+                            description="Equal cards for People, Verifications, Health Data, and AI Review."
+>>>>>>> origin/main
                         >
                             <div className="grid gap-4 xl:grid-cols-4">
                                 {priorityCards.map((card) => (
@@ -414,7 +549,11 @@ export default function AdminOverviewIndex() {
 
                         <AdminSection
                             title="Operational health"
+<<<<<<< HEAD
                             description="Simple status summaries for the queues and records you manage most often."
+=======
+                            description="Health summaries for admin triage, not raw debugging output."
+>>>>>>> origin/main
                         >
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 {healthItems.map((item) => (
@@ -439,6 +578,11 @@ export default function AdminOverviewIndex() {
                                             >
                                                 {item.tone === 'success' ? (
                                                     <ShieldCheck className="h-4 w-4" />
+<<<<<<< HEAD
+=======
+                                                ) : item.tone === 'warning' ? (
+                                                    <AlertTriangle className="h-4 w-4" />
+>>>>>>> origin/main
                                                 ) : (
                                                     <Activity className="h-4 w-4" />
                                                 )}
@@ -462,6 +606,7 @@ export default function AdminOverviewIndex() {
                             >
                                 <AdminScrollArea maxHeightClassName="max-h-[22rem]">
                                     <AdminDataTable tableClassName="min-w-[860px]">
+<<<<<<< HEAD
                                         <ProductTableHead>
                                             <ProductTableRow>
                                                 <ProductTableHeaderCell>When</ProductTableHeaderCell>
@@ -494,12 +639,47 @@ export default function AdminOverviewIndex() {
                                                 </ProductTableRow>
                                             ))}
                                         </ProductTableBody>
+=======
+                                        <thead>
+                                            <tr>
+                                                <th>When</th>
+                                                <th>Action</th>
+                                                <th>Actor</th>
+                                                <th>Target</th>
+                                                <th>Summary</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {recentActions.map((item) => (
+                                                <tr
+                                                    key={`${item.action}-${item.time}`}
+                                                >
+                                                    <td className="text-sm text-muted-foreground">
+                                                        {item.time}
+                                                    </td>
+                                                    <td className="text-sm font-medium text-foreground">
+                                                        {item.action}
+                                                    </td>
+                                                    <td className="text-sm text-muted-foreground">
+                                                        {item.actor}
+                                                    </td>
+                                                    <td className="text-sm text-muted-foreground">
+                                                        {item.target}
+                                                    </td>
+                                                    <td className="text-sm text-muted-foreground">
+                                                        {item.summary}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+>>>>>>> origin/main
                                     </AdminDataTable>
                                 </AdminScrollArea>
                             </AdminPanel>
                         </AdminSection>
 
                         <AdminSection
+<<<<<<< HEAD
                             title="Admin tools"
                             description="The standard destinations for day-to-day admin work."
                         >
@@ -539,6 +719,41 @@ export default function AdminOverviewIndex() {
                                         <Link href="/admin/meals">
                                             <UtensilsCrossed className="h-4 w-4" />
                                             Meals
+=======
+                            title="Diagnostics entry point"
+                            description="Open technical investigation surfaces only when the summarized signals need deeper evidence."
+                        >
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                <AdminNotice tone="info">
+                                    Debugging details are intentionally kept out
+                                    of the command center. Use diagnostics for
+                                    prompt traces, failed jobs, runtime errors,
+                                    and request IDs.
+                                </AdminNotice>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/logs-diagnostics">
+                                            <Settings2 className="h-4 w-4" />
+                                            Logs & Diagnostics
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/logs-diagnostics">
+                                            <ClipboardCheck className="h-4 w-4" />
+                                            Audit logs
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/communications">
+                                            <BellRing className="h-4 w-4" />
+                                            Admin alerts
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="outline">
+                                        <Link href="/admin/ai-review">
+                                            <Sparkles className="h-4 w-4" />
+                                            AI Review
+>>>>>>> origin/main
                                         </Link>
                                     </Button>
                                 </div>

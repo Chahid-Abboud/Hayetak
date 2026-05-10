@@ -23,6 +23,7 @@ class UserSafetyProfileResolver
             ->pluck('value')
             ->all();
 
+<<<<<<< HEAD
         $tableMedical = $this->parseHistoryValues(
             $user->medicalHistories
                 ->where('is_active', true)
@@ -42,6 +43,19 @@ class UserSafetyProfileResolver
         );
 
         $fallbackMedicalHistory = $this->parseHistoryValues($user->medical_history, 'medical_conditions');
+=======
+        $tableMedical = $user->medicalHistories
+            ->where('is_active', true)
+            ->where('kind', 'medical_condition')
+            ->pluck('value')
+            ->all();
+
+        $tableInjuries = $user->medicalHistories
+            ->where('is_active', true)
+            ->where('kind', 'injury')
+            ->pluck('value')
+            ->all();
+>>>>>>> origin/main
 
         return [
             'diet_type' => $dietType,
@@ -50,6 +64,7 @@ class UserSafetyProfileResolver
                 $this->normalizeList($tableAllergies),
             )),
             'medical_conditions' => $this->uniqueStrings(array_merge(
+<<<<<<< HEAD
                 $fallbackMedicalHistory['medical_conditions'],
                 $tableMedical['medical_conditions'],
             )),
@@ -57,6 +72,14 @@ class UserSafetyProfileResolver
                 $this->normalizeList($settings['injury_history'] ?? $settings['injuries'] ?? []),
                 $fallbackMedicalHistory['injuries'],
                 $tableInjuries['injuries'],
+=======
+                $this->normalizeList($user->medical_history),
+                $this->normalizeList($tableMedical),
+            )),
+            'injuries' => $this->uniqueStrings(array_merge(
+                $this->normalizeList($settings['injury_history'] ?? $settings['injuries'] ?? []),
+                $this->normalizeList($tableInjuries),
+>>>>>>> origin/main
             )),
             'available_equipment' => $this->normalizeList($settings['available_equipment'] ?? []),
         ];
@@ -97,6 +120,7 @@ class UserSafetyProfileResolver
             $values,
         ))));
     }
+<<<<<<< HEAD
 
     /**
      * @return array{medical_conditions: array<int, string>, injuries: array<int, string>}
@@ -170,4 +194,6 @@ class UserSafetyProfileResolver
             $parts,
         ));
     }
+=======
+>>>>>>> origin/main
 }

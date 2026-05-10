@@ -41,9 +41,13 @@ createInertiaApp({
                                     ?.csrf_token
                             }
                         />
+<<<<<<< HEAD
                         <AppNotificationsProvider>
                             <Component key={key} {...pageProps} />
                         </AppNotificationsProvider>
+=======
+                        <Component key={key} {...pageProps} />
+>>>>>>> origin/main
                     </>
                 )}
             </App>,

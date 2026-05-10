@@ -18,6 +18,7 @@ export type PredictionTrendPoint = {
     feedback_applied: boolean;
     actual_weight_kg: number | null;
     actual_weight_date: string | null;
+<<<<<<< HEAD
     check_in_number?: number;
     feedback_sample_count?: number;
     per_checkpoint_adjusted?: boolean;
@@ -36,6 +37,18 @@ export function PredictorVsActualCard({
 }: {
     trend: PredictionTrendPoint[];
     comparisonWeights: PredictorMeasurement[];
+=======
+};
+
+type ChartPoint = { xLabel: string; xValue: number; yValue: number };
+
+export function PredictorVsActualCard({
+    trend,
+    weighIns,
+}: {
+    trend: PredictionTrendPoint[];
+    weighIns: PredictorMeasurement[];
+>>>>>>> origin/main
 }) {
     const rows = useMemo(
         () =>
@@ -46,6 +59,7 @@ export function PredictorVsActualCard({
             ),
         [trend],
     );
+<<<<<<< HEAD
     const trustedWeights = useMemo(
         () =>
             [...comparisonWeights]
@@ -70,6 +84,40 @@ export function PredictorVsActualCard({
             new Set([
                 ...rows.map((row) => monthKeyFromIso(row.feedback_period_end_date)),
                 ...trustedWeights.map((item) => monthKeyFromIso(item.date)),
+=======
+    const weightPoints = useMemo(
+        () => chartPointsFromMeasurements(weighIns, 'weight'),
+        [weighIns],
+    );
+    const rowsWithFeedback = useMemo(
+        () =>
+            rows.map((row) => ({
+                ...row,
+                dateKey: row.feedback_period_end_date,
+                xValue: isoDateToAxisValue(row.feedback_period_end_date),
+                feedback_unlocked:
+                    weightPoints.filter(
+                        (point) =>
+                            point.xValue <=
+                            isoDateToAxisValue(row.feedback_period_end_date),
+                    ).length >= 2,
+            })),
+        [rows, weightPoints],
+    );
+    const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+    const preferredPredictionMonthKey = useMemo(() => {
+        const predictionMonths = rowsWithFeedback
+            .map((row) => monthKeyFromIso(row.dateKey))
+            .sort();
+
+        return predictionMonths[predictionMonths.length - 1] ?? 'all';
+    }, [rowsWithFeedback]);
+    const monthOptions = useMemo(() => {
+        const keys = Array.from(
+            new Set([
+                ...rowsWithFeedback.map((row) => monthKeyFromIso(row.dateKey)),
+                ...weightPoints.map((point) => monthKeyFromIso(point.xLabel)),
+>>>>>>> origin/main
             ]),
         ).sort();
 
@@ -77,7 +125,11 @@ export function PredictorVsActualCard({
             value: key,
             label: formatMonthKeyLabel(key),
         }));
+<<<<<<< HEAD
     }, [rows, trustedWeights]);
+=======
+    }, [rowsWithFeedback, weightPoints]);
+>>>>>>> origin/main
     const [selectedMonthKey, setSelectedMonthKey] = useState<string>('all');
 
     useEffect(() => {
@@ -87,11 +139,21 @@ export function PredictorVsActualCard({
         }
 
         setSelectedMonthKey((current) => {
+<<<<<<< HEAD
             const currentHasData =
                 current !== 'all' &&
                 monthOptions.some((option) => option.value === current);
 
             if (currentHasData) {
+=======
+            const currentHasPredictions =
+                current !== 'all' &&
+                rowsWithFeedback.some(
+                    (row) => monthKeyFromIso(row.dateKey) === current,
+                );
+
+            if (currentHasPredictions) {
+>>>>>>> origin/main
                 return current;
             }
 
@@ -106,6 +168,7 @@ export function PredictorVsActualCard({
 
             return monthOptions[monthOptions.length - 1]?.value ?? 'all';
         });
+<<<<<<< HEAD
     }, [monthOptions, preferredPredictionMonthKey]);
 
     const weekOptions = useMemo(() => {
@@ -122,12 +185,35 @@ export function PredictorVsActualCard({
                 ? trustedWeights
                 : trustedWeights.filter(
                       (item) => monthKeyFromIso(item.date) === selectedMonthKey,
+=======
+    }, [monthOptions, preferredPredictionMonthKey, rowsWithFeedback]);
+
+    const weekOptions = useMemo(() => {
+        const filteredRows =
+            selectedMonthKey === 'all'
+                ? rowsWithFeedback
+                : rowsWithFeedback.filter(
+                      (row) =>
+                          monthKeyFromIso(row.dateKey) === selectedMonthKey,
+                  );
+        const filteredWeights =
+            selectedMonthKey === 'all'
+                ? weightPoints
+                : weightPoints.filter(
+                      (point) =>
+                          monthKeyFromIso(point.xLabel) === selectedMonthKey,
+>>>>>>> origin/main
                   );
 
         const keys = Array.from(
             new Set([
+<<<<<<< HEAD
                 ...rowKeys.map((row) => weekKeyFromIso(row.feedback_period_end_date)),
                 ...weightKeys.map((item) => weekKeyFromIso(item.date)),
+=======
+                ...filteredRows.map((row) => weekKeyFromIso(row.dateKey)),
+                ...filteredWeights.map((point) => weekKeyFromIso(point.xLabel)),
+>>>>>>> origin/main
             ]),
         ).sort();
 
@@ -135,7 +221,11 @@ export function PredictorVsActualCard({
             value: key,
             label: formatWeekKeyLabel(key),
         }));
+<<<<<<< HEAD
     }, [rows, selectedMonthKey, trustedWeights]);
+=======
+    }, [rowsWithFeedback, selectedMonthKey, weightPoints]);
+>>>>>>> origin/main
     const [selectedWeekKey, setSelectedWeekKey] = useState<string>('all');
 
     useEffect(() => {
@@ -156,14 +246,23 @@ export function PredictorVsActualCard({
         });
     }, [weekOptions]);
 
+<<<<<<< HEAD
     if (rows.length === 0) {
         return (
             <p className="text-sm text-muted-foreground">
                 Generate a completed plan to unlock the predictor timeline.
+=======
+    if (rowsWithFeedback.length === 0 && weightPoints.length < 2) {
+        return (
+            <p className="text-sm text-muted-foreground">
+                Keep logging plans and weigh-ins to unlock this shared
+                prediction timeline.
+>>>>>>> origin/main
             </p>
         );
     }
 
+<<<<<<< HEAD
     const rowMatchesCurrentView = (date: string) => {
         const monthMatch =
             selectedMonthKey === 'all' || monthKeyFromIso(date) === selectedMonthKey;
@@ -187,6 +286,30 @@ export function PredictorVsActualCard({
     const visibleFutureSeries = futureProjectionSeries.filter((point) =>
         rowMatchesCurrentView(point.label),
     );
+=======
+    const visibleRows = rowsWithFeedback.filter((row) => {
+        const monthMatch =
+            selectedMonthKey === 'all' ||
+            monthKeyFromIso(row.dateKey) === selectedMonthKey;
+        const weekMatch =
+            viewMode !== 'week' ||
+            selectedWeekKey === 'all' ||
+            weekKeyFromIso(row.dateKey) === selectedWeekKey;
+
+        return monthMatch && weekMatch;
+    });
+    const visibleWeightPoints = weightPoints.filter((point) => {
+        const monthMatch =
+            selectedMonthKey === 'all' ||
+            monthKeyFromIso(point.xLabel) === selectedMonthKey;
+        const weekMatch =
+            viewMode !== 'week' ||
+            selectedWeekKey === 'all' ||
+            weekKeyFromIso(point.xLabel) === selectedWeekKey;
+
+        return monthMatch && weekMatch;
+    });
+>>>>>>> origin/main
 
     const width = 860;
     const height = 300;
@@ -195,6 +318,7 @@ export function PredictorVsActualCard({
     const padTop = 36;
     const padBottom = 72;
 
+<<<<<<< HEAD
     const initialSeries = visibleRows.map((row) => ({
         xValue: isoDateToAxisValue(row.feedback_period_end_date),
         yValue: row.projected_before_feedback_kg,
@@ -215,22 +339,62 @@ export function PredictorVsActualCard({
     }));
     const allSeries = [...initialSeries, ...latestSeries, ...actualSeries];
     const chartValues = allSeries.map((point) => point.yValue);
+=======
+    const actualSeries = visibleWeightPoints.map((point) => ({
+        xValue: point.xValue,
+        yValue: point.yValue,
+        label: point.xLabel,
+    }));
+    const beforeFeedbackSeries = visibleRows.map((row) => ({
+        xValue: row.xValue,
+        yValue: row.projected_before_feedback_kg,
+        label: row.feedback_period_end_date,
+    }));
+    const afterFeedbackSeries = visibleRows.map((row) => ({
+        xValue: row.xValue,
+        yValue: row.projected_after_feedback_kg,
+        label: row.feedback_period_end_date,
+    }));
+    const allSeries = [
+        ...actualSeries,
+        ...beforeFeedbackSeries,
+        ...afterFeedbackSeries,
+    ];
+    const chartValues = allSeries
+        .map((point) => point.yValue)
+        .filter((value): value is number => typeof value === 'number');
+>>>>>>> origin/main
 
     if (chartValues.length === 0) {
         return (
             <p className="text-sm text-muted-foreground">
+<<<<<<< HEAD
                 No prediction points were logged in this selected {viewMode}.
+=======
+                No prediction points or weigh-ins were logged in this selected{' '}
+                {viewMode}.
+>>>>>>> origin/main
             </p>
         );
     }
 
+<<<<<<< HEAD
     const noVisiblePredictions = visibleRows.length === 0 && visibleFutureSeries.length === 0;
+=======
+    const noVisiblePredictions = visibleRows.length === 0;
+>>>>>>> origin/main
     const selectedMonthLabel =
         selectedMonthKey === 'all'
             ? 'the selected range'
             : formatMonthKeyLabel(selectedMonthKey);
 
+<<<<<<< HEAD
     const allXValues = allSeries.map((point) => point.xValue);
+=======
+    const allXValues = allSeries
+        .map((point) => point.xValue)
+        .filter((value) => Number.isFinite(value));
+>>>>>>> origin/main
     const minX = Math.min(...allXValues);
     const maxX = Math.max(...allXValues);
     const spanX = Math.max(1, maxX - minX);
@@ -274,9 +438,16 @@ export function PredictorVsActualCard({
         return segments;
     };
 
+<<<<<<< HEAD
     const initialPaths = buildSegmentedPaths(initialSeries);
     const latestPaths = buildSegmentedPaths(latestSeries);
     const actualPaths = buildSegmentedPaths(actualSeries);
+=======
+    const actualPaths = buildSegmentedPaths(actualSeries);
+    const beforeFeedbackPaths = buildSegmentedPaths(beforeFeedbackSeries);
+    const afterFeedbackPaths = buildSegmentedPaths(afterFeedbackSeries);
+
+>>>>>>> origin/main
     const yTicks = Array.from({ length: 5 }, (_, tickIndex) => {
         const ratio = tickIndex / 4;
         const value = maxY - ratio * spanY;
@@ -285,10 +456,18 @@ export function PredictorVsActualCard({
             label: `${value.toFixed(1)} kg`,
         };
     });
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     const xTickValues = Array.from(new Set(allXValues))
         .sort((left, right) => left - right)
         .map((value) => ({
             x: toX(value),
+<<<<<<< HEAD
+=======
+            value,
+>>>>>>> origin/main
             label: formatShortDate(new Date(value).toISOString().slice(0, 10)),
         }));
     const xLabelStep = Math.max(1, Math.ceil(xTickValues.length / 6));
@@ -297,6 +476,7 @@ export function PredictorVsActualCard({
             index % xLabelStep === 0 || index === xTickValues.length - 1,
     );
 
+<<<<<<< HEAD
     const latestProjectedWeight =
         latestPrediction?.projected_after_feedback_kg ?? null;
     const latestBaselineWeight = latestPrediction?.baseline_weight_kg ?? null;
@@ -311,20 +491,60 @@ export function PredictorVsActualCard({
         {
             label: 'Initial projection',
             color: initialColor,
+=======
+    const latestPrediction = visibleRows[visibleRows.length - 1];
+    const latestWeightPoint =
+        visibleWeightPoints[visibleWeightPoints.length - 1] ??
+        weightPoints[weightPoints.length - 1];
+    const latestProjectedActive = latestPrediction?.feedback_unlocked
+        ? latestPrediction.projected_after_feedback_kg
+        : latestPrediction?.projected_weight_kg;
+    const latestBaselineWeight = latestPrediction?.baseline_weight_kg ?? null;
+    const latestHorizonDays = latestPrediction?.horizon_days ?? null;
+    const weeklyProjectedWeight =
+        typeof latestProjectedActive === 'number' &&
+        typeof latestBaselineWeight === 'number' &&
+        typeof latestHorizonDays === 'number' &&
+        latestHorizonDays > 0
+            ? latestBaselineWeight +
+              ((latestProjectedActive - latestBaselineWeight) /
+                  latestHorizonDays) *
+                  7
+            : null;
+    const beforeFeedbackColor = 'var(--chart-3)';
+    const afterFeedbackColor = 'var(--chart-1)';
+    const actualColor = 'var(--chart-5)';
+    const legendItems = [
+        {
+            label: 'Before feedback',
+            color: beforeFeedbackColor,
+>>>>>>> origin/main
             dash: '7 5',
             marker: 'square',
         },
         {
+<<<<<<< HEAD
             label: 'Projected path',
             color: latestColor,
+=======
+            label: 'After feedback',
+            color: afterFeedbackColor,
+>>>>>>> origin/main
             dash: undefined,
             marker: 'circle',
         },
         {
+<<<<<<< HEAD
             label: 'Last 2 logged weights',
             color: actualColor,
             dash: undefined,
             marker: 'diamond',
+=======
+            label: 'Actual weigh-in',
+            color: actualColor,
+            dash: undefined,
+            marker: 'circle',
+>>>>>>> origin/main
         },
     ];
 
@@ -394,7 +614,11 @@ export function PredictorVsActualCard({
             {noVisiblePredictions ? (
                 <div className="rounded-[18px] border border-border/70 bg-background/60 px-4 py-3 text-sm text-muted-foreground">
                     No predictor runs landed in {selectedMonthLabel}. Choose a
+<<<<<<< HEAD
                     month with prediction points to see the projection curve.
+=======
+                    month with prediction points to see before/after feedback.
+>>>>>>> origin/main
                 </div>
             ) : null}
 
@@ -431,11 +655,14 @@ export function PredictorVsActualCard({
                                         rx="2"
                                         fill={item.color}
                                     />
+<<<<<<< HEAD
                                 ) : item.marker === 'diamond' ? (
                                     <polygon
                                         points="17,2 23,7 17,12 11,7"
                                         fill={item.color}
                                     />
+=======
+>>>>>>> origin/main
                                 ) : (
                                     <circle
                                         cx="17"
@@ -453,7 +680,11 @@ export function PredictorVsActualCard({
                     <svg
                         viewBox={`0 0 ${width} ${height}`}
                         role="img"
+<<<<<<< HEAD
                         aria-label="Projected check-in weight timeline with last 2 logged weights"
+=======
+                        aria-label="Prediction timeline versus all logged weigh-ins"
+>>>>>>> origin/main
                         className="h-[300px] w-full min-w-[620px]"
                     >
                         {yTicks.map((tick, tickIndex) => (
@@ -519,6 +750,7 @@ export function PredictorVsActualCard({
                             strokeWidth="1"
                         />
 
+<<<<<<< HEAD
                         {visibleRows.map((row) => {
                             const xValue = isoDateToAxisValue(
                                 row.feedback_period_end_date,
@@ -549,17 +781,52 @@ export function PredictorVsActualCard({
                                 d={path}
                                 fill="none"
                                 stroke={initialColor}
+=======
+                        {visibleRows.map((row) => (
+                            <line
+                                key={`feedback-shift-${row.plan_date}-${row.feedback_period_end_date}`}
+                                x1={toX(row.xValue)}
+                                y1={toY(row.projected_before_feedback_kg)}
+                                x2={toX(row.xValue)}
+                                y2={toY(row.projected_after_feedback_kg)}
+                                stroke={afterFeedbackColor}
+                                strokeWidth="1.8"
+                                strokeDasharray="3 4"
+                                opacity={row.feedback_applied ? 0.72 : 0.28}
+                            >
+                                <title>
+                                    {`Feedback shift on ${formatShortDate(row.feedback_period_end_date)}: ${row.projected_before_feedback_kg.toFixed(1)} kg to ${row.projected_after_feedback_kg.toFixed(1)} kg`}
+                                </title>
+                            </line>
+                        ))}
+
+                        {beforeFeedbackPaths.map((path, index) => (
+                            <path
+                                key={`before-feedback-path-${index}`}
+                                d={path}
+                                fill="none"
+                                stroke={beforeFeedbackColor}
+>>>>>>> origin/main
                                 strokeWidth="2.2"
                                 strokeDasharray="7 5"
                             />
                         ))}
 
+<<<<<<< HEAD
                         {latestPaths.map((path, index) => (
                             <path
                                 key={`latest-path-${index}`}
                                 d={path}
                                 fill="none"
                                 stroke={latestColor}
+=======
+                        {afterFeedbackPaths.map((path, index) => (
+                            <path
+                                key={`after-feedback-path-${index}`}
+                                d={path}
+                                fill="none"
+                                stroke={afterFeedbackColor}
+>>>>>>> origin/main
                                 strokeWidth="2.8"
                             />
                         ))}
@@ -571,6 +838,7 @@ export function PredictorVsActualCard({
                                 fill="none"
                                 stroke={actualColor}
                                 strokeWidth="2.4"
+<<<<<<< HEAD
                                 strokeDasharray="4 3"
                                 opacity={0.92}
                             />
@@ -579,19 +847,35 @@ export function PredictorVsActualCard({
                         {initialSeries.map((point, index) => (
                             <rect
                                 key={`initial-point-${index}`}
+=======
+                            />
+                        ))}
+
+                        {beforeFeedbackSeries.map((point, index) => (
+                            <rect
+                                key={`before-feedback-point-${index}`}
+>>>>>>> origin/main
                                 x={toX(point.xValue) - 4}
                                 y={toY(point.yValue) - 4}
                                 width="8"
                                 height="8"
                                 rx="2"
+<<<<<<< HEAD
                                 fill={initialColor}
                             >
                                 <title>
                                     {`Initial projection ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
+=======
+                                fill={beforeFeedbackColor}
+                            >
+                                <title>
+                                    {`Before feedback ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
+>>>>>>> origin/main
                                 </title>
                             </rect>
                         ))}
 
+<<<<<<< HEAD
                         {latestSeries.map((point, index) => (
                             <circle
                                 key={`latest-point-${index}`}
@@ -604,11 +888,24 @@ export function PredictorVsActualCard({
                             >
                                 <title>
                                     {`${point.isFuture ? 'Future projection' : 'Projected check-in'} ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
+=======
+                        {afterFeedbackSeries.map((point, index) => (
+                            <circle
+                                key={`after-feedback-point-${index}`}
+                                cx={toX(point.xValue)}
+                                cy={toY(point.yValue)}
+                                r={4}
+                                fill={afterFeedbackColor}
+                            >
+                                <title>
+                                    {`After feedback ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
+>>>>>>> origin/main
                                 </title>
                             </circle>
                         ))}
 
                         {actualSeries.map((point, index) => (
+<<<<<<< HEAD
                             <polygon
                                 key={`actual-point-${index}`}
                                 points={diamondPoints(toX(point.xValue), toY(point.yValue), 5)}
@@ -618,6 +915,19 @@ export function PredictorVsActualCard({
                                     {`Logged weight ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
                                 </title>
                             </polygon>
+=======
+                            <circle
+                                key={`actual-point-${index}`}
+                                cx={toX(point.xValue)}
+                                cy={toY(point.yValue)}
+                                r={3.4}
+                                fill={actualColor}
+                            >
+                                <title>
+                                    {`Actual ${formatShortDate(point.label)}: ${point.yValue.toFixed(1)} kg`}
+                                </title>
+                            </circle>
+>>>>>>> origin/main
                         ))}
 
                         <text
@@ -642,6 +952,7 @@ export function PredictorVsActualCard({
                 </div>
             </div>
 
+<<<<<<< HEAD
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {latestHorizonDays ? (
                     <PredictionStat
@@ -696,6 +1007,23 @@ export function PredictorVsActualCard({
                             : rows.some((row) => row.per_checkpoint_adjusted)
                               ? 'Per-checkpoint active'
                               : 'Using base projection'
+=======
+            <div className="grid gap-3 sm:grid-cols-2">
+                <PredictionStat
+                    label="Current weight"
+                    value={
+                        latestWeightPoint
+                            ? `${latestWeightPoint.yValue.toFixed(1)} kg`
+                            : 'N/A'
+                    }
+                />
+                <PredictionStat
+                    label="Next predicted weight"
+                    value={
+                        typeof weeklyProjectedWeight === 'number'
+                            ? `${weeklyProjectedWeight.toFixed(1)} kg in 1 week`
+                            : 'N/A'
+>>>>>>> origin/main
                     }
                 />
             </div>
@@ -703,6 +1031,7 @@ export function PredictorVsActualCard({
     );
 }
 
+<<<<<<< HEAD
 function buildFutureProjectionSeries(
     latestPrediction: PredictionTrendPoint | undefined,
 ): ChartPoint[] {
@@ -742,6 +1071,8 @@ function roundToOne(value: number): number {
     return Math.round(value * 10) / 10;
 }
 
+=======
+>>>>>>> origin/main
 function PredictionStat({ label, value }: { label: string; value: string }) {
     return (
         <div className="dashboard-surface-soft rounded-[20px] p-3.5">
@@ -755,6 +1086,33 @@ function PredictionStat({ label, value }: { label: string; value: string }) {
     );
 }
 
+<<<<<<< HEAD
+=======
+function chartPointsFromMeasurements(
+    measurements: PredictorMeasurement[] | undefined,
+    metric: 'weight' | 'height',
+): ChartPoint[] {
+    const safe = Array.isArray(measurements) ? measurements : [];
+    const byDate = new Map<string, PredictorMeasurement>();
+
+    safe
+        .filter((item) => item.type === metric && Number.isFinite(item.value))
+        .slice()
+        .sort((a, b) => (a.date > b.date ? 1 : -1))
+        .forEach((item) => {
+            byDate.set(item.date, item);
+        });
+
+    return Array.from(byDate.values())
+        .map((item) => ({
+            xLabel: item.date,
+            xValue: isoDateToAxisValue(item.date),
+            yValue: item.value,
+        }))
+        .sort((a, b) => a.xValue - b.xValue);
+}
+
+>>>>>>> origin/main
 function parseIsoDate(value: string): Date {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
     if (!match) {

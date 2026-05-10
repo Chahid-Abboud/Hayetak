@@ -32,12 +32,15 @@ export interface SharedData {
         status?: string;
         success?: string;
         error?: string;
+<<<<<<< HEAD
         verificationArrival?: {
             account_id: number;
             verified_at?: string | null;
             headline?: string | null;
             message?: string | null;
         } | null;
+=======
+>>>>>>> origin/main
         showOptionalTwoFactorPrompt?: boolean;
     };
     security?: {
@@ -76,10 +79,17 @@ export type AppointmentStatus =
 
 export type ConversationContextPayload = {
     conversation_id: number;
+<<<<<<< HEAD
     context_mode?: 'client_summary' | 'professional_summary';
     peer: {
         id: number;
         name: string;
+=======
+    peer: {
+        id: number;
+        name: string;
+        email: string;
+>>>>>>> origin/main
         role?: 'admin' | 'nutritionist' | 'trainer' | 'client' | string | null;
         city?: string | null;
         verified?: boolean;
@@ -93,6 +103,7 @@ export type ConversationContextPayload = {
     safety: {
         allergies?: string[];
         has_medical_history?: boolean;
+<<<<<<< HEAD
         diet_name?: string | null;
         dietary_goal?: string | null;
         fitness_goal?: string | null;
@@ -113,6 +124,14 @@ export type ConversationContextPayload = {
         city?: string | null;
         verified?: boolean;
     } | null;
+=======
+        medical_history?: string | null;
+        diet_name?: string | null;
+        dietary_goal?: string | null;
+        fitness_goal?: string | null;
+        badges?: string[];
+    };
+>>>>>>> origin/main
     activity: {
         today?: {
             meals_logged?: number;

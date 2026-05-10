@@ -31,6 +31,7 @@ test('email can be verified', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     $response->assertRedirect(route('dashboard', absolute: false));
     $this->assertAuthenticatedAs($user);
+<<<<<<< HEAD
 });
 
 test('email can be verified with an absolute signed url', function () {
@@ -50,6 +51,8 @@ test('email can be verified with an absolute signed url', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     $response->assertRedirect(route('dashboard', absolute: false));
     $this->assertAuthenticatedAs($user);
+=======
+>>>>>>> origin/main
 });
 
 test('email is not verified with invalid hash', function () {
@@ -123,8 +126,12 @@ test('guest can verify email and is logged in before redirecting to dashboard', 
     $verificationUrl = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
+<<<<<<< HEAD
         ['id' => $user->id, 'hash' => sha1($user->email)],
         absolute: false,
+=======
+        ['id' => $user->id, 'hash' => sha1($user->email)]
+>>>>>>> origin/main
     );
 
     $response = $this->get($verificationUrl);

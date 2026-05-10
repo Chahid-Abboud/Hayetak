@@ -165,6 +165,7 @@ function sectionHtml(
     `;
 }
 
+<<<<<<< HEAD
 function buildMealCodeHtml(
     mealOptions: NonNullable<PrintablePlan['diet']>['meal_options'],
     mealCode: keyof PrintableDietMealOptions,
@@ -239,6 +240,8 @@ function buildMealCodeHtml(
     `;
 }
 
+=======
+>>>>>>> origin/main
 function buildDietMealOptions(plan: PrintablePlan): string {
     const mealOptions = plan.diet?.meal_options;
 
@@ -253,6 +256,7 @@ function buildDietMealOptions(plan: PrintablePlan): string {
         mealOptions &&
         order.some((mealCode) => (mealOptions[mealCode] ?? []).length > 0)
     ) {
+<<<<<<< HEAD
         const breakfastContent = buildMealCodeHtml(mealOptions, 'breakfast');
         const lunchContent = buildMealCodeHtml(mealOptions, 'lunch');
         const dinnerContent = buildMealCodeHtml(mealOptions, 'dinner');
@@ -266,6 +270,111 @@ function buildDietMealOptions(plan: PrintablePlan): string {
             <div class="meal-row">
                 ${dinnerContent}
                 ${snackContent}
+=======
+        return `
+            <div class="two-column">
+                ${order
+                    .map((mealCode) => {
+                        const options = mealOptions[mealCode] ?? [];
+
+                        if (options.length === 0) {
+                            return '';
+                        }
+
+                        return `
+                            <div class="box">
+                                <h3>${titleCase(mealCode)}</h3>
+                                <div class="stack">
+                                    ${options
+                                        .map((option, optionIndex) => {
+                                            const items = option.items ?? [];
+
+                                            const totalCalories = items.reduce(
+                                                (sum, item) =>
+                                                    sum +
+                                                    Number(
+                                                        item.calories_kcal ?? 0,
+                                                    ),
+                                                0,
+                                            );
+
+                                            const totalProtein = items.reduce(
+                                                (sum, item) =>
+                                                    sum +
+                                                    Number(item.protein_g ?? 0),
+                                                0,
+                                            );
+
+                                            const totalCarbs = items.reduce(
+                                                (sum, item) =>
+                                                    sum +
+                                                    Number(item.carbs_g ?? 0),
+                                                0,
+                                            );
+
+                                            const totalFat = items.reduce(
+                                                (sum, item) =>
+                                                    sum +
+                                                    Number(item.fat_g ?? 0),
+                                                0,
+                                            );
+
+                                            return `
+                                                <div class="mini-card">
+                                                    <div class="mini-card-top">
+                                                        <strong>
+                                                            ${escapeHtml(
+                                                                option.title ||
+                                                                    `${titleCase(
+                                                                        mealCode,
+                                                                    )} option ${
+                                                                        optionIndex +
+                                                                        1
+                                                                    }`,
+                                                            )}
+                                                        </strong>
+                                                        <span>${Math.round(totalCalories)} kcal</span>
+                                                    </div>
+
+                                                    <div class="macro-row">
+                                                        <span>P ${Math.round(totalProtein)}g</span>
+                                                        <span>C ${Math.round(totalCarbs)}g</span>
+                                                        <span>F ${Math.round(totalFat)}g</span>
+                                                    </div>
+
+                                                    <ul class="item-list">
+                                                        ${items
+                                                            .map(
+                                                                (item) => `
+                                                                    <li>
+                                                                        <span>${escapeHtml(item.name ?? 'Food item')}</span>
+                                                                        <small>
+                                                                            ${escapeHtml(item.portion ?? '')}
+                                                                            ${
+                                                                                item.calories_kcal
+                                                                                    ? ` · ${Math.round(
+                                                                                          Number(
+                                                                                              item.calories_kcal,
+                                                                                          ),
+                                                                                      )} kcal`
+                                                                                    : ''
+                                                                            }
+                                                                        </small>
+                                                                    </li>
+                                                                `,
+                                                            )
+                                                            .join('')}
+                                                    </ul>
+                                                </div>
+                                            `;
+                                        })
+                                        .join('')}
+                                </div>
+                            </div>
+                        `;
+                    })
+                    .join('')}
+>>>>>>> origin/main
             </div>
         `;
     }
@@ -281,7 +390,11 @@ function buildDietMealOptions(plan: PrintablePlan): string {
             ${days
                 .map(
                     (day) => `
+<<<<<<< HEAD
                         <div class="box avoid-break diet-day-box">
+=======
+                        <div class="box avoid-break">
+>>>>>>> origin/main
                             <h3>
                                 Day ${day.day_index ?? '-'}
                                 ${day.theme ? ` · ${escapeHtml(day.theme)}` : ''}
@@ -291,7 +404,11 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                 ${(day.meals ?? [])
                                     .map(
                                         (meal) => `
+<<<<<<< HEAD
                                             <div class="mini-card diet-meal-card">
+=======
+                                            <div class="mini-card">
+>>>>>>> origin/main
                                                 <div class="mini-card-top">
                                                     <strong>${escapeHtml(
                                                         meal.title ||
@@ -305,6 +422,7 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                                     )} kcal target</span>
                                                 </div>
 
+<<<<<<< HEAD
                                                 <ul class="item-list diet-item-list">
                                                     ${(meal.items ?? [])
                                                         .map(
@@ -312,6 +430,15 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                                                 <li class="diet-item-row">
                                                                     <span class="diet-item-name">${escapeHtml(item.name ?? 'Food item')}</span>
                                                                     <span class="diet-item-detail">
+=======
+                                                <ul class="item-list">
+                                                    ${(meal.items ?? [])
+                                                        .map(
+                                                            (item) => `
+                                                                <li>
+                                                                    <span>${escapeHtml(item.name ?? 'Food item')}</span>
+                                                                    <small>
+>>>>>>> origin/main
                                                                         ${escapeHtml(item.portion ?? '')}
                                                                         ${
                                                                             item.calories_kcal
@@ -322,7 +449,11 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                                                                   )} kcal`
                                                                                 : ''
                                                                         }
+<<<<<<< HEAD
                                                                     </span>
+=======
+                                                                    </small>
+>>>>>>> origin/main
                                                                 </li>
                                                             `,
                                                         )
@@ -353,6 +484,7 @@ function buildDietHtml(plan: PrintablePlan): string {
 
     return `
         ${sectionHtml(
+<<<<<<< HEAD
             'Daily targets',
             'Energy and macro targets for this plan.',
             `
@@ -390,18 +522,76 @@ function buildDietHtml(plan: PrintablePlan): string {
             'Meal options',
             'Meal cards use the full printable width so food options are easier to scan.',
             buildDietMealOptions(plan),
+=======
+            'Diet overview',
+            'Daily nutrition targets and the foods used to follow the plan.',
+            `
+                ${
+                    Object.keys(targets).length > 0
+                        ? statGridHtml(
+                              Object.entries(targets).map(([key, value]) => ({
+                                  label: titleCase(key),
+                                  value,
+                              })),
+                          )
+                        : `<p class="muted">No daily targets were included.</p>`
+                }
+            `,
+        )}
+
+        ${sectionHtml(
+            'Meal options',
+            'Use these options as your meal structure for the plan.',
+            buildDietMealOptions(plan),
+        )}
+
+        <div class="three-column">
+            ${sectionHtml('Grocery list', null, listHtml(groceryItems))}
+            ${sectionHtml(
+                'Meal prep notes',
+                null,
+                listHtml(plan.diet?.meal_prep_notes ?? []),
+            )}
+            ${sectionHtml(
+                'Adherence notes',
+                null,
+                listHtml(plan.diet?.adherence_notes ?? []),
+            )}
+        </div>
+
+        ${sectionHtml(
+            'Food safety notes',
+            'Allergy, diet-type, and food restriction notes from the generated plan.',
+            `
+                <div class="two-column">
+                    <div class="box">
+                        <h3>Food avoidances</h3>
+                        ${listHtml(plan.safety?.food_avoidances ?? [])}
+                    </div>
+
+                    <div class="box">
+                        <h3>Hard rules observed</h3>
+                        ${listHtml(plan.safety?.hard_rules_observed ?? [])}
+                    </div>
+                </div>
+            `,
+>>>>>>> origin/main
         )}
     `;
 }
 
 function buildWorkoutHtml(plan: PrintablePlan): string {
     const days = plan.workout?.weekly_schedule ?? [];
+<<<<<<< HEAD
     const trainingDays = days.filter((day) => (day.exercises ?? []).length > 0);
     const restDays = days.filter((day) => (day.exercises ?? []).length === 0);
+=======
+>>>>>>> origin/main
 
     return `
         ${sectionHtml(
             'Workout schedule',
+<<<<<<< HEAD
             'Training days are shown in balanced cards, while rest days are compact so the PDF stays neat.',
             days.length
                 ? `
@@ -446,13 +636,65 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                                                     </div>
 
                                                     <div class="stack exercise-stack">
+=======
+            'Day-by-day training structure, including rest days and safer alternatives.',
+            days.length
+                ? `
+                    <div class="day-grid">
+                        ${days
+                            .map((day) => {
+                                const exercises = day.exercises ?? [];
+                                const isRestDay = exercises.length === 0;
+
+                                return `
+                                    <div class="box avoid-break">
+                                        <div class="day-header">
+                                            <div>
+                                                <div class="eyebrow">
+                                                    Day ${formatValue(day.day_index)}
+                                                    ${
+                                                        day.day_label
+                                                            ? ` · ${escapeHtml(day.day_label)}`
+                                                            : ''
+                                                    }
+                                                </div>
+                                                <h3>${escapeHtml(day.focus ?? 'Workout day')}</h3>
+                                            </div>
+
+                                            <span class="pill">${escapeHtml(day.session_type ?? 'Session')}</span>
+                                        </div>
+
+                                        <div class="tag-row">
+                                            ${
+                                                day.duration_min
+                                                    ? `<span>${day.duration_min} min</span>`
+                                                    : ''
+                                            }
+                                            ${
+                                                day.location
+                                                    ? `<span>${escapeHtml(day.location)}</span>`
+                                                    : ''
+                                            }
+                                        </div>
+
+                                        ${
+                                            isRestDay
+                                                ? `<p class="rest-note">Rest or recovery day. No exercises are scheduled.</p>`
+                                                : `
+                                                    <div class="stack">
+>>>>>>> origin/main
                                                         ${exercises
                                                             .map(
                                                                 (exercise) => `
                                                                     <div class="exercise-row">
                                                                         <div>
                                                                             <strong>${escapeHtml(
+<<<<<<< HEAD
                                                                                 exercise.name ?? 'Exercise',
+=======
+                                                                                exercise.name ??
+                                                                                    'Exercise',
+>>>>>>> origin/main
                                                                             )}</strong>
 
                                                                             <small>
@@ -492,6 +734,7 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                                                             )
                                                             .join('')}
                                                     </div>
+<<<<<<< HEAD
                                                 </div>
                                             `;
                                         })
@@ -530,6 +773,15 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                             `
                             : ''
                     }
+=======
+                                                `
+                                        }
+                                    </div>
+                                `;
+                            })
+                            .join('')}
+                    </div>
+>>>>>>> origin/main
                 `
                 : `<p class="muted">No workout schedule was included.</p>`,
         )}
@@ -551,9 +803,67 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                 listHtml(plan.workout?.coach_notes ?? []),
             )}
         </div>
+<<<<<<< HEAD
     `;
 }
 
+=======
+
+        ${sectionHtml(
+            'Exercise safety notes',
+            'Cautions and safer movement guidance from the generated plan.',
+            listHtml(plan.safety?.exercise_cautions ?? []),
+        )}
+    `;
+}
+
+function buildPredictionHtml(
+    plan: PrintablePlan,
+    planHorizonDays: number,
+): string {
+    const prediction = plan.progress_prediction;
+
+    if (!prediction) {
+        return '';
+    }
+
+    return sectionHtml(
+        'Progress prediction',
+        'Expected progress if the user follows this plan consistently.',
+        statGridHtml([
+            {
+                label: 'Check-in window',
+                value: `${prediction.horizon_days ?? planHorizonDays} days`,
+            },
+            {
+                label: 'Baseline weight',
+                value:
+                    prediction.baseline_weight_kg !== null &&
+                    prediction.baseline_weight_kg !== undefined
+                        ? `${prediction.baseline_weight_kg} kg`
+                        : '-',
+            },
+            {
+                label: 'Expected change',
+                value:
+                    prediction.expected_weight_change_kg !== null &&
+                    prediction.expected_weight_change_kg !== undefined
+                        ? `${prediction.expected_weight_change_kg} kg`
+                        : '-',
+            },
+            {
+                label: 'Projected weight',
+                value:
+                    prediction.projected_body_weight_kg !== null &&
+                    prediction.projected_body_weight_kg !== undefined
+                        ? `${prediction.projected_body_weight_kg} kg`
+                        : '-',
+            },
+        ]),
+    );
+}
+
+>>>>>>> origin/main
 function buildDocumentHtml(
     plan: PrintablePlan,
     kind: ExportKind,
@@ -605,7 +915,11 @@ function buildDocumentHtml(
                         width: 100%;
                         max-width: 1080px;
                         margin: 0 auto;
+<<<<<<< HEAD
                         padding: 24px;
+=======
+                        padding: 32px;
+>>>>>>> origin/main
                     }
 
                     .cover {
@@ -613,8 +927,13 @@ function buildDocumentHtml(
                         background:
                             linear-gradient(135deg, #10170d 0%, #1f2c18 62%, #8fc73f 170%);
                         color: white;
+<<<<<<< HEAD
                         padding: 28px;
                         margin-bottom: 16px;
+=======
+                        padding: 34px;
+                        margin-bottom: 22px;
+>>>>>>> origin/main
                     }
 
                     .brand-row {
@@ -661,13 +980,22 @@ function buildDocumentHtml(
                         background: white;
                         border: 1px solid #dfe8d5;
                         border-radius: 24px;
+<<<<<<< HEAD
                         padding: 18px;
                         margin: 14px 0;
+=======
+                        padding: 22px;
+                        margin: 18px 0;
+>>>>>>> origin/main
                         page-break-inside: avoid;
                     }
 
                     .section-header {
+<<<<<<< HEAD
                         margin-bottom: 12px;
+=======
+                        margin-bottom: 16px;
+>>>>>>> origin/main
                     }
 
                     .section h2 {
@@ -697,6 +1025,7 @@ function buildDocumentHtml(
                         line-height: 1.25;
                     }
 
+<<<<<<< HEAD
                     .compact-box {
                         padding: 14px;
                     }
@@ -788,6 +1117,8 @@ function buildDocumentHtml(
                         padding: 14px;
                     }
 
+=======
+>>>>>>> origin/main
                     .stat-grid {
                         display: grid;
                         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -817,9 +1148,13 @@ function buildDocumentHtml(
 
                     .two-column,
                     .three-column,
+<<<<<<< HEAD
                     .day-grid,
                     .diet-overview-grid,
                     .rest-grid {
+=======
+                    .day-grid {
+>>>>>>> origin/main
                         display: grid;
                         gap: 14px;
                     }
@@ -836,6 +1171,7 @@ function buildDocumentHtml(
                         grid-template-columns: repeat(2, minmax(0, 1fr));
                     }
 
+<<<<<<< HEAD
                     /* Day 7 spans full width in workout grid */
                     .full-width-day {
                         grid-column: 1 / -1;
@@ -874,6 +1210,8 @@ function buildDocumentHtml(
                         grid-template-columns: repeat(4, minmax(0, 1fr));
                     }
 
+=======
+>>>>>>> origin/main
                     .stack {
                         display: grid;
                         gap: 10px;
@@ -981,7 +1319,11 @@ function buildDocumentHtml(
                     }
 
                     .footer {
+<<<<<<< HEAD
                         margin: 16px 0 0;
+=======
+                        margin: 22px 0 0;
+>>>>>>> origin/main
                         color: #66745d;
                         font-size: 12px;
                         text-align: center;
@@ -1013,7 +1355,11 @@ function buildDocumentHtml(
 
                     @page {
                         size: A4;
+<<<<<<< HEAD
                         margin: 11mm;
+=======
+                        margin: 14mm;
+>>>>>>> origin/main
                     }
                 </style>
             </head>
@@ -1037,10 +1383,36 @@ function buildDocumentHtml(
                         </div>
                     </section>
 
+<<<<<<< HEAD
+=======
+                    ${buildPredictionHtml(plan, planHorizonDays)}
+
+>>>>>>> origin/main
                     ${includeDiet ? buildDietHtml(plan) : ''}
 
                     ${includeWorkout ? buildWorkoutHtml(plan) : ''}
 
+<<<<<<< HEAD
+=======
+                    ${sectionHtml(
+                        'Review and adjustment',
+                        'Use these notes after the check-in window before regenerating.',
+                        `
+                            <div class="two-column">
+                                <div class="box">
+                                    <h3>Checkpoints</h3>
+                                    ${listHtml(plan.adaptive_review?.checkpoints ?? [])}
+                                </div>
+
+                                <div class="box">
+                                    <h3>Replanning triggers</h3>
+                                    ${listHtml(plan.adaptive_review?.replanning_triggers ?? [])}
+                                </div>
+                            </div>
+                        `,
+                    )}
+
+>>>>>>> origin/main
                     <p class="footer">
                         Generated by Hayetak. This export is for personal fitness and nutrition tracking and does not replace professional medical advice.
                     </p>
@@ -1136,4 +1508,8 @@ export function exportPlanToPdf(
      * print from a hidden iframe instead.
      */
     printHtmlWithHiddenIframe(html);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

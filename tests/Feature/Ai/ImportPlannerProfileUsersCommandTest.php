@@ -1,6 +1,9 @@
 <?php
 
+<<<<<<< HEAD
 use App\Models\AiRequest;
+=======
+>>>>>>> origin/main
 use App\Models\Measurement;
 use App\Models\User;
 use App\Models\UserDietaryRestriction;
@@ -44,9 +47,12 @@ CSV);
     $user = User::query()->where('email', 'planner+p9001@hayetak.local')->firstOrFail();
 
     expect($user->gender)->toBe('female')
+<<<<<<< HEAD
         ->and($user->display_name)->not->toBe('Planner P9001')
         ->and($user->first_name)->not->toBe('Planner')
         ->and($user->last_name)->not->toBe('P9001')
+=======
+>>>>>>> origin/main
         ->and((int) $user->age)->toBe(29)
         ->and((int) $user->height_cm)->toBe(167)
         ->and((float) $user->weight_kg)->toBe(67.2)
@@ -59,6 +65,7 @@ CSV);
         ->and(UserPref::query()->where('user_id', $user->id)->count())->toBe(1)
         ->and(Measurement::query()->where('user_id', $user->id)->count())->toBe(2);
 });
+<<<<<<< HEAD
 
 it('imports planner plan runs as timestamped ai requests and exports real predictor labels', function () {
     $dir = base_path('tmp/test_planner_profile_import_requests');
@@ -130,3 +137,5 @@ CSV);
         ->and($rows->every(fn (array $row): bool => (int) ($row['is_synthetic_weight_label'] ?? 1) === 0))
             ->toBeTrue();
 });
+=======
+>>>>>>> origin/main

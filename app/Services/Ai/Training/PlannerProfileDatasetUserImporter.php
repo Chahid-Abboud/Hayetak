@@ -2,7 +2,10 @@
 
 namespace App\Services\Ai\Training;
 
+<<<<<<< HEAD
 use App\Models\AiRequest;
+=======
+>>>>>>> origin/main
 use App\Models\Measurement;
 use App\Models\User;
 use App\Models\UserDietaryRestriction;
@@ -16,10 +19,13 @@ use Illuminate\Support\Str;
 
 class PlannerProfileDatasetUserImporter
 {
+<<<<<<< HEAD
     public function __construct(
         private readonly ImportedPlannerIdentityService $identities,
     ) {}
 
+=======
+>>>>>>> origin/main
     /**
      * @return array<string, mixed>
      */
@@ -88,7 +94,10 @@ class PlannerProfileDatasetUserImporter
             'medical_rows_written' => 0,
             'measurement_rows_written' => 0,
             'pref_rows_written' => 0,
+<<<<<<< HEAD
             'ai_request_rows_written' => 0,
+=======
+>>>>>>> origin/main
         ];
 
         foreach ($profiles as $profile) {
@@ -97,8 +106,12 @@ class PlannerProfileDatasetUserImporter
                 continue;
             }
 
+<<<<<<< HEAD
             $profilePlanRuns = $planRunsByProfile[$profileId] ?? [];
             $latestRun = $this->latestRunForProfile($profilePlanRuns);
+=======
+            $latestRun = $this->latestRunForProfile($planRunsByProfile[$profileId] ?? []);
+>>>>>>> origin/main
             $email = $this->emailForProfile($profileId);
             $existing = User::withTrashed()->where('email', $email)->first();
 
@@ -115,7 +128,10 @@ class PlannerProfileDatasetUserImporter
             DB::transaction(function () use (
                 $profile,
                 $source,
+<<<<<<< HEAD
                 $profilePlanRuns,
+=======
+>>>>>>> origin/main
                 $latestRun,
                 $outcomesByRun,
                 $existing,
@@ -136,6 +152,7 @@ class PlannerProfileDatasetUserImporter
                     $user,
                     $profile,
                     $source,
+<<<<<<< HEAD
                     $this->measurementsForProfile($profile, $profilePlanRuns, $outcomesByRun)
                 );
                 $summary['ai_request_rows_written'] += $this->syncImportedPlannerRequests(
@@ -143,6 +160,9 @@ class PlannerProfileDatasetUserImporter
                     $profile,
                     $source,
                     $profilePlanRuns
+=======
+                    $this->measurementsForProfile($profile, $latestRun, $outcomesByRun)
+>>>>>>> origin/main
                 );
 
                 $this->refreshUserCurrentWeight($user);
@@ -217,6 +237,7 @@ class PlannerProfileDatasetUserImporter
         $injuries = $this->normalizeValues($this->parseJsonList((string) ($profile['injury_history_json'] ?? '')));
         $email = $this->emailForProfile($profileId);
         $username = 'planner_'.Str::lower($profileId);
+<<<<<<< HEAD
         $gender = $this->mapGender((string) ($profile['sex'] ?? ''));
         $identity = $this->identities->identityForProfile($profileId, $gender);
         $workoutDays = max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3)));
@@ -227,6 +248,18 @@ class PlannerProfileDatasetUserImporter
             'last_name' => $identity['last_name'],
             'username' => $username,
             'gender' => $gender,
+=======
+        $firstName = 'Planner';
+        $lastName = Str::upper($profileId);
+        $workoutDays = max(1, (int) round((float) ($profile['workout_days_target_per_week'] ?? 3)));
+
+        $payload = [
+            'name' => trim($firstName.' '.$lastName),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'username' => $username,
+            'gender' => $this->mapGender((string) ($profile['sex'] ?? '')),
+>>>>>>> origin/main
             'age' => (int) round((float) ($profile['age'] ?? 0)),
             'height_cm' => (int) round((float) ($profile['height_cm'] ?? 0)),
             'weight_kg' => round((float) ($profile['start_weight_kg'] ?? 0), 2),
@@ -246,7 +279,10 @@ class PlannerProfileDatasetUserImporter
             'role' => User::ROLE_CLIENT,
             'verified' => true,
             'status' => 'active',
+<<<<<<< HEAD
             'data_origin' => User::DATA_ORIGIN_IMPORTED_REAL,
+=======
+>>>>>>> origin/main
             'email_verified_at' => $createdAt,
             'created_at' => $existing?->created_at ?? $createdAt,
             'updated_at' => now(),
@@ -413,11 +449,19 @@ class PlannerProfileDatasetUserImporter
     }
 
     /**
+<<<<<<< HEAD
      * @param  list<array<string, string>>  $planRuns
      * @param  array<string, list<array<string, string>>>  $outcomesByRun
      * @return list<array<string, mixed>>
      */
     private function measurementsForProfile(array $profile, array $planRuns, array $outcomesByRun): array
+=======
+     * @param  array<string, string>|null  $latestRun
+     * @param  array<string, list<array<string, string>>>  $outcomesByRun
+     * @return list<array<string, mixed>>
+     */
+    private function measurementsForProfile(array $profile, ?array $latestRun, array $outcomesByRun): array
+>>>>>>> origin/main
     {
         $measurements = [];
         $createdAt = $this->parseTimestamp((string) ($profile['created_at_utc'] ?? ''));
@@ -431,6 +475,7 @@ class PlannerProfileDatasetUserImporter
             ];
         }
 
+<<<<<<< HEAD
         foreach ($planRuns as $planRun) {
             $planRunId = trim((string) ($planRun['plan_run_id'] ?? ''));
             if ($planRunId === '') {
@@ -438,6 +483,12 @@ class PlannerProfileDatasetUserImporter
             }
 
             foreach ($outcomesByRun[$planRunId] ?? [] as $outcome) {
+=======
+        $profileRuns = $latestRun ? [$latestRun] : [];
+        if ($profileRuns !== []) {
+            $latestPlanRunId = trim((string) ($latestRun['plan_run_id'] ?? ''));
+            foreach ($outcomesByRun[$latestPlanRunId] ?? [] as $outcome) {
+>>>>>>> origin/main
                 $date = $this->parseTimestamp((string) ($outcome['checkpoint_date_utc'] ?? ''));
                 $weight = $this->toFloat($outcome['weight_kg'] ?? null);
                 if (! $date || $weight === null) {
@@ -479,6 +530,7 @@ class PlannerProfileDatasetUserImporter
         }
     }
 
+<<<<<<< HEAD
     /**
      * @param  list<array<string, string>>  $planRuns
      */
@@ -539,12 +591,15 @@ class PlannerProfileDatasetUserImporter
         return $written;
     }
 
+=======
+>>>>>>> origin/main
     private function emailForProfile(string $profileId): string
     {
         return 'planner+'.Str::lower($profileId).'@hayetak.local';
     }
 
     /**
+<<<<<<< HEAD
      * @param  array<string, string>  $planRun
      * @return array<string, mixed>
      */
@@ -625,6 +680,8 @@ class PlannerProfileDatasetUserImporter
     }
 
     /**
+=======
+>>>>>>> origin/main
      * @return list<string>
      */
     private function parseJsonList(string $value): array
@@ -757,6 +814,7 @@ class PlannerProfileDatasetUserImporter
 
         return is_numeric($value) ? (float) $value : null;
     }
+<<<<<<< HEAD
 
     private function toInt(mixed $value): ?int
     {
@@ -791,4 +849,6 @@ class PlannerProfileDatasetUserImporter
 
         return is_array($decoded) ? $decoded : [];
     }
+=======
+>>>>>>> origin/main
 }

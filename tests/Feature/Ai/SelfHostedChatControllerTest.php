@@ -155,6 +155,7 @@ it('uses personalized vector context for self-hosted chat when a relevant user m
     });
 });
 
+<<<<<<< HEAD
 it('uses the local direct-context fast path without embedding or vector lookup when forced', function () {
     $user = User::factory()->create([
         'weight_kg' => 82,
@@ -207,6 +208,8 @@ it('uses the local direct-context fast path without embedding or vector lookup w
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+=======
+>>>>>>> origin/main
 it('reindexes updated weight data and uses the saved weight for protein recalculation', function () {
     $user = User::factory()->create([
         'weight_kg' => 82,
@@ -599,6 +602,7 @@ it('refuses out-of-scope questions without calling the self-hosted model', funct
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
 it('refuses rocket league trivia without calling the self-hosted model', function () {
     $user = User::factory()->create();
 
@@ -629,6 +633,8 @@ it('refuses rocket league trivia without calling the self-hosted model', functio
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+=======
+>>>>>>> origin/main
 it('answers gratitude turns without using the model or calling the app name a user name', function () {
     $user = User::factory()->create([
         'name' => 'Maya Client',
@@ -755,6 +761,7 @@ it('resolves brief confirmations to offered food recommendations', function () {
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
 it('resolves recommendation follow-ups to offered vegan food recommendations', function () {
     $user = User::factory()->create([
         'diet_name' => 'Vegan',
@@ -794,6 +801,8 @@ it('resolves recommendation follow-ups to offered vegan food recommendations', f
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+=======
+>>>>>>> origin/main
 it('resolves brief confirmations to offered exercise substitutes', function () {
     $user = User::factory()->create([
         'medical_history' => 'knee pain',
@@ -952,6 +961,7 @@ it('resolves brief confirmations to an offered workout routine', function () {
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+<<<<<<< HEAD
 it('asks for clarification instead of guessing when a short confirmation follows a multi-option offer', function () {
     $user = User::factory()->create([
         'diet_name' => 'Mediterranean',
@@ -991,6 +1001,8 @@ it('asks for clarification instead of guessing when a short confirmation follows
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+=======
+>>>>>>> origin/main
 it('uses a privacy-specific boundary for exfiltration prompts without calling the self-hosted model', function () {
     $user = User::factory()->create();
 
@@ -1308,6 +1320,7 @@ it('answers recovery checklist prompts as general guidance when no user vector c
         ->toContain('sleep');
 });
 
+<<<<<<< HEAD
 it('answers regeneration logging questions with meals macros workouts adherence and weight check-ins', function () {
     $user = User::factory()->create([
         'weight_kg' => 78,
@@ -1343,6 +1356,8 @@ it('answers regeneration logging questions with meals macros workouts adherence 
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+=======
+>>>>>>> origin/main
 it('normalizes internal ai wording into plain english before showing the chatbot reply', function () {
     $user = User::factory()->create([
         'weight_kg' => 61,

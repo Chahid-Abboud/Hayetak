@@ -774,7 +774,10 @@ class PlannerService
 
         for ($dayIndex = 1; $dayIndex <= $targetDietDays; $dayIndex++) {
             $meals = [];
+<<<<<<< HEAD
             $usedDaySignatures = [];
+=======
+>>>>>>> origin/main
 
             foreach ($mealCodes as $mealCode) {
                 $options = is_array($mealOptions[$mealCode] ?? null)
@@ -786,6 +789,7 @@ class PlannerService
 
                 $count = count($options);
                 $baseOffset = ($seed + $this->mealCodeSeedOffset($mealCode)) % $count;
+<<<<<<< HEAD
                 $selectedOption = null;
 
                 for ($step = 0; $step < $count; $step++) {
@@ -808,6 +812,10 @@ class PlannerService
                 }
 
                 $option = $selectedOption;
+=======
+                $optionIndex = ($baseOffset + $dayIndex - 1) % $count;
+                $option = $options[$optionIndex] ?? null;
+>>>>>>> origin/main
                 if (! is_array($option)) {
                     continue;
                 }
@@ -831,6 +839,7 @@ class PlannerService
         return $days;
     }
 
+<<<<<<< HEAD
     private function mealContentSignature(array $meal): string
     {
         $items = is_array($meal['items'] ?? null) ? $meal['items'] : [];
@@ -857,6 +866,8 @@ class PlannerService
         return implode('||', $parts);
     }
 
+=======
+>>>>>>> origin/main
     private function dedupeMealsBySignature(array $meals): array
     {
         $deduped = [];

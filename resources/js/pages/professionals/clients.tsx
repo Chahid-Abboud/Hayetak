@@ -55,6 +55,7 @@ type SearchFood = {
     serving_unit: string;
 };
 
+<<<<<<< HEAD
 type DietPlanFood = {
     id: number;
     name?: string;
@@ -84,6 +85,8 @@ type WorkoutPlanDay = {
     exercises: WorkoutPlanExercise[];
 };
 
+=======
+>>>>>>> origin/main
 type ClientCard = {
     assignment_id: number;
     notes?: string | null;
@@ -95,7 +98,10 @@ type ClientCard = {
         age?: number | null;
         height_cm?: number | null;
         weight_kg?: number | null;
+<<<<<<< HEAD
         allergens?: string[];
+=======
+>>>>>>> origin/main
     };
     progress: {
         latest_weight_kg: number | null;
@@ -113,6 +119,7 @@ type ClientCard = {
     nutrition?: {
         weekly_days: WeeklyMealDay[];
     };
+<<<<<<< HEAD
     diet_plan?: {
         id: number;
         title: string;
@@ -127,6 +134,8 @@ type ClientCard = {
         plan_json?: WorkoutPlanDay[] | null;
         notes?: string | null;
     } | null;
+=======
+>>>>>>> origin/main
 };
 
 type PageProps = SharedData & {
@@ -155,6 +164,7 @@ type MealNoteDialogState = {
     substituteError: string | null;
 };
 
+<<<<<<< HEAD
 type DietPlanDialogState = {
     client: ClientCard['client'];
     diet_plan?: ClientCard['diet_plan'];
@@ -183,6 +193,8 @@ type WorkoutPlanDialogState = {
     saveError: string | null;
 };
 
+=======
+>>>>>>> origin/main
 type ClientFilter = 'all' | 'attention' | 'stable';
 
 function getCsrfToken() {
@@ -196,7 +208,11 @@ function getCsrfToken() {
 }
 
 function formatRoleLabel(role: 'trainer' | 'nutritionist') {
+<<<<<<< HEAD
     return role === 'nutritionist' ? 'Dietitian' : 'Personal Trainer';
+=======
+    return role === 'nutritionist' ? 'Dietitian' : 'Trainer';
+>>>>>>> origin/main
 }
 
 function formatDateTime(value?: string | null) {
@@ -394,10 +410,13 @@ export default function ProfessionalClientsPage() {
         useState<AppointmentDialogState | null>(null);
     const [mealNoteDialog, setMealNoteDialog] =
         useState<MealNoteDialogState | null>(null);
+<<<<<<< HEAD
     const [dietPlanDialog, setDietPlanDialog] =
         useState<DietPlanDialogState | null>(null);
     const [workoutPlanDialog, setWorkoutPlanDialog] =
         useState<WorkoutPlanDialogState | null>(null);
+=======
+>>>>>>> origin/main
     const mealNoteIsOpen = mealNoteDialog !== null;
     const mealNoteSubstituteQuery = mealNoteDialog?.substituteQuery ?? '';
     const mealNoteSelectedMealType = mealNoteDialog
@@ -736,6 +755,7 @@ export default function ProfessionalClientsPage() {
           )
         : null;
 
+<<<<<<< HEAD
     function openDietPlanDialog(clientEntry: ClientCard) {
         const existingPlan = clientEntry.diet_plan;
 
@@ -1030,6 +1050,8 @@ export default function ProfessionalClientsPage() {
         }
     }
 
+=======
+>>>>>>> origin/main
     return (
         <>
             <Head title={pageTitle} />
@@ -1063,6 +1085,7 @@ export default function ProfessionalClientsPage() {
                     }
                 />
 
+<<<<<<< HEAD
                 {workoutPlanDialog ? (
                     <div
                         role="dialog"
@@ -2071,6 +2094,8 @@ export default function ProfessionalClientsPage() {
                     </div>
                 ) : null}
 
+=======
+>>>>>>> origin/main
                 {banner ? (
                     <ProductBanner
                         tone={banner.kind === 'success' ? 'success' : 'danger'}
@@ -2084,9 +2109,15 @@ export default function ProfessionalClientsPage() {
                         No assigned clients found yet.
                     </div>
                 ) : (
+<<<<<<< HEAD
                     <div className="grid gap-5 xl:h-[calc(100vh-13rem)] xl:grid-cols-[minmax(240px,0.72fr)_minmax(0,1.28fr)]">
                         <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
                             <div className="flex h-full min-h-0 flex-col space-y-4">
+=======
+                    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+                        <aside className="rounded-[30px] border border-border/70 bg-card/95 p-4 shadow-sm">
+                            <div className="space-y-4">
+>>>>>>> origin/main
                                 <ProductFilterRow>
                                     <label className="relative min-w-0 flex-1">
                                         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -2128,7 +2159,11 @@ export default function ProfessionalClientsPage() {
                                     ))}
                                 </div>
 
+<<<<<<< HEAD
                                 <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+=======
+                                <div className="space-y-2">
+>>>>>>> origin/main
                                     {filteredClients.length === 0 ? (
                                         <p className="rounded-2xl border border-dashed border-border/70 px-3 py-6 text-center text-sm text-muted-foreground">
                                             No matching clients for this filter.
@@ -2183,12 +2218,17 @@ export default function ProfessionalClientsPage() {
                             </div>
                         </aside>
 
+<<<<<<< HEAD
                         <div className="min-h-0 h-full overflow-hidden">
+=======
+                        <div className="space-y-5">
+>>>>>>> origin/main
                             {filteredClients.length === 0 ? (
                                 <div className="rounded-3xl border border-dashed border-border/70 bg-card p-8 text-sm text-muted-foreground">
                                     No clients match this filter.
                                 </div>
                             ) : (
+<<<<<<< HEAD
                                 <div className="h-full overflow-y-auto pr-1">
                                     {(activeEntry
                                         ? [activeEntry]
@@ -2198,6 +2238,16 @@ export default function ProfessionalClientsPage() {
                                             key={entry.assignment_id}
                                             className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
                                         >
+=======
+                                (activeEntry
+                                    ? [activeEntry]
+                                    : filteredClients
+                                ).map((entry) => (
+                                <div
+                                    key={entry.assignment_id}
+                                    className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
+                                >
+>>>>>>> origin/main
                                         <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-3">
@@ -2270,6 +2320,7 @@ export default function ProfessionalClientsPage() {
                                                     Appointment
                                                 </button>
                                                 {roleMode === 'nutritionist' ? (
+<<<<<<< HEAD
                                                     <>
                                                         <button
                                                             type="button"
@@ -2303,11 +2354,17 @@ export default function ProfessionalClientsPage() {
                                                         </button>
                                                     </>
                                                 ) : roleMode === 'trainer' ? (
+=======
+>>>>>>> origin/main
                                                     <button
                                                         type="button"
                                                         className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
                                                         onClick={() =>
+<<<<<<< HEAD
                                                             openWorkoutPlanDialog(
+=======
+                                                            openMealNoteDialog(
+>>>>>>> origin/main
                                                                 entry,
                                                             )
                                                         }
@@ -2316,13 +2373,21 @@ export default function ProfessionalClientsPage() {
                                                             entry.client.id
                                                         }
                                                     >
+<<<<<<< HEAD
                                                         Workout plan
+=======
+                                                        Meal Note
+>>>>>>> origin/main
                                                     </button>
                                                 ) : null}
                                             </div>
                                         </div>
 
+<<<<<<< HEAD
                                         <div className="mt-5 space-y-4">
+=======
+                                        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+>>>>>>> origin/main
                                             <div className="rounded-2xl border bg-background p-4">
                                                 <div className="mb-3 flex items-center justify-between gap-3">
                                                     <h3 className="text-sm font-semibold">
@@ -2407,6 +2472,7 @@ export default function ProfessionalClientsPage() {
                                             </div>
 
                                             {roleMode === 'trainer' ? (
+<<<<<<< HEAD
                                                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                                                     <div className="rounded-2xl border bg-background p-4">
                                                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -2678,10 +2744,78 @@ export default function ProfessionalClientsPage() {
                                                                                 logged.
                                                                             </p>
                                                                         )}
+=======
+                                                <div className="rounded-2xl border bg-background p-4">
+                                                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Workout progress
+                                                        </h3>
+                                                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                            <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                Sessions:{' '}
+                                                                {
+                                                                    entry
+                                                                        .training
+                                                                        ?.summary
+                                                                        .logged_sessions
+                                                                }
+                                                            </span>
+                                                            <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                Sets:{' '}
+                                                                {
+                                                                    entry
+                                                                        .training
+                                                                        ?.summary
+                                                                        .total_sets
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {entry.training
+                                                        ?.recent_workouts
+                                                        .length ? (
+                                                        <div className="space-y-3">
+                                                            {entry.training.recent_workouts.map(
+                                                                (workout) => (
+                                                                    <div
+                                                                        key={
+                                                                            workout.id
+                                                                        }
+                                                                        className="rounded-2xl border p-3"
+                                                                    >
+                                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                            <div className="font-medium">
+                                                                                {formatDateTime(
+                                                                                    workout.performed_at,
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-xs text-muted-foreground">
+                                                                                {workout.duration_min
+                                                                                    ? `${workout.duration_min} min`
+                                                                                    : 'No duration'}
+                                                                                {
+                                                                                    ' - '
+                                                                                }
+                                                                                {
+                                                                                    workout.sets_count
+                                                                                }{' '}
+                                                                                sets
+                                                                            </div>
+                                                                        </div>
+                                                                        {workout.notes ? (
+                                                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                                                {
+                                                                                    workout.notes
+                                                                                }
+                                                                            </p>
+                                                                        ) : null}
+>>>>>>> origin/main
                                                                     </div>
                                                                 ),
                                                             )}
                                                         </div>
+<<<<<<< HEAD
                                                     </div>
 
                                                     <div className="space-y-4">
@@ -2740,13 +2874,118 @@ export default function ProfessionalClientsPage() {
                                                                 </p>
                                                             </div>
                                                         ) : null}
+=======
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            No workout logs yet
+                                                            for this client.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-2xl border bg-background p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Weekly meals
+                                                        </h3>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Last 7 days
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        {entry.nutrition?.weekly_days.map(
+                                                            (day) => (
+                                                                <div
+                                                                    key={
+                                                                        day.date
+                                                                    }
+                                                                    className="rounded-2xl border p-3"
+                                                                >
+                                                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                                                        <div className="font-medium">
+                                                                            {
+                                                                                day.label
+                                                                            }
+                                                                        </div>
+                                                                        <div className="text-xs text-muted-foreground">
+                                                                            {
+                                                                                day.date
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {day.meals
+                                                                        .length ? (
+                                                                        <div className="space-y-2">
+                                                                            {day.meals.map(
+                                                                                (
+                                                                                    meal,
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={
+                                                                                            meal.meal_type
+                                                                                        }
+                                                                                        className="rounded-xl bg-muted/40 p-3"
+                                                                                    >
+                                                                                        <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                                            {formatMealType(
+                                                                                                meal.meal_type,
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <div className="mt-2 space-y-1 text-sm">
+                                                                                            {meal.items.map(
+                                                                                                (
+                                                                                                    item,
+                                                                                                ) => (
+                                                                                                    <div
+                                                                                                        key={
+                                                                                                            item.id
+                                                                                                        }
+                                                                                                        className="flex items-center justify-between gap-3"
+                                                                                                    >
+                                                                                                        <span className="min-w-0 truncate">
+                                                                                                            {
+                                                                                                                item.food_name
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                        <span className="text-xs text-muted-foreground">
+                                                                                                            {item.servings !==
+                                                                                                            null
+                                                                                                                ? `${item.servings} serving(s)`
+                                                                                                                : ''}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                ),
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ),
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            No
+                                                                            meals
+                                                                            logged.
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            ),
+                                                        )}
+>>>>>>> origin/main
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
+<<<<<<< HEAD
                                         </div>
                                     ))}
                                 </div>
+=======
+                                    </div>
+                                ))
+>>>>>>> origin/main
                             )}
                         </div>
                     </div>
@@ -2883,7 +3122,11 @@ export default function ProfessionalClientsPage() {
                                 disabled={
                                     busyClientId === appointmentDialog.client.id
                                 }
+<<<<<<< HEAD
                                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+=======
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+>>>>>>> origin/main
                             >
                                 Send appointment
                             </button>
@@ -3227,7 +3470,11 @@ export default function ProfessionalClientsPage() {
                                         mealNoteDialog.weeklyDays,
                                     )
                                 }
+<<<<<<< HEAD
                                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+=======
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:ring-2 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-foreground dark:focus:ring-white/30"
+>>>>>>> origin/main
                             >
                                 Send meal note
                             </button>

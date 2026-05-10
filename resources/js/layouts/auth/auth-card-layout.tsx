@@ -28,6 +28,7 @@ export default function AuthCardLayout({
 
             <div className="relative flex w-full max-w-md flex-col gap-6">
                 <Link
+<<<<<<< HEAD
                     href="/"
                     className="inline-flex items-center gap-3 self-center rounded-full border border-border/70 bg-card/72 px-4 py-2 font-medium shadow-sm backdrop-blur"
                 >
@@ -35,6 +36,15 @@ export default function AuthCardLayout({
                         iconClassName="size-8"
                         textClassName="text-[1.34rem] text-foreground"
                     />
+=======
+                    href={home()}
+                    className="inline-flex items-center gap-3 self-center rounded-full border border-border/70 bg-card/72 px-4 py-2 font-medium shadow-sm backdrop-blur"
+                >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <AppLogoIcon className="size-6" />
+                    </div>
+                    <span>Hayetak</span>
+>>>>>>> origin/main
                 </Link>
 
                 <div className="flex flex-col gap-6">

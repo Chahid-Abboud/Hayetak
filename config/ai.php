@@ -30,10 +30,13 @@ return [
                 'limit' => (int) env('AI_SELF_HOSTED_CONTEXT_LIMIT', 4),
                 'max_context_characters' => (int) env('AI_SELF_HOSTED_MAX_CONTEXT_CHARS', 2200),
             ],
+<<<<<<< HEAD
             'direct_context_fast_path' => [
                 'enabled_in_local' => (bool) env('AI_SELF_HOSTED_DIRECT_CONTEXT_FAST_PATH', true),
                 'force' => (bool) env('AI_SELF_HOSTED_FORCE_DIRECT_CONTEXT_FAST_PATH', false),
             ],
+=======
+>>>>>>> origin/main
             'context_sync' => [
                 'debounce_seconds' => (int) env('AI_SELF_HOSTED_CONTEXT_SYNC_DEBOUNCE_SECONDS', 8),
                 'unique_for_seconds' => (int) env('AI_SELF_HOSTED_CONTEXT_SYNC_UNIQUE_FOR_SECONDS', 120),
@@ -43,6 +46,7 @@ return [
         ],
     ],
 
+<<<<<<< HEAD
     'messaging' => [
         'moderation' => [
             'provider' => env('AI_MESSAGE_MODERATION_PROVIDER', 'local_rules'),
@@ -131,6 +135,8 @@ return [
         ],
     ],
 
+=======
+>>>>>>> origin/main
     'planner' => [
         'ollama_only' => true,
         'prompt_version' => env('AI_PLANNER_PROMPT_VERSION', 'hayetak_planner_v2'),
@@ -192,10 +198,13 @@ return [
     ],
 
     'progress_predictor' => [
+<<<<<<< HEAD
         'labeling' => [
             'weight_match_days_before' => (int) env('AI_PROGRESS_PREDICTOR_LABEL_WEIGHT_MATCH_DAYS_BEFORE', 7),
             'weight_match_days_after' => (int) env('AI_PROGRESS_PREDICTOR_LABEL_WEIGHT_MATCH_DAYS_AFTER', 10),
         ],
+=======
+>>>>>>> origin/main
         'inference' => [
             'enabled' => (bool) env('AI_PROGRESS_PREDICTOR_INFERENCE_ENABLED', true),
             'python_bin' => env('AI_PROGRESS_PREDICTOR_PYTHON_BIN', 'python'),

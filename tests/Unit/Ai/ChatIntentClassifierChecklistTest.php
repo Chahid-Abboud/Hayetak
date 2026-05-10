@@ -125,6 +125,7 @@ it('routes general-guidance checklist prompts as in-domain coach questions', fun
     'vegetarian protein sources' => ['What are good vegetarian protein sources?', 'nutrition'],
     'meal prep tips' => ['What are some meal prep tips?', 'nutrition'],
     'rest day' => ['What is a rest day?', 'wellness'],
+<<<<<<< HEAD
     'stretches after training' => ['What are good stretches after training?', 'workout'],
     'before cardio' => ['What should someone eat before cardio?', 'nutrition'],
     'simple workout routine' => ['How do I build a simple workout routine?', 'plans'],
@@ -147,6 +148,15 @@ it('keeps short coach follow-up prompts in domain on the coach screen', function
     expect($result['feature'])->not->toBe('out_of_scope');
 });
 
+=======
+    'stretches after training' => ['What are good stretches after training?', 'wellness'],
+    'before cardio' => ['What should someone eat before cardio?', 'nutrition'],
+    'simple workout routine' => ['How do I build a simple workout routine?', 'plans'],
+    'injury exercise request with typo' => ['my injury dates 7 months , what exercices may i do', 'workout'],
+    'update profile in app' => ['How do I update my profile in the app?', 'settings'],
+]);
+
+>>>>>>> origin/main
 it('routes out-of-scope checklist prompts away from coach handling', function (string $prompt) {
     $result = app(ChatIntentClassifier::class)->classify($prompt, []);
 

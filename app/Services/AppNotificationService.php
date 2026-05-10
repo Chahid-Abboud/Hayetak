@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+<<<<<<< HEAD
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+=======
+use App\Models\Notification;
+use App\Models\User;
+>>>>>>> origin/main
 
 class AppNotificationService
 {
@@ -18,6 +23,7 @@ class AppNotificationService
         int $days
     ): void {
         if ($dietGenerated && $workoutGenerated) {
+<<<<<<< HEAD
             $title = "Diet and workout plans generated";
             $body = "Your {$days}-day diet and workout plans are ready. Open the planner to review them.";
         } elseif ($dietGenerated) {
@@ -26,21 +32,39 @@ class AppNotificationService
         } elseif ($workoutGenerated) {
             $title = "Workout plan generated";
             $body = "Your {$days}-day workout plan is ready. Open the planner to review it.";
+=======
+            $title = 'Your diet and workout plans are ready';
+            $body = "Your {$days}-day diet and workout plans have been generated. Open the planner to review them.";
+        } elseif ($dietGenerated) {
+            $title = 'Your diet plan is ready';
+            $body = "Your {$days}-day diet plan has been generated. Open the planner to review it.";
+        } elseif ($workoutGenerated) {
+            $title = 'Your workout plan is ready';
+            $body = "Your {$days}-day workout plan has been generated. Open the planner to review it.";
+>>>>>>> origin/main
         } else {
             return;
         }
 
         Notification::query()->create([
+<<<<<<< HEAD
             "target_user_id" => $user->id,
             "created_by" => $user->id,
             "title" => $title,
             "body" => $body,
+=======
+            'target_user_id' => $user->id,
+            'created_by' => $user->id,
+            'title' => $title,
+            'body' => $body,
+>>>>>>> origin/main
         ]);
     }
 
     public function chatbotResponded(User $user): void
     {
         Notification::query()->create([
+<<<<<<< HEAD
             "target_user_id" => $user->id,
             "created_by" => $user->id,
             "title" => "AI Coach replied",
@@ -241,3 +265,12 @@ class AppNotificationService
         return $conversation;
     }
 }
+=======
+            'target_user_id' => $user->id,
+            'created_by' => $user->id,
+            'title' => 'AI Coach replied',
+            'body' => 'Your AI Coach has responded to your message. Open the coach page to continue the conversation.',
+        ]);
+    }
+}
+>>>>>>> origin/main

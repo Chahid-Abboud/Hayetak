@@ -319,6 +319,7 @@ class AiProfileDiversitySeeder extends Seeder
                 'diet_failure_reasons' => ['Lack of results', 'Confusing guidance'],
                 'diet_failure_other' => 'Previous plans did not account for shoulder flare-ups when training volume increased.',
             ],
+<<<<<<< HEAD
             [
                 'email' => 'dania.younes+ai15@hayetak.local',
                 'first_name' => 'Dania',
@@ -341,6 +342,8 @@ class AiProfileDiversitySeeder extends Seeder
                 'diet_failure_reasons' => ['Travel/routine changes', 'Too expensive'],
                 'diet_failure_other' => 'Restaurant meals often broke gluten-free consistency during work travel.',
             ],
+=======
+>>>>>>> origin/main
         ];
 
         foreach ($profiles as $index => $profile) {

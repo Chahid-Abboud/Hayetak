@@ -60,9 +60,15 @@ function getCsrfToken() {
 
 function roleLabel(role?: string | null) {
     if (!role) return 'User';
+<<<<<<< HEAD
     if (role === 'nutritionist') return 'Dietitian';
     if (role === 'trainer') return 'Personal Trainer';
     return role.charAt(0).toUpperCase() + role.slice(1);
+=======
+    return role === 'nutritionist'
+        ? 'Dietitian'
+        : role.charAt(0).toUpperCase() + role.slice(1);
+>>>>>>> origin/main
 }
 
 function formatThreadTime(value?: string | null) {
@@ -333,6 +339,7 @@ export default function MessagesPage() {
                     body: JSON.stringify({ body }),
                 },
             );
+<<<<<<< HEAD
             if (!res.ok) {
                 const json = (await res.json().catch(() => null)) as
                     | { message?: string }
@@ -341,6 +348,9 @@ export default function MessagesPage() {
                     json?.message || 'Message could not be sent.',
                 );
             }
+=======
+            if (!res.ok) throw new Error('Message could not be sent.');
+>>>>>>> origin/main
             const json = await res.json();
             const nextMessage = json?.message as Message | undefined;
             setText('');
@@ -699,6 +709,7 @@ export default function MessagesPage() {
                                         {contextError}
                                     </ProductBanner>
                                 ) : context ? (
+<<<<<<< HEAD
                                     context.context_mode ===
                                     'professional_summary' ? (
                                         <>
@@ -869,6 +880,67 @@ export default function MessagesPage() {
                                             </div>
                                         </>
                                     )
+=======
+                                    <>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                <ShieldAlert className="h-3.5 w-3.5" />
+                                                Safety
+                                            </p>
+                                            <p>
+                                                Allergies:{' '}
+                                                {context.safety.allergies
+                                                    ?.length
+                                                    ? context.safety.allergies.join(
+                                                          ', ',
+                                                      )
+                                                    : 'None listed'}
+                                            </p>
+                                            <p>
+                                                Medical history:{' '}
+                                                {context.safety
+                                                    .has_medical_history
+                                                    ? 'Yes'
+                                                    : 'No'}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                <UtensilsCrossed className="h-3.5 w-3.5" />
+                                                Today
+                                            </p>
+                                            <p>
+                                                Meals:{' '}
+                                                {context.activity.today
+                                                    ?.meals_logged ?? 0}
+                                            </p>
+                                            <p>
+                                                Calories:{' '}
+                                                {context.activity.today
+                                                    ?.meal_calories ?? 0}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                            <p className="mb-1 font-medium">
+                                                Upcoming appointments
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                {
+                                                    context.appointments
+                                                        .upcoming_count
+                                                }{' '}
+                                                planned
+                                            </p>
+                                            <a
+                                                href="/appointments"
+                                                className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-foreground no-underline"
+                                            >
+                                                <CalendarDays className="h-3.5 w-3.5" />
+                                                Open scheduler
+                                            </a>
+                                        </div>
+                                    </>
+>>>>>>> origin/main
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
                                         No context available.
@@ -879,7 +951,11 @@ export default function MessagesPage() {
                     </div>
                 </>
             )}
+<<<<<<< HEAD
         </div>
+=======
+        </section>
+>>>>>>> origin/main
     );
 
     return (

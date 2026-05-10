@@ -19,6 +19,7 @@ class PlannerRunQualityScorer
         $weekly = is_array(data_get($plan, 'workout.weekly_schedule')) ? data_get($plan, 'workout.weekly_schedule') : [];
         $reviewAfterDays = (int) data_get($plan, 'adaptive_review.review_after_days', 0);
         $hardRules = is_array(data_get($plan, 'safety.hard_rules_observed')) ? data_get($plan, 'safety.hard_rules_observed') : [];
+<<<<<<< HEAD
         $allergyLeaks = $this->detectAllergyLeaks(
             is_array(data_get($plan, 'diet')) ? data_get($plan, 'diet') : [],
             $profileSafety['allergies'] ?? []
@@ -40,6 +41,8 @@ class PlannerRunQualityScorer
             (string) ($profileSafety['workout_location'] ?? ''),
             $profileSafety['available_equipment'] ?? []
         );
+=======
+>>>>>>> origin/main
 
         $dietPayload = mb_strtolower(json_encode(data_get($plan, 'diet', []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '');
 
@@ -52,6 +55,7 @@ class PlannerRunQualityScorer
             'workout_labels_match_week' => $this->workoutLabelsMatchWeek($weekly),
             'adaptive_review_window_valid' => in_array($reviewAfterDays, [14, 21, 28], true),
             'hard_rules_present' => $hardRules !== [],
+<<<<<<< HEAD
             'allergy_leakage_absent' => $allergyLeaks === [],
             'allergies_respected' => $allergyLeaks === [],
             'diet_type_respected' => $dietTypeLeaks === [],
@@ -62,6 +66,13 @@ class PlannerRunQualityScorer
             'training_days_no_recovery_moves' => $this->trainingDaysContainNoRecoveryMoves($weekly),
             'injury_unsafe_exercises_absent' => $injuryConflicts === [],
             'location_equipment_respected' => $equipmentConflicts === [],
+=======
+            'allergies_respected' => ! $this->containsAny($dietPayload, $this->allergyNeedles($profileSafety['allergies'] ?? [])),
+            'diet_type_respected' => ! $this->containsAny($dietPayload, $this->blockedDietNeedles((string) ($profileSafety['diet_type'] ?? ''))),
+            'breakfast_clean' => $this->mealGroupIsClean($mealOptions['breakfast'] ?? [], 'breakfast'),
+            'lunch_dinner_clean' => $this->mealGroupIsClean($mealOptions['lunch'] ?? [], 'lunch') && $this->mealGroupIsClean($mealOptions['dinner'] ?? [], 'dinner'),
+            'training_days_no_recovery_moves' => $this->trainingDaysContainNoRecoveryMoves($weekly),
+>>>>>>> origin/main
             'workout_split_integrity' => $this->workoutSplitIntegrityHolds($weekly),
             'progress_prediction_present' => is_array(data_get($plan, 'progress_prediction')),
         ];
@@ -75,6 +86,7 @@ class PlannerRunQualityScorer
             'total_checks' => $total,
             'quality_percentage' => $percentage,
             'checks' => $checks,
+<<<<<<< HEAD
             'safety_findings' => [
                 'allergy_leaks' => $allergyLeaks,
                 'diet_type_leaks' => $dietTypeLeaks,
@@ -82,6 +94,8 @@ class PlannerRunQualityScorer
                 'injury_conflicts' => $injuryConflicts,
                 'equipment_conflicts' => $equipmentConflicts,
             ],
+=======
+>>>>>>> origin/main
         ];
     }
 
@@ -217,10 +231,13 @@ class PlannerRunQualityScorer
 
         $resolved['diet_type'] = trim((string) ($profile['diet_type'] ?? $resolved['diet_type'] ?? ''));
         $resolved['allergies'] = $this->normalizeList($profile['allergies'] ?? $resolved['allergies'] ?? []);
+<<<<<<< HEAD
         $resolved['medical_conditions'] = $this->normalizeList($profile['medical_conditions'] ?? $resolved['medical_conditions'] ?? []);
         $resolved['injuries'] = $this->normalizeList($profile['injury_history'] ?? $profile['injuries'] ?? $resolved['injuries'] ?? []);
         $resolved['available_equipment'] = $this->normalizeList($profile['available_equipment'] ?? $resolved['available_equipment'] ?? []);
         $resolved['workout_location'] = trim((string) ($profile['workout_location'] ?? $resolved['workout_location'] ?? $user->workout_location ?? ''));
+=======
+>>>>>>> origin/main
 
         return $resolved;
     }
@@ -246,6 +263,7 @@ class PlannerRunQualityScorer
         ))));
     }
 
+<<<<<<< HEAD
     private function detectAllergyLeaks(array $diet, array $allergies): array
     {
         $findings = [];
@@ -425,6 +443,23 @@ class PlannerRunQualityScorer
 
         $needles = array_merge($needles, $this->allergyAssociatedFoodNeedles($normalized));
 
+=======
+    private function allergyNeedles(array $allergies): array
+    {
+        $needles = [];
+        foreach ($allergies as $allergy) {
+            $value = mb_strtolower(trim((string) $allergy));
+            if ($value === '') {
+                continue;
+            }
+
+            $needles[] = $value;
+            if (str_ends_with($value, 's') && mb_strlen($value) > 4) {
+                $needles[] = rtrim($value, 's');
+            }
+        }
+
+>>>>>>> origin/main
         return array_values(array_unique($needles));
     }
 
@@ -436,6 +471,7 @@ class PlannerRunQualityScorer
             str_contains($dietType, 'vegan') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'egg', 'yogurt', 'milk', 'cheese', 'honey'],
             str_contains($dietType, 'vegetarian') => ['chicken', 'beef', 'pork', 'fish', 'tuna', 'lamb', 'turkey'],
             str_contains($dietType, 'pescetarian') => ['chicken', 'beef', 'pork', 'lamb', 'turkey'],
+<<<<<<< HEAD
             str_contains($dietType, 'gluten-free'), str_contains($dietType, 'gluten free') => ['wheat', 'bread', 'pasta', 'bulgur', 'cracker'],
             str_contains($dietType, 'low fodmap'), str_contains($dietType, 'low-fodmap') => ['garlic', 'onion'],
             str_contains($dietType, 'dairy-free'), str_contains($dietType, 'dairy free') => ['milk', 'yogurt', 'cheese', 'labneh', 'cream', 'butter', 'whey'],
@@ -458,6 +494,8 @@ class PlannerRunQualityScorer
             str_contains($condition, 'fatty liver') => [
                 'beer', 'wine', 'vodka', 'whiskey', 'tequila', 'alcohol',
             ],
+=======
+>>>>>>> origin/main
             default => [],
         };
     }
@@ -473,6 +511,7 @@ class PlannerRunQualityScorer
         return false;
     }
 
+<<<<<<< HEAD
     private function containsNeedlePhrase(string $text, string $needle): bool
     {
         $text = mb_strtolower($text);
@@ -571,6 +610,8 @@ class PlannerRunQualityScorer
         };
     }
 
+=======
+>>>>>>> origin/main
     private function normalizeHorizon(int $days): int
     {
         if ($days <= 14) {
@@ -673,6 +714,7 @@ class PlannerRunQualityScorer
         ]);
     }
 
+<<<<<<< HEAD
     private function exerciseConflictsWithInjuries(string $name, array $injuries): bool
     {
         $blockedMoves = [];
@@ -719,6 +761,8 @@ class PlannerRunQualityScorer
         return true;
     }
 
+=======
+>>>>>>> origin/main
     private function allowedCategoriesForFocus(string $focus): array
     {
         $focus = mb_strtolower(trim($focus));

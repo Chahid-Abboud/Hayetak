@@ -2,11 +2,16 @@
 
 use App\Models\AiPlan;
 use App\Models\Appointment;
+<<<<<<< HEAD
 use App\Models\Conversation;
 use App\Models\Food;
 use App\Models\MealEntry;
 use App\Models\Message;
 use App\Models\Notification;
+=======
+use App\Models\Food;
+use App\Models\MealEntry;
+>>>>>>> origin/main
 use App\Models\ProfessionalClientAssignment;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
@@ -76,12 +81,16 @@ test('clients can request appointments with approved professionals', function ()
             'professional_id' => $nutritionist->id,
             'professional_role' => User::ROLE_NUTRITIONIST,
             'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+<<<<<<< HEAD
             'notes' => 'Can we focus on easy meal prep this week?',
+=======
+>>>>>>> origin/main
         ]);
 
     $response->assertCreated()
         ->assertJsonPath('appointment.professional.id', $nutritionist->id)
         ->assertJsonPath('appointment.client.id', $client->id);
+<<<<<<< HEAD
 
     $conversation = Conversation::query()
         ->whereHas('participants', fn ($query) => $query->where('users.id', $client->id))
@@ -197,6 +206,8 @@ test('trainers notify assigned clients when saving a workout program', function 
                 ->latest('id')
                 ->value('body')
         )->toContain('I shared your workout program: Upper Lower Starter.');
+=======
+>>>>>>> origin/main
 });
 
 test('conversation context endpoint returns coaching context for authorized participants', function () {

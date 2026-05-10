@@ -424,6 +424,7 @@ it('treats allergens and injury history questions as a profile summary instead o
         ->not->toContain('I removed a food suggestion');
 });
 
+<<<<<<< HEAD
 it('answers saved injury-history questions with the injury list instead of mixed medical text', function () {
     config()->set('ai.chat.provider', 'stub');
     config()->set('ai.usage_logging.enabled', false);
@@ -472,6 +473,8 @@ it('answers saved injury-history questions with the injury list instead of mixed
         ->not->toContain('Diabetes');
 });
 
+=======
+>>>>>>> origin/main
 it('answers ingredient safety checks with a direct safe-or-not response', function () {
     config()->set('ai.chat.provider', 'stub');
     config()->set('ai.usage_logging.enabled', false);

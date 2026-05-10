@@ -52,6 +52,7 @@ it('spaces seeded measurement dates roughly every 4 to 7 days', function () {
         ->and(max($diffs))->toBeLessThanOrEqual(7);
 });
 
+<<<<<<< HEAD
 it('preserves imported measurements while clearing synthetic seeded measurements during history resets', function () {
     $user = User::factory()->create([
         'email' => 'planner+p9999@hayetak.local',
@@ -96,6 +97,11 @@ it('marks demo-user predictor rows as synthetic during export', function () {
     $demoUser = User::factory()->create([
         'email' => 'demo.user@hayetak.local',
         'data_origin' => User::DATA_ORIGIN_SEEDED_DEMO,
+=======
+it('marks demo-user predictor rows as synthetic during export', function () {
+    $demoUser = User::factory()->create([
+        'email' => 'demo.user@hayetak.local',
+>>>>>>> origin/main
         'weight_kg' => 84.0,
         'age' => 34,
         'gender' => 'male',
@@ -228,6 +234,7 @@ it('marks demo-user predictor rows as synthetic during export', function () {
         ->and($realRow['is_synthetic_row'])->toBe(0);
 });
 
+<<<<<<< HEAD
 it('keeps imported non-synthetic weight labels usable even for local planner emails', function () {
     $user = User::factory()->create([
         'email' => 'planner+p9002@hayetak.local',
@@ -565,6 +572,8 @@ it('prefers real imported baseline and end measurements over closer synthetic fi
         ->and($row['is_synthetic_weight_label'])->toBe(0);
 });
 
+=======
+>>>>>>> origin/main
 it('exports predictor features from the pre-plan history window and keeps future workout progress only as a label', function () {
     $user = User::factory()->create([
         'email' => 'member.predictor@company.com',
@@ -790,8 +799,12 @@ it('exports predictor features from the pre-plan history window and keeps future
 
 it('backfills seeded planner request dates across supported horizons for predictor exports', function () {
     $user = User::factory()->create([
+<<<<<<< HEAD
         'email' => 'planner+p0058@hayetak.local',
         'data_origin' => User::DATA_ORIGIN_SEEDED_DEMO,
+=======
+        'email' => 'predictor@clients.demo',
+>>>>>>> origin/main
         'weight_kg' => 74.0,
         'age' => 30,
         'gender' => 'female',
@@ -802,6 +815,7 @@ it('backfills seeded planner request dates across supported horizons for predict
     DB::table('measurements')->insert([
         [
             'user_id' => $user->id,
+<<<<<<< HEAD
             'measured_at' => '2026-05-11',
             'weight_kg' => 74.0,
             'notes' => 'Seeded predictor baseline check-in.',
@@ -829,6 +843,11 @@ it('backfills seeded planner request dates across supported horizons for predict
             'measured_at' => '2026-06-08',
             'weight_kg' => 72.8,
             'notes' => 'Seeded predictor 28-day check-in.',
+=======
+            'measured_at' => '2026-04-21',
+            'weight_kg' => 74.0,
+            'notes' => 'Latest check-in.',
+>>>>>>> origin/main
             'created_at' => now(),
             'updated_at' => now(),
         ],
@@ -892,6 +911,7 @@ it('backfills seeded planner request dates across supported horizons for predict
             return [$horizon => $request->created_at?->format('Y-m-d H:i:s')];
         });
 
+<<<<<<< HEAD
     expect($requests->get(14))->toBe('2026-05-11 09:00:00')
         ->and($requests->get(21))->toBe('2026-05-11 09:00:00')
         ->and($requests->get(28))->toBe('2026-05-11 09:00:00');
@@ -1017,4 +1037,9 @@ it('does not backfill imported planner dataset users that already carry real pla
     expect($requests->get(14))->toBe('2026-02-01 00:05:00')
         ->and($requests->get(21))->toBe('2026-02-08 00:05:00')
         ->and($requests->get(28))->toBe('2026-02-15 00:05:00');
+=======
+    expect($requests->get(14))->toBe('2026-04-08 09:00:00')
+        ->and($requests->get(21))->toBe('2026-03-27 09:00:00')
+        ->and($requests->get(28))->toBe('2026-03-15 09:00:00');
+>>>>>>> origin/main
 });
