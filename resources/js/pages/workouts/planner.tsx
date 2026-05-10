@@ -23,7 +23,7 @@ import {
     Trash2,
     WandSparkles,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 type Exercise = {
     id: number;
@@ -331,21 +331,21 @@ export default function WorkoutPlannerPage() {
         );
     };
 
-    const applyDraftDays = (nextDays: DayDraft[]) => {
+    const applyDraftDays = useCallback((nextDays: DayDraft[]) => {
         const normalized = normalizeDayIndexes(nextDays);
         setDraftDays(normalized);
         setSelectedDay(normalized[0]?.day_index ?? 1);
         setStatus(null);
         setErrors({});
-    };
+    }, []);
 
-    const applyPlanToDraft = (plan: WorkoutPlan, label: string) => {
+    const applyPlanToDraft = useCallback((plan: WorkoutPlan, label: string) => {
         const nextDays = toDraftDays(plan);
         setDraftName(`${plan.name} Copy`);
         applyDraftDays(nextDays);
         setMode('build-own');
         setStatus(`${label} loaded into your draft editor.`);
-    };
+    }, [applyDraftDays]);
 
     const templateSources = useMemo(() => {
         const sources: Array<{
@@ -380,7 +380,7 @@ export default function WorkoutPlannerPage() {
         }
 
         return sources;
-    }, [activeAiPlan, premadePlans]);
+    }, [activeAiPlan, applyPlanToDraft, premadePlans]);
 
     const totalTemplatePages = Math.max(
         1,
@@ -593,23 +593,20 @@ export default function WorkoutPlannerPage() {
                                 title="Today and the rest of the week"
                                 description="Start with the recommended day, then scan the full structure without hunting through dense blocks."
                             >
-                                <div className="grid items-start gap-5 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
-                                    <AiFocusCard day={aiRecommendedDay} />
-
-                                    <div className="grid content-start items-start gap-4 md:grid-cols-2">
-                                        {(activeAiPlan.days ?? []).map(
-                                            (day) => (
-                                                <AiDayCard
-                                                    key={day.id}
-                                                    day={day}
-                                                    highlighted={
-                                                        aiRecommendedDay?.id ===
-                                                        day.id
-                                                    }
-                                                />
-                                            ),
-                                        )}
-                                    </div>
+                                <div className="grid items-start gap-4 xl:grid-cols-3">
+                                    <AiFocusCard
+                                        day={aiRecommendedDay}
+                                        className="xl:row-span-2"
+                                    />
+                                    {(activeAiPlan.days ?? []).map((day) => (
+                                        <AiDayCard
+                                            key={day.id}
+                                            day={day}
+                                            highlighted={
+                                                aiRecommendedDay?.id === day.id
+                                            }
+                                        />
+                                    ))}
                                 </div>
                             </ProductSection>
 
@@ -1188,7 +1185,13 @@ function BuilderCard({
     );
 }
 
-function AiFocusCard({ day }: { day: PlanDay | null }) {
+function AiFocusCard({
+    day,
+    className = '',
+}: {
+    day: PlanDay | null;
+    className?: string;
+}) {
     if (!day) {
         return (
             <ProductEmptyState
@@ -1211,7 +1214,9 @@ function AiFocusCard({ day }: { day: PlanDay | null }) {
     const hasExercises = day.exercises.length > 0;
 
     return (
-        <div className="rounded-[28px] border border-primary/25 bg-primary/10 p-6">
+        <div
+            className={`rounded-[28px] border border-primary/25 bg-primary/10 p-6 ${className}`}
+        >
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <div className="text-sm font-semibold text-muted-foreground">

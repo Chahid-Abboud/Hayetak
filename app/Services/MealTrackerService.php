@@ -151,6 +151,66 @@ class MealTrackerService
         return is_string($dietName) && trim($dietName) !== '' ? trim($dietName) : null;
     }
 
+    /**
+     * @throws \InvalidArgumentException
+     */
+    public function resolveLoggedServings(Food $food, array $payload, ?string $mealType = null): float
+    {
+        $hasServings = array_key_exists('servings', $payload) && $payload['servings'] !== null && $payload['servings'] !== '';
+        $hasGrams = array_key_exists('grams', $payload) && $payload['grams'] !== null && $payload['grams'] !== '';
+        $hasMilliliters = array_key_exists('milliliters', $payload) && $payload['milliliters'] !== null && $payload['milliliters'] !== '';
+
+        $providedCount = (int) $hasServings + (int) $hasGrams + (int) $hasMilliliters;
+        if ($providedCount !== 1) {
+            throw new \InvalidArgumentException('Provide exactly one quantity: servings, grams, or milliliters.');
+        }
+
+        if ($hasServings) {
+            return round(max(0.01, (float) $payload['servings']), 4);
+        }
+
+        if ($hasGrams) {
+            return $this->quantityToServings($food, (float) $payload['grams'], 'grams');
+        }
+
+        $normalizedMealType = strtolower(trim((string) $mealType));
+        if ($normalizedMealType !== 'drink' && ! $this->isLiquidServingUnit((string) ($food->serving_unit ?? ''))) {
+            throw new \InvalidArgumentException('Milliliters can only be used for drinks.');
+        }
+
+        return $this->quantityToServings($food, (float) $payload['milliliters'], 'milliliters');
+    }
+
+    private function quantityToServings(Food $food, float $quantity, string $mode): float
+    {
+        $quantity = max(0.01, $quantity);
+        $servingSize = max(0.0, (float) ($food->serving_size ?? 0));
+        $servingUnit = strtolower(trim((string) ($food->serving_unit ?? '')));
+
+        if ($mode === 'milliliters') {
+            if (in_array($servingUnit, ['l', 'liter', 'liters'], true)) {
+                $servingSize *= 1000;
+            } elseif (! $this->isLiquidServingUnit($servingUnit)) {
+                $servingSize = 250.0;
+            }
+
+            return round(max(0.01, $quantity / max(1.0, $servingSize)), 4);
+        }
+
+        if (in_array($servingUnit, ['kg', 'kilogram', 'kilograms'], true)) {
+            $servingSize *= 1000;
+        } elseif ($servingSize <= 0) {
+            $servingSize = 100.0;
+        }
+
+        return round(max(0.01, $quantity / max(1.0, $servingSize)), 4);
+    }
+
+    private function isLiquidServingUnit(string $unit): bool
+    {
+        return in_array($unit, ['ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters'], true);
+    }
+
     public function daySummary(int $userId, string $dateYmd): array
     {
         $date = Carbon::parse($dateYmd)->toDateString();

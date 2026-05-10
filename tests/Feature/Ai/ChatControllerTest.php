@@ -424,6 +424,54 @@ it('treats allergens and injury history questions as a profile summary instead o
         ->not->toContain('I removed a food suggestion');
 });
 
+it('answers saved injury-history questions with the injury list instead of mixed medical text', function () {
+    config()->set('ai.chat.provider', 'stub');
+    config()->set('ai.usage_logging.enabled', false);
+
+    $user = User::factory()->create([
+        'medical_history' => 'Medical: Prediabetes. Injuries: Shoulder Impingement History',
+    ]);
+
+    $user->prefs()->create([
+        'settings' => [
+            'injury_history' => ['Shoulder Impingement'],
+        ],
+    ]);
+
+    \App\Models\UserMedicalHistory::query()->create([
+        'user_id' => $user->id,
+        'kind' => 'medical_condition',
+        'value' => 'Diabetes',
+        'source' => 'profile_sync',
+        'is_active' => true,
+    ]);
+    \App\Models\UserMedicalHistory::query()->create([
+        'user_id' => $user->id,
+        'kind' => 'injury',
+        'value' => 'Medical: Prediabetes. Injuries: Shoulder Impingement History',
+        'source' => 'profile_sync',
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'What injury history do you have saved for me right now?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'restriction_summary');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('saved injury history')
+        ->toContain('Shoulder Impingement History')
+        ->toContain('Shoulder Impingement')
+        ->not->toContain('Prediabetes')
+        ->not->toContain('Diabetes');
+});
+
 it('answers ingredient safety checks with a direct safe-or-not response', function () {
     config()->set('ai.chat.provider', 'stub');
     config()->set('ai.usage_logging.enabled', false);

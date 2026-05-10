@@ -64,7 +64,7 @@ export function AdminWorkspaceHub({
     description,
     stats,
     tabs,
-    diagnosticsHref = '/admin/logs-diagnostics',
+    diagnosticsHref = '/admin/logs',
 }: {
     headTitle: string;
     title: string;

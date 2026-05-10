@@ -5,41 +5,27 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import AuthCardLayout from '@/layouts/auth/auth-card-layout';
 import { login } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    LoaderCircle,
-    Mail,
-    ShieldCheck,
-    Sparkles,
-} from 'lucide-react';
+import { ArrowLeft, LoaderCircle, Mail, Sparkles } from 'lucide-react';
 
 const fieldClass =
     'h-[52px] rounded-[20px] border-border/70 bg-background/78 px-4 text-sm shadow-[0_18px_40px_-30px_rgba(15,23,42,0.8)] placeholder:text-muted-foreground/70';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
-        <AuthLayout
+        <AuthCardLayout
             title="Reset your password"
-            description="Enter your email and we’ll send a secure reset link so you can get back to your plan safely."
+            description="Enter your email and we'll send a secure reset link so you can get back into your account."
         >
             <Head title="Forgot password" />
 
             {status ? (
-                <ProductBanner tone="success">{status}</ProductBanner>
+                <ProductBanner tone="success" className="mb-6">
+                    {status}
+                </ProductBanner>
             ) : null}
-
-            <div className="mb-6 rounded-[24px] border border-border/70 bg-background/72 p-4 shadow-[0_20px_40px_-32px_rgba(15,23,42,0.75)]">
-                <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 size-4 text-secondary" />
-                    <div className="text-sm leading-6 text-muted-foreground">
-                        Reset links expire automatically and can only be used
-                        once. If this request wasn’t you, no action is needed.
-                    </div>
-                </div>
-            </div>
 
             <Form
                 {...PasswordResetLinkController.store.form()}
@@ -94,6 +80,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     Back to sign in
                 </TextLink>
             </div>
-        </AuthLayout>
+        </AuthCardLayout>
     );
 }

@@ -193,8 +193,14 @@ class UserHistoryBackfillSeeder extends Seeder
             WorkoutLog::query()->whereIn('id', $workoutLogIds)->delete();
         }
 
+        // Preserve imported/manual check-ins so predictor labels can stay tied to
+        // real checkpoints while still clearing synthetic seeded measurements.
         Measurement::query()
             ->where('user_id', $user->id)
+            ->where(function ($query): void {
+                $query->whereRaw("LOWER(COALESCE(notes, '')) LIKE 'synthetic_%'")
+                    ->orWhere('notes', 'like', '%append-only history seeder%');
+            })
             ->delete();
 
         DB::table('water_intakes')
@@ -222,13 +228,7 @@ class UserHistoryBackfillSeeder extends Seeder
 
     private function shouldRefreshSeededHistory(User $user): bool
     {
-        $email = strtolower(trim((string) ($user->email ?? '')));
-
-        if (
-            str_contains($email, 'hayetak.local')
-            || str_contains($email, '@clients.')
-            || str_contains($email, 'example.')
-        ) {
+        if ($this->isSeededDemoUser($user)) {
             return true;
         }
 
@@ -2906,6 +2906,14 @@ class UserHistoryBackfillSeeder extends Seeder
 
     private function isSeededDemoUser(User $user): bool
     {
+        $origin = strtolower(trim((string) ($user->data_origin ?? '')));
+        if ($origin !== '') {
+            return in_array($origin, [
+                User::DATA_ORIGIN_SEEDED_DEMO,
+                User::DATA_ORIGIN_TEST,
+            ], true);
+        }
+
         $email = strtolower(trim((string) ($user->email ?? '')));
 
         return $email !== '' && (

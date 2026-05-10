@@ -3,8 +3,10 @@
 use App\Jobs\Ai\GeneratePlansForUser;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 test('registration screen can be rendered', function () {
@@ -14,7 +16,8 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
-    Bus::fake();
+    Bus::fake([GeneratePlansForUser::class]);
+    Notification::fake();
 
     $response = $this->post(route('register.store'), [
         'first_name' => 'Test',
@@ -31,6 +34,10 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('verification.notice', absolute: false));
+    Notification::assertSentTo(
+        User::query()->where('email', 'test@gmail.com')->firstOrFail(),
+        VerifyEmail::class,
+    );
     Bus::assertDispatched(
         GeneratePlansForUser::class,
         fn (GeneratePlansForUser $job) => $job->reason === 'signup_initial_plan',
@@ -38,7 +45,7 @@ test('new users can register', function () {
 });
 
 test('professional users can register with verification documents', function () {
-    Bus::fake();
+    Bus::fake([GeneratePlansForUser::class]);
     Storage::fake('private');
 
     $response = $this->post(route('register.store'), [

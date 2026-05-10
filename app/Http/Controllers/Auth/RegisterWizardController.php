@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Auth\SendEmailVerificationNotification;
 use App\Models\ProfessionalVerification;
 use App\Models\User;
 use App\Services\Ai\AutoPlanGenerationService;
@@ -77,7 +78,7 @@ class RegisterWizardController extends Controller
             'diet_failure_other' => ['nullable', 'string', 'max:120'],
 
             // Credentials
-            'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:120', Rule::unique(User::class, 'email')],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:120', Rule::unique(User::class, 'email')],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
 
             // Account type
@@ -172,7 +173,11 @@ class RegisterWizardController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        $user->sendEmailVerificationNotification();
+        if (app()->runningUnitTests()) {
+            SendEmailVerificationNotification::dispatchSync($user->id);
+        } else {
+            SendEmailVerificationNotification::dispatchAfterResponse($user->id);
+        }
 
         $this->autoPlanGeneration->startIfNeeded($user, 'signup_initial_plan');
 

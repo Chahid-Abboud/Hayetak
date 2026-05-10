@@ -26,7 +26,7 @@ class AiImportPlannerProfileUsers extends Command
         );
 
         $this->table(
-            ['Profiles', 'Created users', 'Updated users', 'Prefs', 'Dietary rows', 'Medical rows', 'Measurements'],
+            ['Profiles', 'Created users', 'Updated users', 'Prefs', 'Dietary rows', 'Medical rows', 'Measurements', 'AI requests'],
             [[
                 $summary['profiles'],
                 $summary['created_users'],
@@ -35,6 +35,7 @@ class AiImportPlannerProfileUsers extends Command
                 $summary['dietary_rows_written'],
                 $summary['medical_rows_written'],
                 $summary['measurement_rows_written'],
+                $summary['ai_request_rows_written'],
             ]]
         );
 

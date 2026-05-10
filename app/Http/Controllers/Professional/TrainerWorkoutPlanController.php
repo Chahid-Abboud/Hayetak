@@ -6,13 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainerWorkoutPlanRequest;
 use App\Models\TrainerWorkoutPlan;
 use App\Models\User;
+use App\Services\AppNotificationService;
 use App\Services\ProfessionalAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TrainerWorkoutPlanController extends Controller
 {
-    public function __construct(private readonly ProfessionalAccessService $access) {}
+    public function __construct(
+        private readonly ProfessionalAccessService $access,
+        private readonly AppNotificationService $notifications,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -35,6 +39,7 @@ class TrainerWorkoutPlanController extends Controller
     {
         $user = $request->user();
         $clientId = (int) $request->validated('client_id');
+        $client = User::query()->findOrFail($clientId);
 
         if (! $user->isAdmin()) {
             abort_unless($user->hasRole(User::ROLE_TRAINER), 403);
@@ -46,6 +51,13 @@ class TrainerWorkoutPlanController extends Controller
             'trainer_id' => $user->id,
         ]);
 
+        $this->notifications->workoutPlanShared(
+            $user,
+            $client,
+            (string) $plan->title,
+            $plan->notes,
+        );
+
         return response()->json(['ok' => true, 'workout_plan' => $plan], 201);
     }
 
@@ -53,6 +65,17 @@ class TrainerWorkoutPlanController extends Controller
     {
         $this->authorize('update', $trainerWorkoutPlan);
         $trainerWorkoutPlan->update($request->validated());
+        $trainerWorkoutPlan->loadMissing(['client', 'trainer']);
+
+        if ($trainerWorkoutPlan->client && $trainerWorkoutPlan->trainer) {
+            $this->notifications->workoutPlanShared(
+                $trainerWorkoutPlan->trainer,
+                $trainerWorkoutPlan->client,
+                (string) $trainerWorkoutPlan->title,
+                $trainerWorkoutPlan->notes,
+                true,
+            );
+        }
 
         return response()->json(['ok' => true, 'workout_plan' => $trainerWorkoutPlan]);
     }

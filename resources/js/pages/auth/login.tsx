@@ -1,9 +1,8 @@
 import AuthenticatedSessionController from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppWordmark from '@/components/app-wordmark';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { register } from '@/routes';
-import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -73,13 +72,11 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-xl items-center justify-center">
                     <div className="w-full rounded-[32px] border border-border/70 bg-card/92 p-6 shadow-[0_35px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur sm:p-8">
                         <div className="mb-8">
-                            <div className="mb-6 flex items-center gap-2.5">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 shadow-[0_18px_34px_-24px_rgba(23,38,60,0.9)]">
-                                    <AppLogoIcon className="size-4.5" />
-                                </div>
-                                <span className="font-semibold tracking-tight text-foreground">
-                                    Hayetak
-                                </span>
+                            <div className="mb-6">
+                                <AppWordmark
+                                    iconClassName="size-8"
+                                    textClassName="text-[1.38rem] text-foreground"
+                                />
                             </div>
                             <h2
                                 className="mb-1.5 text-2xl tracking-tight text-foreground"
@@ -165,7 +162,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                                         {canResetPassword ? (
                                             <TextLink
-                                                href={request()}
+                                                href="/forgot-password"
                                                 className="text-sm font-medium text-primary no-underline hover:text-secondary"
                                             >
                                                 Forgot password?

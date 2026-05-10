@@ -105,7 +105,8 @@ class PlannerPageController extends Controller
             'isAdmin' => $isAdmin,
             'latestAuditRun' => $latestAuditRun ? $this->presentAuditRun($latestAuditRun) : null,
             'predictionTrend' => $this->predictionTimeline->recentPredictionTrend((int) $user->id, 10),
-            'weightHistory' => $this->predictionTimeline->weightHistory((int) $user->id),
+            'comparisonWeights' => $this->predictionTimeline->recentTrustedWeights((int) $user->id, 2),
+            'predictionSummary' => $this->predictionTimeline->predictionSummary((int) $user->id),
         ]);
     }
 

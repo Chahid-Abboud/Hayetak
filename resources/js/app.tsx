@@ -1,5 +1,6 @@
 import '../css/app.css';
 
+import { AppNotificationsProvider } from '@/components/app-notifications';
 import { createInertiaApp } from '@inertiajs/react';
 import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
@@ -40,7 +41,9 @@ createInertiaApp({
                                     ?.csrf_token
                             }
                         />
-                        <Component key={key} {...pageProps} />
+                        <AppNotificationsProvider>
+                            <Component key={key} {...pageProps} />
+                        </AppNotificationsProvider>
                     </>
                 )}
             </App>,

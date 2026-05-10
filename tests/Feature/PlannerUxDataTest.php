@@ -5,6 +5,7 @@ use App\Models\AiRequest;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\MealEntry;
+use App\Models\Measurement;
 use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
 use App\Models\NutritionPlanItem;
@@ -13,6 +14,8 @@ use App\Models\User;
 use App\Models\WorkoutLog;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanDay;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -114,6 +117,9 @@ it('hides technical planner metadata on non-admin ai planner and dashboard paylo
             ->missing('defaults.model')
             ->missing('defaults.prompt_version')
             ->missing('defaults.schema_version')
+            ->missing('weightHistory')
+            ->has('predictionSummary')
+            ->has('comparisonWeights')
         );
 
     $this->actingAs($user)
@@ -347,5 +353,314 @@ it('logs planned meal substitutions and reports their status through the meal tr
             ->where('plannedDay.meals.0.items.0.status', 'logged_substitute')
             ->where('entries.0.plan_tracking.status', 'logged_substitute')
             ->etc()
+        );
+});
+
+it('accepts grams for foods and milliliters for drinks when logging meals', function () {
+    $user = User::factory()->create();
+
+    $solidFood = Food::query()->create([
+        'name' => 'Grilled Chicken',
+        'serving_size' => 100,
+        'serving_unit' => 'g',
+        'calories' => 165,
+        'protein_g' => 31,
+        'carbs_g' => 0,
+        'fat_g' => 4,
+    ]);
+
+    $drink = Food::query()->create([
+        'name' => 'Orange Juice',
+        'serving_size' => 250,
+        'serving_unit' => 'ml',
+        'calories' => 110,
+        'protein_g' => 2,
+        'carbs_g' => 26,
+        'fat_g' => 0,
+    ]);
+
+    $this->actingAs($user)
+        ->postJson('/meal-entries', [
+            'food_id' => $solidFood->id,
+            'meal_type' => 'lunch',
+            'grams' => 150,
+            'eaten_at' => now()->toDateString(),
+        ])
+        ->assertOk();
+
+    $this->actingAs($user)
+        ->postJson('/meal-entries', [
+            'food_id' => $drink->id,
+            'meal_type' => 'drink',
+            'milliliters' => 500,
+            'eaten_at' => now()->toDateString(),
+        ])
+        ->assertOk();
+
+    $entries = MealEntry::query()
+        ->where('user_id', $user->id)
+        ->orderBy('id')
+        ->get();
+
+    expect($entries)->toHaveCount(2)
+        ->and((float) $entries[0]->servings)->toBe(1.5)
+        ->and((float) $entries[1]->servings)->toBe(2.0);
+});
+
+it('filters plan substitution search results to foods that match the user diet', function () {
+    if (! Schema::hasColumn('foods', 'meal_types')) {
+        Schema::table('foods', function (Blueprint $table) {
+            $table->json('meal_types')->nullable();
+        });
+    }
+
+    $user = User::factory()->create([
+        'diet_name' => 'Balanced',
+        'email_verified_at' => now(),
+    ]);
+
+    $plannedFood = Food::query()->create([
+        'name' => 'Oatmeal Bowl',
+        'serving_size' => 1,
+        'serving_unit' => 'bowl',
+        'calories' => 320,
+        'protein_g' => 12,
+        'carbs_g' => 48,
+        'fat_g' => 8,
+        'allergens' => [],
+        'diets_allowed' => ['Balanced'],
+        'meal_types' => ['breakfast'],
+    ]);
+
+    $allowedSubstitute = Food::query()->create([
+        'name' => 'Yogurt Parfait',
+        'serving_size' => 1,
+        'serving_unit' => 'cup',
+        'calories' => 300,
+        'protein_g' => 14,
+        'carbs_g' => 42,
+        'fat_g' => 7,
+        'allergens' => [],
+        'diets_allowed' => ['balanced'],
+        'meal_types' => ['breakfast'],
+    ]);
+
+    $blockedSubstitute = Food::query()->create([
+        'name' => 'Keto Egg Plate',
+        'serving_size' => 1,
+        'serving_unit' => 'plate',
+        'calories' => 310,
+        'protein_g' => 18,
+        'carbs_g' => 6,
+        'fat_g' => 20,
+        'allergens' => [],
+        'diets_allowed' => ['Keto'],
+        'meal_types' => ['breakfast'],
+    ]);
+
+    $request = AiRequest::query()->create([
+        'user_id' => $user->id,
+        'type' => 'plan_generator',
+        'status' => 'completed',
+        'input_context_json' => ['source' => 'test'],
+        'provider' => 'ollama',
+        'model' => 'llama3.1:8b',
+        'prompt_version' => 'hayetak_planner_v2',
+        'schema_version' => 'hayetak_plan_v2',
+    ]);
+
+    $plan = NutritionPlan::query()->create([
+        'user_id' => $user->id,
+        'ai_request_id' => $request->id,
+        'name' => 'AI Diet Plan',
+        'goal' => 'Consistency',
+        'start_date' => now()->toDateString(),
+        'duration_days' => 7,
+        'is_active' => true,
+        'targets_json' => ['calories_kcal' => 1800],
+        'meta' => [],
+    ]);
+
+    $day = NutritionPlanDay::query()->create([
+        'nutrition_plan_id' => $plan->id,
+        'day_index' => 1,
+        'date' => now()->toDateString(),
+        'notes' => 'Breakfast focus',
+    ]);
+
+    $meal = NutritionPlanMeal::query()->create([
+        'nutrition_plan_day_id' => $day->id,
+        'meal_type' => 'breakfast',
+        'order' => 1,
+        'notes' => 'Protein breakfast bowl',
+    ]);
+
+    $item = NutritionPlanItem::query()->create([
+        'nutrition_plan_meal_id' => $meal->id,
+        'food_id' => $plannedFood->id,
+        'servings' => 1,
+        'grams' => null,
+        'sort_order' => 1,
+        'notes' => 'Keep this balanced',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->getJson("/api/foods/search?context=plan_substitution&nutrition_plan_item_id={$item->id}");
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $allowedSubstitute->id);
+
+    expect(collect($response->json('data'))->pluck('id')->all())
+        ->not->toContain($plannedFood->id)
+        ->not->toContain($blockedSubstitute->id);
+});
+
+it('shows one predictor point per completed planner run instead of expanding a single run into repeated future windows', function () {
+    $user = User::factory()->create();
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-01',
+        'weight_kg' => 80.0,
+        'notes' => 'Baseline check-in.',
+    ]);
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-15',
+        'weight_kg' => 79.4,
+        'notes' => '14-day check-in.',
+    ]);
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-28',
+        'weight_kg' => 79.0,
+        'notes' => '21-day check-in.',
+    ]);
+
+    $firstRequest = AiRequest::query()->create([
+        'user_id' => $user->id,
+        'type' => 'plan_generator',
+        'status' => 'completed',
+        'input_context_json' => ['planning_constraints' => ['plan_horizon_days' => 14]],
+        'output_json' => [
+            'progress_prediction' => [
+                'horizon_days' => 14,
+                'baseline_weight_kg' => 80.0,
+                'expected_weight_change_kg' => -0.6,
+                'projected_body_weight_kg' => 79.4,
+                'feedback_adjustment' => [
+                    'base_weekly_weight_change_kg' => -0.25,
+                    'adjusted_weekly_weight_change_kg' => -0.3,
+                    'feedback_sample_count' => 1,
+                ],
+            ],
+        ],
+    ]);
+    $firstRequest->forceFill([
+        'created_at' => '2026-05-01 09:00:00',
+        'updated_at' => '2026-05-01 09:00:00',
+    ])->save();
+
+    $secondRequest = AiRequest::query()->create([
+        'user_id' => $user->id,
+        'type' => 'plan_generator',
+        'status' => 'completed',
+        'input_context_json' => ['planning_constraints' => ['plan_horizon_days' => 21]],
+        'output_json' => [
+            'progress_prediction' => [
+                'horizon_days' => 21,
+                'baseline_weight_kg' => 79.4,
+                'expected_weight_change_kg' => -0.4,
+                'projected_body_weight_kg' => 79.0,
+                'feedback_adjustment' => [
+                    'base_weekly_weight_change_kg' => -0.18,
+                    'adjusted_weekly_weight_change_kg' => -0.133,
+                    'feedback_sample_count' => 2,
+                ],
+            ],
+        ],
+    ]);
+    $secondRequest->forceFill([
+        'created_at' => '2026-05-08 09:00:00',
+        'updated_at' => '2026-05-08 09:00:00',
+    ])->save();
+
+    $this->actingAs($user)
+        ->get('/ai/planner')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('ai/planner')
+            ->has('predictionTrend', 2)
+            ->where('predictionTrend.0.plan_date', '2026-05-01')
+            ->where('predictionTrend.0.feedback_period_end_date', '2026-05-14')
+            ->where('predictionTrend.0.actual_weight_date', '2026-05-15')
+            ->where('predictionTrend.1.plan_date', '2026-05-08')
+            ->where('predictionTrend.1.feedback_period_end_date', '2026-05-28')
+            ->where('predictionTrend.1.actual_weight_date', '2026-05-28')
+        );
+});
+
+it('excludes synthetic weigh-ins from planner predictor comparisons and summary counts', function () {
+    $user = User::factory()->create();
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-01',
+        'weight_kg' => 80.0,
+        'notes' => 'Real baseline check-in.',
+    ]);
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-15',
+        'weight_kg' => 79.2,
+        'notes' => 'synthetic_predictor_label',
+    ]);
+
+    Measurement::query()->create([
+        'user_id' => $user->id,
+        'measured_at' => '2026-05-30',
+        'weight_kg' => 79.0,
+        'notes' => 'Real follow-up check-in.',
+    ]);
+
+    $request = AiRequest::query()->create([
+        'user_id' => $user->id,
+        'type' => 'plan_generator',
+        'status' => 'completed',
+        'input_context_json' => ['planning_constraints' => ['plan_horizon_days' => 14]],
+        'output_json' => [
+            'progress_prediction' => [
+                'horizon_days' => 14,
+                'baseline_weight_kg' => 80.0,
+                'expected_weight_change_kg' => -0.6,
+                'projected_body_weight_kg' => 79.4,
+            ],
+        ],
+    ]);
+    $request->forceFill([
+        'created_at' => '2026-05-01 09:00:00',
+        'updated_at' => '2026-05-01 09:00:00',
+    ])->save();
+
+    $this->actingAs($user)
+        ->get('/ai/planner')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('ai/planner')
+            ->missing('weightHistory')
+            ->has('comparisonWeights', 2)
+            ->where('comparisonWeights.0.date', '2026-05-01')
+            ->where('comparisonWeights.1.date', '2026-05-30')
+            ->where('predictionTrend.0.actual_weight_kg', null)
+            ->where('predictionTrend.0.actual_weight_date', null)
+            ->where('predictionSummary.prediction_only', true)
+            ->where('predictionSummary.real_weight_history_count', 2)
+            ->where('predictionSummary.synthetic_weight_history_count', 1)
+            ->where('predictionSummary.actual_comparison_available', true)
         );
 });

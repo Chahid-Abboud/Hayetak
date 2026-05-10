@@ -1,4 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppWordmark from '@/components/app-wordmark';
 import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
@@ -21,7 +21,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 const FOCUS_RING =
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-const AUTO_PREVIEW_INTERVAL_MS = 3200;
+const AUTO_PREVIEW_INTERVAL_MS = 7200;
 
 function Cta({
     href,
@@ -340,7 +340,7 @@ export default function Landing() {
                 <PreviewShell
                     activeLabel="Nearby/Map"
                     title="Find support around the user without leaving the flow."
-                    description="Gyms, trainers, and nutritionists stay visible with distance, fit, and messaging context."
+                    description="Gyms, personal trainers, and dietitians stay visible with distance, fit, and messaging context."
                 >
                     <div className="grid h-full gap-4 lg:grid-cols-[1.15fr_0.85fr]">
                         <div className="relative min-h-[18rem] overflow-hidden rounded-[26px] border border-border/70 bg-background/74">
@@ -359,7 +359,7 @@ export default function Landing() {
                                 },
                                 {
                                     position: 'top-[67%] left-[36%]',
-                                    label: 'Trainer',
+                                    label: 'Personal Trainer',
                                     icon: Activity,
                                 },
                             ].map(({ position, label, icon: Icon }) => (
@@ -392,7 +392,7 @@ export default function Landing() {
                                 [
                                     'Byblos Fit Hub',
                                     '2.4 km',
-                                    'Gym with strength equipment and trainer availability.',
+                                    'Gym with strength equipment and personal trainer availability.',
                                 ],
                                 [
                                     'Maya Nasser',
@@ -402,7 +402,7 @@ export default function Landing() {
                                 [
                                     'Cedar Performance',
                                     '3.8 km',
-                                    'Trainer comfortable with shoulder-aware programming.',
+                                    'Personal trainer comfortable with shoulder-aware programming.',
                                 ],
                             ].map(([name, distance, note]) => (
                                 <PreviewPanel
@@ -790,18 +790,13 @@ export default function Landing() {
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                         <a
                             href="#hero"
-                            className="inline-flex items-center gap-3 no-underline"
+                            className="inline-flex items-center no-underline"
                         >
-                            <AppLogoIcon className="size-8" />
                             <div>
-                                <p
-                                    className="text-xl tracking-normal text-foreground"
-                                    style={{
-                                        fontFamily: 'var(--font-display)',
-                                    }}
-                                >
-                                    Hayetak
-                                </p>
+                                <AppWordmark
+                                    iconClassName="size-8"
+                                    textClassName="text-[1.52rem] text-foreground"
+                                />
                                 <p className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                                     Planner, tracker, coach
                                 </p>

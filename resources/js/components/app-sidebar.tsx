@@ -19,6 +19,7 @@ import {
     Dumbbell,
     LayoutGrid,
     MessageSquare,
+    ShieldAlert,
     Settings2,
     ShieldCheck,
     Sparkles,
@@ -49,9 +50,14 @@ export function AppSidebar() {
                       icon: ShieldCheck,
                   },
                   {
-                      title: 'Diagnostics',
-                      href: '/admin/diagnostics',
+                      title: 'Audit Logs',
+                      href: '/admin/logs',
                       icon: Settings2,
+                  },
+                  {
+                      title: 'Moderation',
+                      href: '/admin/message-moderations',
+                      icon: ShieldAlert,
                   },
               ]
             : [
@@ -66,7 +72,7 @@ export function AppSidebar() {
                       icon: Sparkles,
                   },
                   {
-                      title: 'Planner',
+                      title: 'AI Planner',
                       href: '/ai/planner',
                       icon: Sparkles,
                   },
@@ -94,6 +100,11 @@ export function AppSidebar() {
                       title: 'Audit Logs',
                       href: '/admin/logs',
                       icon: Settings2,
+                  },
+                  {
+                      title: 'Moderation',
+                      href: '/admin/message-moderations',
+                      icon: ShieldAlert,
                   },
               ]
             : [

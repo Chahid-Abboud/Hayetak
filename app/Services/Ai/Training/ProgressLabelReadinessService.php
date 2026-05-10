@@ -49,6 +49,16 @@ class ProgressLabelReadinessService
         return $generationDate->addDays(max(1, $horizonDays) - 1);
     }
 
+    public function labelToleranceBeforeDays(?int $override = null): int
+    {
+        return max(0, $override ?? (int) config('ai.progress_predictor.labeling.weight_match_days_before', 7));
+    }
+
+    public function labelToleranceAfterDays(?int $override = null): int
+    {
+        return max(0, $override ?? (int) config('ai.progress_predictor.labeling.weight_match_days_after', 10));
+    }
+
     /**
      * @return array{weight: float, date: string, source: string}|null
      */
@@ -59,8 +69,8 @@ class ProgressLabelReadinessService
             return null;
         }
 
-        $bestDate = null;
-        $bestWeight = null;
+        $bestRealRow = null;
+        $bestSyntheticRow = null;
 
         foreach ($rows as $row) {
             $rowDate = CarbonImmutable::parse((string) $row->measured_at)->startOfDay();
@@ -68,11 +78,30 @@ class ProgressLabelReadinessService
                 break;
             }
 
-            $bestDate = $rowDate->toDateString();
-            $bestWeight = (float) $row->weight_kg;
+            if ($this->measurementRowIsSynthetic($row)) {
+                if (
+                    $bestSyntheticRow === null
+                    || $rowDate->greaterThan(CarbonImmutable::parse((string) $bestSyntheticRow->measured_at)->startOfDay())
+                ) {
+                    $bestSyntheticRow = $row;
+                }
+
+                continue;
+            }
+
+            if (
+                $bestRealRow === null
+                || $rowDate->greaterThan(CarbonImmutable::parse((string) $bestRealRow->measured_at)->startOfDay())
+            ) {
+                $bestRealRow = $row;
+            }
         }
 
-        if ($bestDate !== null && $bestWeight !== null) {
+        $bestRow = $bestRealRow ?? $bestSyntheticRow;
+        if ($bestRow !== null) {
+            $bestDate = CarbonImmutable::parse((string) $bestRow->measured_at)->startOfDay()->toDateString();
+            $bestWeight = (float) $bestRow->weight_kg;
+
             return [
                 'weight' => $bestWeight,
                 'date' => $bestDate,
@@ -85,6 +114,10 @@ class ProgressLabelReadinessService
             $rowDate = CarbonImmutable::parse((string) $row->measured_at)->startOfDay();
             $deltaDays = (int) floor(($rowDate->getTimestamp() - $generationDate->getTimestamp()) / 86400);
             if ($deltaDays >= 0 && $deltaDays <= 3) {
+                if ($this->measurementRowIsSynthetic($row)) {
+                    continue;
+                }
+
                 return [
                     'weight' => (float) $row->weight_kg,
                     'date' => $rowDate->toDateString(),
@@ -141,13 +174,20 @@ class ProgressLabelReadinessService
     /**
      * @return array{weight: float, date: string, source: string}|null
      */
-    public function endMeasurement(int $userId, CarbonImmutable $targetDate): ?array
+    public function endMeasurement(
+        int $userId,
+        CarbonImmutable $targetDate,
+        ?int $toleranceBeforeDays = null,
+        ?int $toleranceAfterDays = null
+    ): ?array
     {
         $rows = $this->measurementsForUser($userId);
         if ($rows->isEmpty()) {
             return null;
         }
 
+        $toleranceBeforeDays = $this->labelToleranceBeforeDays($toleranceBeforeDays);
+        $toleranceAfterDays = $this->labelToleranceAfterDays($toleranceAfterDays);
         $targetTs = $targetDate->startOfDay()->getTimestamp();
         $best = null;
         $bestDistance = null;
@@ -155,17 +195,21 @@ class ProgressLabelReadinessService
         foreach ($rows as $row) {
             $rowDate = CarbonImmutable::parse((string) $row->measured_at)->startOfDay();
             $deltaDays = (int) floor(($rowDate->getTimestamp() - $targetTs) / 86400);
-            if ($deltaDays < -7 || $deltaDays > 10) {
+            if ($deltaDays < (-1 * $toleranceBeforeDays) || $deltaDays > $toleranceAfterDays) {
                 continue;
             }
 
             $distance = abs($deltaDays);
-            if ($bestDistance === null || $distance < $bestDistance) {
+            if (
+                $best === null
+                || $this->measurementCandidateScore($row, $distance) < $this->measurementCandidateScore((object) $best, (int) $bestDistance)
+            ) {
                 $bestDistance = $distance;
                 $best = [
                     'weight' => (float) $row->weight_kg,
                     'date' => $rowDate->toDateString(),
                     'source' => 'measurement',
+                    'notes' => $row->notes ?? null,
                 ];
             }
         }
@@ -183,7 +227,7 @@ class ProgressLabelReadinessService
                 ->where('user_id', $userId)
                 ->whereNotNull('weight_kg')
                 ->orderBy('measured_at')
-                ->get(['measured_at', 'weight_kg']);
+                ->get(['measured_at', 'weight_kg', 'notes']);
         }
 
         return $this->measurementCache[$userId];
@@ -197,5 +241,24 @@ class ProgressLabelReadinessService
         }
 
         return $this->userWeightCache[$userId];
+    }
+
+    private function isPreferredMeasurementCandidate(object $candidate, object $current): bool
+    {
+        return ! $this->measurementRowIsSynthetic($candidate) && $this->measurementRowIsSynthetic($current);
+    }
+
+    private function measurementCandidateScore(object $row, int $distance): int
+    {
+        $syntheticPenalty = $this->measurementRowIsSynthetic($row) ? 1000 : 0;
+
+        return $syntheticPenalty + $distance;
+    }
+
+    private function measurementRowIsSynthetic(object $row): bool
+    {
+        $notes = strtolower(trim((string) ($row->notes ?? '')));
+
+        return $notes !== '' && str_contains($notes, 'synthetic_');
     }
 }

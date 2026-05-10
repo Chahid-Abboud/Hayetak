@@ -50,6 +50,13 @@ type PendingBubble = {
     content: string;
 };
 
+type RetryState = {
+    conversationId: number | null;
+    message: string;
+};
+
+const SEND_TIMEOUT_MS = 45_000;
+
 function getCsrfToken() {
     return (
         (
@@ -231,8 +238,10 @@ export default function AiChatPage() {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pendingBubbles, setPendingBubbles] = useState<PendingBubble[]>([]);
+    const [retryState, setRetryState] = useState<RetryState | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const messagesRequestRef = useRef<AbortController | null>(null);
+    const sendRequestRef = useRef<AbortController | null>(null);
 
     async function loadConversations(): Promise<number | null> {
         setLoadingConversations(true);
@@ -355,11 +364,13 @@ export default function AiChatPage() {
     useEffect(() => {
         return () => {
             messagesRequestRef.current?.abort();
+            sendRequestRef.current?.abort();
         };
     }, []);
 
     useEffect(() => {
         setPendingBubbles([]);
+        setRetryState(null);
     }, [activeConversationId]);
 
     const activeConversation = useMemo(
@@ -370,13 +381,18 @@ export default function AiChatPage() {
         [activeConversationId, conversations],
     );
 
-    async function send(seedText?: string) {
+    async function send(seedText?: string, forcedConversationId?: number | null) {
         const message = (seedText ?? text).trim();
         if (!message || sending) return;
 
         const pendingUserId = `pending-user-${Date.now()}`;
         const pendingAssistantId = `pending-assistant-${Date.now() + 1}`;
+        const conversationIdAtSend = forcedConversationId ?? activeConversationId;
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
 
+        sendRequestRef.current?.abort();
+        sendRequestRef.current = controller;
         setPendingBubbles([
             { id: pendingUserId, role: 'user', content: message },
             { id: pendingAssistantId, role: 'assistant', content: '' },
@@ -384,6 +400,7 @@ export default function AiChatPage() {
         setText('');
         setSending(true);
         setError(null);
+        setRetryState(null);
         try {
             const response = await fetch('/api/ai/chat', {
                 method: 'POST',
@@ -395,10 +412,11 @@ export default function AiChatPage() {
                 },
                 body: JSON.stringify({
                     message,
-                    conversation_id: activeConversationId,
+                    conversation_id: conversationIdAtSend,
                     screen_context: 'coach',
                     include_last_7_days: true,
                 }),
+                signal: controller.signal,
             });
 
             if (!response.ok) {
@@ -445,22 +463,34 @@ export default function AiChatPage() {
         } catch (err) {
             setPendingBubbles([]);
             setText(message);
+            setRetryState({
+                conversationId: conversationIdAtSend,
+                message,
+            });
             setError(
-                err instanceof Error
-                    ? err.message
-                    : 'The AI coach could not answer right now.',
+                isAbortError(err)
+                    ? 'The AI coach took too long to answer. Retry the message or start a new chat.'
+                    : err instanceof Error
+                      ? err.message
+                      : 'The AI coach could not answer right now.',
             );
         } finally {
+            window.clearTimeout(timeoutId);
+            if (sendRequestRef.current === controller) {
+                sendRequestRef.current = null;
+            }
             setSending(false);
         }
     }
 
     function startNewChat() {
+        sendRequestRef.current?.abort();
         setActiveConversationId(null);
         setMessages([]);
         setPendingBubbles([]);
         setText('');
         setError(null);
+        setRetryState(null);
     }
 
     const promptSuggestions = isAdmin
@@ -539,7 +569,27 @@ export default function AiChatPage() {
 
                 {error ? (
                     <ProductBanner tone="danger" role="alert">
-                        {error}
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span>{error}</span>
+                            {retryState ? (
+                                <ProductButton
+                                    type="button"
+                                    emphasis="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setActiveConversationId(
+                                            retryState.conversationId,
+                                        );
+                                        void send(
+                                            retryState.message,
+                                            retryState.conversationId,
+                                        );
+                                    }}
+                                >
+                                    Retry last message
+                                </ProductButton>
+                            ) : null}
+                        </div>
                     </ProductBanner>
                 ) : null}
 

@@ -1,4 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppWordmark from '@/components/app-wordmark';
 import CommandPalette, {
     type CommandPaletteItem,
 } from '@/components/command-palette';
@@ -35,10 +35,11 @@ export default function NavHeader() {
         role === 'admin'
             ? [
                   { href: '/admin', label: 'Overview' },
-                  { href: '/admin/people', label: 'People' },
+                  { href: '/admin/users', label: 'Users' },
                   { href: '/admin/verifications', label: 'Verifications' },
-                  { href: '/admin/health-data', label: 'Health Data' },
-                  { href: '/admin/ai-review', label: 'AI Review' },
+                  { href: '/admin/professionals', label: 'Professionals' },
+                  { href: '/admin/notifications', label: 'Notifications' },
+                  { href: '/admin/message-moderations', label: 'Moderation' },
               ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
@@ -91,30 +92,41 @@ export default function NavHeader() {
                     items: [{ href: '/admin', label: 'Overview' }],
                 },
                 {
-                    label: 'Workspaces',
+                    label: 'Accounts',
                     items: [
-                        { href: '/admin/people', label: 'People' },
+                        { href: '/admin/users', label: 'Users' },
                         {
                             href: '/admin/verifications',
                             label: 'Verifications',
                         },
-                        { href: '/admin/health-data', label: 'Health Data' },
-                        { href: '/admin/places', label: 'Places' },
                         {
-                            href: '/admin/communications',
-                            label: 'Communications',
+                            href: '/admin/professionals',
+                            label: 'Professionals',
                         },
-                        { href: '/admin/ai-review', label: 'AI Review' },
+                    ],
+                },
+                {
+                    label: 'Content',
+                    items: [
+                        { href: '/admin/meals', label: 'Meals' },
+                        { href: '/admin/meal-logs', label: 'Meal Logs' },
+                        { href: '/admin/exercises', label: 'Exercises' },
+                        { href: '/admin/places', label: 'Places' },
+                        { href: '/admin/progress', label: 'Progress' },
                     ],
                 },
                 {
                     label: 'System',
                     items: [
                         {
-                            href: '/admin/logs-diagnostics',
-                            label: 'Logs & Diagnostics',
+                            href: '/admin/notifications',
+                            label: 'Notifications',
                         },
-                        { href: '/admin/settings', label: 'Settings' },
+                        {
+                            href: '/admin/message-moderations',
+                            label: 'Moderation',
+                        },
+                        { href: '/admin/logs', label: 'Audit Logs' },
                     ],
                 },
             ];
@@ -139,13 +151,10 @@ export default function NavHeader() {
                 return pathname === '/admin';
             }
 
-            if (href === '/admin/people') {
+            if (href === '/admin/users') {
                 return (
-                    pathname.startsWith('/admin/people') ||
                     pathname.startsWith('/admin/users') ||
-                    pathname.startsWith('/admin/professionals') ||
-                    pathname.startsWith('/admin/safety-profiles') ||
-                    pathname.startsWith('/admin/assignments')
+                    pathname.startsWith('/admin/users/')
                 );
             }
 
@@ -156,47 +165,23 @@ export default function NavHeader() {
                 );
             }
 
-            if (href === '/admin/health-data') {
+            if (href === '/admin/professionals') {
                 return (
-                    pathname.startsWith('/admin/health-data') ||
-                    pathname.startsWith('/admin/meals') ||
-                    pathname.startsWith('/admin/meal-logs') ||
-                    pathname.startsWith('/admin/exercises') ||
-                    pathname.startsWith('/admin/progress')
+                    pathname.startsWith('/admin/professionals') ||
+                    pathname.startsWith('/admin/professionals/')
                 );
             }
 
-            if (href === '/admin/communications') {
-                return (
-                    pathname.startsWith('/admin/communications') ||
-                    pathname.startsWith('/admin/notifications')
-                );
+            if (href === '/admin/notifications') {
+                return pathname.startsWith('/admin/notifications');
             }
 
-            if (href === '/admin/ai-review') {
-                return (
-                    pathname.startsWith('/admin/ai-review') ||
-                    pathname.startsWith('/admin/ai/') ||
-                    pathname.startsWith('/admin/safety-rules') ||
-                    pathname.startsWith('/admin/ai-rollouts')
-                );
+            if (href === '/admin/logs') {
+                return pathname.startsWith('/admin/logs');
             }
 
-            if (href === '/admin/logs-diagnostics') {
-                return (
-                    pathname.startsWith('/admin/logs-diagnostics') ||
-                    pathname.startsWith('/admin/logs') ||
-                    pathname.startsWith('/admin/diagnostics')
-                );
-            }
-
-            if (href === '/admin/settings') {
-                return (
-                    pathname.startsWith('/admin/settings') ||
-                    pathname.startsWith('/admin/roles-permissions') ||
-                    pathname.startsWith('/admin/settings-feature-flags') ||
-                    pathname.startsWith('/admin/privacy-compliance')
-                );
+            if (href === '/admin/message-moderations') {
+                return pathname.startsWith('/admin/message-moderations');
             }
         }
 
@@ -327,19 +312,14 @@ export default function NavHeader() {
                             <div className="flex items-center gap-3">
                                 <Link
                                     href={homeHref}
-                                    className="flex min-w-0 items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/10"
+                                    className="flex min-w-0 items-center rounded-full border border-white/10 bg-white/6 px-3 py-2 no-underline transition hover:bg-white/10"
                                 >
-                                    <AppLogoIcon className="h-8 w-8" />
                                     <span className="min-w-0">
-                                        <span
-                                            className="block truncate text-xl leading-none tracking-tight"
-                                            style={{
-                                                fontFamily:
-                                                    'var(--font-display)',
-                                            }}
-                                        >
-                                            Hayetak
-                                        </span>
+                                        <AppWordmark
+                                            className="max-w-full"
+                                            iconClassName="size-[2.2rem]"
+                                            textClassName="block truncate text-[1.52rem] text-white"
+                                        />
                                         <span className="mt-1 block text-[10px] font-semibold tracking-[0.24em] text-[color:var(--sidebar-foreground)]/60 uppercase">
                                             Daily health system
                                         </span>

@@ -25,25 +25,14 @@ class AutoPlanGenerationService
             $days = 28;
         }
 
-        if (app()->runningUnitTests()) {
-            GeneratePlansForUser::dispatch(
-                userId: $user->id,
-                days: $days,
-                regenerate: true,
-                reason: $reason,
-                generateDiet: true,
-                generateWorkout: true,
-            );
-        } else {
-            GeneratePlansForUser::dispatchAfterResponse(
-                userId: $user->id,
-                days: $days,
-                regenerate: true,
-                reason: $reason,
-                generateDiet: true,
-                generateWorkout: true,
-            );
-        }
+        GeneratePlansForUser::dispatch(
+            userId: $user->id,
+            days: $days,
+            regenerate: true,
+            reason: $reason,
+            generateDiet: true,
+            generateWorkout: true,
+        );
 
         return true;
     }

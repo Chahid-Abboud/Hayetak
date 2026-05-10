@@ -4,6 +4,7 @@ namespace App\Console\Commands\Ai;
 
 use App\Models\AiRequest;
 use App\Models\User;
+use App\Services\Ai\Training\ProgressLabelReadinessService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,7 @@ class AiPredictorEvolutionAudit extends Command
 
     protected $description = 'Audit predictor evolution every 21 days, planner feedback adaptation, plan adjustments, and chatbot quality signals.';
 
-    public function handle(): int
+    public function handle(ProgressLabelReadinessService $readiness): int
     {
         $from = $this->parseDate((string) $this->option('from'));
         $anchor = $this->parseDate((string) $this->option('anchor'));
@@ -87,7 +88,8 @@ class AiPredictorEvolutionAudit extends Command
                 $anchor,
                 $intervalDays,
                 $toleranceBefore,
-                $toleranceAfter
+                $toleranceAfter,
+                $readiness
             );
 
             $summary = $this->summarizeUserCycles($cycles);
@@ -296,7 +298,7 @@ class AiPredictorEvolutionAudit extends Command
             return [];
         }
 
-        $rows = AiRequest::query()
+        $query = DB::table('ai_requests')
             ->whereIn('user_id', $userIds)
             ->where('type', 'plan_generator')
             ->where('status', 'completed')
@@ -304,44 +306,45 @@ class AiPredictorEvolutionAudit extends Command
             ->whereDate('created_at', '>=', $from->toDateString())
             ->orderBy('user_id')
             ->orderBy('created_at')
-            ->orderBy('id')
-            ->get(['id', 'user_id', 'created_at', 'provider', 'model', 'output_json']);
+            ->orderBy('id');
 
         $perUserCycle = [];
-        foreach ($rows as $row) {
-            $output = is_array($row->output_json) ? $row->output_json : [];
-            $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : null;
-            if (! is_array($prediction)) {
-                continue;
-            }
+        $query->chunkById(100, function ($rows) use (&$perUserCycle, $anchor, $intervalDays): void {
+            foreach ($rows as $row) {
+                $output = $this->decodeArray($row->output_json ?? null);
+                $prediction = is_array($output['progress_prediction'] ?? null) ? $output['progress_prediction'] : null;
+                if (! is_array($prediction)) {
+                    continue;
+                }
 
-            $createdAt = CarbonImmutable::parse((string) $row->created_at)->startOfDay();
-            $cycleIndex = $this->cycleIndex($anchor, $createdAt, $intervalDays);
-            if ($cycleIndex < 0) {
-                continue;
-            }
+                $createdAt = CarbonImmutable::parse((string) $row->created_at)->startOfDay();
+                $cycleIndex = $this->cycleIndex($anchor, $createdAt, $intervalDays);
+                if ($cycleIndex < 0) {
+                    continue;
+                }
 
-            $uid = (int) $row->user_id;
-            if (! array_key_exists($uid, $perUserCycle)) {
-                $perUserCycle[$uid] = [];
-            }
+                $uid = (int) $row->user_id;
+                if (! array_key_exists($uid, $perUserCycle)) {
+                    $perUserCycle[$uid] = [];
+                }
 
-            $existing = $perUserCycle[$uid][$cycleIndex] ?? null;
-            $candidate = [
-                'ai_request_id' => (int) $row->id,
-                'user_id' => $uid,
-                'created_at' => $createdAt,
-                'provider' => $row->provider,
-                'model' => $row->model,
-                'output_json' => $output,
-                'progress_prediction' => $prediction,
-                'cycle_index' => $cycleIndex,
-            ];
+                $existing = $perUserCycle[$uid][$cycleIndex] ?? null;
+                $candidate = [
+                    'ai_request_id' => (int) $row->id,
+                    'user_id' => $uid,
+                    'created_at' => $createdAt,
+                    'provider' => $row->provider,
+                    'model' => $row->model,
+                    'output_json' => $output,
+                    'progress_prediction' => $prediction,
+                    'cycle_index' => $cycleIndex,
+                ];
 
-            if (! is_array($existing) || $candidate['ai_request_id'] >= (int) ($existing['ai_request_id'] ?? 0)) {
-                $perUserCycle[$uid][$cycleIndex] = $candidate;
+                if (! is_array($existing) || $candidate['ai_request_id'] >= (int) ($existing['ai_request_id'] ?? 0)) {
+                    $perUserCycle[$uid][$cycleIndex] = $candidate;
+                }
             }
-        }
+        }, 'id', 'id');
 
         return $perUserCycle;
     }
@@ -358,7 +361,8 @@ class AiPredictorEvolutionAudit extends Command
         CarbonImmutable $anchor,
         int $intervalDays,
         int $toleranceBefore,
-        int $toleranceAfter
+        int $toleranceAfter,
+        ProgressLabelReadinessService $readiness
     ): array {
         if ($cycleMap === []) {
             return [];
@@ -377,8 +381,8 @@ class AiPredictorEvolutionAudit extends Command
 
             $cycleStart = $anchor->addDays(((int) $cycleIndex) * $intervalDays)->startOfDay();
             $cycleEnd = $cycleStart->addDays($intervalDays - 1)->startOfDay();
-            $horizonDays = $this->normalizePlanHorizonDays((int) ($prediction['horizon_days'] ?? $intervalDays));
-            $predictionEnd = $generatedAt->addDays($horizonDays - 1)->startOfDay();
+            $horizonDays = $readiness->normalizePlanHorizonDays((int) ($prediction['horizon_days'] ?? $intervalDays));
+            $predictionEnd = $readiness->expectedEndDate($generatedAt, $horizonDays);
 
             $baselineWeight = $this->toFloatOrNull($prediction['baseline_weight_kg'] ?? null)
                 ?? $this->weightOnOrBefore($measurements, $generatedAt);
@@ -391,13 +395,13 @@ class AiPredictorEvolutionAudit extends Command
                 }
             }
 
-            $actualMatch = $this->weightNearDate(
-                $measurements,
+            $actualMatch = $readiness->endMeasurement(
+                (int) $user->id,
                 $predictionEnd,
                 $toleranceBefore,
                 $toleranceAfter
             );
-            $actualWeight = is_array($actualMatch) ? (float) $actualMatch['weight_kg'] : null;
+            $actualWeight = is_array($actualMatch) ? (float) $actualMatch['weight'] : null;
             $errorKg = ($actualWeight !== null && $projectedWeight !== null)
                 ? round($actualWeight - $projectedWeight, 4)
                 : null;
@@ -431,7 +435,7 @@ class AiPredictorEvolutionAudit extends Command
                 'baseline_weight_kg' => $baselineWeight !== null ? round($baselineWeight, 3) : null,
                 'projected_weight_kg' => $projectedWeight !== null ? round((float) $projectedWeight, 3) : null,
                 'actual_weight_kg' => $actualWeight !== null ? round($actualWeight, 3) : null,
-                'actual_weight_date' => is_array($actualMatch) ? (string) ($actualMatch['measured_at'] ?? null) : null,
+                'actual_weight_date' => is_array($actualMatch) ? (string) ($actualMatch['date'] ?? null) : null,
                 'error_kg' => $errorKg,
                 'abs_error_kg' => $errorKg !== null ? round(abs($errorKg), 4) : null,
                 'prediction' => [
@@ -688,47 +692,6 @@ class AiPredictorEvolutionAudit extends Command
     }
 
     /**
-     * @param  array<int, array{date:CarbonImmutable,weight:float}>  $rows
-     * @return array{weight_kg:float,measured_at:string}|null
-     */
-    private function weightNearDate(
-        array $rows,
-        CarbonImmutable $targetDate,
-        int $toleranceBefore,
-        int $toleranceAfter
-    ): ?array {
-        $targetTs = $targetDate->getTimestamp();
-        $best = null;
-        $bestDistance = null;
-
-        foreach ($rows as $row) {
-            if (! (($row['date'] ?? null) instanceof CarbonImmutable)) {
-                continue;
-            }
-            $deltaDays = (int) floor(($row['date']->getTimestamp() - $targetTs) / 86400);
-            if ($deltaDays < (-1 * $toleranceBefore) || $deltaDays > $toleranceAfter) {
-                continue;
-            }
-
-            $distance = abs($deltaDays);
-            if ($bestDistance === null || $distance < $bestDistance) {
-                $weight = $this->toFloatOrNull($row['weight'] ?? null);
-                if ($weight === null) {
-                    continue;
-                }
-
-                $bestDistance = $distance;
-                $best = [
-                    'weight_kg' => $weight,
-                    'measured_at' => $row['date']->toDateString(),
-                ];
-            }
-        }
-
-        return $best;
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function comparePlans(array $previous, array $current): array
@@ -929,18 +892,6 @@ class AiPredictorEvolutionAudit extends Command
         $sq = array_map(static fn (float $error): float => $error * $error, $errors);
 
         return round(sqrt(array_sum($sq) / count($sq)), 4);
-    }
-
-    private function normalizePlanHorizonDays(int $days): int
-    {
-        if ($days <= 14) {
-            return 14;
-        }
-        if ($days <= 21) {
-            return 21;
-        }
-
-        return 28;
     }
 
     private function cycleIndex(CarbonImmutable $anchor, CarbonImmutable $date, int $intervalDays): int

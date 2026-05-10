@@ -3,7 +3,6 @@ import type { HTMLAttributes } from 'react';
 
 export default function AppLogoIcon({
     className,
-    mode = 'auto',
     'aria-label': ariaLabel,
     ...props
 }: HTMLAttributes<HTMLSpanElement> & {
@@ -11,6 +10,7 @@ export default function AppLogoIcon({
     'aria-label'?: string;
 }) {
     const baseImageClass = 'h-full w-full object-contain';
+    const sharedMark = '/brand/hayetak-mark.png';
 
     return (
         <span
@@ -19,36 +19,12 @@ export default function AppLogoIcon({
             aria-hidden={ariaLabel ? undefined : true}
             aria-label={ariaLabel}
         >
-            {mode === 'auto' ? (
-                <>
-                    <img
-                        src="/brand/chado-mark-dark.png"
-                        alt=""
-                        className={cn(baseImageClass, 'block dark:hidden')}
-                        draggable={false}
-                    />
-                    <img
-                        src="/brand/chado-mark-green.png"
-                        alt=""
-                        className={cn(baseImageClass, 'hidden dark:block')}
-                        draggable={false}
-                    />
-                </>
-            ) : mode === 'light' ? (
-                <img
-                    src="/brand/chado-mark-dark.png"
-                    alt=""
-                    className={baseImageClass}
-                    draggable={false}
-                />
-            ) : (
-                <img
-                    src="/brand/chado-mark-green.png"
-                    alt=""
-                    className={baseImageClass}
-                    draggable={false}
-                />
-            )}
+            <img
+                src={sharedMark}
+                alt=""
+                className={baseImageClass}
+                draggable={false}
+            />
         </span>
     );
 }

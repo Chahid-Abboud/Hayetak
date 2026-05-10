@@ -165,6 +165,80 @@ function sectionHtml(
     `;
 }
 
+function buildMealCodeHtml(
+    mealOptions: NonNullable<PrintablePlan['diet']>['meal_options'],
+    mealCode: keyof PrintableDietMealOptions,
+): string {
+    const options = mealOptions?.[mealCode] ?? [];
+    if (options.length === 0) {
+        return '';
+    }
+
+    return `
+        <div class="box">
+            <h3>${titleCase(mealCode)}</h3>
+            <div class="stack">
+                ${options
+                    .map((option, optionIndex) => {
+                        const items = option.items ?? [];
+
+                        const totalCalories = items.reduce(
+                            (sum, item) => sum + Number(item.calories_kcal ?? 0),
+                            0,
+                        );
+                        const totalProtein = items.reduce(
+                            (sum, item) => sum + Number(item.protein_g ?? 0),
+                            0,
+                        );
+                        const totalCarbs = items.reduce(
+                            (sum, item) => sum + Number(item.carbs_g ?? 0),
+                            0,
+                        );
+                        const totalFat = items.reduce(
+                            (sum, item) => sum + Number(item.fat_g ?? 0),
+                            0,
+                        );
+
+                        return `
+                            <div class="mini-card">
+                                <div class="mini-card-top">
+                                    <strong>
+                                        ${escapeHtml(
+                                            option.title ||
+                                                `${titleCase(mealCode)} option ${optionIndex + 1}`,
+                                        )}
+                                    </strong>
+                                    <span>${Math.round(totalCalories)} kcal</span>
+                                </div>
+                                <div class="macro-row">
+                                    <span>P ${Math.round(totalProtein)}g</span>
+                                    <span>C ${Math.round(totalCarbs)}g</span>
+                                    <span>F ${Math.round(totalFat)}g</span>
+                                </div>
+                                <ul class="item-list">
+                                    ${items
+                                        .map(
+                                            (item) => `
+                                                <li>
+                                                    <span>${escapeHtml(item.name ?? 'Food item')}</span>
+                                                    <small>
+                                                        ${escapeHtml(item.portion ?? '')}
+                                                        ${item.calories_kcal ? ` · ${Math.round(Number(item.calories_kcal))} kcal` : ''}
+                                                    </small>
+                                                </li>
+                                            `,
+                                        )
+                                        .join('')}
+                                </ul>
+                            </div>
+                        `;
+                    })
+                    .join('')}
+            </div>
+        </div>
+    `;
+}
+
 function buildDietMealOptions(plan: PrintablePlan): string {
     const mealOptions = plan.diet?.meal_options;
 
@@ -179,109 +253,19 @@ function buildDietMealOptions(plan: PrintablePlan): string {
         mealOptions &&
         order.some((mealCode) => (mealOptions[mealCode] ?? []).length > 0)
     ) {
+        const breakfastContent = buildMealCodeHtml(mealOptions, 'breakfast');
+        const lunchContent = buildMealCodeHtml(mealOptions, 'lunch');
+        const dinnerContent = buildMealCodeHtml(mealOptions, 'dinner');
+        const snackContent = buildMealCodeHtml(mealOptions, 'snack');
+
         return `
-            <div class="two-column">
-                ${order
-                    .map((mealCode) => {
-                        const options = mealOptions[mealCode] ?? [];
-
-                        if (options.length === 0) {
-                            return '';
-                        }
-
-                        return `
-                            <div class="box">
-                                <h3>${titleCase(mealCode)}</h3>
-                                <div class="stack">
-                                    ${options
-                                        .map((option, optionIndex) => {
-                                            const items = option.items ?? [];
-
-                                            const totalCalories = items.reduce(
-                                                (sum, item) =>
-                                                    sum +
-                                                    Number(
-                                                        item.calories_kcal ?? 0,
-                                                    ),
-                                                0,
-                                            );
-
-                                            const totalProtein = items.reduce(
-                                                (sum, item) =>
-                                                    sum +
-                                                    Number(item.protein_g ?? 0),
-                                                0,
-                                            );
-
-                                            const totalCarbs = items.reduce(
-                                                (sum, item) =>
-                                                    sum +
-                                                    Number(item.carbs_g ?? 0),
-                                                0,
-                                            );
-
-                                            const totalFat = items.reduce(
-                                                (sum, item) =>
-                                                    sum +
-                                                    Number(item.fat_g ?? 0),
-                                                0,
-                                            );
-
-                                            return `
-                                                <div class="mini-card">
-                                                    <div class="mini-card-top">
-                                                        <strong>
-                                                            ${escapeHtml(
-                                                                option.title ||
-                                                                    `${titleCase(
-                                                                        mealCode,
-                                                                    )} option ${
-                                                                        optionIndex +
-                                                                        1
-                                                                    }`,
-                                                            )}
-                                                        </strong>
-                                                        <span>${Math.round(totalCalories)} kcal</span>
-                                                    </div>
-
-                                                    <div class="macro-row">
-                                                        <span>P ${Math.round(totalProtein)}g</span>
-                                                        <span>C ${Math.round(totalCarbs)}g</span>
-                                                        <span>F ${Math.round(totalFat)}g</span>
-                                                    </div>
-
-                                                    <ul class="item-list">
-                                                        ${items
-                                                            .map(
-                                                                (item) => `
-                                                                    <li>
-                                                                        <span>${escapeHtml(item.name ?? 'Food item')}</span>
-                                                                        <small>
-                                                                            ${escapeHtml(item.portion ?? '')}
-                                                                            ${
-                                                                                item.calories_kcal
-                                                                                    ? ` · ${Math.round(
-                                                                                          Number(
-                                                                                              item.calories_kcal,
-                                                                                          ),
-                                                                                      )} kcal`
-                                                                                    : ''
-                                                                            }
-                                                                        </small>
-                                                                    </li>
-                                                                `,
-                                                            )
-                                                            .join('')}
-                                                    </ul>
-                                                </div>
-                                            `;
-                                        })
-                                        .join('')}
-                                </div>
-                            </div>
-                        `;
-                    })
-                    .join('')}
+            <div class="meal-row">
+                ${breakfastContent}
+                ${lunchContent}
+            </div>
+            <div class="meal-row">
+                ${dinnerContent}
+                ${snackContent}
             </div>
         `;
     }
@@ -297,7 +281,7 @@ function buildDietMealOptions(plan: PrintablePlan): string {
             ${days
                 .map(
                     (day) => `
-                        <div class="box avoid-break">
+                        <div class="box avoid-break diet-day-box">
                             <h3>
                                 Day ${day.day_index ?? '-'}
                                 ${day.theme ? ` · ${escapeHtml(day.theme)}` : ''}
@@ -307,7 +291,7 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                 ${(day.meals ?? [])
                                     .map(
                                         (meal) => `
-                                            <div class="mini-card">
+                                            <div class="mini-card diet-meal-card">
                                                 <div class="mini-card-top">
                                                     <strong>${escapeHtml(
                                                         meal.title ||
@@ -321,13 +305,13 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                                     )} kcal target</span>
                                                 </div>
 
-                                                <ul class="item-list">
+                                                <ul class="item-list diet-item-list">
                                                     ${(meal.items ?? [])
                                                         .map(
                                                             (item) => `
-                                                                <li>
-                                                                    <span>${escapeHtml(item.name ?? 'Food item')}</span>
-                                                                    <small>
+                                                                <li class="diet-item-row">
+                                                                    <span class="diet-item-name">${escapeHtml(item.name ?? 'Food item')}</span>
+                                                                    <span class="diet-item-detail">
                                                                         ${escapeHtml(item.portion ?? '')}
                                                                         ${
                                                                             item.calories_kcal
@@ -338,7 +322,7 @@ function buildDietMealOptions(plan: PrintablePlan): string {
                                                                                   )} kcal`
                                                                                 : ''
                                                                         }
-                                                                    </small>
+                                                                    </span>
                                                                 </li>
                                                             `,
                                                         )
@@ -369,121 +353,106 @@ function buildDietHtml(plan: PrintablePlan): string {
 
     return `
         ${sectionHtml(
-            'Diet overview',
-            'Daily nutrition targets and the foods used to follow the plan.',
+            'Daily targets',
+            'Energy and macro targets for this plan.',
             `
-                ${
-                    Object.keys(targets).length > 0
-                        ? statGridHtml(
-                              Object.entries(targets).map(([key, value]) => ({
-                                  label: titleCase(key),
-                                  value,
-                              })),
-                          )
-                        : `<p class="muted">No daily targets were included.</p>`
-                }
+                <div class="targets-scroll">
+                    ${
+                        Object.keys(targets).length > 0
+                            ? statGridHtml(
+                                  Object.entries(targets).map(([key, value]) => ({
+                                      label: titleCase(key),
+                                      value,
+                                  })),
+                              )
+                            : `<p class="muted">No daily targets were included.</p>`
+                    }
+                </div>
             `,
         )}
 
-        ${sectionHtml(
-            'Meal options',
-            'Use these options as your meal structure for the plan.',
-            buildDietMealOptions(plan),
-        )}
-
-        <div class="three-column">
-            ${sectionHtml('Grocery list', null, listHtml(groceryItems))}
-            ${sectionHtml(
-                'Meal prep notes',
-                null,
-                listHtml(plan.diet?.meal_prep_notes ?? []),
-            )}
-            ${sectionHtml(
-                'Adherence notes',
-                null,
-                listHtml(plan.diet?.adherence_notes ?? []),
-            )}
+        <div class="notes-row">
+            <div class="box compact-box">
+                <h3>Grocery list</h3>
+                ${listHtml(groceryItems)}
+            </div>
+            <div class="box compact-box">
+                <h3>Meal prep notes</h3>
+                ${listHtml(plan.diet?.meal_prep_notes ?? [])}
+            </div>
+            <div class="box compact-box">
+                <h3>Adherence notes</h3>
+                ${listHtml(plan.diet?.adherence_notes ?? [])}
+            </div>
         </div>
 
         ${sectionHtml(
-            'Food safety notes',
-            'Allergy, diet-type, and food restriction notes from the generated plan.',
-            `
-                <div class="two-column">
-                    <div class="box">
-                        <h3>Food avoidances</h3>
-                        ${listHtml(plan.safety?.food_avoidances ?? [])}
-                    </div>
-
-                    <div class="box">
-                        <h3>Hard rules observed</h3>
-                        ${listHtml(plan.safety?.hard_rules_observed ?? [])}
-                    </div>
-                </div>
-            `,
+            'Meal options',
+            'Meal cards use the full printable width so food options are easier to scan.',
+            buildDietMealOptions(plan),
         )}
     `;
 }
 
 function buildWorkoutHtml(plan: PrintablePlan): string {
     const days = plan.workout?.weekly_schedule ?? [];
+    const trainingDays = days.filter((day) => (day.exercises ?? []).length > 0);
+    const restDays = days.filter((day) => (day.exercises ?? []).length === 0);
 
     return `
         ${sectionHtml(
             'Workout schedule',
-            'Day-by-day training structure, including rest days and safer alternatives.',
+            'Training days are shown in balanced cards, while rest days are compact so the PDF stays neat.',
             days.length
                 ? `
-                    <div class="day-grid">
-                        ${days
-                            .map((day) => {
-                                const exercises = day.exercises ?? [];
-                                const isRestDay = exercises.length === 0;
+                    ${
+                        trainingDays.length
+                            ? `
+                                <div class="day-grid training-grid">
+                                    ${trainingDays
+                                        .map((day) => {
+                                            const exercises = day.exercises ?? [];
+                                            const isDaySeven = (day.day_index ?? -1) >= 7;
 
-                                return `
-                                    <div class="box avoid-break">
-                                        <div class="day-header">
-                                            <div>
-                                                <div class="eyebrow">
-                                                    Day ${formatValue(day.day_index)}
-                                                    ${
-                                                        day.day_label
-                                                            ? ` · ${escapeHtml(day.day_label)}`
-                                                            : ''
-                                                    }
-                                                </div>
-                                                <h3>${escapeHtml(day.focus ?? 'Workout day')}</h3>
-                                            </div>
+                                            return `
+                                                <div class="box avoid-break training-day-box${isDaySeven ? ' full-width-day' : ''}">
+                                                    <div class="day-header">
+                                                        <div>
+                                                            <div class="eyebrow">
+                                                                Day ${formatValue(day.day_index)}
+                                                                ${
+                                                                    day.day_label
+                                                                        ? ` · ${escapeHtml(day.day_label)}`
+                                                                        : ''
+                                                                }
+                                                            </div>
+                                                            <h3>${escapeHtml(day.focus ?? 'Workout day')}</h3>
+                                                        </div>
 
-                                            <span class="pill">${escapeHtml(day.session_type ?? 'Session')}</span>
-                                        </div>
+                                                        <span class="pill">${escapeHtml(day.session_type ?? 'Session')}</span>
+                                                    </div>
 
-                                        <div class="tag-row">
-                                            ${
-                                                day.duration_min
-                                                    ? `<span>${day.duration_min} min</span>`
-                                                    : ''
-                                            }
-                                            ${
-                                                day.location
-                                                    ? `<span>${escapeHtml(day.location)}</span>`
-                                                    : ''
-                                            }
-                                        </div>
+                                                    <div class="tag-row">
+                                                        ${
+                                                            day.duration_min
+                                                                ? `<span>${day.duration_min} min</span>`
+                                                                : ''
+                                                        }
+                                                        ${
+                                                            day.location
+                                                                ? `<span>${escapeHtml(day.location)}</span>`
+                                                                : ''
+                                                        }
+                                                    </div>
 
-                                        ${
-                                            isRestDay
-                                                ? `<p class="rest-note">Rest or recovery day. No exercises are scheduled.</p>`
-                                                : `
-                                                    <div class="stack">
+                                                    <div class="stack exercise-stack">
                                                         ${exercises
                                                             .map(
                                                                 (exercise) => `
                                                                     <div class="exercise-row">
                                                                         <div>
                                                                             <strong>${escapeHtml(
-                                                                                exercise.name ??
-                                                                                    'Exercise',
+                                                                                exercise.name ?? 'Exercise',
                                                                             )}</strong>
 
                                                                             <small>
@@ -523,13 +492,44 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                                                             )
                                                             .join('')}
                                                     </div>
-                                                `
-                                        }
+                                                </div>
+                                            `;
+                                        })
+                                        .join('')}
+                                </div>
+                            `
+                            : ''
+                    }
+
+                    ${
+                        restDays.length
+                            ? `
+                                <div class="rest-section avoid-break">
+                                    <h3>Rest and recovery days</h3>
+                                    <div class="rest-grid">
+                                        ${restDays
+                                            .map(
+                                                (day) => `
+                                                    <div class="rest-box">
+                                                        <div class="eyebrow">
+                                                            Day ${formatValue(day.day_index)}
+                                                            ${
+                                                                day.day_label
+                                                                    ? ` · ${escapeHtml(day.day_label)}`
+                                                                    : ''
+                                                            }
+                                                        </div>
+                                                        <strong>${escapeHtml(day.focus ?? 'Rest day')}</strong>
+                                                        <small>Rest or recovery day. No exercises scheduled.</small>
+                                                    </div>
+                                                `,
+                                            )
+                                            .join('')}
                                     </div>
-                                `;
-                            })
-                            .join('')}
-                    </div>
+                                </div>
+                            `
+                            : ''
+                    }
                 `
                 : `<p class="muted">No workout schedule was included.</p>`,
         )}
@@ -551,59 +551,7 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                 listHtml(plan.workout?.coach_notes ?? []),
             )}
         </div>
-
-        ${sectionHtml(
-            'Exercise safety notes',
-            'Cautions and safer movement guidance from the generated plan.',
-            listHtml(plan.safety?.exercise_cautions ?? []),
-        )}
     `;
-}
-
-function buildPredictionHtml(
-    plan: PrintablePlan,
-    planHorizonDays: number,
-): string {
-    const prediction = plan.progress_prediction;
-
-    if (!prediction) {
-        return '';
-    }
-
-    return sectionHtml(
-        'Progress prediction',
-        'Expected progress if the user follows this plan consistently.',
-        statGridHtml([
-            {
-                label: 'Check-in window',
-                value: `${prediction.horizon_days ?? planHorizonDays} days`,
-            },
-            {
-                label: 'Baseline weight',
-                value:
-                    prediction.baseline_weight_kg !== null &&
-                    prediction.baseline_weight_kg !== undefined
-                        ? `${prediction.baseline_weight_kg} kg`
-                        : '-',
-            },
-            {
-                label: 'Expected change',
-                value:
-                    prediction.expected_weight_change_kg !== null &&
-                    prediction.expected_weight_change_kg !== undefined
-                        ? `${prediction.expected_weight_change_kg} kg`
-                        : '-',
-            },
-            {
-                label: 'Projected weight',
-                value:
-                    prediction.projected_body_weight_kg !== null &&
-                    prediction.projected_body_weight_kg !== undefined
-                        ? `${prediction.projected_body_weight_kg} kg`
-                        : '-',
-            },
-        ]),
-    );
 }
 
 function buildDocumentHtml(
@@ -657,7 +605,7 @@ function buildDocumentHtml(
                         width: 100%;
                         max-width: 1080px;
                         margin: 0 auto;
-                        padding: 32px;
+                        padding: 24px;
                     }
 
                     .cover {
@@ -665,8 +613,8 @@ function buildDocumentHtml(
                         background:
                             linear-gradient(135deg, #10170d 0%, #1f2c18 62%, #8fc73f 170%);
                         color: white;
-                        padding: 34px;
-                        margin-bottom: 22px;
+                        padding: 28px;
+                        margin-bottom: 16px;
                     }
 
                     .brand-row {
@@ -713,13 +661,13 @@ function buildDocumentHtml(
                         background: white;
                         border: 1px solid #dfe8d5;
                         border-radius: 24px;
-                        padding: 22px;
-                        margin: 18px 0;
+                        padding: 18px;
+                        margin: 14px 0;
                         page-break-inside: avoid;
                     }
 
                     .section-header {
-                        margin-bottom: 16px;
+                        margin-bottom: 12px;
                     }
 
                     .section h2 {
@@ -747,6 +695,97 @@ function buildDocumentHtml(
                         margin: 0 0 12px;
                         font-size: 16px;
                         line-height: 1.25;
+                    }
+
+                    .compact-box {
+                        padding: 14px;
+                    }
+
+                    /* Diet day cards — full width, not cramped */
+                    .diet-day-box {
+                        min-height: 0;
+                    }
+
+                    .diet-meal-card {
+                        padding: 10px 12px;
+                    }
+
+                    .diet-item-list {
+                        margin: 6px 0 0;
+                    }
+
+                    .diet-item-row {
+                        display: flex !important;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        gap: 8px;
+                        margin: 3px 0 !important;
+                        line-height: 1.4 !important;
+                    }
+
+                    .diet-item-name {
+                        font-size: 12px;
+                        font-weight: 500;
+                    }
+
+                    .diet-item-detail {
+                        font-size: 11px;
+                        color: #65725d;
+                        white-space: nowrap;
+                    }
+
+                    /* Rest day compact layout */
+                    .rest-section {
+                        margin-top: 14px;
+                        border: 1px dashed #d9e5ce;
+                        border-radius: 20px;
+                        background: #fbfdf8;
+                        padding: 12px 14px;
+                    }
+
+                    .rest-section h3 {
+                        margin: 0 0 10px;
+                        font-size: 15px;
+                    }
+
+                    .rest-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                        gap: 10px;
+                    }
+
+                    .rest-box {
+                        border: 1px solid #e3eadb;
+                        border-radius: 14px;
+                        background: white;
+                        padding: 8px 12px;
+                    }
+
+                    .rest-box .eyebrow {
+                        font-size: 9px;
+                    }
+
+                    .rest-box strong {
+                        display: block;
+                        margin-top: 4px;
+                        font-size: 12px;
+                    }
+
+                    .rest-box small {
+                        font-size: 10px;
+                        margin-top: 2px;
+                    }
+
+                    .training-day-box {
+                        min-height: 0;
+                    }
+
+                    .exercise-stack {
+                        margin-top: 10px;
+                        gap: 8px;
+                    }
+
+                    .compact-box {
+                        padding: 14px;
                     }
 
                     .stat-grid {
@@ -778,7 +817,9 @@ function buildDocumentHtml(
 
                     .two-column,
                     .three-column,
-                    .day-grid {
+                    .day-grid,
+                    .diet-overview-grid,
+                    .rest-grid {
                         display: grid;
                         gap: 14px;
                     }
@@ -793,6 +834,44 @@ function buildDocumentHtml(
 
                     .day-grid {
                         grid-template-columns: repeat(2, minmax(0, 1fr));
+                    }
+
+                    /* Day 7 spans full width in workout grid */
+                    .full-width-day {
+                        grid-column: 1 / -1;
+                    }
+
+                    .diet-overview-grid {
+                        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
+                    }
+
+                    /* Notes row — grocery list + meal prep + adherence on one line */
+                    .notes-row {
+                        display: grid;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 14px;
+                        margin: 0 0 12px;
+                    }
+
+                    .targets-scroll {
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                    }
+
+                    /* Meal layout: breakfast+lunch on row 1, dinner+snack on row 2, each box full column width */
+                    .meal-row {
+                        display: grid;
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 14px;
+                        margin-bottom: 10px;
+                    }
+
+                    .meal-row .box {
+                        min-width: 0;
+                    }
+
+                    .rest-grid {
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
                     }
 
                     .stack {
@@ -902,7 +981,7 @@ function buildDocumentHtml(
                     }
 
                     .footer {
-                        margin: 22px 0 0;
+                        margin: 16px 0 0;
                         color: #66745d;
                         font-size: 12px;
                         text-align: center;
@@ -934,7 +1013,7 @@ function buildDocumentHtml(
 
                     @page {
                         size: A4;
-                        margin: 14mm;
+                        margin: 11mm;
                     }
                 </style>
             </head>
@@ -958,29 +1037,9 @@ function buildDocumentHtml(
                         </div>
                     </section>
 
-                    ${buildPredictionHtml(plan, planHorizonDays)}
-
                     ${includeDiet ? buildDietHtml(plan) : ''}
 
                     ${includeWorkout ? buildWorkoutHtml(plan) : ''}
-
-                    ${sectionHtml(
-                        'Review and adjustment',
-                        'Use these notes after the check-in window before regenerating.',
-                        `
-                            <div class="two-column">
-                                <div class="box">
-                                    <h3>Checkpoints</h3>
-                                    ${listHtml(plan.adaptive_review?.checkpoints ?? [])}
-                                </div>
-
-                                <div class="box">
-                                    <h3>Replanning triggers</h3>
-                                    ${listHtml(plan.adaptive_review?.replanning_triggers ?? [])}
-                                </div>
-                            </div>
-                        `,
-                    )}
 
                     <p class="footer">
                         Generated by Hayetak. This export is for personal fitness and nutrition tracking and does not replace professional medical advice.

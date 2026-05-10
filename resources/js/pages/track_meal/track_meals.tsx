@@ -13,9 +13,12 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CalendarDays, Search, Shuffle, UtensilsCrossed } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { cleanPlanName } from '@/lib/plan-utils';
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink';
+type QuantityMode = 'servings' | 'grams' | 'milliliters';
+type QuantityDraft = { mode: QuantityMode; value: number };
 type Targets = Partial<Totals>;
 
 type SearchFood = {
@@ -153,6 +156,191 @@ function mealLabel(mealType: MealType) {
     return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 }
 
+function isLiquidUnit(unit?: string | null) {
+    return ['ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters'].includes(
+        (unit ?? '').toLowerCase().trim(),
+    );
+}
+
+function isDrinkFood(
+    food: { serving_unit: string },
+    mealType?: MealType | null,
+) {
+    return mealType === 'drink' || isLiquidUnit(food.serving_unit);
+}
+
+function normalizeServingBase(
+    food: { serving_size: number; serving_unit: string },
+    mode: 'grams' | 'milliliters',
+) {
+    let size = Number(food.serving_size) || 0;
+    const unit = food.serving_unit.toLowerCase().trim();
+
+    if (mode === 'milliliters') {
+        if (unit === 'l' || unit === 'liter' || unit === 'liters') {
+            size *= 1000;
+        }
+
+        return size > 0 ? size : 250;
+    }
+
+    if (unit === 'kg' || unit === 'kilogram' || unit === 'kilograms') {
+        size *= 1000;
+    }
+
+    return size > 0 ? size : 100;
+}
+
+function roundQuantity(value: number, precision = 2) {
+    const factor = 10 ** precision;
+    return Math.round(value * factor) / factor;
+}
+
+function safeQuantity(value: number, fallback = 1) {
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function quantityToServings(
+    food: { serving_size: number; serving_unit: string },
+    draft: QuantityDraft,
+) {
+    const amount = safeQuantity(draft.value, draft.mode === 'servings' ? 1 : 100);
+
+    if (draft.mode === 'servings') {
+        return amount;
+    }
+
+    const base = normalizeServingBase(
+        food,
+        draft.mode === 'milliliters' ? 'milliliters' : 'grams',
+    );
+
+    return roundQuantity(Math.max(0.01, amount / Math.max(1, base)), 4);
+}
+
+function quantityModeOptions(
+    food: { serving_unit: string },
+    mealType?: MealType | null,
+): QuantityMode[] {
+    return isDrinkFood(food, mealType)
+        ? ['servings', 'milliliters']
+        : ['servings', 'grams'];
+}
+
+function quantityModeLabel(mode: QuantityMode) {
+    if (mode === 'grams') return 'Grams';
+    if (mode === 'milliliters') return 'Milliliters';
+    return 'Servings';
+}
+
+function quantityStep(mode: QuantityMode) {
+    return mode === 'servings' ? 0.25 : 1;
+}
+
+function quantityMin(mode: QuantityMode) {
+    return mode === 'servings' ? 0.25 : 1;
+}
+
+function servingReferenceText(
+    food: { serving_size: number; serving_unit: string },
+    mealType?: MealType | null,
+) {
+    if (isDrinkFood(food, mealType)) {
+        return `1 serving = ${roundQuantity(
+            normalizeServingBase(food, 'milliliters'),
+            0,
+        )} ml`;
+    }
+
+    const unit = food.serving_unit?.trim();
+    if (unit && !['g', 'kg'].includes(unit.toLowerCase())) {
+        return `1 serving = ${food.serving_size} ${unit}`;
+    }
+
+    return `1 serving = ${roundQuantity(
+        normalizeServingBase(food, 'grams'),
+        0,
+    )} g`;
+}
+
+function plannedItemQuantityDraft(
+    item: PlannedItem,
+    food: { serving_size: number; serving_unit: string } = item.food,
+): QuantityDraft {
+    const drink = isDrinkFood(food, item.meal_type);
+    const loggedServings = item.logged_entry?.servings ?? null;
+
+    if (drink) {
+        return {
+            mode: 'milliliters',
+            value: roundQuantity(
+                safeQuantity(
+                    (loggedServings ?? item.default_servings) *
+                        normalizeServingBase(food, 'milliliters'),
+                    normalizeServingBase(food, 'milliliters'),
+                ),
+                0,
+            ),
+        };
+    }
+
+    if (loggedServings !== null && loggedServings > 0 && item.grams) {
+        return {
+            mode: 'grams',
+            value: roundQuantity(
+                loggedServings * normalizeServingBase(food, 'grams'),
+                0,
+            ),
+        };
+    }
+
+    if (item.grams && item.grams > 0) {
+        return {
+            mode: 'grams',
+            value: roundQuantity(item.grams, 0),
+        };
+    }
+
+    return {
+        mode: 'servings',
+        value: safeQuantity(loggedServings ?? item.default_servings, 1),
+    };
+}
+
+function defaultQuantityDraftForFood(
+    food: SearchFood,
+    mealType: MealType,
+    plannedItem?: PlannedItem | null,
+): QuantityDraft {
+    if (plannedItem) {
+        return plannedItemQuantityDraft(plannedItem, food);
+    }
+
+    if (isDrinkFood(food, mealType)) {
+        return {
+            mode: 'milliliters',
+            value: roundQuantity(
+                normalizeServingBase(food, 'milliliters'),
+                0,
+            ),
+        };
+    }
+
+    return { mode: 'servings', value: 1 };
+}
+
+function quantityDraftPayload(draft: QuantityDraft) {
+    if (draft.mode === 'grams') {
+        return { grams: safeQuantity(draft.value, 100) };
+    }
+
+    if (draft.mode === 'milliliters') {
+        return { milliliters: safeQuantity(draft.value, 250) };
+    }
+
+    return { servings: safeQuantity(draft.value, 1) };
+}
+
 export default function TrackMealsPage() {
     const props = usePage<PageProps>().props;
     const initialDate = props.date ?? todayYmd();
@@ -187,6 +375,10 @@ export default function TrackMealsPage() {
         tone: 'default' | 'danger' | 'success';
         message: string;
     } | null>(null);
+    const [dialogStatus, setDialogStatus] = useState<{
+        tone: 'default' | 'danger' | 'success';
+        message: string;
+    } | null>(null);
     const [selectedPlannedItem, setSelectedPlannedItem] =
         useState<PlannedItem | null>(null);
     const [substituteModalOpen, setSubstituteModalOpen] = useState(false);
@@ -194,14 +386,18 @@ export default function TrackMealsPage() {
         null,
     );
     const [plannedLogModalOpen, setPlannedLogModalOpen] = useState(false);
-    const [plannedLogServings, setPlannedLogServings] = useState(1);
-    const [plannedServingInput, setPlannedServingInput] = useState<
-        Record<number, string>
-    >({});
+    const [plannedLogDraft, setPlannedLogDraft] = useState<QuantityDraft>({
+        mode: 'servings',
+        value: 1,
+    });
     const [openAdd, setOpenAdd] = useState(false);
     const [selectedFood, setSelectedFood] = useState<SearchFood | null>(null);
-    const [portionCount, setPortionCount] = useState(1);
+    const [logDraft, setLogDraft] = useState<QuantityDraft>({
+        mode: 'servings',
+        value: 1,
+    });
     const debounceRef = useRef<number | null>(null);
+    const searchRequestKeyRef = useRef(0);
 
     useEffect(() => {
         const token = (
@@ -228,40 +424,6 @@ export default function TrackMealsPage() {
         setPlannedLogModalOpen(false);
     }, [date]);
 
-    useEffect(() => {
-        const plannedItems =
-            day.plannedDay?.meals.flatMap((meal) => meal.items) ?? [];
-
-        if (!plannedItems.length) {
-            setPlannedServingInput({});
-            return;
-        }
-
-        setPlannedServingInput((current) => {
-            const next = { ...current };
-            const keep = new Set<number>();
-
-            for (const item of plannedItems) {
-                keep.add(item.id);
-                if (next[item.id] !== undefined) {
-                    continue;
-                }
-                next[item.id] = String(
-                    item.logged_entry?.servings ?? item.default_servings,
-                );
-            }
-
-            for (const key of Object.keys(next)) {
-                const itemId = Number(key);
-                if (!keep.has(itemId)) {
-                    delete next[itemId];
-                }
-            }
-
-            return next;
-        });
-    }, [day.plannedDay]);
-
     const fetchDay = async (nextDate: string) => {
         const response = await axios.get<DayResponse>('/api/meal-tracker/day', {
             params: { date: nextDate, meal_type: mealType },
@@ -279,12 +441,15 @@ export default function TrackMealsPage() {
             mode === 'follow-plan' &&
             (!selectedPlannedItem || !substituteModalOpen)
         ) {
+            searchRequestKeyRef.current += 1;
             setResults([]);
+            setLoading(false);
             return;
         }
 
         if (debounceRef.current) window.clearTimeout(debounceRef.current);
         debounceRef.current = window.setTimeout(async () => {
+            const requestKey = ++searchRequestKeyRef.current;
             setLoading(true);
             try {
                 const response = await axios.get('/api/foods/search', {
@@ -303,15 +468,23 @@ export default function TrackMealsPage() {
                                   meal_type: mealType,
                               },
                 });
+                if (requestKey !== searchRequestKeyRef.current) {
+                    return;
+                }
                 setResults(
                     Array.isArray(response.data?.data)
                         ? response.data.data
                         : [],
                 );
             } catch {
+                if (requestKey !== searchRequestKeyRef.current) {
+                    return;
+                }
                 setResults([]);
             } finally {
-                setLoading(false);
+                if (requestKey === searchRequestKeyRef.current) {
+                    setLoading(false);
+                }
             }
         }, 250);
 
@@ -320,42 +493,24 @@ export default function TrackMealsPage() {
         };
     }, [mode, selectedPlannedItem, substituteModalOpen, query, page, mealType]);
 
-    const plannedServingValue = (item: PlannedItem) => {
-        const raw = plannedServingInput[item.id];
-        const parsed = Number(raw);
-
-        if (Number.isFinite(parsed) && parsed > 0) {
-            return parsed;
-        }
-
-        return item.logged_entry?.servings ?? item.default_servings;
-    };
-
-    const updatePlannedServingInput = (itemId: number, value: string) => {
-        setPlannedServingInput((current) => ({ ...current, [itemId]: value }));
-    };
-
-    const applyPlannedServing = (item: PlannedItem, multiplier: number) => {
-        const next = Math.max(
-            0.25,
-            Math.round(item.default_servings * multiplier * 100) / 100,
-        );
-        updatePlannedServingInput(item.id, String(next));
-    };
-
     const openAddDialog = (food: SearchFood) => {
+        setDialogStatus(null);
+        setStatus(null);
         setSelectedFood(food);
-        if (mode === 'follow-plan' && selectedPlannedItem) {
-            setPortionCount(plannedServingValue(selectedPlannedItem));
-        } else {
-            setPortionCount(1);
-        }
+        setLogDraft(
+            defaultQuantityDraftForFood(
+                food,
+                selectedPlannedItem?.meal_type ?? mealType,
+                selectedPlannedItem,
+            ),
+        );
         setOpenAdd(true);
     };
 
     const closeAddDialog = () => {
+        setDialogStatus(null);
         setSelectedFood(null);
-        setPortionCount(1);
+        setLogDraft({ mode: 'servings', value: 1 });
         setOpenAdd(false);
         if (mode === 'follow-plan') {
             setSelectedPlannedItem(null);
@@ -363,23 +518,23 @@ export default function TrackMealsPage() {
     };
 
     const openPlannedLogModal = (item: PlannedItem) => {
-        const servingAmount = plannedServingValue(item);
         setPlannedLogItem(item);
-        setPlannedLogServings(servingAmount > 0 ? servingAmount : 1);
+        setPlannedLogDraft(plannedItemQuantityDraft(item));
         setPlannedLogModalOpen(true);
     };
 
     const closePlannedLogModal = () => {
         setPlannedLogModalOpen(false);
         setPlannedLogItem(null);
+        setPlannedLogDraft({ mode: 'servings', value: 1 });
     };
 
     const confirmAdd = async () => {
         if (!selectedFood) return;
-        if (!Number.isFinite(portionCount) || portionCount <= 0) {
-            setStatus({
+        if (!Number.isFinite(logDraft.value) || logDraft.value <= 0) {
+            setDialogStatus({
                 tone: 'danger',
-                message: 'Enter a serving amount greater than zero.',
+                message: 'Enter a quantity greater than zero.',
             });
             return;
         }
@@ -390,7 +545,7 @@ export default function TrackMealsPage() {
                     `/api/meal-tracker/planned-items/${selectedPlannedItem.id}/log`,
                     {
                         food_id: selectedFood.id,
-                        servings: portionCount,
+                        ...quantityDraftPayload(logDraft),
                         eaten_at: date,
                     },
                 );
@@ -398,7 +553,7 @@ export default function TrackMealsPage() {
                 await axios.post('/meal-entries', {
                     food_id: selectedFood.id,
                     meal_type: mealType,
-                    servings: portionCount,
+                    ...quantityDraftPayload(logDraft),
                     eaten_at: date,
                 });
             }
@@ -420,18 +575,19 @@ export default function TrackMealsPage() {
                 typeof error.response?.data?.message === 'string'
                     ? error.response.data.message
                     : 'Could not save this meal right now.';
-            setStatus({ tone: 'danger', message });
+            setDialogStatus({ tone: 'danger', message });
         }
     };
 
     const confirmPlannedMealLog = async () => {
         if (!plannedLogItem) return;
-        const servings = plannedLogServings;
-
-        if (!Number.isFinite(servings) || servings <= 0) {
+        if (
+            !Number.isFinite(plannedLogDraft.value) ||
+            plannedLogDraft.value <= 0
+        ) {
             setStatus({
                 tone: 'danger',
-                message: 'Enter a serving amount greater than zero.',
+                message: 'Enter a quantity greater than zero.',
             });
             return;
         }
@@ -441,11 +597,10 @@ export default function TrackMealsPage() {
                 `/api/meal-tracker/planned-items/${plannedLogItem.id}/log`,
                 {
                     food_id: plannedLogItem.food.id,
-                    servings,
+                    ...quantityDraftPayload(plannedLogDraft),
                     eaten_at: date,
                 },
             );
-            updatePlannedServingInput(plannedLogItem.id, String(servings));
             closePlannedLogModal();
             setStatus({
                 tone: 'success',
@@ -465,9 +620,10 @@ export default function TrackMealsPage() {
     };
 
     const openSubstituteModal = (item: PlannedItem) => {
+        setDialogStatus(null);
+        setStatus(null);
         setMode('follow-plan');
         setSelectedPlannedItem(item);
-        setPortionCount(plannedServingValue(item));
         setQuery('');
         setPage(1);
         setResults([]);
@@ -475,6 +631,7 @@ export default function TrackMealsPage() {
     };
 
     const closeSubstituteModal = () => {
+        setDialogStatus(null);
         setSubstituteModalOpen(false);
         setSelectedPlannedItem(null);
         setQuery('');
@@ -496,16 +653,19 @@ export default function TrackMealsPage() {
     };
 
     const plannedMealPreviewTotals = plannedLogItem
-        ? {
-              calories: Math.round(
-                  plannedLogItem.food.calories * plannedLogServings,
-              ),
-              protein: Math.round(
-                  plannedLogItem.food.protein * plannedLogServings,
-              ),
-              carbs: Math.round(plannedLogItem.food.carbs * plannedLogServings),
-              fat: Math.round(plannedLogItem.food.fat * plannedLogServings),
-          }
+        ? (() => {
+              const servings = quantityToServings(
+                  plannedLogItem.food,
+                  plannedLogDraft,
+              );
+
+              return {
+                  calories: Math.round(plannedLogItem.food.calories * servings),
+                  protein: Math.round(plannedLogItem.food.protein * servings),
+                  carbs: Math.round(plannedLogItem.food.carbs * servings),
+                  fat: Math.round(plannedLogItem.food.fat * servings),
+              };
+          })()
         : null;
 
     const entries = day.entries ?? [];
@@ -527,8 +687,8 @@ export default function TrackMealsPage() {
                         <div className="space-y-2 text-sm">
                             <div className="font-medium text-foreground">
                                 {day.plannedDay
-                                    ? day.plannedDay.plan.name
-                                    : props.dietName || 'Meal tracking'}
+                                    ? (cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)
+                                    : (cleanPlanName(props.dietName) || props.dietName || 'Meal tracking')}
                             </div>
                             <div className="text-muted-foreground">
                                 Date: {date}
@@ -584,7 +744,7 @@ export default function TrackMealsPage() {
                     day.plannedDay ? (
                         <ProductSection
                             title="Today's planned meals"
-                            description="Adjust servings, log the planned item, or swap with a safe substitute."
+                            description="Open any planned item, choose the quantity you need, and log it or swap with a safe substitute."
                         >
                             <div className="space-y-6">
                                 <MacroCard
@@ -600,7 +760,7 @@ export default function TrackMealsPage() {
                                         Today's plan details
                                     </div>
                                     <div className="mt-3 text-sm text-muted-foreground">
-                                        {day.plannedDay.plan.name} - Day{' '}
+                                        {(cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)} - Day{' '}
                                         {day.plannedDay.day.day_index}
                                     </div>
                                     <div className="mt-3 text-sm text-foreground">
@@ -638,19 +798,6 @@ export default function TrackMealsPage() {
                                                                 {item.food.name}
                                                             </div>
                                                             <div className="mt-1 text-xs text-muted-foreground">
-                                                                {item.grams
-                                                                    ? `${item.grams} g`
-                                                                    : `${plannedServingValue(item)} servings`}
-                                                                {' - '}
-                                                                {Math.round(
-                                                                    item.food
-                                                                        .calories *
-                                                                        plannedServingValue(
-                                                                            item,
-                                                                        ),
-                                                                )}{' '}
-                                                                kcal total
-                                                                {' · '}
                                                                 {Math.round(
                                                                     item.food
                                                                         .calories,
@@ -673,93 +820,15 @@ export default function TrackMealsPage() {
                                                                     .logged_entry
                                                                     .food.name
                                                             }
-                                                            {item.logged_entry
-                                                                .servings
-                                                                ? ` - ${item.logged_entry.servings} servings`
-                                                                : ''}
                                                         </div>
                                                     ) : null}
 
-                                                    <div className="mt-4 space-y-3 rounded-[20px] border border-border/60 bg-background/80 p-3">
-                                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                                            <div className="text-sm font-medium text-foreground">
-                                                                Serving amount
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    updatePlannedServingInput(
-                                                                        item.id,
-                                                                        String(
-                                                                            item.default_servings,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                                className="rounded-full border border-border/70 px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-background"
-                                                            >
-                                                                Use plan amount
-                                                            </button>
-                                                        </div>
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            {[0.5, 1, 1.5].map(
-                                                                (
-                                                                    multiplier,
-                                                                ) => (
-                                                                    <button
-                                                                        key={
-                                                                            multiplier
-                                                                        }
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            applyPlannedServing(
-                                                                                item,
-                                                                                multiplier,
-                                                                            )
-                                                                        }
-                                                                        className="rounded-full border border-border/70 px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-background"
-                                                                    >
-                                                                        {
-                                                                            multiplier
-                                                                        }
-                                                                        x
-                                                                    </button>
-                                                                ),
-                                                            )}
-                                                            <input
-                                                                type="number"
-                                                                min={0.25}
-                                                                step={0.25}
-                                                                value={
-                                                                    plannedServingInput[
-                                                                        item.id
-                                                                    ] ??
-                                                                    String(
-                                                                        item.default_servings,
-                                                                    )
-                                                                }
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    updatePlannedServingInput(
-                                                                        item.id,
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                className="h-9 w-28 rounded-xl border border-border/70 bg-background px-2 py-1 text-sm"
-                                                            />
-                                                            <span className="text-xs text-muted-foreground">
-                                                                servings
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            Planned amount:{' '}
-                                                            {
-                                                                item.default_servings
-                                                            }{' '}
-                                                            servings
-                                                        </div>
+                                                    <div className="mt-4 rounded-[20px] border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
+                                                        Pick the quantity inside
+                                                        the log dialog so macros
+                                                        and units stay focused
+                                                        on the action you are
+                                                        taking.
                                                     </div>
 
                                                     <div className="mt-4 flex flex-wrap gap-2">
@@ -1005,21 +1074,51 @@ export default function TrackMealsPage() {
                         </div>
 
                         <div className="mt-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
-                            1 serving = {plannedLogItem.food.serving_size}
-                            {plannedLogItem.food.serving_unit}
+                            {servingReferenceText(
+                                plannedLogItem.food,
+                                plannedLogItem.meal_type,
+                            )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {quantityModeOptions(
+                                plannedLogItem.food,
+                                plannedLogItem.meal_type,
+                            ).map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() =>
+                                        setPlannedLogDraft((current) => ({
+                                            ...current,
+                                            mode: option,
+                                        }))
+                                    }
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                        plannedLogDraft.mode === option
+                                            ? 'border-primary/30 bg-primary/10 text-foreground'
+                                            : 'border-border/70 bg-background text-muted-foreground'
+                                    }`}
+                                >
+                                    {quantityModeLabel(option)}
+                                </button>
+                            ))}
                         </div>
 
                         <label className="mt-4 block text-sm font-medium text-foreground">
-                            Servings
+                            {quantityModeLabel(plannedLogDraft.mode)}
                             <input
                                 type="number"
-                                min={0.25}
-                                step={0.25}
-                                value={plannedLogServings}
+                                min={quantityMin(plannedLogDraft.mode)}
+                                step={quantityStep(plannedLogDraft.mode)}
+                                value={plannedLogDraft.value}
                                 onChange={(event) =>
-                                    setPlannedLogServings(
-                                        Number(event.target.value) || 1,
-                                    )
+                                    setPlannedLogDraft((current) => ({
+                                        ...current,
+                                        value:
+                                            Number(event.target.value) ||
+                                            quantityMin(current.mode),
+                                    }))
                                 }
                                 className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
                             />
@@ -1086,7 +1185,7 @@ export default function TrackMealsPage() {
                         </div>
 
                         <div className="mt-3 rounded-[22px] border border-border/70 bg-background/72 p-3 text-xs text-muted-foreground">
-                            Planned servings carry over automatically so logging
+                            Planned quantities carry over automatically so logging
                             stays fast.
                         </div>
 
@@ -1182,28 +1281,70 @@ export default function TrackMealsPage() {
                         </div>
 
                         <div className="mt-4 rounded-[22px] border border-border/70 bg-background/72 p-4 text-sm text-muted-foreground">
-                            1 serving = {selectedFood.serving_size}
-                            {selectedFood.serving_unit}
+                            {servingReferenceText(
+                                selectedFood,
+                                selectedPlannedItem?.meal_type ?? mealType,
+                            )}
                         </div>
                         {mode === 'follow-plan' && selectedPlannedItem ? (
                             <div className="mt-3 rounded-[22px] border border-border/70 bg-card/80 p-3 text-xs text-muted-foreground">
-                                Replacing: {selectedPlannedItem.food.name} (
-                                {plannedServingValue(selectedPlannedItem)}{' '}
-                                servings)
+                                Replacing: {selectedPlannedItem.food.name}
                             </div>
                         ) : null}
+                        {dialogStatus ? (
+                            <ProductBanner
+                                tone={dialogStatus.tone}
+                                role={
+                                    dialogStatus.tone === 'danger'
+                                        ? 'alert'
+                                        : 'status'
+                                }
+                                className="mt-3"
+                            >
+                                {dialogStatus.message}
+                            </ProductBanner>
+                        ) : null}
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {quantityModeOptions(
+                                selectedFood,
+                                selectedPlannedItem?.meal_type ?? mealType,
+                            ).map((option) => (
+                                    <button
+                                        key={option}
+                                        type="button"
+                                        onClick={() =>
+                                            setLogDraft((current) => ({
+                                                ...current,
+                                                mode: option,
+                                            }))
+                                        }
+                                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                            logDraft.mode === option
+                                                ? 'border-primary/30 bg-primary/10 text-foreground'
+                                                : 'border-border/70 bg-background text-muted-foreground'
+                                        }`}
+                                    >
+                                        {quantityModeLabel(option)}
+                                    </button>
+                                ),
+                            )}
+                        </div>
 
                         <label className="mt-4 block text-sm font-medium text-foreground">
-                            Servings
+                            {quantityModeLabel(logDraft.mode)}
                             <input
                                 type="number"
-                                min={0.25}
-                                step={0.25}
-                                value={portionCount}
+                                min={quantityMin(logDraft.mode)}
+                                step={quantityStep(logDraft.mode)}
+                                value={logDraft.value}
                                 onChange={(event) =>
-                                    setPortionCount(
-                                        Number(event.target.value) || 1,
-                                    )
+                                    setLogDraft((current) => ({
+                                        ...current,
+                                        value:
+                                            Number(event.target.value) ||
+                                            quantityMin(current.mode),
+                                    }))
                                 }
                                 className="mt-2 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm"
                             />
@@ -1212,20 +1353,24 @@ export default function TrackMealsPage() {
                         <div className="mt-4 rounded-[22px] border border-border/70 bg-card/80 p-4 text-sm text-foreground">
                             Approximate totals:{' '}
                             {Math.round(
-                                (selectedFood.calories ?? 0) * portionCount,
+                                (selectedFood.calories ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
                             )}{' '}
                             kcal
                             {' - '}P{' '}
                             {Math.round(
-                                (selectedFood.protein_g ?? 0) * portionCount,
+                                (selectedFood.protein_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
                             )}
                             {' - '}C{' '}
                             {Math.round(
-                                (selectedFood.carbs_g ?? 0) * portionCount,
+                                (selectedFood.carbs_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
                             )}
                             {' - '}F{' '}
                             {Math.round(
-                                (selectedFood.fat_g ?? 0) * portionCount,
+                                (selectedFood.fat_g ?? 0) *
+                                    quantityToServings(selectedFood, logDraft),
                             )}
                         </div>
 

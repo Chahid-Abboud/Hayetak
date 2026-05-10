@@ -50,13 +50,12 @@ type Props = {
     initialCenter?: { lat: number; lon: number };
     initialZoom?: number;
     radiusKm: number;
-    onRadiusChange?: (km: number) => void;
     showGym?: boolean;
     showNutritionist?: boolean;
     showHealthcare?: boolean;
-    onToggleGym?: (v: boolean) => void;
-    onToggleNutritionist?: (v: boolean) => void;
-    onToggleHealthcare?: (v: boolean) => void;
+    onToggleGym?: (value: boolean) => void;
+    onToggleNutritionist?: (value: boolean) => void;
+    onToggleHealthcare?: (value: boolean) => void;
     onResults?: (items: Place[]) => void;
     onLoadingChange?: (loading: boolean) => void;
     onErrorChange?: (message: string | null) => void;
@@ -73,9 +72,6 @@ export default function NearbyMap({
     showGym = true,
     showNutritionist = true,
     showHealthcare = true,
-    onToggleGym,
-    onToggleNutritionist,
-    onToggleHealthcare,
     onResults,
     onLoadingChange,
     onErrorChange,
@@ -101,6 +97,7 @@ export default function NearbyMap({
 
     const [places, setPlaces] = useState<Place[]>([]);
     const placesRef = useRef<Place[]>([]);
+    const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -151,6 +148,7 @@ export default function NearbyMap({
             .setHTML(
                 `
         <div style="
+          font-family:var(--font-display), sans-serif;
           background:var(--card);
           color:var(--foreground);
           border:1px solid var(--border);
@@ -212,6 +210,14 @@ export default function NearbyMap({
             )
             .addTo(m);
     }, []);
+
+    const activatePlace = useCallback(
+        (place: Place) => {
+            setSelectedPlace(place);
+            showPopupAt(place.lon, place.lat, place);
+        },
+        [showPopupAt],
+    );
 
     /* ---------- fetch places ---------- */
     const fetchPlaces = useCallback(
@@ -298,7 +304,7 @@ export default function NearbyMap({
                 m,
                 placesRef.current,
                 markerRegistry,
-                showPopupAt,
+                activatePlace,
             );
         });
 
@@ -312,7 +318,7 @@ export default function NearbyMap({
             m.remove();
             mapRef.current = null;
         };
-    }, [showPopupAt]);
+    }, [activatePlace]);
 
     /* ---------- set user marker ---------- */
     useEffect(() => {
@@ -356,8 +362,8 @@ export default function NearbyMap({
         const m = mapRef.current;
         if (!m) return;
         placesRef.current = places;
-        updatePlaceMarkers(m, places, placeMarkersRef.current, showPopupAt);
-    }, [places, showPopupAt]);
+        updatePlaceMarkers(m, places, placeMarkersRef.current, activatePlace);
+    }, [activatePlace, places]);
 
     /* ---------- focus from list ---------- */
     useEffect(() => {
@@ -375,48 +381,21 @@ export default function NearbyMap({
             essential: true,
         });
 
-        showPopupAt(target.lon, target.lat, target);
-    }, [focusPlaceId, places, showPopupAt]);
+        activatePlace(target);
+    }, [activatePlace, focusPlaceId, places]);
+
+    useEffect(() => {
+        if (
+            selectedPlace &&
+            !places.some((place) => String(place.id) === String(selectedPlace.id))
+        ) {
+            setSelectedPlace(null);
+        }
+    }, [places, selectedPlace]);
 
     return (
-        <div className="relative">
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-2 rounded-xl border border-border/70 bg-card/92 p-2 shadow-sm backdrop-blur">
-                <button
-                    type="button"
-                    onClick={() => onToggleGym?.(!showGym)}
-                    className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-                        showGym
-                            ? 'border-primary/60 bg-primary text-primary-foreground'
-                            : 'border-border bg-background text-foreground'
-                    }`}
-                >
-                    Gyms
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onToggleNutritionist?.(!showNutritionist)}
-                    className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-                        showNutritionist
-                            ? 'border-info/60 bg-info text-info-foreground'
-                            : 'border-border bg-background text-foreground'
-                    }`}
-                >
-                    Nutrition centers
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onToggleHealthcare?.(!showHealthcare)}
-                    className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-                        showHealthcare
-                            ? 'border-primary/60 bg-primary/15 text-foreground'
-                            : 'border-border bg-background text-foreground'
-                    }`}
-                >
-                    Healthcare
-                </button>
-            </div>
-
-            <div className="absolute top-16 right-3 z-10 rounded-xl border border-border/70 bg-card/92 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
+        <div className="relative flex h-full min-h-[520px] flex-col">
+            <div className="absolute top-3 right-3 z-10 rounded-xl border border-border/70 bg-card/92 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur">
                 <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Current area
                 </div>
@@ -428,8 +407,43 @@ export default function NearbyMap({
 
             <div
                 ref={divRef}
-                className="h-[520px] w-full rounded-[24px] border border-border/70 shadow-sm"
+                className="min-h-[520px] flex-1 rounded-[24px] border border-border/70 shadow-sm xl:min-h-0"
             />
+
+            {selectedPlace ? (
+                <div
+                    className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-[320px] rounded-[22px] border border-border/70 bg-card/95 p-4 text-sm text-foreground shadow-xl backdrop-blur"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                >
+                    <div className="text-lg font-semibold">
+                        {selectedPlace.name}
+                    </div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        {formatCategoryLabel(
+                            selectedPlace.category ??
+                                selectedPlace.type ??
+                                'other',
+                        )}
+                    </div>
+                    {(selectedPlace.address || selectedPlace.city) && (
+                        <div className="mt-3 text-sm text-muted-foreground">
+                            {[selectedPlace.address, selectedPlace.city]
+                                .filter(Boolean)
+                                .join(', ')}
+                        </div>
+                    )}
+                    {typeof selectedPlace.distanceM === 'number' ? (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                            {(selectedPlace.distanceM / 1000).toFixed(2)} km away
+                        </div>
+                    ) : null}
+                    {selectedPlace.description ? (
+                        <div className="mt-3 line-clamp-4 text-sm text-foreground/90">
+                            {selectedPlace.description}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
 
             <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-2">
@@ -654,7 +668,7 @@ function updatePlaceMarkers(
     map: MapboxMap,
     list: Place[],
     registry: globalThis.Map<string, { marker: mapboxgl.Marker; root: Root }>,
-    showPopupAt: (lng: number, lat: number, data: Place) => void,
+    activatePlace: (place: Place) => void,
 ) {
     clearPlaceMarkers(registry);
 
@@ -667,12 +681,12 @@ function updatePlaceMarkers(
         const element = document.createElement('button');
         element.type = 'button';
         element.className =
-            'group flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card text-foreground shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none';
+            'group flex h-7 w-7 items-center justify-center rounded-full border border-border/70 bg-card text-foreground shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none';
         element.style.boxShadow = '0 16px 32px rgba(0,0,0,0.28)';
         element.setAttribute('aria-label', `Show ${place.name} on map`);
         element.addEventListener('click', (event) => {
             event.stopPropagation();
-            showPopupAt(place.lon, place.lat, place);
+            activatePlace(place);
         });
 
         const root = createRoot(element);
@@ -710,9 +724,9 @@ function MapPlaceMarkerIcon({
 
     return (
         <span
-            className={`flex h-7 w-7 items-center justify-center rounded-full border ${tone}`}
+            className={`flex h-6 w-6 items-center justify-center rounded-full border ${tone}`}
         >
-            <Icon className="h-4 w-4" aria-hidden strokeWidth={2.5} />
+            <Icon className="h-3.5 w-3.5" aria-hidden strokeWidth={2.4} />
         </span>
     );
 }
@@ -814,9 +828,10 @@ function truncate(value: string, maxLen: number): string {
 }
 
 function formatCategoryLabel(value: string): string {
-    return value
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+    const normalized = value.replace(/_/g, ' ').toLowerCase();
+    if (normalized.includes('nutritionist')) return 'Dietitian';
+    if (normalized.includes('trainer')) return 'Personal Trainer';
+    return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function safeHttpUrl(value?: string | null): string | null {

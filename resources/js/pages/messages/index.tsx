@@ -60,9 +60,9 @@ function getCsrfToken() {
 
 function roleLabel(role?: string | null) {
     if (!role) return 'User';
-    return role === 'nutritionist'
-        ? 'Dietitian'
-        : role.charAt(0).toUpperCase() + role.slice(1);
+    if (role === 'nutritionist') return 'Dietitian';
+    if (role === 'trainer') return 'Personal Trainer';
+    return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
 function formatThreadTime(value?: string | null) {
@@ -333,7 +333,14 @@ export default function MessagesPage() {
                     body: JSON.stringify({ body }),
                 },
             );
-            if (!res.ok) throw new Error('Message could not be sent.');
+            if (!res.ok) {
+                const json = (await res.json().catch(() => null)) as
+                    | { message?: string }
+                    | null;
+                throw new Error(
+                    json?.message || 'Message could not be sent.',
+                );
+            }
             const json = await res.json();
             const nextMessage = json?.message as Message | undefined;
             setText('');
@@ -692,65 +699,176 @@ export default function MessagesPage() {
                                         {contextError}
                                     </ProductBanner>
                                 ) : context ? (
-                                    <>
-                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
-                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-                                                <ShieldAlert className="h-3.5 w-3.5" />
-                                                Safety
-                                            </p>
-                                            <p>
-                                                Allergies:{' '}
-                                                {context.safety.allergies
-                                                    ?.length
-                                                    ? context.safety.allergies.join(
-                                                          ', ',
-                                                      )
-                                                    : 'None listed'}
-                                            </p>
-                                            <p>
-                                                Medical history:{' '}
-                                                {context.safety
-                                                    .has_medical_history
-                                                    ? 'Yes'
-                                                    : 'No'}
-                                            </p>
-                                        </div>
-                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
-                                            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-                                                <UtensilsCrossed className="h-3.5 w-3.5" />
-                                                Today
-                                            </p>
-                                            <p>
-                                                Meals:{' '}
-                                                {context.activity.today
-                                                    ?.meals_logged ?? 0}
-                                            </p>
-                                            <p>
-                                                Calories:{' '}
-                                                {context.activity.today
-                                                    ?.meal_calories ?? 0}
-                                            </p>
-                                        </div>
-                                        <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
-                                            <p className="mb-1 font-medium">
-                                                Upcoming appointments
-                                            </p>
-                                            <p className="text-muted-foreground">
-                                                {
-                                                    context.appointments
-                                                        .upcoming_count
-                                                }{' '}
-                                                planned
-                                            </p>
-                                            <a
-                                                href="/appointments"
-                                                className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-foreground no-underline"
-                                            >
-                                                <CalendarDays className="h-3.5 w-3.5" />
-                                                Open scheduler
-                                            </a>
-                                        </div>
-                                    </>
+                                    context.context_mode ===
+                                    'professional_summary' ? (
+                                        <>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                    <Sparkles className="h-3.5 w-3.5" />
+                                                    Professional
+                                                </p>
+                                                <p>
+                                                    Role:{' '}
+                                                    {context.professional_snapshot
+                                                        ?.role_label ??
+                                                        roleLabel(
+                                                            context.peer?.role,
+                                                        )}
+                                                </p>
+                                                <p>
+                                                    Verified:{' '}
+                                                    {context.professional_snapshot
+                                                        ?.verified
+                                                        ? 'Yes'
+                                                        : 'No'}
+                                                </p>
+                                                {context.professional_snapshot
+                                                    ?.city ? (
+                                                    <p>
+                                                        City:{' '}
+                                                        {
+                                                            context
+                                                                .professional_snapshot
+                                                                .city
+                                                        }
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                    <ShieldAlert className="h-3.5 w-3.5" />
+                                                    Focus
+                                                </p>
+                                                <p>
+                                                    Specialties:{' '}
+                                                    {context.professional_snapshot
+                                                        ?.specialties?.length
+                                                        ? context.professional_snapshot.specialties.join(
+                                                              ', ',
+                                                          )
+                                                        : 'Not listed'}
+                                                </p>
+                                                <p>
+                                                    Availability:{' '}
+                                                    {context.professional_snapshot
+                                                        ?.availability_text ??
+                                                        'No availability note yet'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-1 font-medium">
+                                                    Upcoming appointments
+                                                </p>
+                                                <p className="text-muted-foreground">
+                                                    {
+                                                        context.appointments
+                                                            .upcoming_count
+                                                    }{' '}
+                                                    planned
+                                                </p>
+                                                <a
+                                                    href="/appointments"
+                                                    className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-foreground no-underline"
+                                                >
+                                                    <CalendarDays className="h-3.5 w-3.5" />
+                                                    Open scheduler
+                                                </a>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                    <ShieldAlert className="h-3.5 w-3.5" />
+                                                    Client profile
+                                                </p>
+                                                <p>
+                                                    Goals:{' '}
+                                                    {context.client_snapshot
+                                                        ?.goals?.length
+                                                        ? context.client_snapshot.goals.join(
+                                                              ', ',
+                                                          )
+                                                        : 'Not set'}
+                                                </p>
+                                                <p>
+                                                    Diet type:{' '}
+                                                    {context.client_snapshot
+                                                        ?.diet_name ??
+                                                        'Not set'}
+                                                </p>
+                                                <p>
+                                                    Allergies:{' '}
+                                                    {context.client_snapshot
+                                                        ?.allergies?.length
+                                                        ? context.client_snapshot.allergies.join(
+                                                              ', ',
+                                                          )
+                                                        : 'None listed'}
+                                                </p>
+                                                <p>
+                                                    Medical history:{' '}
+                                                    {context.client_snapshot
+                                                        ?.has_medical_history
+                                                        ? 'Flagged'
+                                                        : 'None flagged'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                                                    <UtensilsCrossed className="h-3.5 w-3.5" />
+                                                    Activity
+                                                </p>
+                                                <p>
+                                                    Today:{' '}
+                                                    {context.activity.today
+                                                        ?.meals_logged ?? 0}{' '}
+                                                    meals,{' '}
+                                                    {context.activity.today
+                                                        ?.workouts_logged ?? 0}{' '}
+                                                    workouts
+                                                </p>
+                                                <p>
+                                                    Last 7 days:{' '}
+                                                    {context.activity
+                                                        .last_7_days
+                                                        ?.meals_logged ?? 0}{' '}
+                                                    meals,{' '}
+                                                    {context.activity
+                                                        .last_7_days
+                                                        ?.workouts_logged ?? 0}{' '}
+                                                    workouts
+                                                </p>
+                                                <p>
+                                                    Workout location:{' '}
+                                                    {context.client_snapshot
+                                                        ?.workout_location ??
+                                                        'Not set'}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-border/70 bg-card p-3 text-sm">
+                                                <p className="mb-1 font-medium">
+                                                    Plan and appointments
+                                                </p>
+                                                <p className="text-muted-foreground">
+                                                    {context.plan
+                                                        ? `Latest plan v${context.plan.version ?? '?'}`
+                                                        : 'No active plan context'}
+                                                </p>
+                                                <p className="mt-1 text-muted-foreground">
+                                                    {
+                                                        context.appointments
+                                                            .upcoming_count
+                                                    }{' '}
+                                                    upcoming appointment
+                                                    {context.appointments
+                                                        .upcoming_count === 1
+                                                        ? ''
+                                                        : 's'}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
                                         No context available.
@@ -761,7 +879,7 @@ export default function MessagesPage() {
                     </div>
                 </>
             )}
-        </section>
+        </div>
     );
 
     return (

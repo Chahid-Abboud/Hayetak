@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Jobs\Auth\SendEmailVerificationNotification;
 use App\Services\Ai\AutoPlanGenerationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +45,11 @@ class AuthenticatedSessionController extends Controller
         $this->autoPlanGeneration->startIfNeeded($user, 'login_missing_plan_autostart');
 
         if (! $user->hasVerifiedEmail()) {
-            $user->sendEmailVerificationNotification();
+            if (app()->runningUnitTests()) {
+                SendEmailVerificationNotification::dispatchSync($user->id);
+            } else {
+                SendEmailVerificationNotification::dispatchAfterResponse($user->id);
+            }
 
             return to_route('verification.notice')
                 ->with('status', 'verification-link-sent');

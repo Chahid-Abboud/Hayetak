@@ -297,7 +297,9 @@ export function ProductFilterRow({
                 className,
             )}
         >
-            <div className="flex flex-wrap items-end gap-3">{children}</div>
+            <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
+                {children}
+            </div>
         </div>
     );
 }

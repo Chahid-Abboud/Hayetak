@@ -146,6 +146,17 @@ export default function Places() {
         string | null
     >(null);
 
+    function focusPlaceFromList(placeId: string | number | null) {
+        if (placeId === null || placeId === undefined) {
+            return;
+        }
+
+        setSelectedPlaceId(null);
+        window.requestAnimationFrame(() => {
+            setSelectedPlaceId(placeId);
+        });
+    }
+
     // locate once
     useEffect(() => {
         if (!('geolocation' in navigator)) {
@@ -456,8 +467,8 @@ export default function Places() {
             <ProductPageShell width="wide">
                 <ProductHero
                     eyebrow="Nearby support"
-                    title="Nearby"
-                    description="Explore gyms, discover nearby nutrition support, and connect with approved professionals from the same polished workspace."
+                    title="Nearby support"
+                    description="Find nearby gyms, healthcare places, dietitians, and personal trainers."
                     meta={
                         <span>
                             {loading
@@ -528,14 +539,14 @@ export default function Places() {
                                         className="h-11 rounded-xl border border-border bg-background px-3"
                                     >
                                         <option value="all">
-                                            Gyms + Nutrition + Healthcare
+                                            Gyms + Dietitians + Healthcare
                                         </option>
                                         <option value="both">
-                                            Gyms + Nutrition centers
+                                            Gyms + Dietitian centers
                                         </option>
                                         <option value="gym">Gyms only</option>
                                         <option value="nutritionist">
-                                            Nutrition centers only
+                                            Dietitian centers only
                                         </option>
                                         <option value="healthcare">
                                             Healthcare only
@@ -551,7 +562,7 @@ export default function Places() {
                                     <div className="flex items-center justify-between gap-3">
                                         <span>{counts.gym} gyms</span>
                                         <span>
-                                            {counts.nutritionist} nutrition
+                                            {counts.nutritionist} dietitian
                                             centers
                                         </span>
                                         <span>
@@ -596,14 +607,14 @@ export default function Places() {
                             className="h-9 w-full rounded-md border bg-background px-3"
                         >
                             <option value="all">
-                                Gyms + Nutrition + Healthcare
+                                Gyms + Dietitians + Healthcare
                             </option>
                             <option value="both">
-                                Gyms + Nutrition centers
+                                Gyms + Dietitian centers
                             </option>
                             <option value="gym">Gyms only</option>
                             <option value="nutritionist">
-                                Nutrition centers only
+                                Dietitian centers only
                             </option>
                             <option value="healthcare">Healthcare only</option>
                             <option value="custom" disabled>
@@ -633,7 +644,7 @@ export default function Places() {
                                 <span className="font-semibold">
                                     {counts.nutritionist}
                                 </span>{' '}
-                                nutrition centers
+                                dietitian centers
                             </span>
                             <span>
                                 <span className="font-semibold">
@@ -645,8 +656,8 @@ export default function Places() {
                     </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-5">
-                    <div className="md:col-span-3">
+                <div className="grid items-stretch gap-4 xl:h-[calc(100vh-14rem)] xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+                    <div className="min-w-0 h-full">
                         {center ? (
                             <NearbyMap
                                 initialCenter={center}
@@ -655,9 +666,6 @@ export default function Places() {
                                 showGym={showGym}
                                 showNutritionist={showNutri}
                                 showHealthcare={showHealthcare}
-                                onToggleGym={setShowGym}
-                                onToggleNutritionist={setShowNutri}
-                                onToggleHealthcare={setShowHealthcare}
                                 onLoadingChange={setLoading}
                                 onErrorChange={setError}
                                 onResults={(list) => {
@@ -666,7 +674,7 @@ export default function Places() {
                                 focusPlaceId={selectedPlaceId}
                             />
                         ) : (
-                            <div className="flex h-[480px] items-center justify-center rounded-xl border">
+                            <div className="flex h-full min-h-[480px] items-center justify-center rounded-xl border">
                                 <div className="text-sm text-muted-foreground">
                                     {geoMsg ??
                                         'Waiting for location permission...'}
@@ -675,29 +683,28 @@ export default function Places() {
                         )}
                     </div>
 
-                    <div className="md:col-span-2">
-                        <div className="rounded-lg border p-3">
+                    <div className="min-w-0 h-full">
+                        <div className="flex h-full flex-col overflow-hidden rounded-[24px] border border-border/70 bg-card/70 p-4">
                             <div className="mb-3">
                                 <div className="text-sm font-medium">
                                     Nearby directory
                                 </div>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                    One list for map places and approved
-                                    professionals, with one shared search.
+                                    Search places and approved professionals in one stable list.
                                 </p>
                             </div>
 
                             <div className="mb-3 grid gap-2 sm:grid-cols-2">
                                 <input
-                                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                                    placeholder="Search names, categories, areas..."
+                                    className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary/70"
+                                    placeholder="Search by name, category, city, or specialty..."
                                     value={listQuery}
                                     onChange={(event) =>
                                         setListQuery(event.target.value)
                                     }
                                 />
                                 <select
-                                    className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                                    className="h-11 w-full rounded-2xl border border-border/70 bg-background px-4 text-sm outline-none transition focus:border-primary/70"
                                     value={listFilter}
                                     onChange={(event) =>
                                         setListFilter(
@@ -717,11 +724,11 @@ export default function Places() {
                                     <option value="dietitians">
                                         Dietitians
                                     </option>
-                                    <option value="trainers">Trainers</option>
+                                    <option value="trainers">Personal Trainers</option>
                                 </select>
                             </div>
 
-                            <ul className="max-h-[680px] space-y-2 overflow-auto pr-1">
+                            <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
                                 {(loading || loadingProfessionals) &&
                                     Array.from({ length: 4 }).map(
                                         (_, index) => (
@@ -752,11 +759,12 @@ export default function Places() {
                                             p.type ??
                                             'other'
                                         ).toString();
-                                        const prettyCategory = category
-                                            .replace(/_/g, ' ')
-                                            .replace(/\b\w/g, (char) =>
-                                                char.toUpperCase(),
-                                            );
+                                        const rawCategory = category.toLowerCase();
+                                        const prettyCategory = rawCategory === 'nutritionist'
+                                            ? 'Dietitian'
+                                            : rawCategory === 'trainer'
+                                              ? 'Personal Trainer'
+                                              : category.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
                                         const distanceLabel =
                                             typeof p.distanceM === 'number'
                                                 ? `${(p.distanceM / 1000).toFixed(2)} km`
@@ -774,16 +782,16 @@ export default function Places() {
                                         return (
                                             <li
                                                 key={item.key}
-                                                className={`cursor-pointer rounded-md border p-2 transition hover:bg-muted/40 ${
+                                                className={`cursor-pointer rounded-[18px] border border-border/70 bg-background/80 p-3 transition hover:border-primary/50 hover:bg-primary/5 ${
                                                     selectedPlaceId !== null &&
                                                     String(selectedPlaceId) ===
                                                         String(p.id)
-                                                        ? 'bg-muted/60'
+                                                        ? 'border-primary/70 bg-primary/10'
                                                         : ''
                                                 }`}
                                                 title="Show on map"
                                                 onClick={() =>
-                                                    setSelectedPlaceId(p.id)
+                                                    focusPlaceFromList(p.id)
                                                 }
                                             >
                                                 <div className="flex items-start justify-between gap-2">
@@ -831,7 +839,7 @@ export default function Places() {
                                                             </>
                                                         }
                                                     />
-                                                    <div className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                                    <div className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                                                         {prettyCategory}
                                                     </div>
                                                 </div>
@@ -869,7 +877,7 @@ export default function Places() {
                                                             href={mapUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-sky-700 underline"
+                                                            className="font-semibold text-primary underline underline-offset-4"
                                                             onClick={(event) =>
                                                                 event.stopPropagation()
                                                             }
@@ -882,7 +890,7 @@ export default function Places() {
                                                             href={websiteUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="text-sky-700 underline"
+                                                            className="font-semibold text-primary underline underline-offset-4"
                                                             onClick={(event) =>
                                                                 event.stopPropagation()
                                                             }
@@ -899,7 +907,7 @@ export default function Places() {
                                     const roleLabel =
                                         professional.role === 'nutritionist'
                                             ? 'Dietitian'
-                                            : 'Trainer';
+                                            : 'Personal trainer';
                                     const centerOrGymLine =
                                         professional.role === 'nutritionist'
                                             ? professional.nutritionCenterName
@@ -912,7 +920,24 @@ export default function Places() {
                                     return (
                                         <li
                                             key={item.key}
-                                            className="rounded-xl border p-3"
+                                            className={`rounded-[18px] border border-border/70 bg-background/80 p-3 transition ${
+                                                professional.linkedPlaceId &&
+                                                selectedPlaceId !== null &&
+                                                String(selectedPlaceId) ===
+                                                    String(
+                                                        professional.linkedPlaceId,
+                                                    )
+                                                    ? 'border-primary/70 bg-primary/10'
+                                                    : professional.linkedPlaceId
+                                                      ? 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
+                                                      : ''
+                                            }`}
+                                            onClick={() =>
+                                                focusPlaceFromList(
+                                                    professional.linkedPlaceId ??
+                                                        null,
+                                                )
+                                            }
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <HoverPreview
@@ -973,22 +998,21 @@ export default function Places() {
                                             )}
                                             {!professional.canInteract && (
                                                 <div className="mt-1 text-xs text-muted-foreground">
-                                                    Messaging and appointments
-                                                    are currently unavailable
-                                                    for this profile.
+                                                    Chat and appointments are unavailable for this profile.
                                                 </div>
                                             )}
                                             <div className="mt-2 flex flex-wrap gap-3 text-xs">
                                                 {professional.linkedPlaceId ? (
                                                     <button
                                                         type="button"
-                                                        className="text-sky-700 underline"
-                                                        onClick={() =>
-                                                            setSelectedPlaceId(
+                                                        className="font-semibold text-primary underline underline-offset-4"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            focusPlaceFromList(
                                                                 professional.linkedPlaceId ??
                                                                     null,
-                                                            )
-                                                        }
+                                                            );
+                                                        }}
                                                     >
                                                         Show associated place
                                                     </button>
@@ -1004,13 +1028,14 @@ export default function Places() {
                                                         workingProfessionalId ===
                                                             professional.id
                                                     }
-                                                    onClick={() =>
-                                                        professional.canInteract
-                                                            ? void openConversation(
-                                                                  professional.id,
-                                                              )
-                                                            : undefined
-                                                    }
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        if (professional.canInteract) {
+                                                            void openConversation(
+                                                                professional.id,
+                                                            );
+                                                        }
+                                                    }}
                                                 >
                                                     {workingProfessionalId ===
                                                     professional.id
@@ -1028,13 +1053,14 @@ export default function Places() {
                                                         workingProfessionalId ===
                                                             professional.id
                                                     }
-                                                    onClick={() =>
-                                                        professional.canInteract
-                                                            ? openAppointmentDialog(
-                                                                  professional,
-                                                              )
-                                                            : undefined
-                                                    }
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        if (professional.canInteract) {
+                                                            openAppointmentDialog(
+                                                                professional,
+                                                            );
+                                                        }
+                                                    }}
                                                 >
                                                     Request appointment
                                                 </button>
@@ -1083,7 +1109,7 @@ export default function Places() {
                                     {appointmentDialog.professionalRole ===
                                     'nutritionist'
                                         ? 'Dietitian'
-                                        : 'Trainer'}
+                                        : 'Personal trainer'}
                                 </div>
                             </div>
 

@@ -1,4 +1,3 @@
-import AppearanceTabs from '@/components/appearance-tabs';
 import { ProductBanner, ProductSection } from '@/components/product/page';
 import { ProductButton } from '@/components/product/product-ui';
 import SettingsLayout from '@/layouts/settings/layout';
@@ -385,7 +384,7 @@ export default function ProfilePage() {
                     description={`${displayName} - ${email}`}
                 >
                     <div className="space-y-5">
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                             <TextField
                                 label="First name"
                                 value={firstName}
@@ -447,7 +446,7 @@ export default function ProfilePage() {
                         injuryHistory.length + medicalConditions.length
                     }.`}
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                         <div className="space-y-5">
                             <SurfaceCard
                                 title="Diet and body goals"
@@ -598,7 +597,7 @@ export default function ProfilePage() {
                         workoutLocation || 'location not set'
                     }, ${workoutDaysPerWeek || '0'} days per week.`}
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                         <div className="space-y-5">
                             <SurfaceCard
                                 title="Training basics"
@@ -694,7 +693,7 @@ export default function ProfilePage() {
                 </ProductSection>
 
                 <ProductSection
-                    title="Measurements and appearance"
+                    title="Measurements"
                     description={`Latest weight: ${
                         latestWeight !== null
                             ? `${latestWeight} kg`
@@ -707,79 +706,70 @@ export default function ProfilePage() {
                               : 'not logged'
                     }.`}
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                        <div className="space-y-5">
-                            <SurfaceCard
-                                title="Add a measurement"
-                                description="Log weight regularly and update height when needed."
-                            >
-                                <div className="grid gap-4 md:grid-cols-3">
-                                    <TextField
-                                        label="Date"
-                                        value={measurementDate}
-                                        onChange={setMeasurementDate}
-                                        type="date"
-                                    />
-                                    <SelectField
-                                        label="Type"
-                                        value={measurementType}
-                                        onChange={(value) =>
-                                            setMeasurementType(
-                                                value as 'weight' | 'height',
-                                            )
-                                        }
-                                        options={[
-                                            {
-                                                value: 'weight',
-                                                label: 'Weight (kg)',
-                                            },
-                                            {
-                                                value: 'height',
-                                                label: 'Height (cm)',
-                                            },
-                                        ]}
-                                    />
-                                    <TextField
-                                        label="Value"
-                                        value={measurementValue}
-                                        onChange={setMeasurementValue}
-                                        type="number"
-                                        inputMode="decimal"
-                                        placeholder={
-                                            measurementType === 'weight'
-                                                ? 'e.g. 72'
-                                                : 'e.g. 175'
-                                        }
-                                    />
-                                </div>
-
-                                <div className="mt-4 flex flex-wrap gap-3">
-                                    <ProductButton onClick={addMeasurement}>
-                                        Save measurement
-                                    </ProductButton>
-                                </div>
-                            </SurfaceCard>
-
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <RecentListCard
-                                    title="Recent weight"
-                                    unit="kg"
-                                    data={weightHistory}
+                    <div className="space-y-5">
+                        <SurfaceCard
+                            title="Add a measurement"
+                            description="Log weight regularly and update height when needed."
+                        >
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <TextField
+                                    label="Date"
+                                    value={measurementDate}
+                                    onChange={setMeasurementDate}
+                                    type="date"
                                 />
-                                <RecentListCard
-                                    title="Recent height"
-                                    unit="cm"
-                                    data={heightHistory}
+                                <SelectField
+                                    label="Type"
+                                    value={measurementType}
+                                    onChange={(value) =>
+                                        setMeasurementType(
+                                            value as 'weight' | 'height',
+                                        )
+                                    }
+                                    options={[
+                                        {
+                                            value: 'weight',
+                                            label: 'Weight (kg)',
+                                        },
+                                        {
+                                            value: 'height',
+                                            label: 'Height (cm)',
+                                        },
+                                    ]}
+                                />
+                                <TextField
+                                    label="Value"
+                                    value={measurementValue}
+                                    onChange={setMeasurementValue}
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder={
+                                        measurementType === 'weight'
+                                            ? 'e.g. 72'
+                                            : 'e.g. 175'
+                                    }
                                 />
                             </div>
-                        </div>
 
-                        <SurfaceCard
-                            title="Appearance"
-                            description="Choose light, dark, or system theme."
-                        >
-                            <AppearanceTabs />
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                <ProductButton onClick={addMeasurement}>
+                                    Save measurement
+                                </ProductButton>
+                            </div>
                         </SurfaceCard>
+
+                        <div className="space-y-4">
+                            <RecentListCard
+                                title="Recent weight"
+                                unit="kg"
+                                data={weightHistory}
+                            />
+                            <RecentListCard
+                                title="Recent height"
+                                unit="cm"
+                                data={heightHistory}
+                            />
+                        </div>
                     </div>
                 </ProductSection>
             </SettingsLayout>
@@ -984,7 +974,7 @@ function RecentListCard({
         <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
             <div className="text-lg font-semibold text-foreground">{title}</div>
             {items.length ? (
-                <div className="mt-4 space-y-3">
+                <div className="mt-4 max-h-[15rem] space-y-3 overflow-y-auto pr-2">
                     {items.map((item, index) => (
                         <div
                             key={`${item.date}-${index}`}

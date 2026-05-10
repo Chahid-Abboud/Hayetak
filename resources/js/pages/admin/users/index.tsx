@@ -781,11 +781,6 @@ function UserInvestigationPanel({
                     <Link href="/admin/logs">
                         <Settings2 className="h-4 w-4" />
                         Linked logs
-                    </Link>
-                </Button>
-                <Button asChild variant="outline">
-                    <Link href="/admin/diagnostics">
-                        Diagnostics
                         <ArrowUpRight className="h-4 w-4" />
                     </Link>
                 </Button>

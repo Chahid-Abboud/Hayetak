@@ -58,3 +58,38 @@ it('resolves diet, allergy, medical, and injury facts from normalized profile ta
     expect($resolved['injuries'])->toContain('ankle sprain', 'shoulder impingement');
     expect($resolved['available_equipment'])->toContain('dumbbell');
 });
+
+it('splits legacy combined medical and injury summaries without duplicating mixed strings', function () {
+    $user = User::factory()->create([
+        'medical_history' => 'Medical: Prediabetes. Injuries: Shoulder Impingement History',
+    ]);
+
+    UserMedicalHistory::query()->create([
+        'user_id' => $user->id,
+        'kind' => 'medical_condition',
+        'value' => 'Diabetes',
+        'source' => 'profile_sync',
+        'is_active' => true,
+    ]);
+    UserMedicalHistory::query()->create([
+        'user_id' => $user->id,
+        'kind' => 'injury',
+        'value' => 'Medical: Prediabetes. Injuries: Shoulder Impingement History',
+        'source' => 'profile_sync',
+        'is_active' => true,
+    ]);
+    UserMedicalHistory::query()->create([
+        'user_id' => $user->id,
+        'kind' => 'injury',
+        'value' => 'Shoulder Impingement',
+        'source' => 'profile_sync',
+        'is_active' => true,
+    ]);
+
+    $resolved = app(UserProfileFactResolver::class)->resolve($user->fresh());
+
+    expect($resolved['medical_conditions'])->toContain('Diabetes', 'Prediabetes')
+        ->not->toContain('Medical: Prediabetes. Injuries: Shoulder Impingement History');
+    expect($resolved['injuries'])->toContain('Shoulder Impingement History', 'Shoulder Impingement')
+        ->not->toContain('Medical: Prediabetes. Injuries: Shoulder Impingement History');
+});

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Food;
 use App\Models\MealEntry;
 use App\Models\UserPref;
 use App\Services\MealTrackerService;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class MealEntryController extends Controller
@@ -79,14 +81,32 @@ class MealEntryController extends Controller
         $validated = $request->validate([
             'food_id' => ['required', 'exists:foods,id'],
             'meal_type' => ['required', 'in:breakfast,lunch,dinner,snack,drink'],
-            'servings' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            'servings' => ['nullable', 'numeric', 'gt:0', 'max:1000', 'required_without_all:grams,milliliters'],
+            'grams' => ['nullable', 'numeric', 'gt:0', 'max:100000', 'required_without_all:servings,milliliters'],
+            'milliliters' => ['nullable', 'numeric', 'gt:0', 'max:100000', 'required_without_all:servings,grams'],
             'eaten_at' => ['nullable', 'date'],
         ]);
+
+        $food = Food::query()->findOrFail((int) $validated['food_id']);
+
+        try {
+            $servings = $this->mealTrackerService->resolveLoggedServings(
+                $food,
+                $validated,
+                (string) $validated['meal_type']
+            );
+        } catch (\InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'quantity' => $exception->getMessage(),
+            ]);
+        }
 
         $validated['user_id'] = Auth::id();
         $validated['eaten_at'] = isset($validated['eaten_at'])
             ? Carbon::parse($validated['eaten_at'])->startOfDay()
             : now();
+        $validated['servings'] = $servings;
+        unset($validated['grams'], $validated['milliliters']);
 
         MealEntry::create($validated);
 

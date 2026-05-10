@@ -13,10 +13,11 @@ import {
 } from '@/components/admin/AdminShell';
 import BmiCard from '@/components/BmiCard';
 import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
-import { BarListCard, TrendCard } from '@/components/product/analytics';
+import { BarListCard } from '@/components/product/analytics';
 import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
 import { cn } from '@/lib/utils';
+import { cleanPlanName } from '@/lib/plan-utils';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -250,6 +251,10 @@ type HomeProps = {
     predictionTrend?: PredictionTrendPoint[];
 } & Pick<SharedData, 'flash' | 'security'>;
 
+type VerificationArrival = NonNullable<
+    NonNullable<SharedData['flash']>['verificationArrival']
+>;
+
 type AdminListItem = {
     id: number;
     title?: string;
@@ -363,11 +368,7 @@ function CardSection({
         >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
-                    <p className="haye-kicker">Section</p>
-                    <h2
-                        id={headingId}
-                        className="mt-2 text-2xl font-semibold tracking-tight"
-                    >
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
                         {title}
                     </h2>
                     {description ? (
@@ -404,8 +405,6 @@ export default function Home() {
         nutritionPlan,
         workoutPlan,
         coachSnapshot,
-        progressPrediction,
-        predictionTrend,
     } = usePage<HomeProps>().props;
 
     const isGuest =
@@ -417,6 +416,10 @@ export default function Home() {
         auth?.user?.name ||
         (isGuest ? 'guest' : 'there');
     const userRole = auth?.user?.role ?? 'client';
+    const verificationArrival = flash?.verificationArrival as
+        | VerificationArrival
+        | null
+        | undefined;
     const [showOptionalTwoFactorPrompt, setShowOptionalTwoFactorPrompt] =
         useState(
             Boolean(
@@ -433,6 +436,14 @@ export default function Home() {
             setShowOptionalTwoFactorPrompt(true);
         }
     }, [auth?.user?.two_factor_enabled, flash?.showOptionalTwoFactorPrompt]);
+
+    // Cleaned plan display names (hide version numbers)
+    const nutritionPlanDisplayName = nutritionPlan
+        ? cleanPlanName(nutritionPlan.name) || 'AI Diet Plan'
+        : null;
+    const workoutPlanDisplayName = workoutPlan
+        ? cleanPlanName(workoutPlan.name) || 'AI Workout Plan'
+        : null;
 
     // --- BMI input coercion from DB/user profile ---
     const profileSafe = useMemo(() => {
@@ -507,14 +518,6 @@ export default function Home() {
                 ? ('accent' as const)
                 : ('default' as const),
     }));
-    const calorieCadencePoints = mealOrder.reduce<number[]>(
-        (points, mealType) => {
-            const last = points[points.length - 1] ?? 0;
-            points.push(last + Math.round(perMeal[mealType].calories));
-            return points;
-        },
-        [],
-    );
     const round = (n: number) => Math.round(n);
 
     const startTodayWorkout = () => {
@@ -606,13 +609,32 @@ export default function Home() {
                                 >
                                     {isGuest
                                         ? 'Preview the new Hayetak flow.'
-                                        : `Welcome back, ${displayName}.`}
+                                        : verificationArrival
+                                            ? `Verified and in, ${displayName}.`
+                                            : `Welcome back, ${displayName}.`}
                                 </h2>
                                 <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
-                                    A tighter look at what needs attention now,
-                                    what is already on track, and the fastest
-                                    place to act next.
+                                    {verificationArrival
+                                        ? `Account #${verificationArrival.account_id} finished verification${verificationArrival.verified_at ? ` ${new Date(verificationArrival.verified_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ' just now'}. Your dashboard is live and ready for the next step.`
+                                        : 'A tighter look at what needs attention now, what is already on track, and the fastest place to act next.'}
                                 </p>
+                                {verificationArrival ? (
+                                    <div className="mt-6 rounded-[28px] border border-emerald-500/25 bg-emerald-500/8 px-5 py-4 text-sm text-emerald-950 shadow-[0_24px_60px_-42px_rgba(16,185,129,0.65)] dark:text-emerald-100">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-white uppercase">
+                                                Just verified
+                                            </span>
+                                            <span className="font-semibold">
+                                                {verificationArrival.headline ??
+                                                    'Account verified'}
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 leading-6 text-emerald-900/85 dark:text-emerald-100/90">
+                                            {verificationArrival.message ??
+                                                'Your email is confirmed and you have landed on the dashboard successfully.'}
+                                        </p>
+                                    </div>
+                                ) : null}
                                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
                                     <QuickActionCard
                                         title="Log meal"
@@ -635,13 +657,7 @@ export default function Home() {
                             </div>
 
                             <div className="dashboard-surface rounded-[32px] p-5 shadow-[0_28px_65px_-48px_rgba(15,23,42,0.65)]">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                                            Clear, quick, and current
-                                        </h3>
-                                    </div>
-                                </div>
+
 
                                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                     <MetricPill
@@ -749,6 +765,7 @@ export default function Home() {
                         </CardSection>
 
                         <CardSection
+                            // title="Planner result"
                             title="AI Planner"
                             description="Clear status for your active AI nutrition and workout plans."
                             actions={
@@ -782,7 +799,7 @@ export default function Home() {
                                     </p>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {nutritionPlan
-                                            ? `${nutritionPlan.name} is active for your meal tracking.`
+                                            ? `${nutritionPlanDisplayName} is active for your meal tracking.`
                                             : 'Generate a plan to unlock guided meal follow mode.'}
                                     </p>
                                 </div>
@@ -793,7 +810,7 @@ export default function Home() {
                                     </p>
                                     <p className="mt-2 text-sm text-muted-foreground">
                                         {workoutPlan
-                                            ? `${workoutPlan.name} is ready for day-by-day logging.`
+                                            ? `${workoutPlanDisplayName} is ready for day-by-day logging.`
                                             : 'Generate a plan to get guided workout days.'}
                                     </p>
                                 </div>
@@ -801,7 +818,7 @@ export default function Home() {
                         </CardSection>
                     </section>
 
-                    
+                    {/* title="Predictor vs Actual trend" */}
                     <CardSection
                         title="Today's nutrition board"
                         description="A broad daily snapshot so you can scan nutrition fast without recreating the full meal tracker."
@@ -847,21 +864,11 @@ export default function Home() {
                                     />
                                 </div>
 
-                                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.9fr)]">
+                                <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(240px,0.8fr)]">
                                     <div className="dashboard-surface rounded-[26px] p-5">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <div className="haye-kicker">
-                                                    Quick view
-                                                </div>
-                                               <h3 className="mt-3 max-w-none text-2xl font-semibold leading-snug tracking-tight text-foreground">
-                                                    What stands out today
-                                                </h3>   
-                                              </div>
-                                            <span className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Dashboard summary
-                                            </span>
-                                        </div>
+                                        <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                            What stands out today
+                                        </h3>
 
                                         <div className="mt-4 space-y-3">
                                             <div className="dashboard-surface-soft rounded-[22px] px-4 py-3 text-sm text-foreground">
@@ -883,9 +890,6 @@ export default function Home() {
                                     </div>
 
                                     <div className="dashboard-surface rounded-[26px] p-5">
-                                        <div className="haye-kicker">
-                                            Recent items
-                                        </div>
                                         <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
                                             Latest logged foods
                                         </h3>
@@ -919,11 +923,11 @@ export default function Home() {
                             </div>
 
                             <div className="grid gap-4">
-                                <TrendCard
-                                    title="Calorie cadence"
-                                    value={`${round(macros.calories)} kcal`}
-                                    helper="See how intake builds across your meals today."
-                                    points={calorieCadencePoints}
+                                <NutritionMacroSnapshotCard
+                                    protein={round(macros.protein)}
+                                    carbs={round(macros.carbs)}
+                                    fat={round(macros.fat)}
+                                    proteinRemaining={proteinRemaining}
                                 />
                                 <CalorieDistributionGraphCard
                                     title="Calorie distribution"
@@ -939,7 +943,7 @@ export default function Home() {
                         className="grid grid-cols-1 gap-14 md:grid-cols-2"
                     >
                         <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
-                            <p className="haye-kicker">Body metrics</p>
+                            
                             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
                                 BMI
                             </h2>
@@ -952,7 +956,7 @@ export default function Home() {
                         </div>
 
                         <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
-                            <p className="haye-kicker">Recovery</p>
+                            
                             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
                                 Water intake
                             </h2>
@@ -983,7 +987,7 @@ export default function Home() {
                         description="One graph, three views: body weight, height, and gym output."
                         actions={
                             <>
-                                <ActionButton
+                                <ActionButton  
                                     variant="primary"
                                     onClick={startTodayWorkout}
                                 >
@@ -1062,6 +1066,58 @@ function NutritionQuickStatCard({
             </div>
             <div className="mt-2 text-sm leading-6 text-muted-foreground">
                 {detail}
+            </div>
+        </div>
+    );
+}
+
+function NutritionMacroSnapshotCard({
+    protein,
+    carbs,
+    fat,
+    proteinRemaining,
+}: {
+    protein: number;
+    carbs: number;
+    fat: number;
+    proteinRemaining: number;
+}) {
+    const macroItems = [
+        { label: 'Protein', value: `${protein} g` },
+        { label: 'Carbs', value: `${carbs} g` },
+        { label: 'Fat', value: `${fat} g` },
+    ];
+
+    return (
+        <div className="dashboard-surface rounded-[26px] p-5">
+            <div className="haye-kicker">Nutrition focus</div>
+            <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                Macro snapshot
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                The three main macro buckets, without the extra cadence chart.
+            </p>
+
+            <div className="mt-5 space-y-3">
+                {macroItems.map((item) => (
+                    <div
+                        key={item.label}
+                        className="dashboard-surface-soft flex items-center justify-between gap-3 rounded-[20px] px-4 py-3"
+                    >
+                        <span className="text-sm font-medium text-foreground">
+                            {item.label}
+                        </span>
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                            {item.value}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="dashboard-surface-soft mt-4 rounded-[20px] px-4 py-3 text-sm text-foreground">
+                {proteinRemaining > 0
+                    ? `${proteinRemaining} g of protein is still open today.`
+                    : 'Protein target is already covered for today.'}
             </div>
         </div>
     );
@@ -1384,7 +1440,7 @@ function ProgressCenterCard({
         <div className="dashboard-surface rounded-[28px] p-5 lg:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <div className="haye-kicker">Graph switcher</div>
+                    
                     <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
                         {activeConfig.title}
                     </h3>
@@ -1625,7 +1681,8 @@ function SimpleLineChart({
     );
 }
 
-function PredictorVsActualCard({
+// title="Predictor vs Actual trend"
+export function PredictorVsActualCard({
     trend,
     weighIns,
 }: {

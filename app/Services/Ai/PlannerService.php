@@ -774,6 +774,7 @@ class PlannerService
 
         for ($dayIndex = 1; $dayIndex <= $targetDietDays; $dayIndex++) {
             $meals = [];
+            $usedDaySignatures = [];
 
             foreach ($mealCodes as $mealCode) {
                 $options = is_array($mealOptions[$mealCode] ?? null)
@@ -785,8 +786,28 @@ class PlannerService
 
                 $count = count($options);
                 $baseOffset = ($seed + $this->mealCodeSeedOffset($mealCode)) % $count;
-                $optionIndex = ($baseOffset + $dayIndex - 1) % $count;
-                $option = $options[$optionIndex] ?? null;
+                $selectedOption = null;
+
+                for ($step = 0; $step < $count; $step++) {
+                    $optionIndex = ($baseOffset + $dayIndex - 1 + $step) % $count;
+                    $candidate = $options[$optionIndex] ?? null;
+                    if (! is_array($candidate)) {
+                        continue;
+                    }
+
+                    $signature = $this->mealContentSignature($candidate);
+                    if ($signature !== '' && ! in_array($signature, $usedDaySignatures, true)) {
+                        $selectedOption = $candidate;
+                        $usedDaySignatures[] = $signature;
+                        break;
+                    }
+
+                    if ($selectedOption === null) {
+                        $selectedOption = $candidate;
+                    }
+                }
+
+                $option = $selectedOption;
                 if (! is_array($option)) {
                     continue;
                 }
@@ -808,6 +829,32 @@ class PlannerService
         }
 
         return $days;
+    }
+
+    private function mealContentSignature(array $meal): string
+    {
+        $items = is_array($meal['items'] ?? null) ? $meal['items'] : [];
+        $parts = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $name = strtolower(trim((string) ($item['name'] ?? '')));
+            $portion = strtolower(trim((string) ($item['portion'] ?? '')));
+            if ($name === '') {
+                continue;
+            }
+
+            $parts[] = $name.'|'.$portion;
+        }
+
+        if ($parts === []) {
+            return strtolower(trim((string) ($meal['title'] ?? '')));
+        }
+
+        return implode('||', $parts);
     }
 
     private function dedupeMealsBySignature(array $meals): array

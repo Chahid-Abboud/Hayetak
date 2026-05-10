@@ -1,5 +1,4 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-import { home } from '@/routes';
+import AppWordmark from '@/components/app-wordmark';
 import { Link } from '@inertiajs/react';
 import { Activity, Brain, ShieldCheck, Sparkles, Utensils } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
@@ -46,13 +45,13 @@ export default function AuthSimpleLayout({
                 <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] lg:items-center">
                     <div className="space-y-6 lg:pr-4">
                         <Link
-                            href={home()}
+                            href="/"
                             className="inline-flex items-center gap-3 rounded-full border border-border/70 bg-card/72 px-4 py-2 text-sm font-medium text-foreground shadow-sm backdrop-blur"
                         >
-                            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-[0_16px_30px_-24px_rgba(23,38,60,0.9)]">
-                                <AppLogoIcon className="size-6" />
-                            </span>
-                            <span>Hayetak</span>
+                            <AppWordmark
+                                iconClassName="size-8"
+                                textClassName="text-[1.34rem] text-foreground"
+                            />
                         </Link>
 
                         <div className="max-w-2xl space-y-4">
@@ -155,15 +154,13 @@ export default function AuthSimpleLayout({
                         <div className="rounded-[34px] border border-border/70 bg-card/92 p-6 shadow-[0_35px_80px_-45px_rgba(15,23,42,0.65)] backdrop-blur sm:p-8 dark:shadow-black/25">
                             <div className="mb-8 flex flex-col gap-5">
                                 <Link
-                                    href={home()}
-                                    className="inline-flex items-center gap-3 font-medium"
+                                    href="/"
+                                    className="inline-flex items-center font-medium"
                                 >
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary shadow-[0_18px_34px_-24px_rgba(23,38,60,0.9)]">
-                                        <AppLogoIcon className="size-6" />
-                                    </span>
-                                    <span className="text-base font-semibold tracking-tight">
-                                        Hayetak
-                                    </span>
+                                    <AppWordmark
+                                        iconClassName="size-9"
+                                        textClassName="text-[1.38rem] text-foreground"
+                                    />
                                 </Link>
 
                                 <div className="space-y-2">

@@ -1,16 +1,13 @@
 // resources/js/pages/auth/register.tsx
-import AppLogoIcon from '@/components/app-logo-icon';
+import AppWordmark from '@/components/app-wordmark';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
-    Activity,
-    Brain,
     Check,
     Dumbbell,
     Eye,
     EyeOff,
     Mail,
     Shield,
-    ShieldCheck,
     Sparkles,
     Utensils,
 } from 'lucide-react';
@@ -74,15 +71,11 @@ type NumericField = 'age' | 'height_cm' | 'weight_kg' | 'workout_days_per_week';
 /* ---------- Fallbacks (safe defaults) ---------- */
 const FALLBACK_DIETS = [
     'Mediterranean',
-    'Keto',
-    'Paleo',
     'Vegan',
     'Vegetarian',
-    'DASH',
     'Low-Carb',
     'High-Protein',
     'Intermittent Fasting',
-    'Whole30',
 ];
 
 const FALLBACK_ALLERGIES = [
@@ -134,6 +127,205 @@ const ACTIVITY_LEVELS: ActivityLevel[] = [
     'Moderately Active',
     'Very Active',
     'Athlete',
+];
+
+const COUNTRIES = [
+    'Afghanistan',
+    'Albania',
+    'Algeria',
+    'Andorra',
+    'Angola',
+    'Antigua and Barbuda',
+    'Argentina',
+    'Armenia',
+    'Australia',
+    'Austria',
+    'Azerbaijan',
+    'Bahamas',
+    'Bahrain',
+    'Bangladesh',
+    'Barbados',
+    'Belarus',
+    'Belgium',
+    'Belize',
+    'Benin',
+    'Bhutan',
+    'Bolivia',
+    'Bosnia and Herzegovina',
+    'Botswana',
+    'Brazil',
+    'Brunei',
+    'Bulgaria',
+    'Burkina Faso',
+    'Burundi',
+    'Cabo Verde',
+    'Cambodia',
+    'Cameroon',
+    'Canada',
+    'Central African Republic',
+    'Chad',
+    'Chile',
+    'China',
+    'Colombia',
+    'Comoros',
+    'Congo',
+    'Costa Rica',
+    "Cote d'Ivoire",
+    'Croatia',
+    'Cuba',
+    'Cyprus',
+    'Czech Republic',
+    'Democratic Republic of the Congo',
+    'Denmark',
+    'Djibouti',
+    'Dominica',
+    'Dominican Republic',
+    'Ecuador',
+    'Egypt',
+    'El Salvador',
+    'Equatorial Guinea',
+    'Eritrea',
+    'Estonia',
+    'Eswatini',
+    'Ethiopia',
+    'Fiji',
+    'Finland',
+    'France',
+    'Gabon',
+    'Gambia',
+    'Georgia',
+    'Germany',
+    'Ghana',
+    'Greece',
+    'Grenada',
+    'Guatemala',
+    'Guinea',
+    'Guinea-Bissau',
+    'Guyana',
+    'Haiti',
+    'Honduras',
+    'Hungary',
+    'Iceland',
+    'India',
+    'Indonesia',
+    'Iran',
+    'Iraq',
+    'Ireland',
+    'Israel',
+    'Italy',
+    'Jamaica',
+    'Japan',
+    'Jordan',
+    'Kazakhstan',
+    'Kenya',
+    'Kiribati',
+    'Kuwait',
+    'Kyrgyzstan',
+    'Laos',
+    'Latvia',
+    'Lebanon',
+    'Lesotho',
+    'Liberia',
+    'Libya',
+    'Liechtenstein',
+    'Lithuania',
+    'Luxembourg',
+    'Madagascar',
+    'Malawi',
+    'Malaysia',
+    'Maldives',
+    'Mali',
+    'Malta',
+    'Marshall Islands',
+    'Mauritania',
+    'Mauritius',
+    'Mexico',
+    'Micronesia',
+    'Moldova',
+    'Monaco',
+    'Mongolia',
+    'Montenegro',
+    'Morocco',
+    'Mozambique',
+    'Myanmar',
+    'Namibia',
+    'Nauru',
+    'Nepal',
+    'Netherlands',
+    'New Zealand',
+    'Nicaragua',
+    'Niger',
+    'Nigeria',
+    'North Korea',
+    'North Macedonia',
+    'Norway',
+    'Oman',
+    'Pakistan',
+    'Palau',
+    'Palestine',
+    'Panama',
+    'Papua New Guinea',
+    'Paraguay',
+    'Peru',
+    'Philippines',
+    'Poland',
+    'Portugal',
+    'Qatar',
+    'Romania',
+    'Russia',
+    'Rwanda',
+    'Saint Kitts and Nevis',
+    'Saint Lucia',
+    'Saint Vincent and the Grenadines',
+    'Samoa',
+    'San Marino',
+    'Sao Tome and Principe',
+    'Saudi Arabia',
+    'Senegal',
+    'Serbia',
+    'Seychelles',
+    'Sierra Leone',
+    'Singapore',
+    'Slovakia',
+    'Slovenia',
+    'Solomon Islands',
+    'Somalia',
+    'South Africa',
+    'South Korea',
+    'South Sudan',
+    'Spain',
+    'Sri Lanka',
+    'Sudan',
+    'Suriname',
+    'Sweden',
+    'Switzerland',
+    'Syria',
+    'Taiwan',
+    'Tajikistan',
+    'Tanzania',
+    'Thailand',
+    'Timor-Leste',
+    'Togo',
+    'Tonga',
+    'Trinidad and Tobago',
+    'Tunisia',
+    'Turkey',
+    'Turkmenistan',
+    'Tuvalu',
+    'Uganda',
+    'Ukraine',
+    'United Arab Emirates',
+    'United Kingdom',
+    'United States',
+    'Uruguay',
+    'Uzbekistan',
+    'Vanuatu',
+    'Vatican City',
+    'Venezuela',
+    'Vietnam',
+    'Yemen',
+    'Zambia',
+    'Zimbabwe',
 ];
 
 /* ---------- Small helpers ---------- */
@@ -196,6 +388,14 @@ const TEXTAREA_CLASS = `min-h-[120px] ${INPUT_CLASS}`;
 const SELECT_CLASS = `${INPUT_CLASS} appearance-none`;
 const CHOICE_PILL_CLASS =
     'inline-flex items-center rounded-full border border-border/70 px-4 py-2.5 text-sm font-medium transition';
+const ONBOARDING_KICKER_CLASS =
+    'text-primary-foreground dark:text-primary';
+const ENTER_ADVANCE_SELECTOR = [
+    'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="file"]):not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    'button[data-enter-nav="true"]:not([disabled])',
+].join(', ');
 
 // Total steps in the registration wizard.
 const computeTotalSteps = (tried: 'yes' | 'no' | '') =>
@@ -244,6 +444,27 @@ function preventNonNumericKeys(
     if (blocked.includes(e.key)) e.preventDefault();
 }
 
+function getEnterAdvanceTargets(container: ParentNode) {
+    return Array.from(
+        container.querySelectorAll<HTMLElement>(ENTER_ADVANCE_SELECTOR),
+    ).filter((element) => {
+        if (
+            element.closest('[hidden],[aria-hidden="true"]') ||
+            element.getAttribute('tabindex') === '-1'
+        ) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(element);
+
+        return (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            !element.hasAttribute('disabled')
+        );
+    });
+}
+
 /* ---------- UI helpers (small, no deps) ---------- */
 function SectionCard({
     title,
@@ -257,9 +478,14 @@ function SectionCard({
     headingRef?: React.RefObject<HTMLHeadingElement | null>;
 }) {
     return (
-        <div className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-[0_26px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6">
+        <div
+            data-step-panel="true"
+            className="rounded-[28px] border border-border/70 bg-card/88 p-5 shadow-[0_26px_60px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6"
+        >
             <div className="space-y-2 border-b border-border/70 pb-4">
-                <p className="text-[11px] font-semibold tracking-[0.2em] text-secondary uppercase">
+                <p
+                    className={`text-[11px] font-semibold tracking-[0.2em] uppercase ${ONBOARDING_KICKER_CLASS}`}
+                >
                     Guided setup
                 </p>
                 <h2
@@ -440,12 +666,14 @@ function Button({
     variant = 'primary',
     type = 'button',
     disabled,
+    enterNav = false,
 }: {
     children: React.ReactNode;
     onClick?: () => void;
     variant?: 'primary' | 'secondary';
     type?: 'button' | 'submit';
     disabled?: boolean;
+    enterNav?: boolean;
 }) {
     const base =
         'inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition';
@@ -458,6 +686,7 @@ function Button({
             type={type}
             onClick={onClick}
             disabled={disabled}
+            data-enter-nav={enterNav ? 'true' : undefined}
             className={`${base} ${styles} ${FOCUS_RING} disabled:opacity-50`}
         >
             {children}
@@ -538,7 +767,7 @@ function RegisterWizard(props: Props) {
             verification_full_legal_name: '',
             verification_license_number: '',
             verification_authority: '',
-            verification_country_state: '',
+            verification_country_state: 'Lebanon',
             verification_expiry_date: '',
             verification_documents: [] as File[],
         });
@@ -573,6 +802,64 @@ function RegisterWizard(props: Props) {
     ];
 
     const back = () => setStep((s) => Math.max(1, s - 1));
+
+    const focusNextField = (current: HTMLElement) => {
+        const panel = current.closest('[data-step-panel="true"]');
+
+        if (!panel) return false;
+
+        const focusable = getEnterAdvanceTargets(panel);
+        const currentIndex = focusable.indexOf(current);
+        if (currentIndex === -1) return false;
+        const nextTarget = focusable[currentIndex + 1];
+
+        if (!nextTarget) return false;
+
+        nextTarget.focus();
+
+        if (
+            nextTarget instanceof HTMLInputElement ||
+            nextTarget instanceof HTMLTextAreaElement
+        ) {
+            nextTarget.select?.();
+        }
+
+        return true;
+    };
+
+    const handleEnterAdvance = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (
+            event.key !== 'Enter' ||
+            event.defaultPrevented ||
+            event.shiftKey ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.metaKey
+        ) {
+            return;
+        }
+
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        if (
+            !(
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLSelectElement ||
+                target instanceof HTMLTextAreaElement
+            )
+        ) {
+            return;
+        }
+
+        if (target instanceof HTMLInputElement && target.type === 'file') {
+            return;
+        }
+
+        if (focusNextField(target)) {
+            event.preventDefault();
+        }
+    };
 
     const next = () => {
         if (!validateStep(step)) return;
@@ -749,7 +1036,7 @@ function RegisterWizard(props: Props) {
                 }
                 if (!data.verification_country_state.trim()) {
                     ce.verification_country_state =
-                        'Country/state is required.';
+                        'Please select your country.';
                 }
                 if (!data.verification_expiry_date) {
                     ce.verification_expiry_date = 'Expiry date is required.';
@@ -788,11 +1075,13 @@ function RegisterWizard(props: Props) {
     }, [clientErrors, errors]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onKeyDownCapture={handleEnterAdvance}>
             <header className="space-y-4 rounded-[28px] border border-border/70 bg-card/88 px-5 py-5 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)] backdrop-blur sm:px-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-[11px] font-semibold tracking-[0.2em] text-secondary uppercase">
+                        <p
+                            className={`text-[11px] font-semibold tracking-[0.2em] uppercase ${ONBOARDING_KICKER_CLASS}`}
+                        >
                             Hayetak onboarding
                         </p>
                         <h1
@@ -893,7 +1182,7 @@ function RegisterWizard(props: Props) {
                                         {
                                             value: 'nutritionist' as AccountType,
                                             icon: Utensils,
-                                            title: "I'm a registered nutritionist",
+                                            title: "I'm a registered dietitian",
                                             subtitle: 'Professional',
                                             description:
                                                 'Build personalized nutrition plans and monitor clients with more context.',
@@ -1189,7 +1478,9 @@ function RegisterWizard(props: Props) {
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <Button onClick={next}>Next</Button>
+                        <Button onClick={next} enterNav>
+                            Next
+                        </Button>
                     </div>
                 </SectionCard>
             )}
@@ -1385,7 +1676,9 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>Next</Button>
+                        <Button onClick={next} enterNav>
+                            Next
+                        </Button>
                     </div>
                 </SectionCard>
             )}
@@ -1486,7 +1779,9 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>Next</Button>
+                        <Button onClick={next} enterNav>
+                            Next
+                        </Button>
                     </div>
                 </SectionCard>
             )}
@@ -1513,7 +1808,9 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>Next</Button>
+                        <Button onClick={next} enterNav>
+                            Next
+                        </Button>
                     </div>
                 </SectionCard>
             )}
@@ -1583,7 +1880,9 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={next}>Next</Button>
+                        <Button onClick={next} enterNav>
+                            Next
+                        </Button>
                     </div>
                 </SectionCard>
             )}
@@ -1850,15 +2149,15 @@ function RegisterWizard(props: Props) {
 
                                 <Field
                                     id="verification_country_state"
-                                    label="Country / state"
+                                    label="Country"
                                     required
                                     error={showServerOrClientError(
                                         'verification_country_state',
                                     )}
                                 >
-                                    <input
+                                    <select
                                         id="verification_country_state"
-                                        className={INPUT_CLASS}
+                                        className={SELECT_CLASS}
                                         value={data.verification_country_state}
                                         onChange={(e) =>
                                             setData(
@@ -1866,7 +2165,13 @@ function RegisterWizard(props: Props) {
                                                 e.target.value,
                                             )
                                         }
-                                    />
+                                    >
+                                        {COUNTRIES.map((country) => (
+                                            <option key={country} value={country}>
+                                                {country}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </Field>
 
                                 <Field
@@ -1923,7 +2228,7 @@ function RegisterWizard(props: Props) {
                         <Button variant="secondary" onClick={back}>
                             Back
                         </Button>
-                        <Button onClick={submit} disabled={processing}>
+                        <Button onClick={submit} disabled={processing} enterNav>
                             Create Account
                         </Button>
                     </div>
@@ -1955,14 +2260,12 @@ export default function Register(props: Props) {
                     <div className="mx-auto flex max-w-6xl items-center justify-between">
                         <Link
                             href="/"
-                            className="flex items-center gap-2.5 no-underline"
+                            className="flex items-center no-underline"
                         >
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 shadow-[0_14px_32px_-20px_rgba(23,38,60,0.55)]">
-                                <AppLogoIcon className="size-3.5" />
-                            </div>
-                            <span className="font-semibold tracking-tight text-foreground">
-                                Hayetak
-                            </span>
+                            <AppWordmark
+                                iconClassName="size-7"
+                                textClassName="text-[1.08rem] text-foreground"
+                            />
                         </Link>
                         <div className="flex items-center gap-3">
                             <p className="hidden text-sm text-muted-foreground sm:block">
@@ -1981,8 +2284,10 @@ export default function Register(props: Props) {
                 <div className="mx-auto flex w-full max-w-3xl flex-col px-6 py-8">
                     <div className="mb-6 space-y-4 text-center">
                         <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/82 px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-secondary uppercase">
-                            <Sparkles className="size-3.5" />
-                            Guided onboarding
+                            <Sparkles className={`size-3.5 ${ONBOARDING_KICKER_CLASS}`} />
+                            <span className={ONBOARDING_KICKER_CLASS}>
+                                Guided onboarding
+                            </span>
                         </div>
                         <h1
                             className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
@@ -1996,39 +2301,6 @@ export default function Register(props: Props) {
                             planning, better coaching context, and cleaner daily
                             workflows for clients, trainers, and nutritionists.
                         </p>
-                    </div>
-
-                    <div className="mb-6 grid gap-3 sm:grid-cols-3">
-                        {[
-                            {
-                                icon: Activity,
-                                title: 'Profile first',
-                                copy: 'Capture goals, allergies, injuries, and schedule once.',
-                            },
-                            {
-                                icon: Brain,
-                                title: 'Smarter plan',
-                                copy: 'Use real inputs to shape nutrition and workout guidance.',
-                            },
-                            {
-                                icon: ShieldCheck,
-                                title: 'Safety visible',
-                                copy: 'Keep restrictions and medical context in the loop from day one.',
-                            },
-                        ].map(({ icon: Icon, title, copy }) => (
-                            <div
-                                key={title}
-                                className="rounded-2xl border border-border/70 bg-card/84 p-4 shadow-[0_20px_45px_-36px_rgba(15,23,42,0.45)]"
-                            >
-                                <Icon className="size-4 text-secondary" />
-                                <p className="mt-3 text-sm font-semibold text-foreground">
-                                    {title}
-                                </p>
-                                <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                                    {copy}
-                                </p>
-                            </div>
-                        ))}
                     </div>
 
                     <div className="w-full rounded-[28px] border border-border/70 bg-card/76 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur">

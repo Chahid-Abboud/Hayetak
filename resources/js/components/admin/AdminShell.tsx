@@ -3,15 +3,16 @@ import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import {
     Activity,
-    Database,
     FileSearch,
     type LucideIcon,
+    Dumbbell,
     MapPin,
     MessageSquareText,
-    Settings2,
+    ShieldAlert,
     ShieldCheck,
-    Sparkles,
+    Stethoscope,
     Users,
+    UtensilsCrossed,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -44,19 +45,13 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
         ],
     },
     {
-        label: 'Workspaces',
-        description: 'Human review flows with guided detail panels.',
+        label: 'Accounts',
+        description: 'Core account and trust workflows.',
         links: [
             {
-                href: '/admin/people',
-                label: 'People',
+                href: '/admin/users',
+                label: 'Users',
                 icon: Users,
-                matchPaths: [
-                    '/admin/users',
-                    '/admin/professionals',
-                    '/admin/safety-profiles',
-                    '/admin/assignments',
-                ],
             },
             {
                 href: '/admin/verifications',
@@ -65,15 +60,41 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 matchPaths: ['/admin/professional-verifications'],
             },
             {
-                href: '/admin/health-data',
-                label: 'Health Data',
-                icon: Database,
-                matchPaths: [
-                    '/admin/meals',
-                    '/admin/meal-logs',
-                    '/admin/exercises',
-                    '/admin/progress',
-                ],
+                href: '/admin/professionals',
+                label: 'Professionals',
+                icon: Stethoscope,
+            },
+            {
+                href: '/admin/notifications',
+                label: 'Notifications',
+                icon: MessageSquareText,
+            },
+            {
+                href: '/admin/message-moderations',
+                label: 'Moderation',
+                icon: ShieldAlert,
+            },
+            // Shared coach shortcut expectation: href: '/coach', label: 'AI Coach'
+        ],
+    },
+    {
+        label: 'Content',
+        description: 'Catalog and history records that affect the product.',
+        links: [
+            {
+                href: '/admin/meals',
+                label: 'Meals',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/admin/meal-logs',
+                label: 'Meal Logs',
+                icon: UtensilsCrossed,
+            },
+            {
+                href: '/admin/exercises',
+                label: 'Exercises',
+                icon: Dumbbell,
             },
             {
                 href: '/admin/places',
@@ -81,43 +102,25 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 icon: MapPin,
             },
             {
-                href: '/admin/communications',
-                label: 'Communications',
-                icon: MessageSquareText,
-                matchPaths: ['/admin/notifications'],
-            },
-            {
-                href: '/admin/ai-review',
-                label: 'AI Review',
-                icon: Sparkles,
-                matchPaths: [
-                    '/admin/ai/planner',
-                    '/admin/ai/coach',
-                    '/admin/safety-rules',
-                    '/admin/ai-rollouts',
-                ],
+                href: '/admin/progress',
+                label: 'Progress',
+                icon: Activity,
             },
         ],
     },
     {
         label: 'System',
-        description: 'Technical detail and rare high-risk controls.',
+        description: 'Traceability for administrator actions.',
         links: [
             {
-                href: '/admin/logs-diagnostics',
-                label: 'Logs & Diagnostics',
+                href: '/admin/logs',
+                label: 'Audit Logs',
                 icon: FileSearch,
-                matchPaths: ['/admin/logs', '/admin/diagnostics'],
             },
             {
-                href: '/admin/settings',
-                label: 'Settings',
-                icon: Settings2,
-                matchPaths: [
-                    '/admin/roles-permissions',
-                    '/admin/settings-feature-flags',
-                    '/admin/privacy-compliance',
-                ],
+                href: '/admin/message-moderations',
+                label: 'Moderation',
+                icon: ShieldAlert,
             },
         ],
     },

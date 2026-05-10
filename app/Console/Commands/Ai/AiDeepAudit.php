@@ -10,6 +10,7 @@ use App\Services\Ai\Chat\ChatOrchestrator;
 use App\Services\Ai\Evaluation\DeepAuditAnswerGrader;
 use App\Services\Ai\Evaluation\DeepAuditQuestionBank;
 use App\Services\Ai\Evaluation\PlannerRunQualityScorer;
+use App\Services\Ai\Audit\PlannerAuditGpuLoad;
 use App\Services\Ai\Models\ProgressPredictionModel;
 use App\Services\Ai\PlannerService;
 use Carbon\CarbonImmutable;
@@ -31,7 +32,8 @@ class AiDeepAudit extends Command
         {--chat-batch-break-seconds=8 : Pause duration between chat batches.}
         {--chat-category-break-seconds=15 : Pause duration after each chat category.}
         {--planner-horizon=21 : Planner horizon days used for regeneration checks (14/21/28).}
-        {--planner-break-seconds=20 : Pause duration between planner users.}
+        {--planner-gpu-load=low : Planner pacing profile (low|medium|high).}
+        {--planner-break-seconds=20 : Extra pause duration between planner users after the load profile cooldown.}
         {--predictor-holdout=0 : Run Python holdout evaluation for predictor accuracy (1/0).}
         {--out-dir=tmp : Output directory for JSON and Markdown reports.}
         {--skip-chat=0 : Skip chatbot audit (1/0).}
@@ -60,6 +62,7 @@ class AiDeepAudit extends Command
         $chatBatchBreakSeconds = max(0, (int) $this->option('chat-batch-break-seconds'));
         $chatCategoryBreakSeconds = max(0, (int) $this->option('chat-category-break-seconds'));
         $plannerHorizon = $this->normalizeHorizon((int) $this->option('planner-horizon'));
+        $plannerGpuLoad = PlannerAuditGpuLoad::normalize((string) $this->option('planner-gpu-load'));
         $plannerBreakSeconds = max(0, (int) $this->option('planner-break-seconds'));
 
         $users = $this->resolveUsers((string) $this->option('user-ids'), $maxAccounts);
@@ -89,6 +92,7 @@ class AiDeepAudit extends Command
                     'chat_batch_break_seconds' => $chatBatchBreakSeconds,
                     'chat_category_break_seconds' => $chatCategoryBreakSeconds,
                     'planner_horizon' => $plannerHorizon,
+                    'planner_gpu_load' => $plannerGpuLoad,
                     'planner_break_seconds' => $plannerBreakSeconds,
                     'predictor_holdout' => ((int) $this->option('predictor-holdout')) === 1,
                     'skip_chat' => $skipChat,
@@ -120,7 +124,7 @@ class AiDeepAudit extends Command
 
         if (! $skipPlanner) {
             $this->info('Running planner regeneration and logic audit...');
-            $payload['planner'] = $this->runPlannerAudit($users, $planner, $plannerScorer, $plannerHorizon, $stamp, $plannerBreakSeconds);
+            $payload['planner'] = $this->runPlannerAudit($users, $planner, $plannerScorer, $plannerHorizon, $plannerGpuLoad, $stamp, $plannerBreakSeconds);
         }
 
         if (! $skipPredictor) {
@@ -328,11 +332,15 @@ class AiDeepAudit extends Command
         PlannerService $planner,
         PlannerRunQualityScorer $plannerScorer,
         int $horizonDays,
+        string $plannerGpuLoad,
         string $stamp,
         int $plannerBreakSeconds,
     ): array {
         $rows = [];
         $success = 0;
+        $cooldownProfile = PlannerAuditGpuLoad::profile($plannerGpuLoad);
+        $totalPlannerRuns = max(1, count($users) * 2);
+        $completedPlannerRuns = 0;
 
         foreach ($users as $userIndex => $user) {
             $this->line(sprintf('  Planner audit user #%d (%s)', $user->id, $user->email));
@@ -368,12 +376,17 @@ class AiDeepAudit extends Command
                     'created_by' => (int) $user->id,
                     'plan_horizon_days' => $horizonDays,
                 ]);
+                $completedPlannerRuns++;
+                $this->applyPlannerGpuCooldown($cooldownProfile, $completedPlannerRuns, $totalPlannerRuns);
+
                 $regenB = $planner->generate($user, [
                     'regenerate' => true,
                     'reason' => "deep_audit_regen_b_{$stamp}",
                     'created_by' => (int) $user->id,
                     'plan_horizon_days' => $horizonDays,
                 ]);
+                $completedPlannerRuns++;
+                $this->applyPlannerGpuCooldown($cooldownProfile, $completedPlannerRuns, $totalPlannerRuns);
 
                 $planA = is_array($regenA['plan'] ?? null) ? $regenA['plan'] : [];
                 $planB = is_array($regenB['plan'] ?? null) ? $regenB['plan'] : [];
@@ -435,6 +448,9 @@ class AiDeepAudit extends Command
                 'users_success' => $success,
                 'users_failed' => count($users) - $success,
                 'horizon_days' => $horizonDays,
+                'gpu_load' => $plannerGpuLoad,
+                'gpu_cooldown_profile' => $cooldownProfile,
+                'manual_break_seconds' => $plannerBreakSeconds,
             ],
             'users' => $rows,
         ];
@@ -568,6 +584,10 @@ class AiDeepAudit extends Command
 
         $exportStatus = 'not_run';
         $exportOutput = '';
+        $exportIncludedSynthetic = false;
+        $exportFallbackAttempted = false;
+        $exportFallbackReason = null;
+        $exportRowCount = 0;
         $runHoldout = ((int) $this->option('predictor-holdout')) === 1;
         $holdoutStatus = $runHoldout ? 'not_run' : 'skipped';
         $holdoutProcessOutput = '';
@@ -582,6 +602,33 @@ class AiDeepAudit extends Command
             ]);
             $exportStatus = 'ok';
             $exportOutput = trim(Artisan::output());
+            $exportRowCount = max(
+                $this->extractExportedRowCount($exportOutput),
+                $this->countJsonlRows($exportJsonl),
+            );
+
+            if ($exportRowCount === 0) {
+                $exportFallbackAttempted = true;
+                Artisan::call('ai:export-progress-prediction-data', [
+                    '--out-jsonl' => $this->relativePath($exportJsonl),
+                    '--out-csv' => $this->relativePath($exportCsv),
+                    '--include-unlabeled' => 0,
+                ]);
+                $fallbackOutput = trim(Artisan::output());
+                $fallbackRowCount = max(
+                    $this->extractExportedRowCount($fallbackOutput),
+                    $this->countJsonlRows($exportJsonl),
+                );
+
+                if ($fallbackRowCount > 0) {
+                    $exportIncludedSynthetic = true;
+                    $exportRowCount = $fallbackRowCount;
+                    $exportFallbackReason = 'Non-synthetic export returned zero rows, so the audit reran dataset export with synthetic seeded rows included.';
+                    $exportOutput = trim($exportOutput."\nFallback including synthetic seeded rows:\n".$fallbackOutput);
+                } else {
+                    $exportFallbackReason = 'Non-synthetic export returned zero rows, and the fallback export including synthetic seeded rows also returned zero rows.';
+                }
+            }
         } catch (Throwable $e) {
             $exportStatus = 'error';
             $exportOutput = $this->truncate($e->getMessage(), 400);
@@ -647,6 +694,10 @@ class AiDeepAudit extends Command
                 'status' => $exportStatus,
                 'jsonl_path' => $exportJsonl,
                 'csv_path' => $exportCsv,
+                'exported_rows' => $exportRowCount,
+                'included_synthetic_rows' => $exportIncludedSynthetic,
+                'fallback_attempted' => $exportFallbackAttempted,
+                'fallback_reason' => $exportFallbackReason,
                 'output' => $exportOutput,
             ],
             'holdout_evaluation' => [
@@ -658,6 +709,26 @@ class AiDeepAudit extends Command
             'online_accuracy' => $onlineAccuracy,
             'adaptation_simulation' => $adaptationSimulation,
         ];
+    }
+
+    private function extractExportedRowCount(string $output): int
+    {
+        if (preg_match('/Exported\s+(\d+)\s+rows\./i', $output, $matches) === 1) {
+            return (int) ($matches[1] ?? 0);
+        }
+
+        return 0;
+    }
+
+    private function countJsonlRows(string $path): int
+    {
+        if (! File::exists($path)) {
+            return 0;
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        return is_array($lines) ? count($lines) : 0;
     }
 
     /**
@@ -1274,6 +1345,27 @@ class AiDeepAudit extends Command
         return sprintf('%s-%03d', $category, $index);
     }
 
+    /**
+     * @param  array{sleep_ms?: int, batch_size?: int, batch_pause_seconds?: int}  $profile
+     */
+    private function applyPlannerGpuCooldown(array $profile, int $completedRuns, int $totalRuns): void
+    {
+        if ($completedRuns >= $totalRuns) {
+            return;
+        }
+
+        $sleepMs = max(0, (int) ($profile['sleep_ms'] ?? 0));
+        if ($sleepMs > 0) {
+            usleep($sleepMs * 1000);
+        }
+
+        $batchSize = max(0, (int) ($profile['batch_size'] ?? 0));
+        $batchPause = max(0, (int) ($profile['batch_pause_seconds'] ?? 0));
+        if ($batchSize > 0 && $batchPause > 0 && $completedRuns % $batchSize === 0) {
+            sleep($batchPause);
+        }
+    }
+
     private function fileContains(string $path, string $needle): bool
     {
         if (! File::exists($path)) {
@@ -1411,6 +1503,8 @@ class AiDeepAudit extends Command
             $lines[] = '- Users success: `'.(int) data_get($planner, 'summary.users_success', 0).'`';
             $lines[] = '- Users failed: `'.(int) data_get($planner, 'summary.users_failed', 0).'`';
             $lines[] = '- Horizon days: `'.(int) data_get($planner, 'summary.horizon_days', 0).'`';
+            $lines[] = '- GPU load: `'.(string) data_get($planner, 'summary.gpu_load', 'low').'`';
+            $lines[] = '- Extra manual break (seconds): `'.(int) data_get($planner, 'summary.manual_break_seconds', 0).'`';
 
             foreach ((array) ($planner['users'] ?? []) as $row) {
                 $user = (array) ($row['user'] ?? []);

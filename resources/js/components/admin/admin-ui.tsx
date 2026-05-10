@@ -124,7 +124,7 @@ export function AdminToolbar({
                 className,
             )}
         >
-            <div className="flex w-full min-w-0 flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+            <div className="grid w-full min-w-0 gap-3 2xl:grid-cols-[minmax(0,1fr)_auto] 2xl:items-end">
                 {children}
             </div>
         </ProductFilterRow>
@@ -140,11 +140,23 @@ export function AdminToolbarGroup({
     className?: string;
     grow?: boolean;
 }) {
+    if (grow) {
+        return (
+            <div
+                className={cn(
+                    'grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] [&>label]:min-w-0 [&>label]:w-full',
+                    className,
+                )}
+            >
+                {children}
+            </div>
+        );
+    }
+
     return (
         <div
             className={cn(
-                'flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end',
-                grow && 'xl:flex-1',
+                'flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center',
                 className,
             )}
         >

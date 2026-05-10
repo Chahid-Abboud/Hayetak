@@ -19,6 +19,14 @@ class User extends Authenticatable implements MustVerifyEmailContract
 {
     use HasFactory, MustVerifyEmail, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
+    public const DATA_ORIGIN_REAL = 'real';
+
+    public const DATA_ORIGIN_IMPORTED_REAL = 'imported_real';
+
+    public const DATA_ORIGIN_SEEDED_DEMO = 'seeded_demo';
+
+    public const DATA_ORIGIN_TEST = 'test';
+
     public const ROLE_ADMIN = 'admin';
 
     public const ROLE_NUTRITIONIST = 'nutritionist';
@@ -51,7 +59,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
 
         // Auth
         'email', 'password',
-        'role', 'verified', 'status',
+        'role', 'verified', 'status', 'data_origin',
         'professional_bio', 'specialties', 'city', 'contact_display', 'profile_lat', 'profile_lng', 'availability_text',
 
         // 2FA (Fortify)
@@ -99,6 +107,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'has_medical_history' => false,
         'role' => self::ROLE_CLIENT,
         'verified' => false,
+        'data_origin' => self::DATA_ORIGIN_REAL,
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -295,6 +304,21 @@ class User extends Authenticatable implements MustVerifyEmailContract
     }
 
     /* ---------------- Accessors / Helpers ---------------- */
+
+    public function getClientAllergensAttribute(): array
+    {
+        $allergies = $this->allergies ?? [];
+        $dietaryAllergens = $this->dietaryRestrictions
+            ->where('kind', 'allergy')
+            ->where('is_active', true)
+            ->pluck('value')
+            ->toArray();
+
+        return array_unique(array_merge(
+            array_map('strtolower', (array) $allergies),
+            array_map('strtolower', $dietaryAllergens)
+        ));
+    }
 
     public function getDisplayNameAttribute(): string
     {

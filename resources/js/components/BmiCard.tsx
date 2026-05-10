@@ -192,16 +192,14 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
         );
     }
 
-    const { key, label, hint, range } = category(bmi);
+    const { key, label, hint } = category(bmi);
     const cta = ctaFor(key);
 
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                        Current BMI
-                    </div>
+                    
                     <div className="mt-2 flex items-baseline gap-3">
                         <div className="text-4xl font-semibold tracking-tight text-foreground">
                             {bmi}
@@ -213,9 +211,7 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
                         </div>
                     </div>
                 </div>
-                <div className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-                    Range {range}
-                </div>
+                
             </div>
 
             <Progress bmi={bmi} />

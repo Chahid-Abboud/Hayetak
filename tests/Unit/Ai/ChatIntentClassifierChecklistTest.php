@@ -125,12 +125,27 @@ it('routes general-guidance checklist prompts as in-domain coach questions', fun
     'vegetarian protein sources' => ['What are good vegetarian protein sources?', 'nutrition'],
     'meal prep tips' => ['What are some meal prep tips?', 'nutrition'],
     'rest day' => ['What is a rest day?', 'wellness'],
-    'stretches after training' => ['What are good stretches after training?', 'wellness'],
+    'stretches after training' => ['What are good stretches after training?', 'workout'],
     'before cardio' => ['What should someone eat before cardio?', 'nutrition'],
     'simple workout routine' => ['How do I build a simple workout routine?', 'plans'],
     'injury exercise request with typo' => ['my injury dates 7 months , what exercices may i do', 'workout'],
+    'mediterranean fats' => ['What are healthy sources of fats in a Mediterranean-style pattern?', 'nutrition'],
+    'under eating signs' => ['What are common signs someone is under-eating?', 'nutrition'],
+    'reduce sugar intake' => ['What are practical ways to reduce added sugar intake?', 'nutrition'],
+    'grocery shopping rules' => ['What are simple grocery shopping rules for healthier choices?', 'nutrition'],
+    'training mistakes for beginners' => ['What are common training mistakes for beginners?', 'workout'],
+    'muscle gain consistency habits' => ['What are the top five habits for muscle gain with better consistency?', 'workout'],
     'update profile in app' => ['How do I update my profile in the app?', 'settings'],
 ]);
+
+it('keeps short coach follow-up prompts in domain on the coach screen', function () {
+    $result = app(ChatIntentClassifier::class)->classify('can you give me some recommendations?', [
+        'screen_context' => 'coach',
+    ]);
+
+    expect($result['scope'])->toBe('in_domain');
+    expect($result['feature'])->not->toBe('out_of_scope');
+});
 
 it('routes out-of-scope checklist prompts away from coach handling', function (string $prompt) {
     $result = app(ChatIntentClassifier::class)->classify($prompt, []);
