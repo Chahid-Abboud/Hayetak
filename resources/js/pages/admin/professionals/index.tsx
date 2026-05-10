@@ -213,7 +213,7 @@ function ProfessionalEditorSurface({
         (professional.verified ? 'approved' : 'pending');
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-28 ">
             <AdminPanel
                 title={professionalName(professional)}
                 description="Edit the public discovery profile here, while keeping heavier credential decisions in the dedicated verification queue."

@@ -69,11 +69,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 label: 'Notifications',
                 icon: MessageSquareText,
             },
-            {
-                href: '/admin/message-moderations',
-                label: 'Moderation',
-                icon: ShieldAlert,
-            },
+           
             // Shared coach shortcut expectation: href: '/coach', label: 'AI Coach'
         ],
     },

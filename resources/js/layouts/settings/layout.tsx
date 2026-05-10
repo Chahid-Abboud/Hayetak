@@ -43,18 +43,7 @@ const sidebarGroups: SettingsNavGroup[] = [
                 icon: ShieldCheck,
                 matches: ['/settings/password', '/settings/two-factor'],
             },
-            {
-                title: 'Password',
-                href: '/settings/password',
-                helper: 'Update password directly',
-                icon: KeyRound,
-            },
-            {
-                title: 'Two-factor',
-                href: '/settings/two-factor',
-                helper: 'Authenticator and recovery codes',
-                icon: ShieldCheck,
-            },
+           
         ],
     },
 ];
@@ -110,7 +99,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
             <div className="space-y-6">
                 <div className="rounded-[24px] border border-border/70 bg-card/95 p-3 shadow-sm">
-                    <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4">
+                    <div className="grid gap-3 lg:grid-cols-2">
                         {navItems.map((item) => (
                             <Button
                                 key={item.href}

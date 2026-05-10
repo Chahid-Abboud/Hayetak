@@ -416,20 +416,7 @@ export default function ProfilePage() {
                                 type="number"
                                 inputMode="numeric"
                             />
-                            <TextField
-                                label="Height (cm)"
-                                value={heightCm}
-                                onChange={setHeightCm}
-                                type="number"
-                                inputMode="numeric"
-                            />
-                            <TextField
-                                label="Weight (kg)"
-                                value={weightKg}
-                                onChange={setWeightKg}
-                                type="number"
-                                inputMode="decimal"
-                            />
+                            
                         </div>
 
                         <div className="flex flex-wrap gap-3">
