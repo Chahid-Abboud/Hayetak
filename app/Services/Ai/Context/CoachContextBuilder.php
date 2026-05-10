@@ -2,8 +2,8 @@
 
 namespace App\Services\Ai\Context;
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiPlan;
+use App\Models\AiConversation;
+use App\Models\AiPlan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;

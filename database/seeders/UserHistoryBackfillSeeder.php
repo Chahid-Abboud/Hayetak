@@ -21,7 +21,6 @@ use App\Services\Ai\FoodCatalog\FoodCatalogAnomalyService;
 use App\Services\Ai\Seed\SeededPlanCleanupService;
 use App\Services\Ai\Seed\SeedUserProfileTargetsService;
 use Carbon\CarbonImmutable;
-use Database\Seeders\Ai\Data\ExerciseDataQualitySeeder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

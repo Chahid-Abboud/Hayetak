@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Ai;
 
 use App\Jobs\Ai\GeneratePlansForUser;
-use App\Models\Ai\AiRequest;
+use App\Models\AiRequest;
 use App\Models\Notification;
 use App\Models\User;
 use Carbon\CarbonImmutable;

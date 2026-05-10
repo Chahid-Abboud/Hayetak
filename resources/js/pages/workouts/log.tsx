@@ -15,8 +15,14 @@ import {
 } from '@/components/product/product-ui';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CalendarDays, Play, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Search,
+} from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 type Exercise = {
     id: number;
@@ -117,21 +123,30 @@ export default function WorkoutLogPage() {
     const [mode, setMode] = useState<'follow-ai' | 'my-plan' | 'freestyle'>(
         aiPlan ? 'follow-ai' : manualPlan ? 'my-plan' : 'freestyle',
     );
+
     const [selectedAiDayId, setSelectedAiDayId] = useState<number | null>(
         recommendedAiDayId ?? aiPlan?.days?.[0]?.id ?? null,
     );
+
     const [selectedManualDayId, setSelectedManualDayId] = useState<
         number | null
     >(recommendedManualDayId ?? manualPlan?.days?.[0]?.id ?? null);
+
     const [activeLogId, setActiveLogId] = useState<number | null>(
         flash?.activeLogId ?? null,
     );
+
     const [status, setStatus] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [weights, setWeights] = useState<Record<number, string>>({});
     const [reps, setReps] = useState<Record<number, string>>({});
     const [search, setSearch] = useState('');
     const [freestyleIds, setFreestyleIds] = useState<number[]>([]);
+    const [exercisePage, setExercisePage] = useState(1);
+    const [recentPage, setRecentPage] = useState(1);
+
+    const exercisesPerPage = 12;
+    const recentLogsPerPage = 6;
 
     useEffect(() => {
         if (flash?.activeLogId) {
@@ -154,7 +169,10 @@ export default function WorkoutLogPage() {
 
     const filteredExercises = useMemo(() => {
         const token = search.trim().toLowerCase();
-        if (token === '') return exercises.slice(0, 24);
+
+        if (token === '') {
+            return exercises;
+        }
 
         return exercises.filter((exercise) =>
             `${exercise.name} ${exercise.primary_muscle} ${exercise.equipment ?? ''}`
@@ -162,6 +180,34 @@ export default function WorkoutLogPage() {
                 .includes(token),
         );
     }, [exercises, search]);
+
+    useEffect(() => {
+        setExercisePage(1);
+    }, [search]);
+
+    useEffect(() => {
+        setRecentPage(1);
+    }, [recentLogs.length]);
+
+    const totalExercisePages = Math.max(
+        1,
+        Math.ceil(filteredExercises.length / exercisesPerPage),
+    );
+
+    const paginatedExercises = filteredExercises.slice(
+        (exercisePage - 1) * exercisesPerPage,
+        exercisePage * exercisesPerPage,
+    );
+
+    const totalRecentPages = Math.max(
+        1,
+        Math.ceil(recentLogs.length / recentLogsPerPage),
+    );
+
+    const paginatedRecentLogs = recentLogs.slice(
+        (recentPage - 1) * recentLogsPerPage,
+        recentPage * recentLogsPerPage,
+    );
 
     const freestyleExercises = freestyleIds
         .map((id) => exercises.find((exercise) => exercise.id === id))
@@ -251,8 +297,14 @@ export default function WorkoutLogPage() {
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setWeights((current) => ({ ...current, [exerciseId]: '' }));
-                    setReps((current) => ({ ...current, [exerciseId]: '' }));
+                    setWeights((current) => ({
+                        ...current,
+                        [exerciseId]: '',
+                    }));
+                    setReps((current) => ({
+                        ...current,
+                        [exerciseId]: '',
+                    }));
                     setStatus('Set saved.');
                     router.reload({ only: ['recentLogs'] });
                 },
@@ -267,6 +319,7 @@ export default function WorkoutLogPage() {
         }
 
         setSaving(true);
+
         router.post(
             `/workouts/log/${activeLogId}/finish`,
             { duration_min: null, notes: null },
@@ -318,6 +371,7 @@ export default function WorkoutLogPage() {
                                           : 'Freestyle logging'}
                                 </div>
                             </div>
+
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <SummaryPill label="Today" value={today} />
                                 <SummaryPill
@@ -340,6 +394,7 @@ export default function WorkoutLogPage() {
                             >
                                 Follow AI plan
                             </ProductModeButton>
+
                             <ProductModeButton
                                 active={mode === 'my-plan'}
                                 disabled={!manualPlan}
@@ -347,12 +402,14 @@ export default function WorkoutLogPage() {
                             >
                                 My draft
                             </ProductModeButton>
+
                             <ProductModeButton
                                 active={mode === 'freestyle'}
                                 onClick={() => setMode('freestyle')}
                             >
                                 Freestyle
                             </ProductModeButton>
+
                             <ProductButton
                                 type="button"
                                 onClick={startSession}
@@ -488,72 +545,63 @@ export default function WorkoutLogPage() {
                     }
                     description={
                         mode === 'freestyle'
-                            ? 'Build the session on one side and log sets on the other so the page stays easy to scan.'
+                            ? 'Start your session, add exercises, then log your sets in a cleaner layout.'
                             : 'The logging cards stay roomy, with clear weight and rep fields plus visible saved sets.'
                     }
                 >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_360px]">
-                        <div className="space-y-5">
-                            <ExerciseLogList
-                                exercises={currentExercises}
-                                weights={weights}
-                                reps={reps}
-                                loggedSetsByExercise={activeSetGroups}
-                                onWeightChange={(exerciseId, value) =>
-                                    setWeights((current) => ({
-                                        ...current,
-                                        [exerciseId]: value,
-                                    }))
-                                }
-                                onRepsChange={(exerciseId, value) =>
-                                    setReps((current) => ({
-                                        ...current,
-                                        [exerciseId]: value,
-                                    }))
-                                }
-                                onAddSet={(exerciseId) => addSet(exerciseId)}
-                            />
-                        </div>
+                    <div className="space-y-5">
+                        <SidePanelCard
+                            title="Live session"
+                            description="Your current session summary stays visible before you choose or log exercises."
+                        >
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <SessionMetric
+                                    label="Active session"
+                                    value={
+                                        activeLogId
+                                            ? `#${activeLogId}`
+                                            : 'Not started'
+                                    }
+                                />
+                                <SessionMetric
+                                    label="Saved sets"
+                                    value={String(activeLog?.sets.length ?? 0)}
+                                />
+                                <SessionMetric
+                                    label="Current focus"
+                                    value={
+                                        activePlanDay?.name ??
+                                        (mode === 'freestyle'
+                                            ? 'Freestyle session'
+                                            : 'Select a day')
+                                    }
+                                />
+                            </div>
 
-                        <div className="space-y-4">
-                            <SidePanelCard
-                                title="Live session"
-                                description="Your current session summary stays visible while you log."
-                            >
-                                <div className="grid gap-3">
-                                    <SessionMetric
-                                        label="Active session"
-                                        value={
-                                            activeLogId
-                                                ? `#${activeLogId}`
-                                                : 'Not started'
-                                        }
-                                    />
-                                    <SessionMetric
-                                        label="Saved sets"
-                                        value={String(
-                                            activeLog?.sets.length ?? 0,
-                                        )}
-                                    />
-                                    <SessionMetric
-                                        label="Current focus"
-                                        value={
-                                            activePlanDay?.name ??
-                                            (mode === 'freestyle'
-                                                ? 'Freestyle session'
-                                                : 'Select a day')
-                                        }
-                                    />
+                            {mode !== 'freestyle' ? (
+                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                    <ProductButton asChild emphasis="secondary">
+                                        <Link href="/workouts/plan">
+                                            Open workout planner
+                                        </Link>
+                                    </ProductButton>
+                                    <ProductButton asChild emphasis="secondary">
+                                        <Link href="/ai/planner">
+                                            Open AI planner
+                                        </Link>
+                                    </ProductButton>
                                 </div>
-                            </SidePanelCard>
+                            ) : null}
+                        </SidePanelCard>
 
-                            {mode === 'freestyle' ? (
-                                <SidePanelCard
-                                    title="Exercise library"
-                                    description="Search and add freestyle exercises without leaving the page."
-                                >
-                                    <div className="space-y-4">
-                                        <div className="relative">
+                        {mode === 'freestyle' ? (
+                            <SidePanelCard
+                                title="Exercise library"
+                                description="Search and add freestyle exercises before logging your sets."
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div className="relative w-full max-w-xl">
                                             <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                             <ProductInput
                                                 value={search}
@@ -566,92 +614,108 @@ export default function WorkoutLogPage() {
                                                 className="h-12 w-full pl-11 text-base"
                                             />
                                         </div>
-                                        <div className="space-y-3">
-                                            {filteredExercises.map(
-                                                (exercise) => {
-                                                    const added =
-                                                        freestyleIds.includes(
-                                                            exercise.id,
-                                                        );
 
-                                                    return (
-                                                        <div
-                                                            key={exercise.id}
-                                                            className="rounded-[20px] border border-border/70 bg-card/80 p-4"
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div>
-                                                                    <div className="text-base font-semibold text-foreground">
-                                                                        {
-                                                                            exercise.name
-                                                                        }
-                                                                    </div>
-                                                                    <div className="mt-1 text-sm text-muted-foreground">
-                                                                        {
-                                                                            exercise.primary_muscle
-                                                                        }
-                                                                        {exercise.equipment
-                                                                            ? ` - ${exercise.equipment}`
-                                                                            : ''}
-                                                                    </div>
-                                                                </div>
-                                                                <ProductButton
-                                                                    emphasis="secondary"
-                                                                    disabled={
-                                                                        added
-                                                                    }
-                                                                    onClick={() =>
-                                                                        setFreestyleIds(
-                                                                            (
-                                                                                current,
-                                                                            ) =>
-                                                                                added
-                                                                                    ? current
-                                                                                    : [
-                                                                                          ...current,
-                                                                                          exercise.id,
-                                                                                      ],
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {added
-                                                                        ? 'Added'
-                                                                        : 'Add'}
-                                                                </ProductButton>
+                                        <PaginationControls
+                                            page={exercisePage}
+                                            totalPages={totalExercisePages}
+                                            onPrevious={() =>
+                                                setExercisePage((current) =>
+                                                    Math.max(1, current - 1),
+                                                )
+                                            }
+                                            onNext={() =>
+                                                setExercisePage((current) =>
+                                                    Math.min(
+                                                        totalExercisePages,
+                                                        current + 1,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                        {paginatedExercises.map((exercise) => {
+                                            const added =
+                                                freestyleIds.includes(
+                                                    exercise.id,
+                                                );
+
+                                            return (
+                                                <div
+                                                    key={exercise.id}
+                                                    className="rounded-[20px] border border-border/70 bg-card/80 p-4"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="truncate text-base font-semibold text-foreground">
+                                                                {exercise.name}
+                                                            </div>
+                                                            <div className="mt-1 text-sm text-muted-foreground">
+                                                                {
+                                                                    exercise.primary_muscle
+                                                                }
+                                                                {exercise.equipment
+                                                                    ? ` - ${exercise.equipment}`
+                                                                    : ''}
                                                             </div>
                                                         </div>
-                                                    );
-                                                },
-                                            )}
+
+                                                        <ProductButton
+                                                            emphasis="secondary"
+                                                            disabled={added}
+                                                            onClick={() =>
+                                                                setFreestyleIds(
+                                                                    (
+                                                                        current,
+                                                                    ) =>
+                                                                        added
+                                                                            ? current
+                                                                            : [
+                                                                                  ...current,
+                                                                                  exercise.id,
+                                                                              ],
+                                                                )
+                                                            }
+                                                        >
+                                                            {added
+                                                                ? 'Added'
+                                                                : 'Add'}
+                                                        </ProductButton>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {filteredExercises.length === 0 ? (
+                                        <div className="rounded-[20px] border border-dashed border-border/70 bg-background/70 px-4 py-8 text-center text-sm text-muted-foreground">
+                                            No exercises matched your search.
                                         </div>
-                                    </div>
-                                </SidePanelCard>
-                            ) : (
-                                <SidePanelCard
-                                    title="Quick links"
-                                    description="Jump between the planner, the AI flow, and your logging screen without breaking rhythm."
-                                >
-                                    <div className="grid gap-3">
-                                        <ProductButton
-                                            asChild
-                                            emphasis="secondary"
-                                        >
-                                            <Link href="/workouts/plan">
-                                                Open workout planner
-                                            </Link>
-                                        </ProductButton>
-                                        <ProductButton
-                                            asChild
-                                            emphasis="secondary"
-                                        >
-                                            <Link href="/ai/planner">
-                                                Open AI planner
-                                            </Link>
-                                        </ProductButton>
-                                    </div>
-                                </SidePanelCard>
-                            )}
-                        </div>
+                                    ) : null}
+                                </div>
+                            </SidePanelCard>
+                        ) : null}
+
+                        <ExerciseLogList
+                            exercises={currentExercises}
+                            weights={weights}
+                            reps={reps}
+                            loggedSetsByExercise={activeSetGroups}
+                            onWeightChange={(exerciseId, value) =>
+                                setWeights((current) => ({
+                                    ...current,
+                                    [exerciseId]: value,
+                                }))
+                            }
+                            onRepsChange={(exerciseId, value) =>
+                                setReps((current) => ({
+                                    ...current,
+                                    [exerciseId]: value,
+                                }))
+                            }
+                            onAddSet={(exerciseId) => addSet(exerciseId)}
+                        />
                     </div>
                 </ProductSection>
 
@@ -659,18 +723,44 @@ export default function WorkoutLogPage() {
                     title="Recent workout history"
                     description="Each card shows when you trained, what mode you used, and how many sets you logged."
                 >
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {recentLogs.length ? (
-                            recentLogs.map((log) => (
-                                <RecentLogCard key={log.id} log={log} />
-                            ))
-                        ) : (
-                            <ProductEmptyState
-                                title="No workouts logged yet"
-                                description="Start your first session and your history will fill in here."
-                                className="lg:col-span-2"
+                    <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="text-sm text-muted-foreground">
+                                Showing page {recentPage} of {totalRecentPages}
+                            </div>
+
+                            <PaginationControls
+                                page={recentPage}
+                                totalPages={totalRecentPages}
+                                onPrevious={() =>
+                                    setRecentPage((current) =>
+                                        Math.max(1, current - 1),
+                                    )
+                                }
+                                onNext={() =>
+                                    setRecentPage((current) =>
+                                        Math.min(
+                                            totalRecentPages,
+                                            current + 1,
+                                        ),
+                                    )
+                                }
                             />
-                        )}
+                        </div>
+
+                        <div className="grid gap-4 xl:grid-cols-3">
+                            {paginatedRecentLogs.length ? (
+                                paginatedRecentLogs.map((log) => (
+                                    <RecentLogCard key={log.id} log={log} />
+                                ))
+                            ) : (
+                                <ProductEmptyState
+                                    title="No workouts logged yet"
+                                    description="Start your first session and your history will fill in here."
+                                    className="xl:col-span-3"
+                                />
+                            )}
+                        </div>
                     </div>
                 </ProductSection>
 
@@ -689,6 +779,50 @@ export default function WorkoutLogPage() {
                 </ProductStickyActions>
             </ProductPageShell>
         </>
+    );
+}
+
+function PaginationControls({
+    page,
+    totalPages,
+    onPrevious,
+    onNext,
+}: {
+    page: number;
+    totalPages: number;
+    onPrevious: () => void;
+    onNext: () => void;
+}) {
+    return (
+        <div className="flex items-center gap-2">
+            <ProductButton
+                type="button"
+                emphasis="secondary"
+                size="sm"
+                disabled={page <= 1}
+                onClick={onPrevious}
+                className="gap-1"
+            >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+            </ProductButton>
+
+            <span className="rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm font-semibold text-muted-foreground">
+                {page}/{totalPages}
+            </span>
+
+            <ProductButton
+                type="button"
+                emphasis="secondary"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={onNext}
+                className="gap-1"
+            >
+                Next
+                <ChevronRight className="h-4 w-4" />
+            </ProductButton>
+        </div>
     );
 }
 
@@ -712,7 +846,7 @@ function SidePanelCard({
 }: {
     title: string;
     description: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
     return (
         <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
@@ -772,6 +906,7 @@ function DayPickerCard({
                         {day.name ?? `Workout Day ${day.day_index}`}
                     </div>
                 </div>
+
                 {recommended ? (
                     <span className="inline-flex items-center rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-semibold text-foreground">
                         Recommended
@@ -780,6 +915,7 @@ function DayPickerCard({
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 )}
             </div>
+
             <div className="mt-3 text-sm text-muted-foreground">
                 {day.exercises.length} exercises ready to log
             </div>
@@ -806,10 +942,15 @@ function ExerciseLogList({
 }) {
     if (!exercises.length) {
         return (
-            <ProductEmptyState
-                title="No exercises ready yet"
-                description="Choose a planned day or add freestyle exercises to begin logging."
-            />
+            <div className="rounded-[26px] border border-dashed border-border/70 bg-background/72 px-6 py-10 text-center">
+                <div className="text-lg font-semibold text-foreground">
+                    No exercises ready yet
+                </div>
+                <div className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                    Choose a planned day or add freestyle exercises above to
+                    begin logging.
+                </div>
+            </div>
         );
     }
 
@@ -840,6 +981,7 @@ function ExerciseLogList({
                                         : ''}
                                 </div>
                             </div>
+
                             {savedSets.length ? (
                                 <span className="inline-flex items-center rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm font-semibold text-foreground">
                                     {savedSets.length} saved sets
@@ -874,6 +1016,7 @@ function ExerciseLogList({
                                     className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-card px-4 text-base text-foreground"
                                 />
                             </label>
+
                             <label className="block">
                                 <span className="text-sm font-semibold text-foreground">
                                     Reps
@@ -909,6 +1052,7 @@ function ExerciseLogList({
                                     className="mt-2 h-12 w-full rounded-2xl border border-border/70 bg-card px-4 text-base text-foreground"
                                 />
                             </label>
+
                             <ProductButton
                                 type="button"
                                 onClick={() => onAddSet(exercise.id)}
@@ -942,7 +1086,7 @@ function ExerciseLogList({
 
 function RecentLogCard({ log }: { log: WorkoutLog }) {
     return (
-        <div className="rounded-[24px] border border-border/70 bg-background/72 p-5">
+        <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -956,13 +1100,14 @@ function RecentLogCard({ log }: { log: WorkoutLog }) {
                         {sessionSourceLabel(log.plan_source)}
                     </div>
                 </div>
+
                 <span className="inline-flex items-center rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm font-semibold text-foreground">
                     {log.sets.length} sets
                 </span>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-                {log.sets.slice(0, 5).map((set) => (
+                {log.sets.slice(0, 3).map((set) => (
                     <div
                         key={set.id}
                         className="rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm text-foreground"
@@ -971,6 +1116,12 @@ function RecentLogCard({ log }: { log: WorkoutLog }) {
                         {set.weight_kg !== null ? ` @ ${set.weight_kg} kg` : ''}
                     </div>
                 ))}
+
+                {log.sets.length > 3 ? (
+                    <div className="rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm text-muted-foreground">
+                        +{log.sets.length - 3} more
+                    </div>
+                ) : null}
             </div>
         </div>
     );

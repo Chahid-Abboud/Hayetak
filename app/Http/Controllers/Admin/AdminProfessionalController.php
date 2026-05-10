@@ -18,16 +18,67 @@ class AdminProfessionalController extends Controller
     public function index(Request $request): JsonResponse
     {
         $role = (string) $request->query('role', User::ROLE_TRAINER);
+        $search = trim((string) $request->query('search', ''));
+        $city = trim((string) $request->query('city', ''));
+        $readiness = (string) $request->query('readiness', 'all');
 
         abort_unless(in_array($role, [User::ROLE_TRAINER, User::ROLE_NUTRITIONIST], true), 422, 'Invalid role');
+        abort_unless(in_array($readiness, ['all', 'ready', 'needs_cleanup', 'verified'], true), 422, 'Invalid readiness');
 
-        $rows = User::query()
+        $baseQuery = User::query()
             ->with(['latestProfessionalVerification'])
-            ->where('role', $role)
+            ->where('role', $role);
+
+        $cities = (clone $baseQuery)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city')
+            ->values();
+
+        $rows = $baseQuery
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner
+                        ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%")
+                        ->orWhere('contact_display', 'like', "%{$search}%")
+                        ->orWhere('availability_text', 'like', "%{$search}%")
+                        ->orWhere('professional_bio', 'like', "%{$search}%");
+                });
+            })
+            ->when($city !== '', fn ($query) => $query->where('city', $city))
+            ->when($readiness === 'verified', fn ($query) => $query->where('verified', true))
+            ->when($readiness === 'ready', function ($query) {
+                $query
+                    ->where('verified', true)
+                    ->whereNotNull('city')->where('city', '!=', '')
+                    ->whereNotNull('contact_display')->where('contact_display', '!=', '')
+                    ->whereNotNull('availability_text')->where('availability_text', '!=', '')
+                    ->whereNotNull('professional_bio')->where('professional_bio', '!=', '')
+                    ->whereNotNull('specialties')->where('specialties', '!=', '[]')->where('specialties', '!=', '');
+            })
+            ->when($readiness === 'needs_cleanup', function ($query) {
+                $query->where(function ($inner) {
+                    $inner
+                        ->where('verified', false)
+                        ->orWhereNull('city')->orWhere('city', '')
+                        ->orWhereNull('contact_display')->orWhere('contact_display', '')
+                        ->orWhereNull('availability_text')->orWhere('availability_text', '')
+                        ->orWhereNull('professional_bio')->orWhere('professional_bio', '')
+                        ->orWhereNull('specialties')->orWhere('specialties', '[]')->orWhere('specialties', '');
+                });
+            })
             ->orderBy('id')
             ->paginate((int) $request->query('per_page', 20));
 
-        return response()->json($rows);
+        return response()->json([
+            ...$rows->toArray(),
+            'cities' => $cities,
+        ]);
     }
 
     public function show(User $user): JsonResponse

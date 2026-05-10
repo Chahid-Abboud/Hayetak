@@ -136,7 +136,8 @@ type PageProps = DayResponse & {
 
 const ZERO: Totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'];
-const SUMMARY_MEALS: MealType[] = ['breakfast', 'lunch', 'dinner'];
+const CORE_SUMMARY_MEALS: MealType[] = ['breakfast', 'lunch', 'dinner'];
+const OPTIONAL_SUMMARY_MEALS: MealType[] = ['snack', 'drink'];
 
 function todayYmd() {
     return new Date().toISOString().slice(0, 10);
@@ -516,7 +517,6 @@ export default function TrackMealsPage() {
 
             <ProductPageShell width="wide">
                 <ProductHero
-                    eyebrow="Meal Tracker"
                     title={
                         mode === 'follow-plan'
                             ? "Follow today's plan"
@@ -593,6 +593,7 @@ export default function TrackMealsPage() {
                                     targets={day.targets ?? null}
                                     remaining={day.remaining ?? null}
                                     mealTotals={day.mealTotals}
+                                    entries={entries}
                                 />
                                 <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
                                     <div className="text-lg font-semibold text-foreground">
@@ -823,6 +824,7 @@ export default function TrackMealsPage() {
                                 targets={day.targets ?? null}
                                 remaining={day.remaining ?? null}
                                 mealTotals={day.mealTotals}
+                                entries={entries}
                             />
 
                             <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
@@ -842,7 +844,7 @@ export default function TrackMealsPage() {
                                                     : 'border-border/70 bg-card text-foreground hover:bg-background'
                                             }`}
                                         >
-                                            {type}
+                                            {mealLabel(type)}
                                         </button>
                                     ))}
                                 </div>
@@ -860,6 +862,12 @@ export default function TrackMealsPage() {
                                     {loading ? (
                                         <div className="text-sm text-muted-foreground">
                                             Searching...
+                                        </div>
+                                    ) : results.length === 0 ? (
+                                        <div className="rounded-[18px] border border-dashed border-border/70 bg-card/60 px-4 py-5 text-sm text-muted-foreground">
+                                            {query.trim()
+                                                ? `No ${mealLabel(mealType).toLowerCase()} matches found. Try a simpler food name.`
+                                                : `Search to log a ${mealLabel(mealType).toLowerCase()}.`}
                                         </div>
                                     ) : (
                                         results.map((food) => (
@@ -924,7 +932,10 @@ export default function TrackMealsPage() {
                                                     {entry.food.name}
                                                 </div>
                                                 <div className="mt-1 text-xs text-muted-foreground">
-                                                    {entry.meal_type} -{' '}
+                                                    {mealLabel(
+                                                        entry.meal_type,
+                                                    )}{' '}
+                                                    -{' '}
                                                     {entry.servings} servings
                                                 </div>
                                                 {entry.plan_tracking ? (
@@ -1249,12 +1260,14 @@ function MacroCard({
     targets,
     remaining,
     mealTotals,
+    entries,
 }: {
     title: string;
     totals: Totals;
     targets: Targets | null;
     remaining?: Partial<Totals> | null;
     mealTotals: Record<MealType, Totals>;
+    entries: EntryItem[];
 }) {
     const macroCards = [
         {
@@ -1294,6 +1307,23 @@ function MacroCard({
             fillClass: 'bg-primary/70',
         },
     ];
+    const loggedOptionalMeals = OPTIONAL_SUMMARY_MEALS.filter((mealType) => {
+        const totalsForMeal = mealTotals[mealType] ?? ZERO;
+        const hasLoggedEntry = entries.some(
+            (entry) => entry.meal_type === mealType,
+        );
+        const hasTotals =
+            totalsForMeal.calories > 0 ||
+            totalsForMeal.protein > 0 ||
+            totalsForMeal.carbs > 0 ||
+            totalsForMeal.fat > 0;
+
+        return hasLoggedEntry || hasTotals;
+    });
+    const singleOptionalMeal = loggedOptionalMeals.length === 1;
+    const summaryMeals: MealType[] = singleOptionalMeal
+        ? [...CORE_SUMMARY_MEALS, loggedOptionalMeals[0] as MealType]
+        : CORE_SUMMARY_MEALS;
 
     return (
         <div className="rounded-[26px] border border-border/70 bg-background/72 p-4">
@@ -1303,8 +1333,8 @@ function MacroCard({
                         {title}
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
-                        Progress stays visible for the whole day, then rolls
-                        into a meal-by-meal summary right underneath.
+                        Daily totals stay visible for the whole day, with meal
+                        totals grouped underneath.
                     </div>
                 </div>
                 {typeof targets?.calories === 'number' ? (
@@ -1396,73 +1426,70 @@ function MacroCard({
                 <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                     Meal summary
                 </div>
-                <div className="mt-3 grid gap-3 lg:grid-cols-3">
-                    {SUMMARY_MEALS.map((mealType) => {
-                        const totalsForMeal = mealTotals[mealType] ?? ZERO;
-                        const calorieShare =
-                            typeof targets?.calories === 'number' &&
-                            targets.calories > 0
-                                ? Math.min(
-                                      100,
-                                      (totalsForMeal.calories /
-                                          targets.calories) *
-                                          100,
-                                  )
-                                : 0;
-
-                        return (
-                            <div
-                                key={mealType}
-                                className="rounded-[22px] border border-border/70 bg-card/80 p-4"
-                            >
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="text-sm font-semibold text-foreground">
-                                        {mealLabel(mealType)}
-                                    </div>
-                                    <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                                        {Math.round(totalsForMeal.calories)}{' '}
-                                        kcal
-                                    </span>
-                                </div>
-
-                                <div className="mt-4 h-2 overflow-hidden rounded-full bg-background">
-                                    <div
-                                        className="h-full rounded-full bg-primary"
-                                        style={{ width: `${calorieShare}%` }}
-                                    />
-                                </div>
-
-                                <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                                    <div className="rounded-[18px] border border-border/70 bg-background px-3 py-2">
-                                        <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                                            Protein
-                                        </div>
-                                        <div className="mt-1 font-medium text-foreground">
-                                            {Math.round(totalsForMeal.protein)}{' '}
-                                            g
-                                        </div>
-                                    </div>
-                                    <div className="rounded-[18px] border border-border/70 bg-background px-3 py-2">
-                                        <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                                            Carbs
-                                        </div>
-                                        <div className="mt-1 font-medium text-foreground">
-                                            {Math.round(totalsForMeal.carbs)} g
-                                        </div>
-                                    </div>
-                                    <div className="rounded-[18px] border border-border/70 bg-background px-3 py-2">
-                                        <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                                            Fat
-                                        </div>
-                                        <div className="mt-1 font-medium text-foreground">
-                                            {Math.round(totalsForMeal.fat)} g
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div
+                    className={`mt-3 grid gap-3 ${
+                        singleOptionalMeal ? 'md:grid-cols-2' : 'lg:grid-cols-3'
+                    }`}
+                >
+                    {summaryMeals.map((mealType) => (
+                        <MealSummaryCard
+                            key={mealType}
+                            mealType={mealType}
+                            totals={mealTotals[mealType] ?? ZERO}
+                        />
+                    ))}
                 </div>
+                {loggedOptionalMeals.length > 1 ? (
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        {loggedOptionalMeals.map((mealType) => (
+                            <MealSummaryCard
+                                key={mealType}
+                                mealType={mealType}
+                                totals={mealTotals[mealType] ?? ZERO}
+                            />
+                        ))}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function MealSummaryCard({
+    mealType,
+    totals,
+}: {
+    mealType: MealType;
+    totals: Totals;
+}) {
+    return (
+        <div className="rounded-[22px] border border-border/70 bg-card/80 p-4">
+            <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-foreground">
+                    {mealLabel(mealType)}
+                </div>
+                <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-xs text-muted-foreground">
+                    {Math.round(totals.calories)} kcal
+                </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                <MacroPill label="Protein" value={totals.protein} />
+                <MacroPill label="Carbs" value={totals.carbs} />
+                <MacroPill label="Fat" value={totals.fat} />
+            </div>
+        </div>
+    );
+}
+
+function MacroPill({ label, value }: { label: string; value: number }) {
+    return (
+        <div className="rounded-[18px] border border-border/70 bg-background px-3 py-2">
+            <div className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                {label}
+            </div>
+            <div className="mt-1 font-medium text-foreground">
+                {Math.round(value)} g
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 # AI Model Diagram Images Index
 
-Source file: `docs/ai/diagrams/model-diagrams.md`
+Source file: `docs/ai-model-diagrams.md`
 
 ## Quick Open
 - PNG gallery markdown: `docs/diagrams/ai-model/ai-model-diagrams-png.md`

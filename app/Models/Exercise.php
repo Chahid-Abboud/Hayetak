@@ -45,6 +45,12 @@ class Exercise extends Model
         // New fields we recommended adding (only works if you added them in DB)
         'secondary_muscles',
         'equipment_list',
+        'locations',
+        'default_sets',
+        'reps_min',
+        'reps_max',
+        'rest_seconds_min',
+        'rest_seconds_max',
     ];
 
     /**
@@ -57,6 +63,7 @@ class Exercise extends Model
         // If you add these columns (recommended)
         'secondary_muscles' => 'array',
         'equipment_list' => 'array',
+        'locations' => 'array',
 
         // Existing jsonb columns in your DB
         'joint_stress' => 'array',

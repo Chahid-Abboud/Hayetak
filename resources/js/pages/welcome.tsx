@@ -905,8 +905,8 @@ export default function Landing() {
                     ) : null}
                 </header>
 
-                <main id="main-content" className="relative z-10">
-                    <section
+                 <main id="main-content" className="relative z-10">
+                    <div
                         id="hero"
                         className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
                     >
@@ -938,9 +938,9 @@ export default function Landing() {
                                 </Cta>
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    <section
+                    <div
                         id="story"
                         className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-14"
                     >
@@ -994,10 +994,10 @@ export default function Landing() {
                                     </p>
                                 </div>
                             ))}
-                        </div>
-                    </section>
+                         </div>
+                    </div>
 
-                    <section id="preview" className="relative py-6 sm:py-8">
+                    <div id="preview" className="relative py-6 sm:py-8">
                         <div
                             ref={previewSectionRef}
                             className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
@@ -1067,10 +1067,10 @@ export default function Landing() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                         </div>
+                    </div>
 
-                    <section
+                    <div
                         id="trust"
                         className="mx-auto max-w-7xl px-4 pt-10 pb-12 sm:px-6 lg:px-8 lg:pt-12 lg:pb-14"
                     >
@@ -1146,7 +1146,7 @@ export default function Landing() {
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </div>
                 </main>
             </div>
         </>

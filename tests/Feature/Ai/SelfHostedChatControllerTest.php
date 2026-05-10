@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Ai\AiMessage;
+use App\Models\AiMessage;
 use App\Models\User;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
@@ -52,6 +52,33 @@ function fakeSelfHostedTransports(?callable $chatHandler = null, array $queryPoi
             ], 200);
         },
     ]);
+}
+
+function seedChatOffer(User $user, string $assistantOffer): \App\Models\AiConversation
+{
+    $conversation = \App\Models\AiConversation::query()->create([
+        'user_id' => $user->id,
+        'title' => 'Offer thread',
+        'last_message_at' => now(),
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'user',
+        'content' => 'Can you help?',
+        'metadata' => [],
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'assistant',
+        'content' => $assistantOffer,
+        'metadata' => [],
+    ]);
+
+    return $conversation;
 }
 
 it('uses personalized vector context for self-hosted chat when a relevant user match is found', function () {
@@ -520,6 +547,290 @@ it('refuses out-of-scope questions without calling the self-hosted model', funct
     Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
 });
 
+it('answers gratitude turns without using the model or calling the app name a user name', function () {
+    $user = User::factory()->create([
+        'name' => 'Maya Client',
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'thank you so much!',
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'gratitude_acknowledgement')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'conversation');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('You are very welcome')
+        ->not->toContain('Hayetak!');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('answers short confirmations from the previous assistant offer instead of restarting the topic', function () {
+    $user = User::factory()->create();
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = \App\Models\AiConversation::query()->create([
+        'user_id' => $user->id,
+        'title' => 'Sluggish thread',
+        'last_message_at' => now(),
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'user',
+        'content' => 'i feel sluggish',
+        'metadata' => [],
+    ]);
+
+    AiMessage::query()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $user->id,
+        'role' => 'assistant',
+        'content' => 'I can suggest some low-intensity exercises or modifications to help you get moving without feeling too exhausted. Would you like me to?',
+        'metadata' => [],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'please do',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'sluggish_follow_up_movement')
+        ->assertJsonPath('assistant_message.metadata.chat.chat_path', 'personalized');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('low-intensity session')
+        ->toContain('wall push-ups')
+        ->not->toContain('average daily caloric intake')
+        ->not->toContain('continue with some suggestions on why you might be feeling sluggish');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('resolves brief confirmations to offered food recommendations', function () {
+    $user = User::factory()->create([
+        'allergies' => ['Avocado'],
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can give you food recommendations and snack ideas that fit your restrictions. Would you like me to list them?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'give them',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_food_recommendations');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Here are food options')
+        ->toContain('Greek yogurt with banana')
+        ->toContain('Avoid anything that includes your saved allergens: Avocado')
+        ->not->toContain('Tell me which option');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('resolves brief confirmations to offered exercise substitutes', function () {
+    $user = User::factory()->create([
+        'medical_history' => 'knee pain',
+    ]);
+
+    $user->prefs()->create([
+        'settings' => [
+            'injuries' => ['knee pain'],
+        ],
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can suggest safer exercise substitutes and workout modifications for your injury. Want me to give them?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'yes please',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_exercise_substitutes');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('safer exercise substitutes')
+        ->toContain('box squats')
+        ->toContain('Stop any movement that causes sharp pain')
+        ->not->toContain('Tell me which option');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('resolves brief confirmations to offered recipe and macro details', function () {
+    $user = User::factory()->create([
+        'allergies' => ['Avocado'],
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can give you the full recipe, ingredients, prep steps, and macros. Would you like that?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'show me',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_recipe_follow_up');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Macros per serving')
+        ->toContain('Ingredients:')
+        ->toContain('Steps:')
+        ->not->toContain('Tell me which option');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('resolves brief confirmations to offered tips without repeating the original analysis', function () {
+    $user = User::factory()->create();
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can give you more specific tips and strategies based on this thread. Would you like me to elaborate?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'tell me more',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_tips_follow_up');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('Here are focused tips')
+        ->toContain('Hydration:')
+        ->toContain('Energy:')
+        ->not->toContain('Tell me which option');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
+it('resolves brief confirmations to an offered workout routine', function () {
+    $user = User::factory()->create();
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports();
+
+    $conversation = seedChatOffer(
+        $user,
+        'I can plan a workout routine for you based on your energy today. Should I send it?',
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'go ahead',
+            'conversation_id' => $conversation->id,
+            'screen_context' => 'coach',
+        ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('assistant_message.metadata.chat.reason', 'offered_workout_routine');
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('simple low-stress workout')
+        ->toContain('Warm-up:')
+        ->toContain('Main work:')
+        ->not->toContain('Tell me which option');
+
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/api/chat'));
+    Http::assertNotSent(fn (HttpRequest $request) => str_contains($request->url(), '/points/query'));
+});
+
 it('uses a privacy-specific boundary for exfiltration prompts without calling the self-hosted model', function () {
     $user = User::factory()->create();
 
@@ -748,6 +1059,50 @@ it('treats meal requests that mention allergies as meal guidance instead of a re
     expect(data_get($response->json(), 'assistant_message.content'))
         ->toContain('safe snack idea')
         ->not->toContain('Here are the saved safety and diet details');
+});
+
+it('replaces allergen-conflicting high-calorie snack suggestions with a concrete safe snack', function () {
+    $user = User::factory()->create([
+        'allergies' => ['Avocado'],
+    ]);
+
+    config()->set('ai.chat.provider', 'self_hosted');
+    config()->set('ai.chat.self_hosted.ollama.base_url', 'http://ollama.local');
+    config()->set('ai.chat.self_hosted.qdrant.base_url', 'http://qdrant.local');
+    config()->set('ai.usage_logging.enabled', false);
+
+    fakeSelfHostedTransports(
+        fn () => Http::response([
+            'model' => 'llama3.1:8b',
+            'message' => [
+                'role' => 'assistant',
+                'content' => 'Try avocado toast with olive oil and nuts for a high calorie snack.',
+            ],
+            'prompt_eval_count' => 90,
+            'eval_count' => 35,
+        ], 200),
+        [],
+    );
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/ai/chat', [
+            'message' => 'can you give me any high calorie snack to eat ?',
+            'screen_context' => 'coach',
+        ]);
+
+    $response->assertCreated();
+
+    expect(data_get($response->json(), 'assistant_message.content'))
+        ->toContain('safer high-calorie snack')
+        ->toContain('Greek yogurt with banana, oats, honey, and walnuts')
+        ->toContain('560 kcal')
+        ->toContain('28 g protein')
+        ->not->toContain('I removed one suggested item');
+
+    expect(collect($response->json('warnings')))
+        ->contains('Removed a food suggestion that matched the allergy list.')
+        ->toBeTrue();
 });
 
 it('answers recovery checklist prompts as general guidance when no user vector context matches', function () {

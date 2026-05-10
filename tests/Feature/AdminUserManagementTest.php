@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Ai\AiPlan;
-use App\Models\Ai\AiRequest;
+use App\Models\AiPlan;
+use App\Models\AiRequest;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\UserPref;

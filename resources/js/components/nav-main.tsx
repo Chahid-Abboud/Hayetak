@@ -10,6 +10,14 @@ import { Link, usePage } from '@inertiajs/react';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
     const page = usePage();
+    const isActive = (href: string) => {
+        if (href === '/admin') {
+            return page.url === '/admin';
+        }
+
+        return page.url.startsWith(href);
+    };
+
     return (
         <SidebarGroup className="px-2 py-0">
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -18,7 +26,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
-                            isActive={page.url.startsWith(
+                            isActive={isActive(
                                 typeof item.href === 'string'
                                     ? item.href
                                     : item.href.url,

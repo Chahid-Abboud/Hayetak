@@ -51,7 +51,7 @@ class AiSeededAiCompletionReport extends Command
                 'Realistic non-admin user diversity is seeded by AiProfileDiversitySeeder, ProfessionalClientsDemoSeeder, and UserHistoryBackfillSeeder.',
                 'Admin accounts are excluded from user history backfill and bulk planner generation.',
             ], [
-                'database/seeders/Ai/AiProfileDiversitySeeder.php',
+                'database/seeders/AiProfileDiversitySeeder.php',
                 'database/seeders/ProfessionalClientsDemoSeeder.php',
                 'database/seeders/UserHistoryBackfillSeeder.php',
                 'tmp/PlannerGeneratedPostReseed22April.md',

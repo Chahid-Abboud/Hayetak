@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Models\User;
 use App\Services\Ai\Audit\PlannerAuditExecutionMode;
 use App\Services\Ai\Audit\PlannerAuditGpuLoad;

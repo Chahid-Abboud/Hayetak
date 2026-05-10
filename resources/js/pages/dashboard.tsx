@@ -598,7 +598,6 @@ export default function Home() {
                         <h1 className="sr-only">Hayetak dashboard</h1>
                         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
                             <div className="max-w-3xl">
-                                <p className="haye-kicker">Command center</p>
                                 <h2
                                     className="mt-4 text-5xl tracking-tight text-foreground sm:text-6xl"
                                     style={{
@@ -638,16 +637,10 @@ export default function Home() {
                             <div className="dashboard-surface rounded-[32px] p-5 shadow-[0_28px_65px_-48px_rgba(15,23,42,0.65)]">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="haye-kicker">
-                                            Today pulse
-                                        </p>
                                         <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
                                             Clear, quick, and current
                                         </h3>
                                     </div>
-                                    <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                        Live snapshot
-                                    </span>
                                 </div>
 
                                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -752,16 +745,11 @@ export default function Home() {
                                         in the same conversation.
                                     </div>
                                 )}
-                                <div className="dashboard-surface-accent rounded-[24px] p-4 text-sm text-foreground">
-                                    {proteinRemaining > 0
-                                        ? `Best next move: close about ${proteinRemaining} g of protein before the day ends.`
-                                        : 'Best next move: keep momentum with hydration or your planned workout session.'}
-                                </div>
                             </div>
                         </CardSection>
 
                         <CardSection
-                            title="Planner result"
+                            title="AI Planner"
                             description="Clear status for your active AI nutrition and workout plans."
                             actions={
                                 <>
@@ -813,24 +801,7 @@ export default function Home() {
                         </CardSection>
                     </section>
 
-                    <CardSection
-                        title="Predictor vs Actual trend"
-                        description="See projected progress against every logged weigh-in on one shared timeline."
-                    >
-                        <div className="pt-1">
-                            {progressPrediction ? (
-                                <PredictorVsActualCard
-                                    trend={predictionTrend ?? []}
-                                    weighIns={weightHistory ?? []}
-                                />
-                            ) : (
-                                <div className="rounded-[26px] border border-dashed border-border/60 bg-background/55 p-4 text-sm leading-6 text-muted-foreground">
-                                    Generate a plan and keep logging weight
-                                    check-ins to unlock the progress predictor.
-                                </div>
-                            )}
-                        </div>
-                    </CardSection>
+                    
                     <CardSection
                         title="Today's nutrition board"
                         description="A broad daily snapshot so you can scan nutrition fast without recreating the full meal tracker."
@@ -883,10 +854,10 @@ export default function Home() {
                                                 <div className="haye-kicker">
                                                     Quick view
                                                 </div>
-                                                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                               <h3 className="mt-3 max-w-none text-2xl font-semibold leading-snug tracking-tight text-foreground">
                                                     What stands out today
-                                                </h3>
-                                            </div>
+                                                </h3>   
+                                              </div>
                                             <span className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                                                 Dashboard summary
                                             </span>
@@ -2615,7 +2586,7 @@ function AdminDashboard() {
 
     return (
         <AdminPageShell
-            title="Admin Command Center"
+            title=""
             description="A calmer command center for account review, professional moderation, AI oversight, and audit follow-up without dumping technical noise into every surface."
             actions={
                 <>

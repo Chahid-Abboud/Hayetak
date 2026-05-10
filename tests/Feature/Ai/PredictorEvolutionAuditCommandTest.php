@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Ai\AiConversation;
-use App\Models\Ai\AiMessage;
-use App\Models\Ai\AiRequest;
+use App\Models\AiConversation;
+use App\Models\AiMessage;
+use App\Models\AiRequest;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;

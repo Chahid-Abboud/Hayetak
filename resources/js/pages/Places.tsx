@@ -48,6 +48,7 @@ type FixedListFilter =
     | 'all'
     | 'gyms'
     | 'nutrition-centers'
+    | 'healthcare'
     | 'dietitians'
     | 'trainers';
 
@@ -116,6 +117,7 @@ export default function Places() {
     const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
     const [showGym, setShowGym] = useState<boolean>(true);
     const [showNutri, setShowNutri] = useState<boolean>(true);
+    const [showHealthcare, setShowHealthcare] = useState<boolean>(true);
 
     const [results, setResults] = useState<Place[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -172,18 +174,16 @@ export default function Places() {
         return results.reduce(
             (acc, p) => {
                 const t = (p.type ?? p.category ?? '').toLowerCase();
-                if (
-                    t.includes('nutri') ||
-                    t.includes('diet') ||
-                    t.includes('clinic')
-                ) {
+                if (isHealthcareCategory(t)) {
+                    acc.healthcare += 1;
+                } else if (t.includes('nutri') || t.includes('diet')) {
                     acc.nutritionist += 1;
                 } else if (t.includes('gym')) {
                     acc.gym += 1;
                 }
                 return acc;
             },
-            { gym: 0, nutritionist: 0 },
+            { gym: 0, nutritionist: 0, healthcare: 0 },
         );
     }, [results]);
 
@@ -193,7 +193,7 @@ export default function Places() {
             return;
         }
         setError(null);
-    }, [center, radiusKm, showGym, showNutri]);
+    }, [center, radiusKm, showGym, showHealthcare, showNutri]);
 
     useEffect(() => {
         void (async () => {
@@ -267,7 +267,11 @@ export default function Places() {
                 place.category ?? place.type ?? 'other',
             );
             const filterTag: FixedListFilter =
-                normalizedCategory === 'gym' ? 'gyms' : 'nutrition-centers';
+                normalizedCategory === 'gym'
+                    ? 'gyms'
+                    : isHealthcareCategory(normalizedCategory)
+                      ? 'healthcare'
+                      : 'nutrition-centers';
 
             return {
                 key: `place-${place.id ?? index}`,
@@ -508,39 +512,36 @@ export default function Places() {
                                         Types
                                     </span>
                                     <select
-                                        value={
-                                            showGym && showNutri
-                                                ? 'both'
-                                                : showGym
-                                                  ? 'gym'
-                                                  : showNutri
-                                                    ? 'nutritionist'
-                                                    : 'none'
-                                        }
+                                        value={typePreset(
+                                            showGym,
+                                            showNutri,
+                                            showHealthcare,
+                                        )}
                                         onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === 'both') {
-                                                setShowGym(true);
-                                                setShowNutri(true);
-                                            } else if (val === 'gym') {
-                                                setShowGym(true);
-                                                setShowNutri(false);
-                                            } else if (val === 'nutritionist') {
-                                                setShowGym(false);
-                                                setShowNutri(true);
-                                            } else {
-                                                setShowGym(false);
-                                                setShowNutri(false);
-                                            }
+                                            applyTypePreset(
+                                                e.target.value,
+                                                setShowGym,
+                                                setShowNutri,
+                                                setShowHealthcare,
+                                            );
                                         }}
                                         className="h-11 rounded-xl border border-border bg-background px-3"
                                     >
+                                        <option value="all">
+                                            Gyms + Nutrition + Healthcare
+                                        </option>
                                         <option value="both">
                                             Gyms + Nutrition centers
                                         </option>
                                         <option value="gym">Gyms only</option>
                                         <option value="nutritionist">
                                             Nutrition centers only
+                                        </option>
+                                        <option value="healthcare">
+                                            Healthcare only
+                                        </option>
+                                        <option value="custom" disabled>
+                                            Custom mix
                                         </option>
                                         <option value="none">None</option>
                                     </select>
@@ -552,6 +553,9 @@ export default function Places() {
                                         <span>
                                             {counts.nutritionist} nutrition
                                             centers
+                                        </span>
+                                        <span>
+                                            {counts.healthcare} healthcare
                                         </span>
                                     </div>
                                 </div>
@@ -576,39 +580,34 @@ export default function Places() {
                     <label className="flex min-w-[260px] flex-1 flex-col gap-1">
                         <span className="text-sm font-medium">Types</span>
                         <select
-                            value={
-                                showGym && showNutri
-                                    ? 'both'
-                                    : showGym
-                                      ? 'gym'
-                                      : showNutri
-                                        ? 'nutritionist'
-                                        : 'none'
-                            }
+                            value={typePreset(
+                                showGym,
+                                showNutri,
+                                showHealthcare,
+                            )}
                             onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'both') {
-                                    setShowGym(true);
-                                    setShowNutri(true);
-                                } else if (val === 'gym') {
-                                    setShowGym(true);
-                                    setShowNutri(false);
-                                } else if (val === 'nutritionist') {
-                                    setShowGym(false);
-                                    setShowNutri(true);
-                                } else {
-                                    setShowGym(false);
-                                    setShowNutri(false);
-                                }
+                                applyTypePreset(
+                                    e.target.value,
+                                    setShowGym,
+                                    setShowNutri,
+                                    setShowHealthcare,
+                                );
                             }}
                             className="h-9 w-full rounded-md border bg-background px-3"
                         >
+                            <option value="all">
+                                Gyms + Nutrition + Healthcare
+                            </option>
                             <option value="both">
                                 Gyms + Nutrition centers
                             </option>
                             <option value="gym">Gyms only</option>
                             <option value="nutritionist">
                                 Nutrition centers only
+                            </option>
+                            <option value="healthcare">Healthcare only</option>
+                            <option value="custom" disabled>
+                                Custom mix
                             </option>
                             <option value="none">None</option>
                         </select>
@@ -623,7 +622,7 @@ export default function Places() {
                     </label>
 
                     <div className="min-w-[260px] flex-1">
-                        <div className="flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 text-sm">
+                        <div className="flex min-h-9 w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md border bg-background px-3 py-2 text-sm">
                             <span>
                                 <span className="font-semibold">
                                     {counts.gym}
@@ -635,6 +634,12 @@ export default function Places() {
                                     {counts.nutritionist}
                                 </span>{' '}
                                 nutrition centers
+                            </span>
+                            <span>
+                                <span className="font-semibold">
+                                    {counts.healthcare}
+                                </span>{' '}
+                                healthcare
                             </span>
                         </div>
                     </div>
@@ -649,8 +654,10 @@ export default function Places() {
                                 radiusKm={radiusKm}
                                 showGym={showGym}
                                 showNutritionist={showNutri}
+                                showHealthcare={showHealthcare}
                                 onToggleGym={setShowGym}
                                 onToggleNutritionist={setShowNutri}
+                                onToggleHealthcare={setShowHealthcare}
                                 onLoadingChange={setLoading}
                                 onErrorChange={setError}
                                 onResults={(list) => {
@@ -703,6 +710,9 @@ export default function Places() {
                                     <option value="gyms">Gyms</option>
                                     <option value="nutrition-centers">
                                         Nutrition centers
+                                    </option>
+                                    <option value="healthcare">
+                                        Healthcare
                                     </option>
                                     <option value="dietitians">
                                         Dietitians
@@ -1189,14 +1199,26 @@ function toSafeHttpUrl(value?: string | null): string | null {
 
 function normalizePlaceCategory(
     value: string,
-): 'gym' | 'nutritionist' | 'other' {
+):
+    | 'gym'
+    | 'nutritionist'
+    | 'hospital'
+    | 'medical_lab'
+    | 'other' {
     const v = value.toLowerCase();
     if (v.includes('gym')) return 'gym';
-    if (v.includes('nutri') || v.includes('diet') || v.includes('clinic')) {
+    if (v.includes('nutri') || v.includes('diet')) {
         return 'nutritionist';
     }
-
+    if (v.includes('hospital')) return 'hospital';
+    if (v.includes('lab') || v.includes('diagnostic')) return 'medical_lab';
     return 'other';
+}
+
+function isHealthcareCategory(value: string): boolean {
+    return ['hospital', 'medical_lab'].includes(
+        normalizePlaceCategory(value),
+    );
 }
 
 function isGymPlace(place: Place): boolean {
@@ -1213,6 +1235,32 @@ function isNutritionCenterPlace(place: Place): boolean {
             (place.category ?? place.type ?? 'other').toString(),
         ) === 'nutritionist'
     );
+}
+
+function typePreset(
+    showGym: boolean,
+    showNutri: boolean,
+    showHealthcare: boolean,
+) {
+    if (showGym && showNutri && showHealthcare) return 'all';
+    if (showGym && showNutri && !showHealthcare) return 'both';
+    if (showGym && !showNutri && !showHealthcare) return 'gym';
+    if (!showGym && showNutri && !showHealthcare) return 'nutritionist';
+    if (!showGym && !showNutri && showHealthcare) return 'healthcare';
+    if (!showGym && !showNutri && !showHealthcare) return 'none';
+
+    return 'custom';
+}
+
+function applyTypePreset(
+    preset: string,
+    setShowGym: (value: boolean) => void,
+    setShowNutri: (value: boolean) => void,
+    setShowHealthcare: (value: boolean) => void,
+) {
+    setShowGym(['all', 'both', 'gym'].includes(preset));
+    setShowNutri(['all', 'both', 'nutritionist'].includes(preset));
+    setShowHealthcare(['all', 'healthcare'].includes(preset));
 }
 
 function findClosestPlaceForProfessional(

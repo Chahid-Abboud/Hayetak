@@ -7,11 +7,15 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Bell,
     CalendarDays,
+    ClipboardCheck,
     Dumbbell,
+    HeartPulse,
     LayoutDashboard,
     LogOut,
+    LockKeyhole,
     MapPin,
     Menu,
     MessageSquare,
@@ -46,6 +50,7 @@ function matchesPath(pathname: string, item: NavItem) {
     const patterns = [item.href, ...(item.match ?? [])];
 
     return patterns.some((pattern) => {
+        if (pattern === '/admin') return pathname === '/admin';
         if (pathname === pattern) return true;
         return pattern !== '/' && pathname.startsWith(`${pattern}/`);
     });
@@ -136,6 +141,7 @@ function ShellSidebar({
     roleLabel,
     primaryNav,
     secondaryGroups,
+    homeHref,
     onOpenPalette,
     onLogout,
     onNavigate,
@@ -147,6 +153,7 @@ function ShellSidebar({
     roleLabel: string;
     primaryNav: NavItem[];
     secondaryGroups: NavGroup[];
+    homeHref: string;
     onOpenPalette: () => void;
     onLogout: () => void;
     onNavigate?: () => void;
@@ -164,7 +171,7 @@ function ShellSidebar({
             <div className="border-b border-[color:var(--sidebar-border)] px-4 py-4">
                 <div className="flex items-center gap-3">
                     <Link
-                        href="/dashboard"
+                        href={homeHref}
                         onClick={onNavigate}
                         className="flex min-w-0 items-center gap-3 no-underline"
                     >
@@ -328,23 +335,34 @@ export function AppProductShell({
         if (role === 'admin') {
             return [
                 {
-                    href: '/dashboard',
-                    label: 'Overview',
+                    href: '/admin',
+                    label: 'Command',
                     icon: LayoutDashboard,
-                    keywords: ['admin', 'dashboard', 'overview'],
+                    keywords: ['admin', 'command center', 'overview'],
                 },
                 {
-                    href: '/coach',
-                    label: 'AI Coach',
-                    icon: Sparkles,
-                    keywords: ['coach', 'chat', 'assistant'],
+                    href: '/admin/users',
+                    label: 'Users',
+                    icon: Users,
+                    keywords: ['users', 'accounts', 'investigation'],
                 },
                 {
-                    href: '/ai/planner',
-                    label: 'AI Planner',
-                    icon: Sparkles,
-                    keywords: ['planner', 'audit', 'diet plan', 'workout plan'],
-                    match: ['/planner'],
+                    href: '/admin/professional-verifications',
+                    label: 'Verify',
+                    icon: ShieldCheck,
+                    keywords: ['verifications', 'professional review'],
+                },
+                {
+                    href: '/admin/support-cases',
+                    label: 'Cases',
+                    icon: HeartPulse,
+                    keywords: ['support', 'intervention', 'cases'],
+                },
+                {
+                    href: '/admin/diagnostics',
+                    label: 'Diagnostics',
+                    icon: Settings2,
+                    keywords: ['diagnostics', 'logs', 'technical'],
                 },
             ];
         }
@@ -364,7 +382,7 @@ export function AppProductShell({
             },
             {
                 href: '/ai/planner',
-                label: 'AI Planner',
+                label: 'Planner',
                 icon: Sparkles,
                 keywords: ['planner', 'ai plan', 'diet plan', 'workout plan'],
                 match: ['/planner'],
@@ -382,24 +400,6 @@ export function AppProductShell({
                 match: ['/workouts/plan'],
                 keywords: ['workout log', 'workouts', 'training'],
             },
-            {
-                href: '/nearby',
-                label: 'Nearby',
-                icon: MapPin,
-                keywords: ['nearby', 'gyms', 'nutritionists'],
-            },
-            {
-                href: '/messages',
-                label: 'Messages',
-                icon: MessageSquare,
-                keywords: ['messages', 'chat', 'conversations'],
-            },
-            {
-                href: '/appointments',
-                label: 'Appointments',
-                icon: CalendarDays,
-                keywords: ['appointments', 'schedule', 'sessions'],
-            },
         ];
     }, [role]);
 
@@ -407,13 +407,13 @@ export function AppProductShell({
         if (role === 'admin') {
             return [
                 {
-                    label: 'Admin Workspace',
+                    label: 'People & Safety',
                     items: [
                         {
-                            href: '/admin/users',
-                            label: 'Users',
-                            icon: Users,
-                            keywords: ['users', 'accounts', 'members'],
+                            href: '/admin/safety-profiles',
+                            label: 'Safety Profiles',
+                            icon: ShieldCheck,
+                            keywords: ['safety', 'restrictions', 'allergies'],
                         },
                         {
                             href: '/admin/professionals',
@@ -426,14 +426,29 @@ export function AppProductShell({
                             ],
                         },
                         {
-                            href: '/admin/professional-verifications',
-                            label: 'Verifications',
-                            icon: ShieldCheck,
+                            href: '/admin/assignments',
+                            label: 'Assignments',
+                            icon: Users,
                         },
+                    ],
+                },
+                {
+                    label: 'Catalog & Data',
+                    items: [
                         {
                             href: '/admin/meals',
-                            label: 'Meals',
+                            label: 'Food Catalog',
                             icon: UtensilsCrossed,
+                        },
+                        {
+                            href: '/admin/meal-logs',
+                            label: 'Meal Logs',
+                            icon: UtensilsCrossed,
+                        },
+                        {
+                            href: '/admin/exercises',
+                            label: 'Exercises',
+                            icon: Dumbbell,
                         },
                         {
                             href: '/admin/places',
@@ -445,16 +460,63 @@ export function AppProductShell({
                             label: 'Progress',
                             icon: Dumbbell,
                         },
+                    ],
+                },
+                {
+                    label: 'AI Operations',
+                    items: [
+                        {
+                            href: '/admin/ai/planner',
+                            label: 'AI Planner Ops',
+                            icon: Sparkles,
+                            keywords: ['planner operations', 'ai planner'],
+                        },
+                        {
+                            href: '/admin/ai/coach',
+                            label: 'AI Coach Moderation',
+                            icon: Sparkles,
+                            keywords: ['coach moderation', 'ai coach'],
+                        },
+                        {
+                            href: '/admin/safety-rules',
+                            label: 'Safety Rules',
+                            icon: ShieldCheck,
+                        },
+                        {
+                            href: '/admin/ai-rollouts',
+                            label: 'AI Rollouts',
+                            icon: Sparkles,
+                        },
+                    ],
+                },
+                {
+                    label: 'Operations',
+                    items: [
                         {
                             href: '/admin/notifications',
-                            label: 'Alerts',
+                            label: 'Notifications',
                             icon: Bell,
                             keywords: ['alerts', 'notifications', 'broadcasts'],
                         },
                         {
+                            href: '/admin/analytics',
+                            label: 'Analytics',
+                            icon: Activity,
+                        },
+                        {
                             href: '/admin/logs',
-                            label: 'Admin Logs',
+                            label: 'Audit Logs',
                             icon: Settings2,
+                        },
+                        {
+                            href: '/admin/privacy-compliance',
+                            label: 'Privacy & Compliance',
+                            icon: ClipboardCheck,
+                        },
+                        {
+                            href: '/admin/roles-permissions',
+                            label: 'Roles & Flags',
+                            icon: LockKeyhole,
                         },
                     ],
                 },
@@ -468,6 +530,7 @@ export function AppProductShell({
                 icon: Dumbbell,
             },
         ];
+
         const professionalItems: NavItem[] =
             role === 'trainer'
                 ? [
@@ -495,7 +558,30 @@ export function AppProductShell({
             });
         }
         groups.push({
-            label: 'Program tools',
+            label: 'Care & Support',
+            items: [
+                {
+                    href: '/nearby',
+                    label: 'Nearby support',
+                    icon: MapPin,
+                    keywords: ['nearby', 'gyms', 'nutritionists'],
+                },
+                {
+                    href: '/messages',
+                    label: 'Messages',
+                    icon: MessageSquare,
+                    keywords: ['messages', 'chat', 'conversations'],
+                },
+                {
+                    href: '/appointments',
+                    label: 'Appointments',
+                    icon: CalendarDays,
+                    keywords: ['appointments', 'schedule', 'sessions'],
+                },
+            ],
+        });
+        groups.push({
+            label: 'Plan tools',
             items: programItems,
         });
         groups.push({
@@ -645,8 +731,8 @@ export function AppProductShell({
         role === 'admin'
             ? [
                   {
-                      href: '/dashboard',
-                      label: 'Overview',
+                      href: '/admin',
+                      label: 'Command',
                       icon: LayoutDashboard,
                   },
                   {
@@ -700,6 +786,7 @@ export function AppProductShell({
                             roleLabel={roleLabel}
                             primaryNav={primaryNav}
                             secondaryGroups={secondaryGroups}
+                            homeHref={role === 'admin' ? '/admin' : '/dashboard'}
                             onOpenPalette={() => setPaletteOpen(true)}
                             onLogout={() => router.post('/logout')}
                         />
@@ -722,6 +809,9 @@ export function AppProductShell({
                                 roleLabel={roleLabel}
                                 primaryNav={primaryNav}
                                 secondaryGroups={secondaryGroups}
+                                homeHref={
+                                    role === 'admin' ? '/admin' : '/dashboard'
+                                }
                                 onOpenPalette={() => {
                                     setPaletteOpen(true);
                                     setMobileOpen(false);

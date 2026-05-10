@@ -815,10 +815,10 @@ export default function ProfessionalClientsPage() {
                                     ? [activeEntry]
                                     : filteredClients
                                 ).map((entry) => (
-                                    <section
-                                        key={entry.assignment_id}
-                                        className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
-                                    >
+                                <div
+                                    key={entry.assignment_id}
+                                    className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
+                                >
                                         <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-3">
@@ -1166,7 +1166,7 @@ export default function ProfessionalClientsPage() {
                                                 </div>
                                             )}
                                         </div>
-                                    </section>
+                                    </div>
                                 ))
                             )}
                         </div>

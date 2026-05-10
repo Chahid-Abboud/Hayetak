@@ -4,7 +4,7 @@
 
 @font-face {
     font-family: 'Gabarito';
-    src: url('/fonts/Gabarito-VariableFont_wght.ttf') format('truetype');
+    src: url('../fonts/Gabarito-VariableFont_wght.ttf') format('truetype');
     font-style: normal;
     font-weight: 400 900;
     font-display: swap;
@@ -179,10 +179,10 @@
     --theme-border: var(--border);
 
     --chart-1: var(--color-primary-500);
-    --chart-2: var(--color-primary-400);
-    --chart-3: var(--color-primary-600);
-    --chart-4: var(--color-primary-300);
-    --chart-5: var(--color-primary-700);
+    --chart-2: var(--color-info-600);
+    --chart-3: var(--color-primary-800);
+    --chart-4: var(--color-warning-500);
+    --chart-5: var(--color-primary-300);
 
     --radius: 0.5rem;
 
@@ -248,10 +248,10 @@
     --theme-border: var(--border);
 
     --chart-1: var(--color-primary-500);
-    --chart-2: var(--color-primary-400);
-    --chart-3: var(--color-primary-600);
-    --chart-4: var(--color-primary-300);
-    --chart-5: var(--color-primary-700);
+    --chart-2: var(--color-info-500);
+    --chart-3: var(--color-primary-300);
+    --chart-4: var(--color-warning-500);
+    --chart-5: var(--color-success-500);
 
     --sidebar: #101317;
     --sidebar-foreground: #f1f5ef;
@@ -269,7 +269,9 @@
     }
 
     html {
+        font-size: 16px;
         scroll-behavior: smooth;
+        text-rendering: optimizeLegibility;
     }
 
     html,
@@ -282,6 +284,8 @@
         @apply bg-background text-foreground antialiased;
         min-height: 100vh;
         background-image: none;
+        font-size: 1rem;
+        line-height: 1.5;
     }
 
     html[data-page='workouts'] body {

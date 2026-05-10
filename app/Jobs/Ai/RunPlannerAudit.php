@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Ai;
 
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Services\Ai\Audit\PlannerAuditRunner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

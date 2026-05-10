@@ -2,8 +2,8 @@
 
 namespace App\Services\Ai;
 
-use App\Models\Ai\AiPlan;
-use App\Models\Ai\AiRequest;
+use App\Models\AiPlan;
+use App\Models\AiRequest;
 use App\Models\User;
 use App\Services\Ai\Context\PlannerContextBuilder;
 use App\Services\Ai\Evaluation\PlannerRunQualityScorer;

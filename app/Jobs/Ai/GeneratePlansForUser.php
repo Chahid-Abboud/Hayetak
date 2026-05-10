@@ -4,6 +4,7 @@ namespace App\Jobs\Ai;
 
 use App\Models\User;
 use App\Services\Ai\PlannerService;
+use App\Services\AppNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,9 +24,12 @@ class GeneratePlansForUser implements ShouldQueue
         public bool $generateWorkout = true,
     ) {}
 
-    public function handle(PlannerService $service): void
-    {
+    public function handle(
+        PlannerService $service,
+        AppNotificationService $notifications
+    ): void {
         $user = User::find($this->userId);
+
         if (! $user) {
             return;
         }
@@ -38,5 +42,12 @@ class GeneratePlansForUser implements ShouldQueue
             'generate_diet' => $this->generateDiet,
             'generate_workout' => $this->generateWorkout,
         ]);
+
+        $notifications->planGenerated(
+            user: $user,
+            dietGenerated: $this->generateDiet,
+            workoutGenerated: $this->generateWorkout,
+            days: $this->days,
+        );
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Services\Ai\Audit;
 
-use App\Models\Ai\Audit\PlannerAuditRun;
+use App\Models\PlannerAuditRun;
 use App\Models\User;
 use App\Services\Ai\Evaluation\PlannerRunQualityScorer;
 use App\Services\Ai\PlannerHealthService;
