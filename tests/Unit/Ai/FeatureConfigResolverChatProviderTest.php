@@ -30,3 +30,11 @@ it('rejects unsupported chat providers and falls back to stub', function () {
 
     expect($provider)->toBe('stub');
 });
+
+it('does not resolve chat to openai in the current local runtime', function () {
+    config()->set('ai.chat.provider', 'openai');
+
+    $provider = app(FeatureConfigResolver::class)->provider(FeatureConfigResolver::FEATURE_CHAT);
+
+    expect($provider)->toBe('stub');
+});

@@ -14,13 +14,12 @@ import { dashboard } from '@/routes';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Bell,
     CalendarDays,
     Dumbbell,
     LayoutGrid,
     MessageSquare,
-    ShieldAlert,
-    Settings2,
     ShieldCheck,
     Sparkles,
     Users,
@@ -49,16 +48,6 @@ export function AppSidebar() {
                       href: '/admin/professional-verifications',
                       icon: ShieldCheck,
                   },
-                  {
-                      title: 'Audit Logs',
-                      href: '/admin/logs',
-                      icon: Settings2,
-                  },
-                  {
-                      title: 'Moderation',
-                      href: '/admin/message-moderations',
-                      icon: ShieldAlert,
-                  },
               ]
             : [
                   {
@@ -75,6 +64,11 @@ export function AppSidebar() {
                       title: 'AI Planner',
                       href: '/ai/planner',
                       icon: Sparkles,
+                  },
+                  {
+                      title: 'Progress',
+                      href: '/progress',
+                      icon: Activity,
                   },
                   {
                       title: 'Meals',
@@ -95,16 +89,6 @@ export function AppSidebar() {
                       title: 'Notifications',
                       href: '/admin/notifications',
                       icon: Bell,
-                  },
-                  {
-                      title: 'Audit Logs',
-                      href: '/admin/logs',
-                      icon: Settings2,
-                  },
-                  {
-                      title: 'Moderation',
-                      href: '/admin/message-moderations',
-                      icon: ShieldAlert,
                   },
               ]
             : [

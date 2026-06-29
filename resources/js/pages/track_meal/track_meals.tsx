@@ -9,11 +9,11 @@ import {
     ProductButton,
     ProductModeButton,
 } from '@/components/product/product-ui';
+import { cleanPlanName } from '@/lib/plan-utils';
 import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CalendarDays, Search, Shuffle, UtensilsCrossed } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { cleanPlanName } from '@/lib/plan-utils';
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drink';
@@ -204,7 +204,10 @@ function quantityToServings(
     food: { serving_size: number; serving_unit: string },
     draft: QuantityDraft,
 ) {
-    const amount = safeQuantity(draft.value, draft.mode === 'servings' ? 1 : 100);
+    const amount = safeQuantity(
+        draft.value,
+        draft.mode === 'servings' ? 1 : 100,
+    );
 
     if (draft.mode === 'servings') {
         return amount;
@@ -319,10 +322,7 @@ function defaultQuantityDraftForFood(
     if (isDrinkFood(food, mealType)) {
         return {
             mode: 'milliliters',
-            value: roundQuantity(
-                normalizeServingBase(food, 'milliliters'),
-                0,
-            ),
+            value: roundQuantity(normalizeServingBase(food, 'milliliters'), 0),
         };
     }
 
@@ -339,6 +339,17 @@ function quantityDraftPayload(draft: QuantityDraft) {
     }
 
     return { servings: safeQuantity(draft.value, 1) };
+}
+
+function plannedItemDisplayFood(item: PlannedItem) {
+    return item.logged_entry?.food ?? item.food;
+}
+
+function plannedItemWasSubstituted(item: PlannedItem) {
+    return Boolean(
+        item.logged_entry &&
+            Number(item.logged_entry.food_id) !== Number(item.food.id),
+    );
 }
 
 export default function TrackMealsPage() {
@@ -687,8 +698,11 @@ export default function TrackMealsPage() {
                         <div className="space-y-2 text-sm">
                             <div className="font-medium text-foreground">
                                 {day.plannedDay
-                                    ? (cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)
-                                    : (cleanPlanName(props.dietName) || props.dietName || 'Meal tracking')}
+                                    ? cleanPlanName(day.plannedDay.plan.name) ||
+                                      day.plannedDay.plan.name
+                                    : cleanPlanName(props.dietName) ||
+                                      props.dietName ||
+                                      'Meal tracking'}
                             </div>
                             <div className="text-muted-foreground">
                                 Date: {date}
@@ -760,8 +774,10 @@ export default function TrackMealsPage() {
                                         Today's plan details
                                     </div>
                                     <div className="mt-3 text-sm text-muted-foreground">
-                                        {(cleanPlanName(day.plannedDay.plan.name) || day.plannedDay.plan.name)} - Day{' '}
-                                        {day.plannedDay.day.day_index}
+                                        {cleanPlanName(
+                                            day.plannedDay.plan.name,
+                                        ) || day.plannedDay.plan.name}{' '}
+                                        - Day {day.plannedDay.day.day_index}
                                     </div>
                                     <div className="mt-3 text-sm text-foreground">
                                         {day.plannedDay.day.notes ??
@@ -794,16 +810,45 @@ export default function TrackMealsPage() {
                                                 >
                                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                                         <div>
-                                                            <div className="font-medium text-foreground">
-                                                                {item.food.name}
-                                                            </div>
-                                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                                {Math.round(
-                                                                    item.food
-                                                                        .calories,
-                                                                )}{' '}
-                                                                kcal per serving
-                                                            </div>
+                                                            {(() => {
+                                                                const displayFood =
+                                                                    plannedItemDisplayFood(
+                                                                        item,
+                                                                    );
+                                                                const wasSubstituted =
+                                                                    plannedItemWasSubstituted(
+                                                                        item,
+                                                                    );
+
+                                                                return (
+                                                                    <>
+                                                                        <div className="font-medium text-foreground">
+                                                                            {
+                                                                                displayFood.name
+                                                                            }
+                                                                        </div>
+                                                                        {wasSubstituted ? (
+                                                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                                                Originally
+                                                                                planned:{' '}
+                                                                                {
+                                                                                    item
+                                                                                        .food
+                                                                                        .name
+                                                                                }
+                                                                            </div>
+                                                                        ) : null}
+                                                                        <div className="mt-1 text-xs text-muted-foreground">
+                                                                            {Math.round(
+                                                                                displayFood.calories,
+                                                                            )}{' '}
+                                                                            kcal
+                                                                            per
+                                                                            serving
+                                                                        </div>
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </div>
                                                         <span className="haye-chip">
                                                             {statusLabel(
@@ -814,12 +859,11 @@ export default function TrackMealsPage() {
 
                                                     {item.logged_entry ? (
                                                         <div className="mt-3 rounded-[18px] border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-                                                            Logged as{' '}
-                                                            {
-                                                                item
-                                                                    .logged_entry
-                                                                    .food.name
-                                                            }
+                                                            {plannedItemWasSubstituted(
+                                                                item,
+                                                            )
+                                                                ? 'Substitute has been logged for this planned meal.'
+                                                                : 'This planned meal has been logged.'}
                                                         </div>
                                                     ) : null}
 
@@ -1001,11 +1045,8 @@ export default function TrackMealsPage() {
                                                     {entry.food.name}
                                                 </div>
                                                 <div className="mt-1 text-xs text-muted-foreground">
-                                                    {mealLabel(
-                                                        entry.meal_type,
-                                                    )}{' '}
-                                                    -{' '}
-                                                    {entry.servings} servings
+                                                    {mealLabel(entry.meal_type)}{' '}
+                                                    - {entry.servings} servings
                                                 </div>
                                                 {entry.plan_tracking ? (
                                                     <div className="mt-2 text-xs text-foreground/80">
@@ -1185,8 +1226,8 @@ export default function TrackMealsPage() {
                         </div>
 
                         <div className="mt-3 rounded-[22px] border border-border/70 bg-background/72 p-3 text-xs text-muted-foreground">
-                            Planned quantities carry over automatically so logging
-                            stays fast.
+                            Planned quantities carry over automatically so
+                            logging stays fast.
                         </div>
 
                         <input
@@ -1310,25 +1351,24 @@ export default function TrackMealsPage() {
                                 selectedFood,
                                 selectedPlannedItem?.meal_type ?? mealType,
                             ).map((option) => (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() =>
-                                            setLogDraft((current) => ({
-                                                ...current,
-                                                mode: option,
-                                            }))
-                                        }
-                                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                                            logDraft.mode === option
-                                                ? 'border-primary/30 bg-primary/10 text-foreground'
-                                                : 'border-border/70 bg-background text-muted-foreground'
-                                        }`}
-                                    >
-                                        {quantityModeLabel(option)}
-                                    </button>
-                                ),
-                            )}
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() =>
+                                        setLogDraft((current) => ({
+                                            ...current,
+                                            mode: option,
+                                        }))
+                                    }
+                                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                        logDraft.mode === option
+                                            ? 'border-primary/30 bg-primary/10 text-foreground'
+                                            : 'border-border/70 bg-background text-muted-foreground'
+                                    }`}
+                                >
+                                    {quantityModeLabel(option)}
+                                </button>
+                            ))}
                         </div>
 
                         <label className="mt-4 block text-sm font-medium text-foreground">

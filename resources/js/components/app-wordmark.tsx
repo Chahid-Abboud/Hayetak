@@ -29,7 +29,7 @@ export default function AppWordmark({
             />
             <span
                 className={cn(
-                    '-ml-0.5 truncate text-[1.56rem] font-semibold leading-none tracking-[-0.03em]',
+                    '-ml-0.5 truncate text-[1.56rem] leading-none font-semibold tracking-[-0.03em]',
                     textClassName,
                 )}
                 style={{ fontFamily: 'var(--font-display)' }}

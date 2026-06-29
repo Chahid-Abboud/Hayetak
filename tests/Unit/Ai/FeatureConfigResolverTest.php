@@ -33,6 +33,16 @@ it('always uses ollama as the planner provider', function () {
     expect($provider)->toBe('ollama');
 });
 
+it('keeps planner on ollama even when hosted provider config is present', function () {
+    config()->set('ai.planner.provider', 'openai');
+    config()->set('ai.planner.hosted.enabled', true);
+
+    $resolver = app(FeatureConfigResolver::class);
+
+    expect($resolver->provider(FeatureConfigResolver::FEATURE_PLANNER))->toBe('ollama');
+    expect($resolver->ollamaOnly(FeatureConfigResolver::FEATURE_PLANNER))->toBeTrue();
+});
+
 it('keeps local planner fallback available when enabled', function () {
     config()->set('ai.planner.local_fallback.enabled', true);
 

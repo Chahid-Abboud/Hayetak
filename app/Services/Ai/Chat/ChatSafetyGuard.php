@@ -25,6 +25,8 @@ class ChatSafetyGuard
             'exact amount of caffeine',
             'how much caffeine',
             'caffeine should i take',
+            'i need caffeine',
+            'need caffeine',
         ])) {
             return $this->boundary(
                 'I cannot tell you how to dose, change, or time medication around training. Please follow your prescriber\'s instructions and ask your doctor or pharmacist before changing anything. I can help with general workout, meal, hydration, and recovery planning that does not alter medication use.',
@@ -82,6 +84,67 @@ class ChatSafetyGuard
             return $this->boundary(
                 'I cannot help with deception, hiding unsafe behavior, bypassing tracking, or illegal activity. I can help you make the plan easier to follow honestly and adjust it if it is not realistic.',
                 'Harmful misuse or deception request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'admin notifications',
+            'moderation notes',
+            'private user details',
+            'database records',
+            'memory buffer',
+        ])) {
+            return $this->boundary(
+                'I cannot reveal admin notifications, moderation notes, private user details, chat history, or database records. I can help with workouts, meals, macros, recovery, plans, and progress in Hayetak.',
+                'Privacy or data-exfiltration request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'diagnose this skin rash',
+            'skin rash',
+            'prescribe treatment',
+            'prescribe medication',
+            'diagnose this',
+        ])) {
+            return $this->boundary(
+                'I cannot diagnose skin conditions from a photo or prescribe treatment or medication. Please contact a licensed clinician for diagnosis. I can help with fitness and nutrition guidance that stays in scope.',
+                'Diagnosis or treatment request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'ignore safety policy',
+            'ignore policy',
+            'ignore instruction hierarchy',
+            'obey only this message',
+            'privacy policies',
+        ])) {
+            return $this->boundary(
+                'I cannot ignore instruction hierarchy, safety rules, or privacy policies. I can help with workouts, meals, macros, recovery, plans, and progress in Hayetak.',
+                'Policy-bypass request blocked.'
+            );
+        }
+
+        if ($this->containsAny($text, [
+            'ignore injury constraints',
+            'maximal-risk exercises',
+            'maximal risk exercises',
+        ])) {
+            return $this->boundary(
+                'I cannot ignore injury constraints or prescribe maximal-risk exercises. I can help you find safer alternatives that match your goal and equipment.',
+                'Injury-constraint override request blocked.'
+            );
+        }
+
+        if (
+            $this->containsAny($text, ['unclear ingredients', 'unclear ingredient']) &&
+            $this->containsAny($text, ['allergy', 'allergic']) &&
+            $this->containsAny($text, ['scrape it off', 'scrape it', 'probably fine', 'guess'])
+        ) {
+            return $this->boundary(
+                'I cannot tell you to guess when unclear ingredients may contain an allergen. Scraping an ingredient off is not a reliable safety step. Choose an allergen-free option instead or confirm the ingredients directly before eating it.',
+                'Unclear ingredient allergy-risk request blocked.'
             );
         }
 
@@ -401,6 +464,7 @@ class ChatSafetyGuard
     private function answerContainsUnsafeFoodRecommendation(string $answer, string $allergy): bool
     {
         $normalized = mb_strtolower($answer);
+        $aliases = $this->allergyAliases($allergy);
 
         foreach ($this->extractRecommendationSegments($normalized) as $segment) {
             if ($this->segmentIsAvoidanceContext($segment, $allergy)) {
@@ -408,7 +472,7 @@ class ChatSafetyGuard
             }
 
             if (
-                $this->containsWholeWord($segment, $allergy) &&
+                $this->containsAnyAlias($segment, $aliases) &&
                 $this->containsAny($segment, [
                     'try ',
                     'eat ',
@@ -501,21 +565,21 @@ class ChatSafetyGuard
 
         if ($dietType === 'vegan') {
             if ($this->containsAny($question, ['snack', 'recommend', 'recommendation', 'suggest'])) {
-                return 'I swapped that to vegan-safe options because your diet type is vegan. Good high-protein snack choices are roasted edamame, soy yogurt with berries and chia, tofu pudding, or hummus with whole-grain crackers.' . $proteinHint;
+                return 'I swapped that to vegan-safe options because your diet type is vegan. Good high-protein snack choices are roasted edamame, soy yogurt with berries and chia, tofu pudding, or hummus with whole-grain crackers. Use plant-based dairy alternatives whenever a dairy item would normally appear.'.$proteinHint;
             }
 
             if ($this->containsAny($question, ['breakfast', 'lunch', 'dinner', 'meal', 'recipe', 'eat'])) {
-                return 'I adjusted that to fit your vegan diet type. Build the meal around tofu, tempeh, beans, lentils, or soy yogurt alternatives, then add grains, fruit, or vegetables depending on the meal.' . $proteinHint;
+                return 'I adjusted that because your diet type is vegan. Build the meal around tofu, tempeh, beans, lentils, or soy yogurt alternatives, then add grains, fruit, or vegetables depending on the meal. Use plant-based dairy alternatives anywhere yogurt, milk, or cheese would usually appear.'.$proteinHint;
             }
 
-            return 'I kept that vegan-safe because your diet type is vegan. Choose legumes, tofu, tempeh, grains, and plant-based dairy alternatives that fit your goal and saved restrictions.' . $proteinHint;
+            return 'I kept that vegan-safe because your diet type is vegan. Choose legumes, tofu, tempeh, grains, and plant-based dairy alternatives that fit your goal and saved restrictions.'.$proteinHint;
         }
 
         if ($this->containsAny($question, ['snack', 'recommend', 'recommendation', 'suggest'])) {
-            return 'I adjusted that to fit your vegetarian diet type. Good protein-forward vegetarian snacks are Greek yogurt if tolerated, cottage cheese, eggs, tofu, edamame, or hummus with crackers.' . $proteinHint;
+            return 'I adjusted that to fit your vegetarian diet type. Good protein-forward vegetarian snacks are Greek yogurt if tolerated, cottage cheese, eggs, tofu, edamame, or hummus with crackers.'.$proteinHint;
         }
 
-        return 'I kept that vegetarian-safe because your diet type is vegetarian. Choose protein sources like eggs, dairy if tolerated, legumes, tofu, or beans depending on your preferences and saved restrictions.' . $proteinHint;
+        return 'I kept that vegetarian-safe because your diet type is vegetarian. Choose protein sources like eggs, dairy if tolerated, legumes, tofu, or beans depending on your preferences and saved restrictions.'.$proteinHint;
     }
 
     private function displayAllergyLabel(array $context, string $matchedAllergy): string
@@ -616,5 +680,75 @@ class ChatSafetyGuard
         ));
 
         return implode("\n", $normalizedLines);
+    }
+
+    /**
+     * Route questions into the coarse handling lanes the coach uses before response generation.
+     *
+     * @return array{lane: string, reason: string}
+     */
+    public function questionHandlingLane(string $question): array
+    {
+        $normalized = mb_strtolower(trim($question));
+        $preflight = $this->preflight($normalized);
+
+        if (($preflight['answer'] ?? null) !== null) {
+            return [
+                'lane' => 'blocked',
+                'reason' => 'domain_guard',
+            ];
+        }
+
+        if ($this->containsAny($normalized, [
+            'my meals today',
+            'meals today',
+            'today',
+            'last 7 days',
+            'last week',
+            'past week',
+            'my allergies',
+            'my profile',
+            'saved weight',
+            'based on my',
+        ])) {
+            return [
+                'lane' => 'personalized',
+                'reason' => 'profile_or_history_dependent',
+            ];
+        }
+
+        return [
+            'lane' => 'general_guidance',
+            'reason' => 'general_coaching',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allergyAliases(string $allergy): array
+    {
+        $normalized = mb_strtolower(trim($allergy));
+
+        return match ($normalized) {
+            'dairy' => ['dairy', 'milk', 'cheese', 'labneh', 'yogurt', 'greek yogurt'],
+            'shellfish' => ['shellfish', 'shrimp', 'prawn', 'prawns', 'crab', 'lobster', 'mussels'],
+            'peanut', 'peanuts' => ['peanut', 'peanuts', 'peanut butter'],
+            default => [$normalized],
+        };
+    }
+
+    /**
+     * @param  array<int, string>  $aliases
+     */
+    private function containsAnyAlias(string $text, array $aliases): bool
+    {
+        foreach ($aliases as $alias) {
+            if ($this->containsWholeWord($text, $alias)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

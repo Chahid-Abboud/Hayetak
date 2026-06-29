@@ -58,9 +58,16 @@ export function AppNotificationsProvider({
     children: ReactNode;
 }) {
     const page = usePage<SharedData>();
-    const authUser = (page.props.auth as
-        | { user?: { id?: number; email_verified_at?: string | null } | null }
-        | undefined)?.user;
+    const authUser = (
+        page.props.auth as
+            | {
+                  user?: {
+                      id?: number;
+                      email_verified_at?: string | null;
+                  } | null;
+              }
+            | undefined
+    )?.user;
     const userId = typeof authUser?.id === 'number' ? authUser.id : null;
     const isEmailVerified = Boolean(authUser?.email_verified_at);
 
@@ -359,7 +366,7 @@ function NotificationToastViewport({
             {items.map((item) => (
                 <div
                     key={item.id}
-                    className="pointer-events-auto dashboard-surface rounded-[24px] border border-border/70 bg-background/94 p-4 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.78)] backdrop-blur-xl"
+                    className="dashboard-surface pointer-events-auto rounded-[24px] border border-border/70 bg-background/94 p-4 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.78)] backdrop-blur-xl"
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-start gap-3">

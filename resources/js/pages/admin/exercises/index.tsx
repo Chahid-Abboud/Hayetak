@@ -262,8 +262,7 @@ function ExerciseEditor({
                                     exercise.planner_suitability ??
                                     'needs_review',
                                 label:
-                                    exercise.planner_suitability ===
-                                    'suitable'
+                                    exercise.planner_suitability === 'suitable'
                                         ? 'Planner suitable'
                                         : 'Planner review',
                             },
@@ -440,7 +439,10 @@ function ExerciseEditor({
                         label="Home friendly"
                         description="Allows the planner to consider this movement for home workouts when equipment also fits."
                     />
-                    <AdminField label="Locations" helper="Comma-separated: home, gym, outdoor.">
+                    <AdminField
+                        label="Locations"
+                        helper="Comma-separated: home, gym, outdoor."
+                    >
                         <AdminInput
                             value={listToText(exercise.locations)}
                             onChange={(event) =>
@@ -675,8 +677,7 @@ function ExerciseEditor({
                                     substitute_exercise_id:
                                         Number(alternativeId),
                                     reason: alternativeReason,
-                                    priority:
-                                        Number(alternativePriority) || 5,
+                                    priority: Number(alternativePriority) || 5,
                                     note: alternativeNote,
                                 })
                             }
@@ -792,8 +793,9 @@ export default function AdminExercisesPage() {
     const [muscles, setMuscles] = useState<string[]>([]);
     const [equipmentOptions, setEquipmentOptions] = useState<string[]>([]);
     const [difficultyOptions, setDifficultyOptions] = useState<string[]>([]);
-    const [selectedExercise, setSelectedExercise] =
-        useState<Exercise | null>(null);
+    const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
+        null,
+    );
     const [hideOpen, setHideOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -878,7 +880,10 @@ export default function AdminExercisesPage() {
                 if (current?.id === null) return current;
                 if (!current) return rows[0] ?? null;
 
-                return rows.find((exercise) => exercise.id === current.id) ?? current;
+                return (
+                    rows.find((exercise) => exercise.id === current.id) ??
+                    current
+                );
             });
         } catch (loadError) {
             setError(
@@ -1128,7 +1133,9 @@ export default function AdminExercisesPage() {
                             />
                         </AdminStatsGrid>
 
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
@@ -1145,8 +1152,8 @@ export default function AdminExercisesPage() {
                                     <div className="dashboard-surface-soft rounded-[20px] px-4 py-4 text-sm leading-6 text-muted-foreground">
                                         Use avoid for exercises the planner
                                         should block for an injury type. Use
-                                        caution when a trainer review or
-                                        lighter variation is acceptable.
+                                        caution when a trainer review or lighter
+                                        variation is acceptable.
                                     </div>
                                 </AdminPanel>
                                 <AdminPanel
@@ -1163,7 +1170,11 @@ export default function AdminExercisesPage() {
                                     title="Audit trail stays separate"
                                     description="This page keeps exercise editing focused and links out to audit logs instead of crowding the workspace with history detail."
                                 >
-                                    <Button asChild type="button" variant="outline">
+                                    <Button
+                                        asChild
+                                        type="button"
+                                        variant="outline"
+                                    >
                                         <Link href="/admin/logs">
                                             Open audit logs
                                         </Link>
@@ -1178,7 +1189,10 @@ export default function AdminExercisesPage() {
                         >
                             <AdminToolbar>
                                 <AdminToolbarGroup grow>
-                                    <AdminField label="Search" className="xl:flex-1">
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:flex-1"
+                                    >
                                         <AdminInput
                                             value={query}
                                             placeholder="Search exercise, muscle, equipment"
@@ -1187,14 +1201,19 @@ export default function AdminExercisesPage() {
                                             }
                                         />
                                     </AdminField>
-                                    <AdminField label="Muscle" className="sm:w-48">
+                                    <AdminField
+                                        label="Muscle"
+                                        className="sm:w-48"
+                                    >
                                         <AdminNativeSelect
                                             value={muscle}
                                             onChange={(event) =>
                                                 setMuscle(event.target.value)
                                             }
                                         >
-                                            <option value="all">All muscles</option>
+                                            <option value="all">
+                                                All muscles
+                                            </option>
                                             {muscles.map((option) => (
                                                 <option
                                                     key={option}
@@ -1205,14 +1224,19 @@ export default function AdminExercisesPage() {
                                             ))}
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Equipment" className="sm:w-48">
+                                    <AdminField
+                                        label="Equipment"
+                                        className="sm:w-48"
+                                    >
                                         <AdminNativeSelect
                                             value={equipment}
                                             onChange={(event) =>
                                                 setEquipment(event.target.value)
                                             }
                                         >
-                                            <option value="all">All equipment</option>
+                                            <option value="all">
+                                                All equipment
+                                            </option>
                                             {equipmentOptions.map((option) => (
                                                 <option
                                                     key={option}
@@ -1223,7 +1247,10 @@ export default function AdminExercisesPage() {
                                             ))}
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Difficulty" className="sm:w-44">
+                                    <AdminField
+                                        label="Difficulty"
+                                        className="sm:w-44"
+                                    >
                                         <AdminNativeSelect
                                             value={difficulty}
                                             onChange={(event) =>
@@ -1232,7 +1259,9 @@ export default function AdminExercisesPage() {
                                                 )
                                             }
                                         >
-                                            <option value="all">All levels</option>
+                                            <option value="all">
+                                                All levels
+                                            </option>
                                             {difficultyOptions.map((option) => (
                                                 <option
                                                     key={option}
@@ -1243,7 +1272,10 @@ export default function AdminExercisesPage() {
                                             ))}
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Location" className="sm:w-40">
+                                    <AdminField
+                                        label="Location"
+                                        className="sm:w-40"
+                                    >
                                         <AdminNativeSelect
                                             value={location}
                                             onChange={(event) =>
@@ -1255,20 +1287,32 @@ export default function AdminExercisesPage() {
                                             <option value="gym">Gym</option>
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Risk" className="sm:w-40">
+                                    <AdminField
+                                        label="Risk"
+                                        className="sm:w-40"
+                                    >
                                         <AdminNativeSelect
                                             value={risk}
                                             onChange={(event) =>
                                                 setRisk(event.target.value)
                                             }
                                         >
-                                            <option value="all">All risk</option>
-                                            <option value="unsafe">Unsafe</option>
-                                            <option value="caution">Caution</option>
+                                            <option value="all">
+                                                All risk
+                                            </option>
+                                            <option value="unsafe">
+                                                Unsafe
+                                            </option>
+                                            <option value="caution">
+                                                Caution
+                                            </option>
                                             <option value="clear">Clear</option>
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Visibility" className="sm:w-40">
+                                    <AdminField
+                                        label="Visibility"
+                                        className="sm:w-40"
+                                    >
                                         <AdminNativeSelect
                                             value={visibility}
                                             onChange={(event) =>
@@ -1278,8 +1322,12 @@ export default function AdminExercisesPage() {
                                             }
                                         >
                                             <option value="all">All</option>
-                                            <option value="visible">Visible</option>
-                                            <option value="hidden">Hidden</option>
+                                            <option value="visible">
+                                                Visible
+                                            </option>
+                                            <option value="hidden">
+                                                Hidden
+                                            </option>
                                         </AdminNativeSelect>
                                     </AdminField>
                                 </AdminToolbarGroup>
@@ -1371,7 +1419,8 @@ export default function AdminExercisesPage() {
                                                     key={exercise.id}
                                                     interactive
                                                     className={
-                                                        exercise.id === selectedId
+                                                        exercise.id ===
+                                                        selectedId
                                                             ? 'bg-primary/5'
                                                             : undefined
                                                     }
@@ -1422,7 +1471,8 @@ export default function AdminExercisesPage() {
                                                         </div>
                                                     </ProductTableCell>
                                                     <ProductTableCell>
-                                                        {exercise.difficulty || '-'}
+                                                        {exercise.difficulty ||
+                                                            '-'}
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="flex flex-wrap gap-1">
@@ -1469,21 +1519,27 @@ export default function AdminExercisesPage() {
                                                                     []
                                                                 )
                                                                     .map(
-                                                                        (item) =>
+                                                                        (
+                                                                            item,
+                                                                        ) =>
                                                                             item.label ||
                                                                             item.code,
                                                                     )
-                                                                    .join(', ') ||
+                                                                    .join(
+                                                                        ', ',
+                                                                    ) ||
                                                                     'None recorded'}
                                                             </div>
                                                         </div>
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="font-medium text-foreground">
-                                                            {(
-                                                                exercise.safe_alternatives ??
-                                                                []
-                                                            ).length}
+                                                            {
+                                                                (
+                                                                    exercise.safe_alternatives ??
+                                                                    []
+                                                                ).length
+                                                            }
                                                         </div>
                                                         <div className="line-clamp-1 max-w-44 text-xs text-muted-foreground">
                                                             {(
@@ -1507,7 +1563,9 @@ export default function AdminExercisesPage() {
                                                                 .slice(0, 3)
                                                                 .map((tag) => (
                                                                     <Badge
-                                                                        key={tag}
+                                                                        key={
+                                                                            tag
+                                                                        }
                                                                         variant="secondary"
                                                                     >
                                                                         {tag}

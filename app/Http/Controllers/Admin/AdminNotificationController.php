@@ -47,6 +47,7 @@ class AdminNotificationController extends Controller
                         'sent' => $campaign['status'] === 'sent',
                         'partial' => $campaign['status'] === 'partial',
                         'failed' => $campaign['status'] === 'failed',
+                        'unread' => $campaign['unread_count'] > 0,
                         'read' => $campaign['read_count'] > 0,
                         'dismissed' => $campaign['dismissed_count'] > 0,
                         default => true,
@@ -154,6 +155,10 @@ class AdminNotificationController extends Controller
 
         $deliveredCount = $notifications->count();
         $failedCount = count($failedUserIds);
+        $unreadNotifications = $notifications
+            ->whereNull('read_at')
+            ->whereNull('dismissed_at')
+            ->values();
 
         return [
             'id' => $log->id,
@@ -166,8 +171,13 @@ class AdminNotificationController extends Controller
             'sent_time' => optional($log->created_at)?->toISOString(),
             'read_count' => $notifications->whereNotNull('read_at')->count(),
             'dismissed_count' => $notifications->whereNotNull('dismissed_at')->count(),
+            'unread_count' => $unreadNotifications->count(),
             'failed_deliveries' => $failedCount,
             'failed_user_ids' => $failedUserIds,
+            'target_user_ids' => $unreadNotifications->pluck('target_user_id')->map(fn ($id) => (int) $id)->values()->all(),
+            'target_user_id' => $unreadNotifications->count() === 1
+                ? (int) $unreadNotifications->first()->target_user_id
+                : null,
             'sender' => $log->admin ? [
                 'id' => $log->admin->id,
                 'name' => $log->admin->display_name,

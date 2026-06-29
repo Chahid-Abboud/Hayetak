@@ -14,6 +14,14 @@ class PlacesController extends Controller
 
     public function index(Request $request, OverpassService $overpass)
     {
+        $data = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+            'radius' => ['nullable', 'integer', 'between:100,30000'],
+            'types' => ['nullable', 'string', 'max:100'],
+            'bbox' => ['nullable', 'string', 'max:120'],
+        ]);
+
         // Throttle by IP to avoid hammering Overpass on pan/zoom
         $key = 'overpass:'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 20)) { // 20 req/min
@@ -24,17 +32,17 @@ class PlacesController extends Controller
         RateLimiter::hit($key, 60); // decay (seconds)
 
         // Input
-        $lat = (float) $request->query('lat', 33.8938);
-        $lng = (float) $request->query('lng', 35.5018);
-        $radius = (int) $request->query('radius', 1500);
+        $lat = (float) $data['lat'];
+        $lng = (float) $data['lng'];
+        $radius = (int) ($data['radius'] ?? 1500);
 
         // Handle types - can be comma-separated string or array
-        $typesRaw = $request->query('types', 'gym,nutritionist');
+        $typesRaw = $data['types'] ?? 'gym,nutritionist';
         $types = is_string($typesRaw) ? explode(',', $typesRaw) : (array) $typesRaw;
         $types = array_filter(array_map('trim', $types));
 
         // Optional bbox sanity (if you pass bbox)
-        if ($bbox = $request->query('bbox')) {
+        if ($bbox = $data['bbox'] ?? null) {
             $this->assertValidBbox($bbox);
         }
 

@@ -14,6 +14,7 @@ import {
     ProductModeButton,
 } from '@/components/product/product-ui';
 import WorkoutTabs from '@/components/workouts/WorkoutTabs';
+import { cleanPlanName } from '@/lib/plan-utils';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     CalendarDays,
@@ -23,7 +24,6 @@ import {
     Search,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { cleanPlanName } from '@/lib/plan-utils';
 
 type Exercise = {
     id: number;
@@ -365,9 +365,11 @@ export default function WorkoutLogPage() {
                                 </div>
                                 <div className="mt-2 text-base text-muted-foreground">
                                     {mode === 'follow-ai'
-                                        ? (cleanPlanName(aiPlan?.name) || 'AI workout plan')
+                                        ? cleanPlanName(aiPlan?.name) ||
+                                          'AI workout plan'
                                         : mode === 'my-plan'
-                                          ? (cleanPlanName(manualPlan?.name) || 'My workout draft')
+                                          ? cleanPlanName(manualPlan?.name) ||
+                                            'My workout draft'
                                           : 'Freestyle logging'}
                                 </div>
                             </div>
@@ -636,10 +638,9 @@ export default function WorkoutLogPage() {
 
                                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                         {paginatedExercises.map((exercise) => {
-                                            const added =
-                                                freestyleIds.includes(
-                                                    exercise.id,
-                                                );
+                                            const added = freestyleIds.includes(
+                                                exercise.id,
+                                            );
 
                                             return (
                                                 <div
@@ -739,10 +740,7 @@ export default function WorkoutLogPage() {
                                 }
                                 onNext={() =>
                                     setRecentPage((current) =>
-                                        Math.min(
-                                            totalRecentPages,
-                                            current + 1,
-                                        ),
+                                        Math.min(totalRecentPages, current + 1),
                                     )
                                 }
                             />

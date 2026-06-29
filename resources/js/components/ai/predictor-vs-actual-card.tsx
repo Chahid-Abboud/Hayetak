@@ -68,7 +68,9 @@ export function PredictorVsActualCard({
     const monthOptions = useMemo(() => {
         const keys = Array.from(
             new Set([
-                ...rows.map((row) => monthKeyFromIso(row.feedback_period_end_date)),
+                ...rows.map((row) =>
+                    monthKeyFromIso(row.feedback_period_end_date),
+                ),
                 ...trustedWeights.map((item) => monthKeyFromIso(item.date)),
             ]),
         ).sort();
@@ -126,7 +128,9 @@ export function PredictorVsActualCard({
 
         const keys = Array.from(
             new Set([
-                ...rowKeys.map((row) => weekKeyFromIso(row.feedback_period_end_date)),
+                ...rowKeys.map((row) =>
+                    weekKeyFromIso(row.feedback_period_end_date),
+                ),
                 ...weightKeys.map((item) => weekKeyFromIso(item.date)),
             ]),
         ).sort();
@@ -166,7 +170,8 @@ export function PredictorVsActualCard({
 
     const rowMatchesCurrentView = (date: string) => {
         const monthMatch =
-            selectedMonthKey === 'all' || monthKeyFromIso(date) === selectedMonthKey;
+            selectedMonthKey === 'all' ||
+            monthKeyFromIso(date) === selectedMonthKey;
         const weekMatch =
             viewMode !== 'week' ||
             selectedWeekKey === 'all' ||
@@ -183,7 +188,8 @@ export function PredictorVsActualCard({
     );
 
     const latestPrediction = rows[rows.length - 1];
-    const futureProjectionSeries = buildFutureProjectionSeries(latestPrediction);
+    const futureProjectionSeries =
+        buildFutureProjectionSeries(latestPrediction);
     const visibleFutureSeries = futureProjectionSeries.filter((point) =>
         rowMatchesCurrentView(point.label),
     );
@@ -224,7 +230,8 @@ export function PredictorVsActualCard({
         );
     }
 
-    const noVisiblePredictions = visibleRows.length === 0 && visibleFutureSeries.length === 0;
+    const noVisiblePredictions =
+        visibleRows.length === 0 && visibleFutureSeries.length === 0;
     const selectedMonthLabel =
         selectedMonthKey === 'all'
             ? 'the selected range'
@@ -598,7 +605,9 @@ export function PredictorVsActualCard({
                                 cx={toX(point.xValue)}
                                 cy={toY(point.yValue)}
                                 r={point.isFuture ? 4.6 : 4}
-                                fill={point.isFuture ? 'transparent' : latestColor}
+                                fill={
+                                    point.isFuture ? 'transparent' : latestColor
+                                }
                                 stroke={latestColor}
                                 strokeWidth={point.isFuture ? 2.2 : 0}
                             >
@@ -611,7 +620,11 @@ export function PredictorVsActualCard({
                         {actualSeries.map((point, index) => (
                             <polygon
                                 key={`actual-point-${index}`}
-                                points={diamondPoints(toX(point.xValue), toY(point.yValue), 5)}
+                                points={diamondPoints(
+                                    toX(point.xValue),
+                                    toY(point.yValue),
+                                    5,
+                                )}
                                 fill={actualColor}
                             >
                                 <title>
@@ -722,7 +735,9 @@ function buildFutureProjectionSeries(
 
         return {
             xValue: nextDate.getTime(),
-            yValue: roundToOne(latestPrediction.projected_after_feedback_kg + delta * step),
+            yValue: roundToOne(
+                latestPrediction.projected_after_feedback_kg + delta * step,
+            ),
             label: nextDate.toISOString().slice(0, 10),
             isFuture: true,
         };

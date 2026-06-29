@@ -18,33 +18,33 @@ class AppNotificationService
         int $days
     ): void {
         if ($dietGenerated && $workoutGenerated) {
-            $title = "Diet and workout plans generated";
+            $title = 'Diet and workout plans generated';
             $body = "Your {$days}-day diet and workout plans are ready. Open the planner to review them.";
         } elseif ($dietGenerated) {
-            $title = "Diet plan generated";
+            $title = 'Diet plan generated';
             $body = "Your {$days}-day diet plan is ready. Open the planner to review it.";
         } elseif ($workoutGenerated) {
-            $title = "Workout plan generated";
+            $title = 'Workout plan generated';
             $body = "Your {$days}-day workout plan is ready. Open the planner to review it.";
         } else {
             return;
         }
 
         Notification::query()->create([
-            "target_user_id" => $user->id,
-            "created_by" => $user->id,
-            "title" => $title,
-            "body" => $body,
+            'target_user_id' => $user->id,
+            'created_by' => $user->id,
+            'title' => $title,
+            'body' => $body,
         ]);
     }
 
     public function chatbotResponded(User $user): void
     {
         Notification::query()->create([
-            "target_user_id" => $user->id,
-            "created_by" => $user->id,
-            "title" => "AI Coach replied",
-            "body" => "Your AI Coach has responded to your message. Open the coach page to continue the conversation.",
+            'target_user_id' => $user->id,
+            'created_by' => $user->id,
+            'title' => 'AI Coach replied',
+            'body' => 'Your AI Coach has responded to your message. Open the coach page to continue the conversation.',
         ]);
     }
 
@@ -55,15 +55,15 @@ class AppNotificationService
         ?string $notes = null,
     ): void {
         Notification::query()->create([
-            "target_user_id" => $professional->id,
-            "created_by" => $client->id,
-            "title" => "New appointment request",
-            "body" => "{$client->display_name} has requested an appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A"),
+            'target_user_id' => $professional->id,
+            'created_by' => $client->id,
+            'title' => 'New appointment request',
+            'body' => "{$client->display_name} has requested an appointment on ".\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A'),
         ]);
 
-        $messageBody = "Appointment requested for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
+        $messageBody = 'Appointment requested for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
         if (is_string($notes) && trim($notes) !== '') {
-            $messageBody .= "\nNote: " . trim($notes);
+            $messageBody .= "\nNote: ".trim($notes);
         }
 
         DB::transaction(function () use ($client, $professional, $messageBody) {
@@ -71,9 +71,9 @@ class AppNotificationService
             $conversation->touch();
 
             Message::query()->create([
-                "conversation_id" => $conversation->id,
-                "sender_id" => $client->id,
-                "body" => $messageBody,
+                'conversation_id' => $conversation->id,
+                'sender_id' => $client->id,
+                'body' => $messageBody,
             ]);
         });
     }
@@ -89,40 +89,40 @@ class AppNotificationService
         $targetUser = $client;
         $fromName = $professional->display_name;
 
-        if ($status === "accepted") {
-            $title = "Appointment confirmed";
-            $body = "{$fromName} has confirmed your appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-            $messageBody = "Appointment confirmed for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-        } elseif ($status === "declined") {
-            $title = "Appointment declined";
-            $body = "{$fromName} has declined your appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-            $messageBody = "Appointment declined for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-        } elseif ($status === "cancelled") {
+        if ($status === 'accepted') {
+            $title = 'Appointment confirmed';
+            $body = "{$fromName} has confirmed your appointment on ".\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+            $messageBody = 'Appointment confirmed for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+        } elseif ($status === 'declined') {
+            $title = 'Appointment declined';
+            $body = "{$fromName} has declined your appointment on ".\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+            $messageBody = 'Appointment declined for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+        } elseif ($status === 'cancelled') {
             if ($isProfessional) {
-                $title = "Appointment cancelled by professional";
-                $body = "{$fromName} has cancelled your appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-                $messageBody = "Appointment cancelled by professional for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
+                $title = 'Appointment cancelled by professional';
+                $body = "{$fromName} has cancelled your appointment on ".\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+                $messageBody = 'Appointment cancelled by professional for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
             } else {
-                $title = "Appointment cancelled";
-                $body = "You cancelled your appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
-                $messageBody = "Appointment cancelled for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
+                $title = 'Appointment cancelled';
+                $body = 'You cancelled your appointment on '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
+                $messageBody = 'Appointment cancelled for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
                 $targetUser = $professional;
             }
-        } elseif ($status === "completed") {
-            $title = "Appointment completed";
-            $body = "Your appointment on " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A") . " has been marked as completed.";
-            $messageBody = "Appointment completed for " . \Carbon\Carbon::parse($scheduledAt)->format("M j, Y g:i A");
+        } elseif ($status === 'completed') {
+            $title = 'Appointment completed';
+            $body = 'Your appointment on '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A').' has been marked as completed.';
+            $messageBody = 'Appointment completed for '.\Carbon\Carbon::parse($scheduledAt)->format('M j, Y g:i A');
         } else {
-            $title = "Appointment updated";
+            $title = 'Appointment updated';
             $body = "Your appointment status has been updated to: {$status}";
             $messageBody = "Appointment status changed to: {$status}";
         }
 
         Notification::query()->create([
-            "target_user_id" => $targetUser->id,
-            "created_by" => $actor->id,
-            "title" => $title,
-            "body" => $body,
+            'target_user_id' => $targetUser->id,
+            'created_by' => $actor->id,
+            'title' => $title,
+            'body' => $body,
         ]);
 
         DB::transaction(function () use ($client, $professional, $messageBody, $actor) {
@@ -130,9 +130,9 @@ class AppNotificationService
             $conversation->touch();
 
             Message::query()->create([
-                "conversation_id" => $conversation->id,
-                "sender_id" => $actor->id,
-                "body" => $messageBody,
+                'conversation_id' => $conversation->id,
+                'sender_id' => $actor->id,
+                'body' => $messageBody,
             ]);
         });
     }
@@ -140,28 +140,28 @@ class AppNotificationService
     public function checkupReminder(
         User $professional,
         User $client,
-        string $notes = ""
+        string $notes = ''
     ): void {
-        $title = "Check-up reminder from " . $professional->display_name;
-        $body = $notes ?: "Your " . $professional->role . " has requested a check-up. Please schedule an appointment.";
+        $title = 'Check-up reminder from '.$professional->display_name;
+        $body = $notes ?: 'Your '.$professional->role.' has requested a check-up. Please schedule an appointment.';
 
         Notification::query()->create([
-            "target_user_id" => $client->id,
-            "created_by" => $professional->id,
-            "title" => $title,
-            "body" => $body,
+            'target_user_id' => $client->id,
+            'created_by' => $professional->id,
+            'title' => $title,
+            'body' => $body,
         ]);
 
         DB::transaction(function () use ($client, $professional, $notes) {
             $conversation = $this->ensureConversation($client, $professional, $professional->id);
             $conversation->touch();
 
-            $messageBody = $notes ?: "Your " . $professional->role . " has requested a check-up. Please schedule an appointment.";
+            $messageBody = $notes ?: 'Your '.$professional->role.' has requested a check-up. Please schedule an appointment.';
 
             Message::query()->create([
-                "conversation_id" => $conversation->id,
-                "sender_id" => $professional->id,
-                "body" => $messageBody,
+                'conversation_id' => $conversation->id,
+                'sender_id' => $professional->id,
+                'body' => $messageBody,
             ]);
         });
     }
@@ -174,7 +174,7 @@ class AppNotificationService
         $messageBody = "I {$action} your diet plan: {$title}.";
 
         if (is_string($notes) && trim($notes) !== '') {
-            $messageBody .= "\nNote: " . Str::limit(trim($notes), 240);
+            $messageBody .= "\nNote: ".Str::limit(trim($notes), 240);
         }
 
         $this->notifyAndMessagePeer($professional, $client, $notificationTitle, $notificationBody, $messageBody);
@@ -188,7 +188,7 @@ class AppNotificationService
         $messageBody = "I {$action} your workout program: {$title}.";
 
         if (is_string($notes) && trim($notes) !== '') {
-            $messageBody .= "\nNote: " . Str::limit(trim($notes), 240);
+            $messageBody .= "\nNote: ".Str::limit(trim($notes), 240);
         }
 
         $this->notifyAndMessagePeer($professional, $client, $notificationTitle, $notificationBody, $messageBody);

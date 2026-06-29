@@ -43,4 +43,3 @@ it('repairs imported planner placeholder identities into human-readable internal
         ->and($user->email)->toEndWith('@clients.hayetak.local')
         ->and($user->username)->toContain('p0058');
 });
-

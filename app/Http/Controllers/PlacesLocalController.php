@@ -10,6 +10,13 @@ class PlacesLocalController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+            'radius' => ['nullable', 'integer', 'between:100,30000'],
+            'types' => ['nullable', 'string', 'max:100'],
+        ]);
+
         [$lat, $lng, $radius, $types, $hasExplicitTypes] = $this->parseInputs($request);
 
         if ($lat === null || $lng === null) {

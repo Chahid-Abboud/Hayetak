@@ -125,10 +125,11 @@ class ChatController extends Controller
                 ]);
                 $this->sendEvent('done', ['ok' => true]);
             } catch (\Throwable $throwable) {
+                report($throwable);
+
                 $this->sendEvent('error', [
                     'ok' => false,
                     'message' => 'AI Coach is temporarily unavailable right now.',
-                    'error' => $throwable->getMessage(),
                 ]);
             }
         }, 201, [

@@ -11,9 +11,9 @@ import {
     AdminSearchInput,
     AdminStickyBar,
     AdminTextarea,
+    AdminToggleGroup,
     AdminToolbar,
     AdminToolbarGroup,
-    AdminToggleGroup,
 } from '@/components/admin/admin-ui';
 import { StatusChipSet } from '@/components/admin/admin-workflows';
 import {
@@ -143,7 +143,9 @@ function loadStoredTemplates(): Template[] {
     if (typeof window === 'undefined') return [];
 
     try {
-        const value = window.localStorage.getItem('hayetak.admin.notification.templates');
+        const value = window.localStorage.getItem(
+            'hayetak.admin.notification.templates',
+        );
         const parsed = value ? JSON.parse(value) : [];
         return Array.isArray(parsed) ? parsed : [];
     } catch {
@@ -206,7 +208,9 @@ export default function AdminNotificationsIndex() {
             const params = new URLSearchParams({ per_page: '8' });
             if (userSearch.trim()) params.set('search', userSearch.trim());
 
-            const response = await fetch(`/api/admin/users?${params.toString()}`);
+            const response = await fetch(
+                `/api/admin/users?${params.toString()}`,
+            );
             const json = await response.json();
             setUserResults(Array.isArray(json?.data) ? json.data : []);
         } finally {
@@ -224,7 +228,8 @@ export default function AdminNotificationsIndex() {
                 per_page: '25',
             });
 
-            if (historySearch.trim()) params.set('search', historySearch.trim());
+            if (historySearch.trim())
+                params.set('search', historySearch.trim());
             if (statusFilter !== 'all') params.set('status', statusFilter);
             if (typeFilter !== 'all') params.set('type', typeFilter);
 
@@ -284,8 +289,8 @@ export default function AdminNotificationsIndex() {
 
     const audienceLabel = useMemo(
         () =>
-            audienceOptions.find((option) => option.value === audience)?.label ??
-            'Selected users',
+            audienceOptions.find((option) => option.value === audience)
+                ?.label ?? 'Selected users',
         [audience],
     );
 
@@ -399,10 +404,14 @@ export default function AdminNotificationsIndex() {
             } | null;
 
             if (!response.ok) {
-                throw new Error(json?.message || 'Could not resend failed deliveries.');
+                throw new Error(
+                    json?.message || 'Could not resend failed deliveries.',
+                );
             }
 
-            setMessage(json?.message || `Resent ${json?.sent ?? 0} failed deliveries.`);
+            setMessage(
+                json?.message || `Resent ${json?.sent ?? 0} failed deliveries.`,
+            );
             await loadHistory();
         } catch (resendError) {
             setError(
@@ -424,7 +433,9 @@ export default function AdminNotificationsIndex() {
                     description="Send targeted announcements and intervention messages, then review delivery state in readable campaign logs."
                 >
                     <div className="space-y-6">
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {message ? (
                             <AdminNotice tone="success">{message}</AdminNotice>
                         ) : null}
@@ -432,28 +443,46 @@ export default function AdminNotificationsIndex() {
                         <AdminStatsGrid>
                             <AdminStatCard
                                 label="Campaigns"
-                                value={loadingHistory ? '...' : String(stats.campaigns)}
+                                value={
+                                    loadingHistory
+                                        ? '...'
+                                        : String(stats.campaigns)
+                                }
                                 tone="accent"
                                 helper="Admin sends recorded in audit history."
                             />
                             <AdminStatCard
                                 label="Delivered"
-                                value={loadingHistory ? '...' : String(stats.delivered)}
+                                value={
+                                    loadingHistory
+                                        ? '...'
+                                        : String(stats.delivered)
+                                }
                                 helper="Recipient notifications created."
                             />
                             <AdminStatCard
                                 label="Unread"
-                                value={loadingHistory ? '...' : String(stats.unread)}
+                                value={
+                                    loadingHistory
+                                        ? '...'
+                                        : String(stats.unread)
+                                }
                                 helper="Still active in recipient bells."
                             />
                             <AdminStatCard
                                 label="Read"
-                                value={loadingHistory ? '...' : String(stats.read)}
+                                value={
+                                    loadingHistory ? '...' : String(stats.read)
+                                }
                                 helper="Opened by recipients."
                             />
                             <AdminStatCard
                                 label="Dismissed"
-                                value={loadingHistory ? '...' : String(stats.dismissed)}
+                                value={
+                                    loadingHistory
+                                        ? '...'
+                                        : String(stats.dismissed)
+                                }
                                 helper="Dismissed by recipients."
                             />
                         </AdminStatsGrid>
@@ -486,8 +515,14 @@ export default function AdminNotificationsIndex() {
                                     title="Readable logs"
                                     description="Delivery history summarizes counts, failures, and sender without burying logs in tiny cards."
                                 >
-                                    <Button asChild type="button" variant="outline">
-                                        <Link href="/admin/logs">Open audit logs</Link>
+                                    <Button
+                                        asChild
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        <Link href="/admin/logs">
+                                            Open audit logs
+                                        </Link>
                                     </Button>
                                 </AdminPanel>
                             </div>
@@ -509,21 +544,35 @@ export default function AdminNotificationsIndex() {
                                 description="Focused workflow: audience, message, preview, confirmation."
                             >
                                 <div className="space-y-4">
-                                    <AdminPanel title="1. Audience" description="Choose a recipient group. Selected users can be searched and added individually.">
+                                    <AdminPanel
+                                        title="1. Audience"
+                                        description="Choose a recipient group. Selected users can be searched and added individually."
+                                    >
                                         <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
                                             <AdminField label="Recipient group">
                                                 <AdminNativeSelect
                                                     value={audience}
                                                     onChange={(event) => {
-                                                        setAudience(event.target.value);
+                                                        setAudience(
+                                                            event.target.value,
+                                                        );
                                                         setConfirmReady(false);
                                                     }}
                                                 >
-                                                    {audienceOptions.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
+                                                    {audienceOptions.map(
+                                                        (option) => (
+                                                            <option
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {option.label}
+                                                            </option>
+                                                        ),
+                                                    )}
                                                 </AdminNativeSelect>
                                             </AdminField>
 
@@ -533,34 +582,63 @@ export default function AdminNotificationsIndex() {
                                                         <AdminSearchInput
                                                             value={userSearch}
                                                             placeholder="Search by name or email"
-                                                            onChange={(event) => setUserSearch(event.target.value)}
+                                                            onChange={(event) =>
+                                                                setUserSearch(
+                                                                    event.target
+                                                                        .value,
+                                                                )
+                                                            }
                                                         />
                                                     </AdminField>
                                                     <AdminScrollArea maxHeightClassName="max-h-72">
                                                         <div className="grid gap-2">
                                                             {loadingUsers ? (
-                                                                <div className="text-sm text-muted-foreground">Searching users...</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    Searching
+                                                                    users...
+                                                                </div>
                                                             ) : null}
-                                                            {!loadingUsers && userResults.map((user) => (
-                                                                <button
-                                                                    key={user.id}
-                                                                    type="button"
-                                                                    onClick={() => addUser(user)}
-                                                                    className="flex items-center justify-between rounded-2xl border border-border/70 px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
-                                                                >
-                                                                    <div>
-                                                                        <div className="font-medium text-foreground">{personName(user)}</div>
-                                                                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                                                                    </div>
-                                                                    <Badge variant="outline">{user.role ?? 'user'}</Badge>
-                                                                </button>
-                                                            ))}
+                                                            {!loadingUsers &&
+                                                                userResults.map(
+                                                                    (user) => (
+                                                                        <button
+                                                                            key={
+                                                                                user.id
+                                                                            }
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                addUser(
+                                                                                    user,
+                                                                                )
+                                                                            }
+                                                                            className="flex items-center justify-between rounded-2xl border border-border/70 px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
+                                                                        >
+                                                                            <div>
+                                                                                <div className="font-medium text-foreground">
+                                                                                    {personName(
+                                                                                        user,
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="text-sm text-muted-foreground">
+                                                                                    {
+                                                                                        user.email
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
+                                                                            <Badge variant="outline">
+                                                                                {user.role ??
+                                                                                    'user'}
+                                                                            </Badge>
+                                                                        </button>
+                                                                    ),
+                                                                )}
                                                         </div>
                                                     </AdminScrollArea>
                                                 </div>
                                             ) : (
                                                 <AdminNotice tone="info">
-                                                    Audience will be resolved at send time: {audienceLabel}.
+                                                    Audience will be resolved at
+                                                    send time: {audienceLabel}.
                                                 </AdminNotice>
                                             )}
                                         </div>
@@ -571,7 +649,9 @@ export default function AdminNotificationsIndex() {
                                                     <button
                                                         key={user.id}
                                                         type="button"
-                                                        onClick={() => removeUser(user.id)}
+                                                        onClick={() =>
+                                                            removeUser(user.id)
+                                                        }
                                                         className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1.5 text-sm text-foreground transition hover:border-destructive/30 hover:bg-destructive/10"
                                                     >
                                                         {personName(user)}
@@ -579,24 +659,43 @@ export default function AdminNotificationsIndex() {
                                                     </button>
                                                 ))}
                                                 {selectedUsers.length === 0 ? (
-                                                    <div className="text-sm text-muted-foreground">No selected recipients yet.</div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        No selected recipients
+                                                        yet.
+                                                    </div>
                                                 ) : null}
                                             </div>
                                         ) : null}
                                     </AdminPanel>
 
-                                    <AdminPanel title="2. Message" description="Write the notification as recipients will see it.">
+                                    <AdminPanel
+                                        title="2. Message"
+                                        description="Write the notification as recipients will see it."
+                                    >
                                         <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                                             <AdminField label="Type">
                                                 <AdminNativeSelect
                                                     value={type}
-                                                    onChange={(event) => setType(event.target.value)}
+                                                    onChange={(event) =>
+                                                        setType(
+                                                            event.target.value,
+                                                        )
+                                                    }
                                                 >
-                                                    {typeOptions.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
+                                                    {typeOptions.map(
+                                                        (option) => (
+                                                            <option
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {option.label}
+                                                            </option>
+                                                        ),
+                                                    )}
                                                 </AdminNativeSelect>
                                             </AdminField>
                                             <AdminField label="Title">
@@ -604,7 +703,9 @@ export default function AdminNotificationsIndex() {
                                                     value={title}
                                                     placeholder="Short notification title"
                                                     onChange={(event) => {
-                                                        setTitle(event.target.value);
+                                                        setTitle(
+                                                            event.target.value,
+                                                        );
                                                         setConfirmReady(false);
                                                     }}
                                                 />
@@ -617,7 +718,9 @@ export default function AdminNotificationsIndex() {
                                                     value={body}
                                                     placeholder="Write a clear announcement or intervention message."
                                                     onChange={(event) => {
-                                                        setBody(event.target.value);
+                                                        setBody(
+                                                            event.target.value,
+                                                        );
                                                         setConfirmReady(false);
                                                     }}
                                                 />
@@ -625,15 +728,22 @@ export default function AdminNotificationsIndex() {
                                         </div>
                                     </AdminPanel>
 
-                                    <AdminPanel title="3. Preview" description="Review the exact message summary before confirmation.">
+                                    <AdminPanel
+                                        title="3. Preview"
+                                        description="Review the exact message summary before confirmation."
+                                    >
                                         <div className="flex flex-wrap gap-2">
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                onClick={() => setPreviewOpen(!previewOpen)}
+                                                onClick={() =>
+                                                    setPreviewOpen(!previewOpen)
+                                                }
                                             >
                                                 <Eye className="h-4 w-4" />
-                                                {previewOpen ? 'Hide preview' : 'Preview'}
+                                                {previewOpen
+                                                    ? 'Hide preview'
+                                                    : 'Preview'}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -646,10 +756,14 @@ export default function AdminNotificationsIndex() {
                                         </div>
 
                                         {previewOpen ? (
-                                            <div className="mt-4 dashboard-surface-soft rounded-[22px] px-4 py-4">
+                                            <div className="dashboard-surface-soft mt-4 rounded-[22px] px-4 py-4">
                                                 <div className="flex flex-wrap gap-2">
-                                                    <Badge variant="outline">{audienceLabel}</Badge>
-                                                    <Badge variant="secondary">{type}</Badge>
+                                                    <Badge variant="outline">
+                                                        {audienceLabel}
+                                                    </Badge>
+                                                    <Badge variant="secondary">
+                                                        {type}
+                                                    </Badge>
                                                     <Badge variant="outline">
                                                         {audience === 'selected'
                                                             ? `${selectedUsers.length} selected`
@@ -657,25 +771,35 @@ export default function AdminNotificationsIndex() {
                                                     </Badge>
                                                 </div>
                                                 <h3 className="mt-4 text-lg font-semibold text-foreground">
-                                                    {title || 'Notification title'}
+                                                    {title ||
+                                                        'Notification title'}
                                                 </h3>
-                                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                                                    {body || 'Notification body preview.'}
+                                                <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-muted-foreground">
+                                                    {body ||
+                                                        'Notification body preview.'}
                                                 </p>
                                             </div>
                                         ) : null}
                                     </AdminPanel>
 
-                                    <AdminPanel title="4. Confirmation" description="Confirm the audience and content before sending.">
+                                    <AdminPanel
+                                        title="4. Confirmation"
+                                        description="Confirm the audience and content before sending."
+                                    >
                                         <label className="dashboard-surface-soft flex items-start gap-3 rounded-[20px] px-4 py-4">
                                             <input
                                                 type="checkbox"
                                                 checked={confirmReady}
-                                                onChange={(event) => setConfirmReady(event.target.checked)}
+                                                onChange={(event) =>
+                                                    setConfirmReady(
+                                                        event.target.checked,
+                                                    )
+                                                }
                                                 className="mt-1"
                                             />
                                             <span className="text-sm leading-6 text-muted-foreground">
-                                                I reviewed the audience, message type, title, body, and preview.
+                                                I reviewed the audience, message
+                                                type, title, body, and preview.
                                             </span>
                                         </label>
                                     </AdminPanel>
@@ -704,37 +828,81 @@ export default function AdminNotificationsIndex() {
                                 <div className="space-y-4">
                                     <AdminToolbar>
                                         <AdminToolbarGroup grow>
-                                            <AdminField label="Search" className="xl:flex-1">
+                                            <AdminField
+                                                label="Search"
+                                                className="xl:flex-1"
+                                            >
                                                 <AdminSearchInput
                                                     value={historySearch}
                                                     placeholder="Search title, body, audience"
-                                                    onChange={(event) => setHistorySearch(event.target.value)}
+                                                    onChange={(event) =>
+                                                        setHistorySearch(
+                                                            event.target.value,
+                                                        )
+                                                    }
                                                 />
                                             </AdminField>
-                                            <AdminField label="Status" className="sm:w-44">
+                                            <AdminField
+                                                label="Status"
+                                                className="sm:w-44"
+                                            >
                                                 <AdminNativeSelect
                                                     value={statusFilter}
-                                                    onChange={(event) => setStatusFilter(event.target.value)}
+                                                    onChange={(event) =>
+                                                        setStatusFilter(
+                                                            event.target.value,
+                                                        )
+                                                    }
                                                 >
-                                                    <option value="all">All statuses</option>
-                                                    <option value="sent">Sent</option>
-                                                    <option value="partial">Partial</option>
-                                                    <option value="failed">Failed</option>
-                                                    <option value="read">Has reads</option>
-                                                    <option value="dismissed">Has dismissals</option>
+                                                    <option value="all">
+                                                        All statuses
+                                                    </option>
+                                                    <option value="sent">
+                                                        Sent
+                                                    </option>
+                                                    <option value="partial">
+                                                        Partial
+                                                    </option>
+                                                    <option value="failed">
+                                                        Failed
+                                                    </option>
+                                                    <option value="read">
+                                                        Has reads
+                                                    </option>
+                                                    <option value="dismissed">
+                                                        Has dismissals
+                                                    </option>
                                                 </AdminNativeSelect>
                                             </AdminField>
-                                            <AdminField label="Type" className="sm:w-44">
+                                            <AdminField
+                                                label="Type"
+                                                className="sm:w-44"
+                                            >
                                                 <AdminNativeSelect
                                                     value={typeFilter}
-                                                    onChange={(event) => setTypeFilter(event.target.value)}
+                                                    onChange={(event) =>
+                                                        setTypeFilter(
+                                                            event.target.value,
+                                                        )
+                                                    }
                                                 >
-                                                    <option value="all">All types</option>
-                                                    {typeOptions.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
+                                                    <option value="all">
+                                                        All types
+                                                    </option>
+                                                    {typeOptions.map(
+                                                        (option) => (
+                                                            <option
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {option.label}
+                                                            </option>
+                                                        ),
+                                                    )}
                                                 </AdminNativeSelect>
                                             </AdminField>
                                         </AdminToolbarGroup>
@@ -743,7 +911,9 @@ export default function AdminNotificationsIndex() {
                                                 type="button"
                                                 variant="outline"
                                                 disabled={loadingHistory}
-                                                onClick={() => void loadHistory()}
+                                                onClick={() =>
+                                                    void loadHistory()
+                                                }
                                             >
                                                 <RefreshCcw className="h-4 w-4" />
                                                 Refresh
@@ -751,84 +921,176 @@ export default function AdminNotificationsIndex() {
                                         </AdminToolbarGroup>
                                     </AdminToolbar>
 
-                                    {loadingHistory && campaigns.length === 0 ? (
-                                        <AdminEmpty title="Loading delivery history" description="Fetching campaign logs and recipient counts." />
+                                    {loadingHistory &&
+                                    campaigns.length === 0 ? (
+                                        <AdminEmpty
+                                            title="Loading delivery history"
+                                            description="Fetching campaign logs and recipient counts."
+                                        />
                                     ) : (
                                         <AdminScrollArea maxHeightClassName="max-h-[68vh]">
                                             <AdminDataTable tableClassName="min-w-[1180px]">
                                                 <ProductTableHead>
                                                     <tr>
-                                                        <ProductTableHeaderCell>Recipient group</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Message</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Type</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Status</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Sent time</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Read / dismissed</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Failed</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell>Sender</ProductTableHeaderCell>
-                                                        <ProductTableHeaderCell className="w-36">Actions</ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Recipient group
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Message
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Type
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Status
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Sent time
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Read / dismissed
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Failed
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell>
+                                                            Sender
+                                                        </ProductTableHeaderCell>
+                                                        <ProductTableHeaderCell className="w-36">
+                                                            Actions
+                                                        </ProductTableHeaderCell>
                                                     </tr>
                                                 </ProductTableHead>
                                                 <ProductTableBody>
-                                                    {campaigns.map((campaign) => (
-                                                        <ProductTableRow key={campaign.id}>
-                                                            <ProductTableCell>
-                                                                <div className="font-medium text-foreground">{campaign.recipient_group}</div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    {campaign.recipient_count} recipient(s)
-                                                                </div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className="font-medium text-foreground">{campaign.title}</div>
-                                                                <div className="line-clamp-2 max-w-80 text-sm text-muted-foreground">{campaign.body}</div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <Badge variant="outline">{campaign.type}</Badge>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <StatusChipSet
-                                                                    items={[
+                                                    {campaigns.map(
+                                                        (campaign) => (
+                                                            <ProductTableRow
+                                                                key={
+                                                                    campaign.id
+                                                                }
+                                                            >
+                                                                <ProductTableCell>
+                                                                    <div className="font-medium text-foreground">
                                                                         {
-                                                                            value: campaign.status === 'failed' ? 'rejected' : campaign.status === 'partial' ? 'needs_review' : 'completed',
-                                                                            label: campaign.status,
-                                                                        },
-                                                                    ]}
-                                                                />
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                {formatDateTime(campaign.sent_time)}
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className="font-medium text-foreground">
-                                                                    {campaign.read_count} read
-                                                                </div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    {campaign.dismissed_count} dismissed
-                                                                </div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className={campaign.failed_deliveries > 0 ? 'font-semibold text-destructive' : 'text-muted-foreground'}>
-                                                                    {campaign.failed_deliveries}
-                                                                </div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className="text-sm text-foreground">{campaign.sender?.name || 'Admin'}</div>
-                                                                <div className="text-xs text-muted-foreground">{campaign.sender?.email}</div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <Button
-                                                                    type="button"
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    disabled={sending || campaign.failed_deliveries === 0}
-                                                                    onClick={() => void resendFailed(campaign)}
-                                                                >
-                                                                    Resend failed
-                                                                </Button>
-                                                            </ProductTableCell>
-                                                        </ProductTableRow>
-                                                    ))}
-                                                    {!loadingHistory && campaigns.length === 0 ? (
+                                                                            campaign.recipient_group
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {
+                                                                            campaign.recipient_count
+                                                                        }{' '}
+                                                                        recipient(s)
+                                                                    </div>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <div className="font-medium text-foreground">
+                                                                        {
+                                                                            campaign.title
+                                                                        }
+                                                                    </div>
+                                                                    <div className="line-clamp-2 max-w-80 text-sm text-muted-foreground">
+                                                                        {
+                                                                            campaign.body
+                                                                        }
+                                                                    </div>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <Badge variant="outline">
+                                                                        {
+                                                                            campaign.type
+                                                                        }
+                                                                    </Badge>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <StatusChipSet
+                                                                        items={[
+                                                                            {
+                                                                                value:
+                                                                                    campaign.status ===
+                                                                                    'failed'
+                                                                                        ? 'rejected'
+                                                                                        : campaign.status ===
+                                                                                            'partial'
+                                                                                          ? 'needs_review'
+                                                                                          : 'completed',
+                                                                                label: campaign.status,
+                                                                            },
+                                                                        ]}
+                                                                    />
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    {formatDateTime(
+                                                                        campaign.sent_time,
+                                                                    )}
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <div className="font-medium text-foreground">
+                                                                        {
+                                                                            campaign.read_count
+                                                                        }{' '}
+                                                                        read
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {
+                                                                            campaign.dismissed_count
+                                                                        }{' '}
+                                                                        dismissed
+                                                                    </div>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <div
+                                                                        className={
+                                                                            campaign.failed_deliveries >
+                                                                            0
+                                                                                ? 'font-semibold text-destructive'
+                                                                                : 'text-muted-foreground'
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            campaign.failed_deliveries
+                                                                        }
+                                                                    </div>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <div className="text-sm text-foreground">
+                                                                        {campaign
+                                                                            .sender
+                                                                            ?.name ||
+                                                                            'Admin'}
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {
+                                                                            campaign
+                                                                                .sender
+                                                                                ?.email
+                                                                        }
+                                                                    </div>
+                                                                </ProductTableCell>
+                                                                <ProductTableCell>
+                                                                    <Button
+                                                                        type="button"
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        disabled={
+                                                                            sending ||
+                                                                            campaign.failed_deliveries ===
+                                                                                0
+                                                                        }
+                                                                        onClick={() =>
+                                                                            void resendFailed(
+                                                                                campaign,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Resend
+                                                                        failed
+                                                                    </Button>
+                                                                </ProductTableCell>
+                                                            </ProductTableRow>
+                                                        ),
+                                                    )}
+                                                    {!loadingHistory &&
+                                                    campaigns.length === 0 ? (
                                                         <ProductTableEmptyRow
                                                             colSpan={9}
                                                             title="No delivery history found"
@@ -849,8 +1111,16 @@ export default function AdminNotificationsIndex() {
                                                 ? `Showing ${from}-${to} of ${total} campaigns`
                                                 : 'Pagination follows active history filters.'
                                         }
-                                        onPrevious={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                        onNext={() => setCurrentPage((page) => Math.min(lastPage, page + 1))}
+                                        onPrevious={() =>
+                                            setCurrentPage((page) =>
+                                                Math.max(1, page - 1),
+                                            )
+                                        }
+                                        onNext={() =>
+                                            setCurrentPage((page) =>
+                                                Math.min(lastPage, page + 1),
+                                            )
+                                        }
                                     />
                                 </div>
                             </AdminSection>
@@ -875,7 +1145,9 @@ export default function AdminNotificationsIndex() {
                                                 type="button"
                                                 variant="outline"
                                                 className="mt-4"
-                                                onClick={() => applyTemplate(template)}
+                                                onClick={() =>
+                                                    applyTemplate(template)
+                                                }
                                             >
                                                 <ClipboardCheck className="h-4 w-4" />
                                                 Use template

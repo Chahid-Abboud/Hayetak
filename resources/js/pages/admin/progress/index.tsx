@@ -38,13 +38,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { jsonRequestInit } from '@/lib/http';
 import { Head, Link } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    Pencil,
-    Plus,
-    RefreshCcw,
-    Trash2,
-} from 'lucide-react';
+import { AlertTriangle, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type MetricType =
@@ -720,9 +714,7 @@ export default function AdminProgressPage() {
                 type !== 'all'
                     ? { value: 'type', label: metricConfig(type).label }
                     : null,
-                outlier !== 'all'
-                    ? { value: outlier, label: outlier }
-                    : null,
+                outlier !== 'all' ? { value: outlier, label: outlier } : null,
                 source !== 'all' ? { value: source, label: source } : null,
             ].filter(Boolean) as Array<{ value: string; label: string }>,
         [outlier, source, type, userId],
@@ -877,9 +869,7 @@ export default function AdminProgressPage() {
                             <AdminStatCard
                                 label="Manual edits"
                                 value={
-                                    loading
-                                        ? '...'
-                                        : String(stats.manual_edits)
+                                    loading ? '...' : String(stats.manual_edits)
                                 }
                                 helper="Admin-created or corrected records."
                             />
@@ -890,7 +880,9 @@ export default function AdminProgressPage() {
                             />
                         </AdminStatsGrid>
 
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
@@ -924,8 +916,14 @@ export default function AdminProgressPage() {
                                     title="Diagnostics"
                                     description="Audit metadata stays summarized here, with deeper logs available separately."
                                 >
-                                    <Button asChild type="button" variant="outline">
-                                        <Link href="/admin/logs">Open audit logs</Link>
+                                    <Button
+                                        asChild
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        <Link href="/admin/logs">
+                                            Open audit logs
+                                        </Link>
                                     </Button>
                                 </AdminPanel>
                             </div>
@@ -937,7 +935,10 @@ export default function AdminProgressPage() {
                         >
                             <AdminToolbar>
                                 <AdminToolbarGroup grow>
-                                    <AdminField label="Search" className="xl:flex-1">
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:flex-1"
+                                    >
                                         <AdminSearchInput
                                             value={search}
                                             placeholder="Search user or audit note"
@@ -946,7 +947,10 @@ export default function AdminProgressPage() {
                                             }
                                         />
                                     </AdminField>
-                                    <AdminField label="User ID" className="sm:w-40">
+                                    <AdminField
+                                        label="User ID"
+                                        className="sm:w-40"
+                                    >
                                         <AdminInput
                                             value={userId}
                                             placeholder="148"
@@ -955,14 +959,19 @@ export default function AdminProgressPage() {
                                             }
                                         />
                                     </AdminField>
-                                    <AdminField label="Metric" className="sm:w-48">
+                                    <AdminField
+                                        label="Metric"
+                                        className="sm:w-48"
+                                    >
                                         <AdminNativeSelect
                                             value={type}
                                             onChange={(event) =>
                                                 setType(event.target.value)
                                             }
                                         >
-                                            <option value="all">All metrics</option>
+                                            <option value="all">
+                                                All metrics
+                                            </option>
                                             {metricOptions.map((metric) => (
                                                 <option
                                                     key={metric.value}
@@ -973,26 +982,38 @@ export default function AdminProgressPage() {
                                             ))}
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Outlier" className="sm:w-44">
+                                    <AdminField
+                                        label="Outlier"
+                                        className="sm:w-44"
+                                    >
                                         <AdminNativeSelect
                                             value={outlier}
                                             onChange={(event) =>
                                                 setOutlier(event.target.value)
                                             }
                                         >
-                                            <option value="all">All records</option>
-                                            <option value="flagged">Flagged</option>
+                                            <option value="all">
+                                                All records
+                                            </option>
+                                            <option value="flagged">
+                                                Flagged
+                                            </option>
                                             <option value="clear">Clear</option>
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Source" className="sm:w-48">
+                                    <AdminField
+                                        label="Source"
+                                        className="sm:w-48"
+                                    >
                                         <AdminNativeSelect
                                             value={source}
                                             onChange={(event) =>
                                                 setSource(event.target.value)
                                             }
                                         >
-                                            <option value="all">All sources</option>
+                                            <option value="all">
+                                                All sources
+                                            </option>
                                             <option value="user_logged">
                                                 User logged
                                             </option>
@@ -1059,7 +1080,9 @@ export default function AdminProgressPage() {
                                 </AdminPanel>
                                 <AdminPanel
                                     title="Latest weight"
-                                    description={formatDate(summary?.latest_date)}
+                                    description={formatDate(
+                                        summary?.latest_date,
+                                    )}
                                 >
                                     <div className="text-2xl font-semibold tracking-tight text-foreground">
                                         {formatValue(
@@ -1159,7 +1182,8 @@ export default function AdminProgressPage() {
                                                         key={row.id}
                                                         interactive
                                                         className={
-                                                            row.id === selected?.id
+                                                            row.id ===
+                                                            selected?.id
                                                                 ? 'bg-primary/5'
                                                                 : undefined
                                                         }
@@ -1169,10 +1193,14 @@ export default function AdminProgressPage() {
                                                                 type="button"
                                                                 className="w-full text-left"
                                                                 onClick={() => {
-                                                                    setSelected({
-                                                                        ...row,
-                                                                    });
-                                                                    setReason('');
+                                                                    setSelected(
+                                                                        {
+                                                                            ...row,
+                                                                        },
+                                                                    );
+                                                                    setReason(
+                                                                        '',
+                                                                    );
                                                                     setDrawerOpen(
                                                                         true,
                                                                     );
@@ -1184,7 +1212,8 @@ export default function AdminProgressPage() {
                                                                     )}
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground">
-                                                                    {row.user?.email ||
+                                                                    {row.user
+                                                                        ?.email ||
                                                                         `User #${row.user_id}`}
                                                                 </div>
                                                             </button>
@@ -1283,10 +1312,14 @@ export default function AdminProgressPage() {
                                                                 size="sm"
                                                                 variant="outline"
                                                                 onClick={() => {
-                                                                    setSelected({
-                                                                        ...row,
-                                                                    });
-                                                                    setReason('');
+                                                                    setSelected(
+                                                                        {
+                                                                            ...row,
+                                                                        },
+                                                                    );
+                                                                    setReason(
+                                                                        '',
+                                                                    );
                                                                     setDrawerOpen(
                                                                         true,
                                                                     );

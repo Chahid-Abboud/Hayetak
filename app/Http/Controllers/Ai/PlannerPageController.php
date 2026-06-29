@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Ai;
 
 use App\Http\Controllers\Controller;
-use App\Models\PlannerAuditRun;
 use App\Models\NutritionPlan;
+use App\Models\PlannerAuditRun;
 use App\Models\WorkoutPlan;
 use App\Services\Ai\Audit\PlannerAuditExecutionMode;
 use App\Services\Ai\Audit\PlannerAuditGpuLoad;
 use App\Services\Ai\PlannerService;
-use App\Services\Ai\ProgressPredictionTimelineService;
 use App\Services\Ai\Presentation\UserFacingAiPayloadSanitizer;
+use App\Services\Ai\ProgressPredictionTimelineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;

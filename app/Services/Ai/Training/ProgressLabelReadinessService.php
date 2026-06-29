@@ -179,8 +179,7 @@ class ProgressLabelReadinessService
         CarbonImmutable $targetDate,
         ?int $toleranceBeforeDays = null,
         ?int $toleranceAfterDays = null
-    ): ?array
-    {
+    ): ?array {
         $rows = $this->measurementsForUser($userId);
         if ($rows->isEmpty()) {
             return null;

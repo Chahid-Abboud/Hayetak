@@ -11,9 +11,9 @@ import {
     AdminSearchInput,
     AdminStickyBar,
     AdminTextarea,
+    AdminToggleGroup,
     AdminToolbar,
     AdminToolbarGroup,
-    AdminToggleGroup,
 } from '@/components/admin/admin-ui';
 import {
     ConfirmActionDialogWithReason,
@@ -321,7 +321,7 @@ function PlaceEditor({
                         />
                     </AdminField>
                 </div>
-                <div className="mt-4 dashboard-surface-soft rounded-[20px] px-4 py-3 text-sm text-muted-foreground">
+                <div className="dashboard-surface-soft mt-4 rounded-[20px] px-4 py-3 text-sm text-muted-foreground">
                     Last verified: {formatDate(place.last_verified_at)}
                 </div>
             </AdminPanel>
@@ -563,7 +563,10 @@ export default function AdminPlacesPage() {
     const placesToolbar = (
         <AdminToolbar>
             <AdminToolbarGroup grow>
-                <AdminField label="Search" className="sm:min-w-[18rem] xl:flex-1">
+                <AdminField
+                    label="Search"
+                    className="sm:min-w-[18rem] xl:flex-1"
+                >
                     <AdminSearchInput
                         value={query}
                         placeholder="Search name, category, city, address"
@@ -674,9 +677,7 @@ export default function AdminPlacesPage() {
             }
 
             setSuccess(
-                selected.id === null
-                    ? 'Place created.'
-                    : 'Place updated.',
+                selected.id === null ? 'Place created.' : 'Place updated.',
             );
             await load();
         } catch (saveError) {
@@ -708,7 +709,11 @@ export default function AdminPlacesPage() {
                   : `/api/admin/places-local/${selected.id}`;
 
         const method =
-            action === 'hide' ? 'PATCH' : action === 'validate' ? 'POST' : 'DELETE';
+            action === 'hide'
+                ? 'PATCH'
+                : action === 'validate'
+                  ? 'POST'
+                  : 'DELETE';
 
         try {
             const response = await fetch(
@@ -767,9 +772,7 @@ export default function AdminPlacesPage() {
                             <AdminStatCard
                                 label="Needs review"
                                 value={
-                                    loading
-                                        ? '...'
-                                        : String(stats.needs_review)
+                                    loading ? '...' : String(stats.needs_review)
                                 }
                                 helper="Missing quality or coordinate signals."
                             />
@@ -789,7 +792,9 @@ export default function AdminPlacesPage() {
                             />
                         </AdminStatsGrid>
 
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
@@ -822,8 +827,14 @@ export default function AdminPlacesPage() {
                                     title="Diagnostics"
                                     description="Audit details live in logs; this page shows readable quality and action summaries."
                                 >
-                                    <Button asChild type="button" variant="outline">
-                                        <Link href="/admin/logs">Open audit logs</Link>
+                                    <Button
+                                        asChild
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        <Link href="/admin/logs">
+                                            Open audit logs
+                                        </Link>
                                     </Button>
                                 </AdminPanel>
                             </div>
@@ -973,8 +984,13 @@ export default function AdminPlacesPage() {
                                                                 </ProductTableCell>
                                                                 <ProductTableCell>
                                                                     <div className="text-sm text-foreground">
-                                                                        {row.lat},{' '}
-                                                                        {row.lng}
+                                                                        {
+                                                                            row.lat
+                                                                        }
+                                                                        ,{' '}
+                                                                        {
+                                                                            row.lng
+                                                                        }
                                                                     </div>
                                                                     <div className="text-xs text-muted-foreground">
                                                                         {row.coordinates_validated
@@ -1013,8 +1029,10 @@ export default function AdminPlacesPage() {
                                                                             ]}
                                                                         />
                                                                         <div className="line-clamp-1 max-w-52 text-xs text-muted-foreground">
-                                                                            {(row.quality_warnings ??
-                                                                                [])
+                                                                            {(
+                                                                                row.quality_warnings ??
+                                                                                []
+                                                                            )
                                                                                 .slice(
                                                                                     0,
                                                                                     2,

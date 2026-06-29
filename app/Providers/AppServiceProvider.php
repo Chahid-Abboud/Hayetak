@@ -24,11 +24,11 @@ use App\Policies\DietPlanPolicy;
 use App\Policies\TrainerProgressNotePolicy;
 use App\Policies\TrainerWorkoutPlanPolicy;
 use App\Support\Ai\AiContextSyncDispatcher;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 

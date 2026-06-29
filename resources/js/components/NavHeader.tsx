@@ -39,11 +39,11 @@ export default function NavHeader() {
                   { href: '/admin/verifications', label: 'Verifications' },
                   { href: '/admin/professionals', label: 'Professionals' },
                   { href: '/admin/notifications', label: 'Notifications' },
-                  { href: '/admin/message-moderations', label: 'Moderation' },
               ]
             : [
                   { href: '/dashboard', label: 'Dashboard' },
                   { href: '/coach', label: 'Coach' },
+                  { href: '/progress', label: 'Progress' },
                   { href: '/nearby', label: 'Nearby' },
               ];
 
@@ -55,6 +55,7 @@ export default function NavHeader() {
                 label: 'General',
                 items: [
                     { href: '/ai/planner', label: 'AI Planner' },
+                    { href: '/progress', label: 'Progress' },
                     { href: '/track-meals', label: 'Meal Tracker' },
                     { href: '/workouts/plan', label: 'Workout Planner' },
                     { href: '/workouts/log', label: 'Workout Log' },

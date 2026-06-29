@@ -91,6 +91,10 @@ class CoachDeterministicResponder
             return $this->restrictionSummaryAnswer($context, $normalizedQuestion);
         }
 
+        if ($this->isPlanRegenerationLoggingQuestion($normalizedQuestion)) {
+            return $this->planRegenerationLoggingAnswer();
+        }
+
         if (
             ($classification['deterministic_action'] ?? null) === 'allergy_exposure_check' ||
             $this->isAllergyExposureAuditQuestion($normalizedQuestion)
@@ -1929,7 +1933,13 @@ class CoachDeterministicResponder
             'injuries' => $mentionsInjuries,
         ]);
 
-        return count($active) === 1 ? array_key_first($active) : null;
+        if (count($active) !== 1) {
+            return null;
+        }
+
+        $focus = (string) array_key_first($active);
+
+        return in_array($focus, ['medical_conditions', 'injuries'], true) ? $focus : null;
     }
 
     private function isGratitudeOrClosing(string $question): bool
@@ -2140,6 +2150,20 @@ class CoachDeterministicResponder
             return $this->offeredWorkoutRoutineAnswer($context);
         }
 
+        if (
+            $this->containsAny($offerText, ['would you like me to suggest', 'would you like me to recommend']) &&
+            $this->containsAny($offerText, ['or provide', 'or share', 'or explain'])
+        ) {
+            return [
+                'answer' => 'I do not want to guess from a short yes when I offered more than one option. Tell me whether you want healthy coffee alternatives or more information about incorporating coffee into your daily routine, and I will continue from there.',
+                'warnings' => [],
+                'chat_path' => 'conversation',
+                'mode_label' => 'Conversation',
+                'reason' => 'ambiguous_affirmation_clarification',
+                'model' => 'coach-conversation-shortcut',
+            ];
+        }
+
         if ($this->containsAny($offerText, [
             'tips',
             'suggestions',
@@ -2153,6 +2177,39 @@ class CoachDeterministicResponder
         }
 
         return null;
+    }
+
+    private function isPlanRegenerationLoggingQuestion(string $question): bool
+    {
+        return $this->containsAny($question, [
+            'what data should i log this week before regenerating',
+            'what should i log this week before regenerating',
+            'before regenerating',
+            'before i regenerate',
+            'regenerate',
+        ]) && $this->containsAny($question, [
+            'log',
+            'logging',
+            'data',
+            'week',
+        ]);
+    }
+
+    private function planRegenerationLoggingAnswer(): array
+    {
+        return [
+            'answer' => implode("\n\n", [
+                'Before regenerating, log enough detail that the next plan can react to real patterns instead of guesses.',
+                'Focus on meals and macros: calories, protein, carbs, fat, and enough meal detail to show what you actually ate.',
+                'Also log workouts and adherence so the plan can see what sessions you completed, what you skipped, and how the week really went.',
+                'Add body-weight check-ins across the week when possible, because those trends help decide whether calories or training volume should change.',
+            ]),
+            'warnings' => [],
+            'chat_path' => 'personalized',
+            'mode_label' => 'Personalized',
+            'reason' => 'plan_regeneration_logging',
+            'model' => 'coach-plan-support',
+        ];
     }
 
     private function offeredRecipeAnswer(array $context): array

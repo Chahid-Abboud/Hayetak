@@ -137,7 +137,13 @@ class MealTrackerApiController extends Controller
                 'message' => $exception->getMessage(),
             ], 422);
         }
-        $violations = $this->validateFoodSafety($user?->id ?? 0, $food);
+        $isSubstitute = (int) $food->id !== (int) $nutritionPlanItem->food_id;
+
+        $violations = $this->validateFoodSafety(
+            (int) ($user?->id ?? 0),
+            $food,
+            $isSubstitute
+        );
         if ($violations !== []) {
             return response()->json([
                 'ok' => false,
@@ -168,20 +174,28 @@ class MealTrackerApiController extends Controller
         ]);
     }
 
-    private function validateFoodSafety(int $userId, Food $food): array
+    private function validateFoodSafety(int $userId, Food $food, bool $isSubstitute): array
     {
         $violations = [];
         $userAllergies = array_map('mb_strtolower', $this->svc->userAllergies($userId));
         $foodAllergens = array_map('mb_strtolower', is_array($food->allergens) ? $food->allergens : []);
 
         if ($userAllergies !== [] && array_intersect($userAllergies, $foodAllergens) !== []) {
-            $violations[] = 'This substitute conflicts with your saved allergies.';
+            $violations[] = $isSubstitute
+                ? 'This substitute conflicts with your saved allergies.'
+                : 'This planned meal conflicts with your saved allergies.';
         }
 
-        $dietName = $this->svc->userDietName($userId);
-        $allowedDiets = array_map('mb_strtolower', is_array($food->diets_allowed) ? $food->diets_allowed : []);
-        if ($dietName && $allowedDiets !== [] && ! in_array(mb_strtolower($dietName), $allowedDiets, true)) {
-            $violations[] = 'This substitute does not match your saved diet type.';
+        // Diet-type blocking is only applied when the user chooses a substitute.
+        // Original AI-planned meals may have incomplete food metadata, so they should
+        // not be rejected here after already being generated as part of the plan.
+        if ($isSubstitute) {
+            $dietName = $this->svc->userDietName($userId);
+            $allowedDiets = array_map('mb_strtolower', is_array($food->diets_allowed) ? $food->diets_allowed : []);
+
+            if ($dietName && $allowedDiets !== [] && ! in_array(mb_strtolower($dietName), $allowedDiets, true)) {
+                $violations[] = 'This substitute does not match your saved diet type.';
+            }
         }
 
         return $violations;

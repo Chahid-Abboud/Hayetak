@@ -198,10 +198,10 @@ export default function ProfilePage() {
     const [age, setAge] = useState(
         userProfile.age === null ? '' : String(userProfile.age),
     );
-    const [heightCm, setHeightCm] = useState(
+    const [heightCm] = useState(
         userProfile.height_cm === null ? '' : String(userProfile.height_cm),
     );
-    const [weightKg, setWeightKg] = useState(
+    const [weightKg] = useState(
         userProfile.weight_kg === null ? '' : String(userProfile.weight_kg),
     );
 
@@ -416,7 +416,6 @@ export default function ProfilePage() {
                                 type="number"
                                 inputMode="numeric"
                             />
-                            
                         </div>
 
                         <div className="flex flex-wrap gap-3">

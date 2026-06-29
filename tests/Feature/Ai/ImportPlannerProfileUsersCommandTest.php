@@ -101,11 +101,11 @@ CSV);
 
     expect($requests)->toHaveCount(2)
         ->and($requests->pluck('created_at')->map(fn ($value) => $value?->setTimezone('UTC')->format('Y-m-d H:i:s'))->all())
-            ->toBe(['2026-02-01 00:05:00', '2026-02-20 00:05:00'])
+        ->toBe(['2026-02-01 00:05:00', '2026-02-20 00:05:00'])
         ->and($requests->pluck('usage_json')->map(fn ($usage) => $usage['imported_plan_run_id'] ?? null)->all())
-            ->toBe(['R9101', 'R9102'])
+        ->toBe(['R9101', 'R9102'])
         ->and(Measurement::query()->where('user_id', $user->id)->count())
-            ->toBe(3);
+        ->toBe(3);
 
     File::ensureDirectoryExists(base_path('tmp'));
     $jsonlPath = 'tmp/test_imported_planner_predictor_export.jsonl';
@@ -126,7 +126,7 @@ CSV);
 
     expect($rows)->toHaveCount(2)
         ->and($rows->every(fn (array $row): bool => (int) ($row['has_weight_label'] ?? 0) === 1))
-            ->toBeTrue()
+        ->toBeTrue()
         ->and($rows->every(fn (array $row): bool => (int) ($row['is_synthetic_weight_label'] ?? 1) === 0))
-            ->toBeTrue();
+        ->toBeTrue();
 });

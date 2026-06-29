@@ -6,7 +6,6 @@ import {
     AdminInput,
     AdminNativeSelect,
     AdminNotice,
-    AdminOverviewCard,
     AdminPagination,
     AdminPanel,
     AdminScrollArea,
@@ -213,7 +212,7 @@ function ProfessionalEditorSurface({
         (professional.verified ? 'approved' : 'pending');
 
     return (
-        <div className="space-y-4 pb-28 ">
+        <div className="space-y-4 pb-28">
             <AdminPanel
                 title={professionalName(professional)}
                 description="Edit the public discovery profile here, while keeping heavier credential decisions in the dedicated verification queue."
@@ -589,20 +588,6 @@ export default function AdminProfessionalsPage() {
         [filteredRows],
     );
 
-    const activeFilterCount = useMemo(
-        () =>
-            (role !== 'trainer' ? 1 : 0) +
-            (readiness !== 'all' ? 1 : 0) +
-            (city !== 'all' ? 1 : 0) +
-            (query.trim() ? 1 : 0),
-        [city, query, readiness, role],
-    );
-
-    const selectedGapCount = useMemo(
-        () => directoryGaps(selected).length,
-        [selected],
-    );
-
     async function save() {
         if (!selected) {
             return;
@@ -697,106 +682,6 @@ export default function AdminProfessionalsPage() {
                         ) : null}
 
                         <AdminSection
-                            title="Triage Guidance"
-                            description="Use this page for public profile quality and discovery readiness. Move to the verification queue when the task becomes credential review or compliance."
-                        >
-                            <div className="grid gap-4 xl:grid-cols-2">
-                                <AdminOverviewCard
-                                    title="Directory snapshot"
-                                    description="Keep the list narrow, keep one profile selected, and treat this as a tidy-up workspace for what clients actually see."
-                                    action={
-                                        <Button asChild variant="outline">
-                                            <Link href="/admin/professional-verifications">
-                                                Verification queue
-                                            </Link>
-                                        </Button>
-                                    }
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Active filters
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {activeFilterCount === 0
-                                                    ? 'Default trainer view'
-                                                    : `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Role focus is{' '}
-                                                {formatRoleLabel(
-                                                    role,
-                                                ).toLowerCase()}
-                                                {query.trim()
-                                                    ? ' with local search applied.'
-                                                    : ' with no extra search narrowing.'}
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Current slice
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {from && to
-                                                    ? `${from}-${to} of ${total}`
-                                                    : 'Waiting for directory data'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Pagination keeps the
-                                                professional directory stable
-                                                while search only refines the
-                                                current page.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AdminOverviewCard>
-
-                                <AdminOverviewCard
-                                    title="Current profile context"
-                                    description="Keep public readiness visible here, while raw logs or credential history stay in their own admin surfaces."
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Selected profile
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selected
-                                                    ? professionalName(selected)
-                                                    : 'No profile selected'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                {selected
-                                                    ? `${formatRoleLabel(selected.role)} profile is pinned beside the queue so you can edit without losing context.`
-                                                    : 'Choose a professional from the directory to start editing public profile fields.'}
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Public readiness
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selected
-                                                    ? selectedGapCount === 0
-                                                        ? 'Ready for discovery'
-                                                        : `${selectedGapCount} visible gap${selectedGapCount === 1 ? '' : 's'}`
-                                                    : 'Pending selection'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                City, contact, availability,
-                                                bio, and specialties should stay
-                                                coherent before client discovery
-                                                surfaces rely on them.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AdminOverviewCard>
-                            </div>
-                        </AdminSection>
-
-                        <AdminSection
                             title="Filter & actions toolbar"
                             description={
                                 from && to
@@ -888,7 +773,10 @@ export default function AdminProfessionalsPage() {
                                         </AdminNativeSelect>
                                     </AdminField>
 
-                                    <AdminField label="City" className="sm:w-52">
+                                    <AdminField
+                                        label="City"
+                                        className="sm:w-52"
+                                    >
                                         <AdminNativeSelect
                                             value={city}
                                             onChange={(event) =>
@@ -926,263 +814,256 @@ export default function AdminProfessionalsPage() {
                             </AdminToolbar>
 
                             <div className="mt-4 space-y-4">
-                                        {loading &&
-                                        filteredRows.length === 0 ? (
-                                            <AdminEmpty
-                                                title="Loading professionals"
-                                                description="Pulling the current directory for the selected role."
-                                            />
-                                        ) : (
-                                            <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
-                                                <AdminDataTable tableClassName="min-w-[980px]">
-                                                    <ProductTableHead>
-                                                        <tr>
-                                                            <ProductTableHeaderCell>
-                                                                Professional
-                                                            </ProductTableHeaderCell>
-                                                            <ProductTableHeaderCell>
-                                                                Public contact
-                                                            </ProductTableHeaderCell>
-                                                            <ProductTableHeaderCell>
-                                                                Profile content
-                                                            </ProductTableHeaderCell>
-                                                            <ProductTableHeaderCell>
-                                                                Directory readiness
-                                                            </ProductTableHeaderCell>
-                                                            <ProductTableHeaderCell>
-                                                                Verification
-                                                            </ProductTableHeaderCell>
-                                                            <ProductTableHeaderCell className="w-36">
-                                                                Actions
-                                                            </ProductTableHeaderCell>
-                                                        </tr>
-                                                    </ProductTableHead>
-                                                    <ProductTableBody>
-                                                        {filteredRows.map(
-                                                            (row) => {
-                                                                const gaps =
-                                                                    directoryGaps(
-                                                                        row,
-                                                                    );
+                                {loading && filteredRows.length === 0 ? (
+                                    <AdminEmpty
+                                        title="Loading professionals"
+                                        description="Pulling the current directory for the selected role."
+                                    />
+                                ) : (
+                                    <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
+                                        <AdminDataTable tableClassName="min-w-[980px]">
+                                            <ProductTableHead>
+                                                <tr>
+                                                    <ProductTableHeaderCell>
+                                                        Professional
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Public contact
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Profile content
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Directory readiness
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Verification
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell className="w-36">
+                                                        Actions
+                                                    </ProductTableHeaderCell>
+                                                </tr>
+                                            </ProductTableHead>
+                                            <ProductTableBody>
+                                                {filteredRows.map((row) => {
+                                                    const gaps =
+                                                        directoryGaps(row);
 
-                                                                return (
-                                                                    <ProductTableRow
-                                                                        key={
-                                                                            row.id
+                                                    return (
+                                                        <ProductTableRow
+                                                            key={row.id}
+                                                            interactive
+                                                            className={
+                                                                row.id ===
+                                                                selected?.id
+                                                                    ? 'bg-primary/5'
+                                                                    : undefined
+                                                            }
+                                                        >
+                                                            <ProductTableCell>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setSelected(
+                                                                            row,
+                                                                        )
+                                                                    }
+                                                                    className="w-full space-y-2 text-left"
+                                                                >
+                                                                    <div className="font-medium break-words text-foreground">
+                                                                        {professionalName(
+                                                                            row,
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-sm [overflow-wrap:anywhere] break-words text-muted-foreground">
+                                                                        {
+                                                                            row.email
                                                                         }
-                                                                        interactive
-                                                                        className={
-                                                                            row.id ===
-                                                                            selected?.id
-                                                                                ? 'bg-primary/5'
-                                                                                : undefined
-                                                                        }
+                                                                    </div>
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="rounded-full px-2.5 py-1 capitalize"
                                                                     >
-                                                                        <ProductTableCell>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() =>
-                                                                                    setSelected(
-                                                                                        row,
-                                                                                    )
-                                                                                }
-                                                                                className="w-full space-y-2 text-left"
-                                                                            >
-                                                                                <div className="font-medium text-foreground">
-                                                                                    {professionalName(
-                                                                                        row,
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="text-sm text-muted-foreground">
-                                                                                    {
-                                                                                        row.email
-                                                                                    }
-                                                                                </div>
-                                                                                <Badge
-                                                                                    variant="outline"
-                                                                                    className="rounded-full px-2.5 py-1 capitalize"
-                                                                                >
-                                                                                    {formatRoleLabel(
-                                                                                        row.role,
-                                                                                    )}
-                                                                                </Badge>
-                                                                            </button>
-                                                                        </ProductTableCell>
-                                                                        <ProductTableCell>
-                                                                            <div className="space-y-1">
-                                                                                <div className="font-medium text-foreground">
-                                                                                    {row.city ||
-                                                                                        'City not set'}
-                                                                                </div>
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    {row.contact_display ||
-                                                                                        'Contact display missing'}
-                                                                                </div>
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    {row.availability_text ||
-                                                                                        'Availability missing'}
-                                                                                </div>
-                                                                            </div>
-                                                                        </ProductTableCell>
-                                                                        <ProductTableCell>
-                                                                            <div className="space-y-2">
-                                                                                <div className="line-clamp-2 text-sm text-foreground">
-                                                                                    {row.professional_bio ||
-                                                                                        'Bio missing'}
-                                                                                </div>
-                                                                                <div className="flex flex-wrap gap-1">
-                                                                                    {(row.specialties ??
-                                                                                        [])
-                                                                                        .slice(
-                                                                                            0,
-                                                                                            3,
-                                                                                        )
-                                                                                        .map(
-                                                                                            (
-                                                                                                specialty,
-                                                                                            ) => (
-                                                                                                <Badge
-                                                                                                    key={
-                                                                                                        specialty
-                                                                                                    }
-                                                                                                    variant="secondary"
-                                                                                                    className="rounded-full px-2 py-0.5 text-[11px]"
-                                                                                                >
-                                                                                                    {
-                                                                                                        specialty
-                                                                                                    }
-                                                                                                </Badge>
-                                                                                            ),
-                                                                                        )}
-                                                                                    {(row.specialties ??
-                                                                                        [])
-                                                                                        .length ===
-                                                                                    0 ? (
-                                                                                        <span className="text-xs text-muted-foreground">
-                                                                                            Specialties
-                                                                                            missing
-                                                                                        </span>
-                                                                                    ) : null}
-                                                                                </div>
-                                                                            </div>
-                                                                        </ProductTableCell>
-                                                                        <ProductTableCell>
-                                                                            <div className="space-y-2">
-                                                                                <StatusChipSet
-                                                                                    items={[
+                                                                        {formatRoleLabel(
+                                                                            row.role,
+                                                                        )}
+                                                                    </Badge>
+                                                                </button>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="space-y-1">
+                                                                    <div className="font-medium break-words text-foreground">
+                                                                        {row.city ||
+                                                                            'City not set'}
+                                                                    </div>
+                                                                    <div className="text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
+                                                                        {row.contact_display ||
+                                                                            'Contact display missing'}
+                                                                    </div>
+                                                                    <div className="text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
+                                                                        {row.availability_text ||
+                                                                            'Availability missing'}
+                                                                    </div>
+                                                                </div>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="space-y-2">
+                                                                    <div className="line-clamp-2 text-sm text-foreground">
+                                                                        {row.professional_bio ||
+                                                                            'Bio missing'}
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {(
+                                                                            row.specialties ??
+                                                                            []
+                                                                        )
+                                                                            .slice(
+                                                                                0,
+                                                                                3,
+                                                                            )
+                                                                            .map(
+                                                                                (
+                                                                                    specialty,
+                                                                                ) => (
+                                                                                    <Badge
+                                                                                        key={
+                                                                                            specialty
+                                                                                        }
+                                                                                        variant="secondary"
+                                                                                        className="rounded-full px-2 py-0.5 text-[11px]"
+                                                                                    >
                                                                                         {
-                                                                                            value: isDirectoryReady(
-                                                                                                row,
-                                                                                            )
-                                                                                                ? 'ready'
-                                                                                                : 'needs_cleanup',
-                                                                                            label: isDirectoryReady(
-                                                                                                row,
-                                                                                            )
-                                                                                                ? 'Ready'
-                                                                                                : 'Needs cleanup',
-                                                                                        },
-                                                                                    ]}
-                                                                                />
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    {gaps.length ===
-                                                                                    0
-                                                                                        ? 'Core public fields are complete.'
-                                                                                        : `Missing ${gaps.join(', ')}.`}
-                                                                                </div>
-                                                                            </div>
-                                                                        </ProductTableCell>
-                                                                        <ProductTableCell>
-                                                                            <div className="space-y-2">
-                                                                                <StatusChipSet
-                                                                                    items={[
-                                                                                        {
-                                                                                            value: row.verified
-                                                                                                ? 'verified'
-                                                                                                : 'unverified',
-                                                                                        },
-                                                                                        {
-                                                                                            value:
-                                                                                                row
-                                                                                                    .latest_professional_verification
-                                                                                                    ?.review_status ||
-                                                                                                'pending',
-                                                                                            label: `Review ${formatStatusLabel(
-                                                                                                row
-                                                                                                    .latest_professional_verification
-                                                                                                    ?.review_status ||
-                                                                                                    'pending',
-                                                                                            )}`,
-                                                                                        },
-                                                                                    ]}
-                                                                                />
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    {row
+                                                                                            specialty
+                                                                                        }
+                                                                                    </Badge>
+                                                                                ),
+                                                                            )}
+                                                                        {(
+                                                                            row.specialties ??
+                                                                            []
+                                                                        )
+                                                                            .length ===
+                                                                        0 ? (
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                Specialties
+                                                                                missing
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </div>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="space-y-2">
+                                                                    <StatusChipSet
+                                                                        items={[
+                                                                            {
+                                                                                value: isDirectoryReady(
+                                                                                    row,
+                                                                                )
+                                                                                    ? 'ready'
+                                                                                    : 'needs_cleanup',
+                                                                                label: isDirectoryReady(
+                                                                                    row,
+                                                                                )
+                                                                                    ? 'Ready'
+                                                                                    : 'Needs cleanup',
+                                                                            },
+                                                                        ]}
+                                                                    />
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {gaps.length ===
+                                                                        0
+                                                                            ? 'Core public fields are complete.'
+                                                                            : `Missing ${gaps.join(', ')}.`}
+                                                                    </div>
+                                                                </div>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <div className="space-y-2">
+                                                                    <StatusChipSet
+                                                                        items={[
+                                                                            {
+                                                                                value: row.verified
+                                                                                    ? 'verified'
+                                                                                    : 'unverified',
+                                                                            },
+                                                                            {
+                                                                                value:
+                                                                                    row
                                                                                         .latest_professional_verification
-                                                                                        ?.authority ||
-                                                                                        'No verification authority recorded'}
-                                                                                </div>
-                                                                            </div>
-                                                                        </ProductTableCell>
-                                                                        <ProductTableCell>
-                                                                            <Button
-                                                                                type="button"
-                                                                                size="sm"
-                                                                                variant="outline"
-                                                                                onClick={() => {
-                                                                                    setSelected(
-                                                                                        row,
-                                                                                    );
-                                                                                    setDrawerOpen(
-                                                                                        true,
-                                                                                    );
-                                                                                }}
-                                                                            >
-                                                                                Edit
-                                                                            </Button>
-                                                                        </ProductTableCell>
-                                                                    </ProductTableRow>
-                                                                );
-                                                            },
-                                                        )}
+                                                                                        ?.review_status ||
+                                                                                    'pending',
+                                                                                label: `Review ${formatStatusLabel(
+                                                                                    row
+                                                                                        .latest_professional_verification
+                                                                                        ?.review_status ||
+                                                                                        'pending',
+                                                                                )}`,
+                                                                            },
+                                                                        ]}
+                                                                    />
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {row
+                                                                            .latest_professional_verification
+                                                                            ?.authority ||
+                                                                            'No verification authority recorded'}
+                                                                    </div>
+                                                                </div>
+                                                            </ProductTableCell>
+                                                            <ProductTableCell>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => {
+                                                                        setSelected(
+                                                                            row,
+                                                                        );
+                                                                        setDrawerOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    Edit
+                                                                </Button>
+                                                            </ProductTableCell>
+                                                        </ProductTableRow>
+                                                    );
+                                                })}
 
-                                                        {!loading &&
-                                                        filteredRows.length ===
-                                                            0 ? (
-                                                            <ProductTableEmptyRow
-                                                                colSpan={6}
-                                                                title="No professionals found"
-                                                                description="Switch roles, adjust search, or return once new professional profiles exist."
-                                                            />
-                                                        ) : null}
-                                                    </ProductTableBody>
-                                                </AdminDataTable>
-                                            </AdminScrollArea>
-                                        )}
+                                                {!loading &&
+                                                filteredRows.length === 0 ? (
+                                                    <ProductTableEmptyRow
+                                                        colSpan={6}
+                                                        title="No professionals found"
+                                                        description="Switch roles, adjust search, or return once new professional profiles exist."
+                                                    />
+                                                ) : null}
+                                            </ProductTableBody>
+                                        </AdminDataTable>
+                                    </AdminScrollArea>
+                                )}
 
-                                        <AdminPagination
-                                            currentPage={currentPage}
-                                            lastPage={lastPage}
-                                            disabled={loading}
-                                            summary={
-                                                from && to
-                                                    ? `Showing ${from}-${to} of ${total} profiles`
-                                                    : 'Pagination stays aligned with the active role focus.'
-                                            }
-                                            onPrevious={() =>
-                                                setCurrentPage((page) =>
-                                                    Math.max(1, page - 1),
-                                                )
-                                            }
-                                            onNext={() =>
-                                                setCurrentPage((page) =>
-                                                    Math.min(
-                                                        lastPage,
-                                                        page + 1,
-                                                    ),
-                                                )
-                                            }
-                                        />
+                                <AdminPagination
+                                    currentPage={currentPage}
+                                    lastPage={lastPage}
+                                    disabled={loading}
+                                    summary={
+                                        from && to
+                                            ? `Showing ${from}-${to} of ${total} profiles`
+                                            : 'Pagination stays aligned with the active role focus.'
+                                    }
+                                    onPrevious={() =>
+                                        setCurrentPage((page) =>
+                                            Math.max(1, page - 1),
+                                        )
+                                    }
+                                    onNext={() =>
+                                        setCurrentPage((page) =>
+                                            Math.min(lastPage, page + 1),
+                                        )
+                                    }
+                                />
                             </div>
                         </AdminSection>
                     </div>

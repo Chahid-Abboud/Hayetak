@@ -2,8 +2,8 @@ import '../css/app.css';
 
 import { AppNotificationsProvider } from '@/components/app-notifications';
 import { createInertiaApp } from '@inertiajs/react';
-import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -229,7 +229,9 @@ function isSameOriginUrl(url?: string) {
         return true;
     }
 
-    return new URL(url, window.location.origin).origin === window.location.origin;
+    return (
+        new URL(url, window.location.origin).origin === window.location.origin
+    );
 }
 
 function setAxiosHeader(
@@ -239,10 +241,7 @@ function setAxiosHeader(
 ) {
     const headers = config.headers as unknown;
 
-    if (
-        headers &&
-        typeof (headers as { set?: unknown }).set === 'function'
-    ) {
+    if (headers && typeof (headers as { set?: unknown }).set === 'function') {
         (headers as { set: (key: string, value: string) => void }).set(
             name,
             value,

@@ -16,6 +16,7 @@ class GeneratePlansForUser implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 600;
+
     public int $tries = 1;
 
     public function __construct(

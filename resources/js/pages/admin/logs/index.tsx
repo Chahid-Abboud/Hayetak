@@ -11,7 +11,10 @@ import {
     AdminToolbar,
     AdminToolbarGroup,
 } from '@/components/admin/admin-ui';
-import { EntityDetailDrawer, StatusChipSet } from '@/components/admin/admin-workflows';
+import {
+    EntityDetailDrawer,
+    StatusChipSet,
+} from '@/components/admin/admin-workflows';
 import {
     AdminSection,
     AdminShell,
@@ -130,7 +133,8 @@ function metadataString(
 function inferTargetHref(log: AdminActionLog) {
     if (!log.target_id || !log.target_type) return null;
 
-    if (log.target_type.endsWith('User')) return `/admin/users/${log.target_id}`;
+    if (log.target_type.endsWith('User'))
+        return `/admin/users/${log.target_id}`;
     if (log.target_type.endsWith('Food')) return '/admin/meals';
     if (log.target_type.endsWith('MealEntry')) return '/admin/meal-logs';
     if (log.target_type.endsWith('Measurement')) return '/admin/progress';
@@ -164,7 +168,8 @@ function severityClassName(severity: 'critical' | 'warning' | 'info') {
     return {
         critical:
             'border-destructive/35 bg-destructive/12 text-destructive dark:text-red-200',
-        warning: 'border-warning/35 bg-warning/12 text-amber-700 dark:text-amber-200',
+        warning:
+            'border-warning/35 bg-warning/12 text-amber-700 dark:text-amber-200',
         info: 'border-info/35 bg-info/12 text-foreground',
     }[severity];
 }
@@ -216,7 +221,10 @@ function flattenMetadata(
         }
 
         if (typeof rawValue === 'object') {
-            return flattenMetadata(rawValue as Record<string, MetadataValue>, label);
+            return flattenMetadata(
+                rawValue as Record<string, MetadataValue>,
+                label,
+            );
         }
 
         return [{ label, value: String(rawValue) }];
@@ -296,7 +304,11 @@ function AuditDetailDrawer({
                     : 'Select an audit row.'
             }
             footer={
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                >
                     Close
                 </Button>
             }
@@ -313,7 +325,9 @@ function AuditDetailDrawer({
                                     },
                                     {
                                         value: log.target_type ? 'info' : '',
-                                        label: formatTargetType(log.target_type),
+                                        label: formatTargetType(
+                                            log.target_type,
+                                        ),
                                     },
                                 ]}
                             />
@@ -360,7 +374,8 @@ function AuditDetailDrawer({
                                         ))
                                     ) : (
                                         <p className="text-sm text-muted-foreground">
-                                            No metadata was stored for this action.
+                                            No metadata was stored for this
+                                            action.
                                         </p>
                                     )}
                                 </div>
@@ -380,13 +395,15 @@ function AuditDetailDrawer({
                                             {related.action}
                                         </div>
                                         <div className="mt-1 text-xs text-muted-foreground">
-                                            {formatDateTime(related.created_at)} · {shortSummary(related)}
+                                            {formatDateTime(related.created_at)}{' '}
+                                            · {shortSummary(related)}
                                         </div>
                                     </div>
                                 ))
                             ) : (
                                 <p className="text-sm text-muted-foreground">
-                                    No related logs in the current filtered page.
+                                    No related logs in the current filtered
+                                    page.
                                 </p>
                             )}
                         </div>
@@ -429,9 +446,12 @@ export default function AdminLogsIndex() {
                 params.set('target_type', targetTypeFilter);
             }
 
-            const res = await fetch(`/api/admin/action-logs?${params.toString()}`, {
-                headers: { Accept: 'application/json' },
-            });
+            const res = await fetch(
+                `/api/admin/action-logs?${params.toString()}`,
+                {
+                    headers: { Accept: 'application/json' },
+                },
+            );
 
             if (!res.ok) throw new Error('Could not load admin action logs.');
 
@@ -495,9 +515,12 @@ export default function AdminLogsIndex() {
     const stats = useMemo(
         () => ({
             visible: visibleLogs.length,
-            actors: new Set(logs.map((log) => log.admin_id).filter(Boolean)).size,
-            warning: logs.filter((log) => inferSeverity(log) === 'warning').length,
-            critical: logs.filter((log) => inferSeverity(log) === 'critical').length,
+            actors: new Set(logs.map((log) => log.admin_id).filter(Boolean))
+                .size,
+            warning: logs.filter((log) => inferSeverity(log) === 'warning')
+                .length,
+            critical: logs.filter((log) => inferSeverity(log) === 'critical')
+                .length,
             metadata: logs.filter(
                 (log) => log.metadata && Object.keys(log.metadata).length > 0,
             ).length,
@@ -571,55 +594,125 @@ export default function AdminLogsIndex() {
                             description="Full-width table with readable summaries. Dense JSON stays in the detail drawer."
                         >
                             <div className="space-y-4">
-                                {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                                {error ? (
+                                    <AdminNotice tone="danger">
+                                        {error}
+                                    </AdminNotice>
+                                ) : null}
 
                                 <AdminToolbar>
                                     <AdminToolbarGroup grow>
-                                        <AdminField label="Search" className="min-w-[220px] flex-1">
+                                        <AdminField
+                                            label="Search"
+                                            className="min-w-[220px] flex-1"
+                                        >
                                             <AdminSearchInput
                                                 value={search}
-                                                onChange={(event) => setSearch(event.target.value)}
+                                                onChange={(event) =>
+                                                    setSearch(
+                                                        event.target.value,
+                                                    )
+                                                }
                                                 placeholder="Search action, admin, target type, or target id"
                                             />
                                         </AdminField>
-                                        <AdminField label="Action" className="min-w-[190px]">
+                                        <AdminField
+                                            label="Action"
+                                            className="min-w-[190px]"
+                                        >
                                             <AdminNativeSelect
                                                 value={actionFilter}
-                                                onChange={(event) => setActionFilter(event.target.value)}
+                                                onChange={(event) =>
+                                                    setActionFilter(
+                                                        event.target.value,
+                                                    )
+                                                }
                                             >
-                                                <option value="all">All actions</option>
-                                                <option value="admin.user">User actions</option>
-                                                <option value="admin.professional_verification">Verification actions</option>
-                                                <option value="admin.notifications">Notification actions</option>
-                                                <option value="admin.food">Food actions</option>
-                                                <option value="admin.meal_entry">Meal entry actions</option>
-                                                <option value="admin.progress">Progress actions</option>
+                                                <option value="all">
+                                                    All actions
+                                                </option>
+                                                <option value="admin.user">
+                                                    User actions
+                                                </option>
+                                                <option value="admin.professional_verification">
+                                                    Verification actions
+                                                </option>
+                                                <option value="admin.notifications">
+                                                    Notification actions
+                                                </option>
+                                                <option value="admin.food">
+                                                    Food actions
+                                                </option>
+                                                <option value="admin.meal_entry">
+                                                    Meal entry actions
+                                                </option>
+                                                <option value="admin.progress">
+                                                    Progress actions
+                                                </option>
                                             </AdminNativeSelect>
                                         </AdminField>
-                                        <AdminField label="Target" className="min-w-[180px]">
+                                        <AdminField
+                                            label="Target"
+                                            className="min-w-[180px]"
+                                        >
                                             <AdminNativeSelect
                                                 value={targetTypeFilter}
-                                                onChange={(event) => setTargetTypeFilter(event.target.value)}
+                                                onChange={(event) =>
+                                                    setTargetTypeFilter(
+                                                        event.target.value,
+                                                    )
+                                                }
                                             >
-                                                <option value="all">All targets</option>
-                                                <option value="User">Users</option>
-                                                <option value="ProfessionalVerification">Verifications</option>
-                                                <option value="Notification">Notifications</option>
-                                                <option value="Food">Foods</option>
-                                                <option value="MealEntry">Meal entries</option>
-                                                <option value="Measurement">Measurements</option>
-                                                <option value="PlaceLocal">Places</option>
+                                                <option value="all">
+                                                    All targets
+                                                </option>
+                                                <option value="User">
+                                                    Users
+                                                </option>
+                                                <option value="ProfessionalVerification">
+                                                    Verifications
+                                                </option>
+                                                <option value="Notification">
+                                                    Notifications
+                                                </option>
+                                                <option value="Food">
+                                                    Foods
+                                                </option>
+                                                <option value="MealEntry">
+                                                    Meal entries
+                                                </option>
+                                                <option value="Measurement">
+                                                    Measurements
+                                                </option>
+                                                <option value="PlaceLocal">
+                                                    Places
+                                                </option>
                                             </AdminNativeSelect>
                                         </AdminField>
-                                        <AdminField label="Severity" className="min-w-[160px]">
+                                        <AdminField
+                                            label="Severity"
+                                            className="min-w-[160px]"
+                                        >
                                             <AdminNativeSelect
                                                 value={severityFilter}
-                                                onChange={(event) => setSeverityFilter(event.target.value)}
+                                                onChange={(event) =>
+                                                    setSeverityFilter(
+                                                        event.target.value,
+                                                    )
+                                                }
                                             >
-                                                <option value="all">All severities</option>
-                                                <option value="critical">Critical</option>
-                                                <option value="warning">Warning</option>
-                                                <option value="info">Info</option>
+                                                <option value="all">
+                                                    All severities
+                                                </option>
+                                                <option value="critical">
+                                                    Critical
+                                                </option>
+                                                <option value="warning">
+                                                    Warning
+                                                </option>
+                                                <option value="info">
+                                                    Info
+                                                </option>
                                             </AdminNativeSelect>
                                         </AdminField>
                                     </AdminToolbarGroup>
@@ -645,42 +738,89 @@ export default function AdminLogsIndex() {
                                         <AdminDataTable tableClassName="min-w-[1120px]">
                                             <ProductTableHead>
                                                 <ProductTableRow>
-                                                    <ProductTableHeaderCell>Timestamp</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Admin actor</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Action</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Target</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Summary</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Severity</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>IP / device</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Action link</ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Timestamp
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Admin actor
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Action
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Target
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Summary
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Severity
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        IP / device
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Action link
+                                                    </ProductTableHeaderCell>
                                                 </ProductTableRow>
                                             </ProductTableHead>
                                             <ProductTableBody>
                                                 {visibleLogs.map((log) => {
-                                                    const severity = inferSeverity(log);
-                                                    const ip = metadataString(log.metadata, ['ip', 'ip_address', 'remote_ip']);
-                                                    const device = metadataString(log.metadata, ['device', 'user_agent', 'ua']);
+                                                    const severity =
+                                                        inferSeverity(log);
+                                                    const ip = metadataString(
+                                                        log.metadata,
+                                                        [
+                                                            'ip',
+                                                            'ip_address',
+                                                            'remote_ip',
+                                                        ],
+                                                    );
+                                                    const device =
+                                                        metadataString(
+                                                            log.metadata,
+                                                            [
+                                                                'device',
+                                                                'user_agent',
+                                                                'ua',
+                                                            ],
+                                                        );
 
                                                     return (
                                                         <ProductTableRow
                                                             key={log.id}
                                                             interactive
-                                                            className={selectedId === log.id ? 'bg-primary/8' : undefined}
+                                                            className={
+                                                                selectedId ===
+                                                                log.id
+                                                                    ? 'bg-primary/8'
+                                                                    : undefined
+                                                            }
                                                         >
                                                             <ProductTableCell>
-                                                                {formatDateTime(log.created_at)}
+                                                                {formatDateTime(
+                                                                    log.created_at,
+                                                                )}
                                                             </ProductTableCell>
                                                             <ProductTableCell>
                                                                 <div className="font-medium text-foreground">
-                                                                    {formatAdminName(log)}
+                                                                    {formatAdminName(
+                                                                        log,
+                                                                    )}
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground">
-                                                                    {log.admin?.email ?? (log.admin_id ? `#${log.admin_id}` : 'System')}
+                                                                    {log.admin
+                                                                        ?.email ??
+                                                                        (log.admin_id
+                                                                            ? `#${log.admin_id}`
+                                                                            : 'System')}
                                                                 </div>
                                                             </ProductTableCell>
                                                             <ProductTableCell>
                                                                 <div className="font-medium text-foreground">
-                                                                    {startCase(log.action)}
+                                                                    {startCase(
+                                                                        log.action,
+                                                                    )}
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground">
                                                                     {log.action}
@@ -688,15 +828,21 @@ export default function AdminLogsIndex() {
                                                             </ProductTableCell>
                                                             <ProductTableCell>
                                                                 <div className="text-sm text-foreground">
-                                                                    {formatTargetType(log.target_type)}
+                                                                    {formatTargetType(
+                                                                        log.target_type,
+                                                                    )}
                                                                 </div>
                                                                 <div className="text-xs text-muted-foreground">
-                                                                    {log.target_id ? `#${log.target_id}` : 'No ID'}
+                                                                    {log.target_id
+                                                                        ? `#${log.target_id}`
+                                                                        : 'No ID'}
                                                                 </div>
                                                             </ProductTableCell>
                                                             <ProductTableCell>
                                                                 <div className="max-w-[320px] text-sm leading-6 text-muted-foreground">
-                                                                    {shortSummary(log)}
+                                                                    {shortSummary(
+                                                                        log,
+                                                                    )}
                                                                 </div>
                                                             </ProductTableCell>
                                                             <ProductTableCell>
@@ -709,10 +855,12 @@ export default function AdminLogsIndex() {
                                                             </ProductTableCell>
                                                             <ProductTableCell>
                                                                 <div className="text-sm text-foreground">
-                                                                    {ip ?? 'Not captured'}
+                                                                    {ip ??
+                                                                        'Not captured'}
                                                                 </div>
                                                                 <div className="max-w-[180px] truncate text-xs text-muted-foreground">
-                                                                    {device ?? 'Device unavailable'}
+                                                                    {device ??
+                                                                        'Device unavailable'}
                                                                 </div>
                                                             </ProductTableCell>
                                                             <ProductTableCell>
@@ -722,15 +870,32 @@ export default function AdminLogsIndex() {
                                                                         size="sm"
                                                                         variant="outline"
                                                                         onClick={() => {
-                                                                            setSelectedId(log.id);
-                                                                            setDrawerOpen(true);
+                                                                            setSelectedId(
+                                                                                log.id,
+                                                                            );
+                                                                            setDrawerOpen(
+                                                                                true,
+                                                                            );
                                                                         }}
                                                                     >
                                                                         Details
                                                                     </Button>
-                                                                    {inferTargetHref(log) ? (
-                                                                        <Button asChild size="sm" variant="outline">
-                                                                            <Link href={inferTargetHref(log) ?? '#'}>
+                                                                    {inferTargetHref(
+                                                                        log,
+                                                                    ) ? (
+                                                                        <Button
+                                                                            asChild
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                        >
+                                                                            <Link
+                                                                                href={
+                                                                                    inferTargetHref(
+                                                                                        log,
+                                                                                    ) ??
+                                                                                    '#'
+                                                                                }
+                                                                            >
                                                                                 Open
                                                                                 <ExternalLink className="h-3.5 w-3.5" />
                                                                             </Link>
@@ -762,8 +927,16 @@ export default function AdminLogsIndex() {
                                             ? `Showing ${from}-${to} of ${total} log entries`
                                             : 'Pagination follows active server filters.'
                                     }
-                                    onPrevious={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                    onNext={() => setCurrentPage((page) => Math.min(lastPage, page + 1))}
+                                    onPrevious={() =>
+                                        setCurrentPage((page) =>
+                                            Math.max(1, page - 1),
+                                        )
+                                    }
+                                    onNext={() =>
+                                        setCurrentPage((page) =>
+                                            Math.min(lastPage, page + 1),
+                                        )
+                                    }
                                 />
 
                                 <AdminStickyBar

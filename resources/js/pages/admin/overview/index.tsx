@@ -1,6 +1,5 @@
 import {
     AdminDataTable,
-    AdminNotice,
     AdminOverviewCard,
     AdminPanel,
     AdminScrollArea,
@@ -25,10 +24,7 @@ import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
     ArrowRight,
-    BellRing,
     ClipboardCheck,
-    Settings2,
-    ShieldAlert,
     ShieldCheck,
     Stethoscope,
     Users,
@@ -71,11 +67,6 @@ const stats = [
         label: 'Unread admin alerts',
         value: 5,
         helper: 'Messages and interventions in Notifications.',
-    },
-    {
-        label: 'Moderation queue',
-        value: 7,
-        helper: 'Flagged or escalated user message cases.',
     },
     {
         label: 'Professional profiles',
@@ -136,13 +127,15 @@ const priorityCards: PriorityCard[] = [
     {
         title: 'Users',
         value: '248',
-        description:
-            'Search, inspect, and update account state in one place.',
+        description: 'Search, inspect, and update account state in one place.',
         icon: Users,
         href: '/admin/users',
         items: [
             { label: '12 users need account review', meta: 'Status queue' },
-            { label: '8 accounts have pending notes', meta: 'Support follow-up' },
+            {
+                label: '8 accounts have pending notes',
+                meta: 'Support follow-up',
+            },
             { label: '4 soft-deleted accounts', meta: 'Restoration check' },
         ],
     },
@@ -162,13 +155,18 @@ const priorityCards: PriorityCard[] = [
     {
         title: 'Professionals',
         value: '41',
-        description:
-            'Public directory records for trainers and dietitians.',
+        description: 'Public directory records for trainers and dietitians.',
         icon: Stethoscope,
         href: '/admin/professionals',
         items: [
-            { label: '9 profiles need biography polish', meta: 'Profile content' },
-            { label: '5 profiles missing specialties', meta: 'Metadata review' },
+            {
+                label: '9 profiles need biography polish',
+                meta: 'Profile content',
+            },
+            {
+                label: '5 profiles missing specialties',
+                meta: 'Metadata review',
+            },
             { label: '3 visibility changes pending', meta: 'Directory update' },
         ],
     },
@@ -180,22 +178,12 @@ const priorityCards: PriorityCard[] = [
         icon: UtensilsCrossed,
         href: '/admin/meals',
         items: [
-            { label: '2 meal items need allergen checks', meta: 'Food catalog' },
+            {
+                label: '2 meal items need allergen checks',
+                meta: 'Food catalog',
+            },
             { label: '1 exercise is hidden pending review', meta: 'Exercises' },
             { label: '2 places need location updates', meta: 'Places' },
-        ],
-    },
-    {
-        title: 'Moderation',
-        value: '7',
-        description:
-            'Flagged user-to-user messages that need confirmation, dismissal, or follow-up.',
-        icon: ShieldAlert,
-        href: '/admin/message-moderations',
-        items: [
-            { label: '3 escalations are still open', meta: 'Needs review' },
-            { label: '2 hard blocks confirmed', meta: 'Policy enforcement' },
-            { label: '2 flagged messages await dismissal', meta: 'False-positive check' },
         ],
     },
 ];
@@ -286,7 +274,7 @@ export default function AdminOverviewIndex() {
                     description="Daily command center for attention queues, workspace summaries, recent admin activity, and system health."
                 >
                     <div className="space-y-6">
-                        <AdminStatsGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                        <AdminStatsGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                             {stats.map((stat) => (
                                 <AdminStatCard
                                     key={stat.label}
@@ -464,11 +452,21 @@ export default function AdminOverviewIndex() {
                                     <AdminDataTable tableClassName="min-w-[860px]">
                                         <ProductTableHead>
                                             <ProductTableRow>
-                                                <ProductTableHeaderCell>When</ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>Action</ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>Actor</ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>Target</ProductTableHeaderCell>
-                                                <ProductTableHeaderCell>Summary</ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    When
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Action
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Actor
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Target
+                                                </ProductTableHeaderCell>
+                                                <ProductTableHeaderCell>
+                                                    Summary
+                                                </ProductTableHeaderCell>
                                             </ProductTableRow>
                                         </ProductTableHead>
                                         <ProductTableBody>
@@ -497,52 +495,6 @@ export default function AdminOverviewIndex() {
                                     </AdminDataTable>
                                 </AdminScrollArea>
                             </AdminPanel>
-                        </AdminSection>
-
-                        <AdminSection
-                            title="Admin tools"
-                            description="The standard destinations for day-to-day admin work."
-                        >
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                <AdminNotice tone="info">
-                                    This overview stays focused on routine
-                                    operations. Detailed activity history lives
-                                    in audit logs, while user and catalog work
-                                    stays in their dedicated pages.
-                                </AdminNotice>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <Button asChild variant="outline">
-                                        <Link href="/admin/logs">
-                                            <Settings2 className="h-4 w-4" />
-                                            Audit Logs
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/admin/message-moderations">
-                                            <ShieldAlert className="h-4 w-4" />
-                                            Moderation
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/admin/users">
-                                            <Users className="h-4 w-4" />
-                                            Users
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/admin/notifications">
-                                            <BellRing className="h-4 w-4" />
-                                            Notifications
-                                        </Link>
-                                    </Button>
-                                    <Button asChild variant="outline">
-                                        <Link href="/admin/meals">
-                                            <UtensilsCrossed className="h-4 w-4" />
-                                            Meals
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
                         </AdminSection>
                     </div>
                 </AdminShell>

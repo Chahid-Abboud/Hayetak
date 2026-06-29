@@ -428,7 +428,9 @@ function CorrectionDrawer({
                     Correct log
                 </Button>
                 <Button asChild type="button" variant="outline">
-                    <Link href={`/admin/users/${entry.user_id}`}>Open user</Link>
+                    <Link href={`/admin/users/${entry.user_id}`}>
+                        Open user
+                    </Link>
                 </Button>
                 <Button asChild type="button" variant="outline">
                     <Link href={`/admin/users/${entry.user_id}#ai-activity`}>
@@ -668,18 +670,24 @@ export default function AdminMealLogsPage() {
                         <AdminStatsGrid>
                             <AdminStatCard
                                 label="Recent logs"
-                                value={loading ? '...' : String(stats.recent_logs)}
+                                value={
+                                    loading ? '...' : String(stats.recent_logs)
+                                }
                                 tone="accent"
                                 helper="Total meal-entry records."
                             />
                             <AdminStatCard
                                 label="Edited logs"
-                                value={loading ? '...' : String(stats.edited_logs)}
+                                value={
+                                    loading ? '...' : String(stats.edited_logs)
+                                }
                                 helper="Corrections recorded in admin audit logs."
                             />
                             <AdminStatCard
                                 label="Deleted logs"
-                                value={loading ? '...' : String(stats.deleted_logs)}
+                                value={
+                                    loading ? '...' : String(stats.deleted_logs)
+                                }
                                 helper="Hard-deleted logs captured by audit trail."
                             />
                             <AdminStatCard
@@ -693,7 +701,9 @@ export default function AdminMealLogsPage() {
                             />
                         </AdminStatsGrid>
 
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
@@ -732,7 +742,10 @@ export default function AdminMealLogsPage() {
                         >
                             <AdminToolbar>
                                 <AdminToolbarGroup grow>
-                                    <AdminField label="Search" className="xl:flex-1">
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:flex-1"
+                                    >
                                         <AdminInput
                                             value={query}
                                             onChange={(event) =>
@@ -741,22 +754,34 @@ export default function AdminMealLogsPage() {
                                             placeholder="Search user or food"
                                         />
                                     </AdminField>
-                                    <AdminField label="Meal type" className="sm:w-48">
+                                    <AdminField
+                                        label="Meal type"
+                                        className="sm:w-48"
+                                    >
                                         <AdminNativeSelect
                                             value={mealType}
                                             onChange={(event) =>
                                                 setMealType(event.target.value)
                                             }
                                         >
-                                            <option value="all">All meals</option>
-                                            <option value="breakfast">Breakfast</option>
+                                            <option value="all">
+                                                All meals
+                                            </option>
+                                            <option value="breakfast">
+                                                Breakfast
+                                            </option>
                                             <option value="lunch">Lunch</option>
-                                            <option value="dinner">Dinner</option>
+                                            <option value="dinner">
+                                                Dinner
+                                            </option>
                                             <option value="snack">Snack</option>
                                             <option value="drink">Drink</option>
                                         </AdminNativeSelect>
                                     </AdminField>
-                                    <AdminField label="Date" className="sm:w-48">
+                                    <AdminField
+                                        label="Date"
+                                        className="sm:w-48"
+                                    >
                                         <AdminInput
                                             type="date"
                                             value={date}
@@ -837,7 +862,9 @@ export default function AdminMealLogsPage() {
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="font-medium text-foreground">
-                                                            {formatDate(entry.eaten_at)}
+                                                            {formatDate(
+                                                                entry.eaten_at,
+                                                            )}
                                                         </div>
                                                         <Badge variant="outline">
                                                             {entry.meal_type}
@@ -849,7 +876,8 @@ export default function AdminMealLogsPage() {
                                                                 `Food #${entry.food_id}`}
                                                         </div>
                                                         <div className="text-xs text-muted-foreground">
-                                                            {entry.food?.category ||
+                                                            {entry.food
+                                                                ?.category ||
                                                                 'No category'}
                                                         </div>
                                                     </ProductTableCell>
@@ -859,22 +887,26 @@ export default function AdminMealLogsPage() {
                                                     <ProductTableCell>
                                                         <div className="font-medium text-foreground">
                                                             {formatMacro(
-                                                                entry.macros.calories,
+                                                                entry.macros
+                                                                    .calories,
                                                                 ' kcal',
                                                             )}
                                                         </div>
                                                         <div className="text-xs text-muted-foreground">
                                                             P{' '}
                                                             {formatMacro(
-                                                                entry.macros.protein_g,
+                                                                entry.macros
+                                                                    .protein_g,
                                                             )}{' '}
                                                             · C{' '}
                                                             {formatMacro(
-                                                                entry.macros.carbs_g,
+                                                                entry.macros
+                                                                    .carbs_g,
                                                             )}{' '}
                                                             · F{' '}
                                                             {formatMacro(
-                                                                entry.macros.fat_g,
+                                                                entry.macros
+                                                                    .fat_g,
                                                             )}
                                                         </div>
                                                     </ProductTableCell>
@@ -890,7 +922,8 @@ export default function AdminMealLogsPage() {
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="text-sm text-foreground">
-                                                            {entry.last_edited_by
+                                                            {entry
+                                                                .last_edited_by
                                                                 ?.name ||
                                                                 'Not edited'}
                                                         </div>
@@ -926,7 +959,8 @@ export default function AdminMealLogsPage() {
                                                 </ProductTableRow>
                                             ))}
 
-                                            {!loading && entries.length === 0 ? (
+                                            {!loading &&
+                                            entries.length === 0 ? (
                                                 <ProductTableEmptyRow
                                                     colSpan={9}
                                                     title="No meal logs found"
@@ -968,7 +1002,9 @@ export default function AdminMealLogsPage() {
                 onOpenChange={setDrawerOpen}
                 title={
                     selectedEntry?.food?.name ||
-                    (selectedEntry ? `Meal log #${selectedEntry.id}` : 'Meal log')
+                    (selectedEntry
+                        ? `Meal log #${selectedEntry.id}`
+                        : 'Meal log')
                 }
                 description="Correct user meal history with a readable audit reason."
             >

@@ -35,6 +35,7 @@ use App\Http\Controllers\Professional\ProfessionalClientController;
 use App\Http\Controllers\Professional\TrainerProgressNoteController;
 use App\Http\Controllers\Professional\TrainerWorkoutPlanController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\UserMeasurementController;
 use App\Http\Controllers\UserNotificationController;
 use App\Http\Controllers\WaterIntakeController;
 use App\Http\Controllers\Workout\WorkoutLogController;
@@ -95,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/places', fn () => Inertia::render('Places'))->name('places');
     Route::get('/nearby', fn () => Inertia::render('Places'))->name('nearby');
+    Route::get('/progress', fn () => Inertia::render('progress/index'))->name('progress.index');
 
     /*
     |--------------------------------------------------------------------------
@@ -138,6 +140,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/api/meal-tracker/copy-day', [MealTrackerApiController::class, 'copyDay'])->name('meal.tracker.copyDay');
     Route::post('/api/meal-tracker/planned-items/{nutritionPlanItem}/log', [MealTrackerApiController::class, 'logPlannedItem'])
         ->name('meal.tracker.planned.log');
+    Route::get('/api/places', [PlacesController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.places');
+    Route::get('/api/places-local', [PlacesLocalController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.places.local');
+    Route::get('/api/measurements', [UserMeasurementController::class, 'index'])->name('measurements.index');
+    Route::post('/api/measurements', [UserMeasurementController::class, 'store'])->name('measurements.store');
+    Route::delete('/api/measurements/{measurement}', [UserMeasurementController::class, 'destroy'])->name('measurements.destroy');
 
     /*
     |--------------------------------------------------------------------------
@@ -302,12 +313,6 @@ Route::middleware('auth')->prefix('/api')->group(function () {
 Route::get('/csrf-token', fn () => response()->json([
     'csrf_token' => csrf_token(),
 ]))->name('csrf-token');
-
-Route::get('/api/places', [PlacesController::class, 'index'])
-    ->middleware('throttle:60,1')
-    ->name('api.places');
-
-Route::get('/api/places-local', [PlacesLocalController::class, 'index'])->name('api.places.local');
 
 /*
 |--------------------------------------------------------------------------

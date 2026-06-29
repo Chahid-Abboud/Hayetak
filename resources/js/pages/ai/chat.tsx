@@ -136,14 +136,17 @@ function MessageContent({ content }: { content: string }) {
     }
 
     return (
-        <div className="space-y-3 break-words leading-7">
+        <div className="space-y-3 leading-7 break-words">
             {blocks.map((block, blockIndex) => {
                 const lines = block
                     .split('\n')
                     .map((line) => line.trim())
                     .filter(Boolean);
                 const groups = lines.reduce<
-                    Array<{ type: 'paragraph' | 'ordered' | 'unordered'; lines: string[] }>
+                    Array<{
+                        type: 'paragraph' | 'ordered' | 'unordered';
+                        lines: string[];
+                    }>
                 >((grouped, line) => {
                     const type = /^\d+[.)]\s+/.test(line)
                         ? 'ordered'
@@ -381,15 +384,22 @@ export default function AiChatPage() {
         [activeConversationId, conversations],
     );
 
-    async function send(seedText?: string, forcedConversationId?: number | null) {
+    async function send(
+        seedText?: string,
+        forcedConversationId?: number | null,
+    ) {
         const message = (seedText ?? text).trim();
         if (!message || sending) return;
 
         const pendingUserId = `pending-user-${Date.now()}`;
         const pendingAssistantId = `pending-assistant-${Date.now() + 1}`;
-        const conversationIdAtSend = forcedConversationId ?? activeConversationId;
+        const conversationIdAtSend =
+            forcedConversationId ?? activeConversationId;
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+        const timeoutId = window.setTimeout(
+            () => controller.abort(),
+            SEND_TIMEOUT_MS,
+        );
 
         sendRequestRef.current?.abort();
         sendRequestRef.current = controller;
@@ -635,7 +645,7 @@ export default function AiChatPage() {
                                 </ProductButton>
                             </div>
                         </div>
-                        </div>
+                    </div>
                 ) : null}
 
                 <ResizablePanels

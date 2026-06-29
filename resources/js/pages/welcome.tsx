@@ -900,7 +900,7 @@ export default function Landing() {
                     ) : null}
                 </header>
 
-                 <main id="main-content" className="relative z-10">
+                <main id="main-content" className="relative z-10">
                     <div
                         id="hero"
                         className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8 lg:pb-20"
@@ -989,7 +989,7 @@ export default function Landing() {
                                     </p>
                                 </div>
                             ))}
-                         </div>
+                        </div>
                     </div>
 
                     <div id="preview" className="relative py-6 sm:py-8">
@@ -1062,7 +1062,7 @@ export default function Landing() {
                                     </div>
                                 </div>
                             </div>
-                         </div>
+                        </div>
                     </div>
 
                     <div

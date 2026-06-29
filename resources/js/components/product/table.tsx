@@ -99,7 +99,7 @@ export function ProductTableCell({
     return (
         <td
             className={cn(
-                'px-4 py-4 align-top text-foreground first:pl-5 last:pr-5',
+                'min-w-0 px-4 py-4 align-top [overflow-wrap:anywhere] break-words text-foreground first:pl-5 last:pr-5',
                 className,
             )}
         >

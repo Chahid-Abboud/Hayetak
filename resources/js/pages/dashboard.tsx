@@ -16,8 +16,8 @@ import OptionalTwoFactorPrompt from '@/components/optional-two-factor-prompt';
 import { BarListCard } from '@/components/product/analytics';
 import { ProductPageShell } from '@/components/product/page';
 import WaterCard from '@/components/WaterCard';
-import { cn } from '@/lib/utils';
 import { cleanPlanName } from '@/lib/plan-utils';
+import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -610,8 +610,8 @@ export default function Home() {
                                     {isGuest
                                         ? 'Preview the new Hayetak flow.'
                                         : verificationArrival
-                                            ? `Verified and in, ${displayName}.`
-                                            : `Welcome back, ${displayName}.`}
+                                          ? `Verified and in, ${displayName}.`
+                                          : `Welcome back, ${displayName}.`}
                                 </h2>
                                 <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
                                     {verificationArrival
@@ -657,8 +657,6 @@ export default function Home() {
                             </div>
 
                             <div className="dashboard-surface rounded-[32px] p-5 shadow-[0_28px_65px_-48px_rgba(15,23,42,0.65)]">
-
-
                                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                     <MetricPill
                                         label="Meals logged"
@@ -943,7 +941,6 @@ export default function Home() {
                         className="grid grid-cols-1 gap-14 md:grid-cols-2"
                     >
                         <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
-                            
                             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
                                 BMI
                             </h2>
@@ -956,7 +953,6 @@ export default function Home() {
                         </div>
 
                         <div className="haye-panel rounded-[30px] p-5 text-card-foreground">
-                            
                             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
                                 Water intake
                             </h2>
@@ -987,7 +983,7 @@ export default function Home() {
                         description="One graph, three views: body weight, height, and gym output."
                         actions={
                             <>
-                                <ActionButton  
+                                <ActionButton
                                     variant="primary"
                                     onClick={startTodayWorkout}
                                 >
@@ -1440,7 +1436,6 @@ function ProgressCenterCard({
         <div className="dashboard-surface rounded-[28px] p-5 lg:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    
                     <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
                         {activeConfig.title}
                     </h3>

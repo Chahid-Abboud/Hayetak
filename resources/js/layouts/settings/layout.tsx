@@ -2,12 +2,7 @@ import { ProductHero, ProductPageShell } from '@/components/product/page';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
-import {
-    ChevronRight,
-    KeyRound,
-    ShieldCheck,
-    UserRound,
-} from 'lucide-react';
+import { ChevronRight, ShieldCheck, UserRound } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 type SettingsNavGroup = {
@@ -43,7 +38,6 @@ const sidebarGroups: SettingsNavGroup[] = [
                 icon: ShieldCheck,
                 matches: ['/settings/password', '/settings/two-factor'],
             },
-           
         ],
     },
 ];

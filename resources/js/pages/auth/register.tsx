@@ -388,8 +388,7 @@ const TEXTAREA_CLASS = `min-h-[120px] ${INPUT_CLASS}`;
 const SELECT_CLASS = `${INPUT_CLASS} appearance-none`;
 const CHOICE_PILL_CLASS =
     'inline-flex items-center rounded-full border border-border/70 px-4 py-2.5 text-sm font-medium transition';
-const ONBOARDING_KICKER_CLASS =
-    'text-primary-foreground dark:text-primary';
+const ONBOARDING_KICKER_CLASS = 'text-primary-foreground dark:text-primary';
 const ENTER_ADVANCE_SELECTOR = [
     'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="file"]):not([disabled])',
     'select:not([disabled])',
@@ -2167,7 +2166,10 @@ function RegisterWizard(props: Props) {
                                         }
                                     >
                                         {COUNTRIES.map((country) => (
-                                            <option key={country} value={country}>
+                                            <option
+                                                key={country}
+                                                value={country}
+                                            >
                                                 {country}
                                             </option>
                                         ))}
@@ -2284,7 +2286,9 @@ export default function Register(props: Props) {
                 <div className="mx-auto flex w-full max-w-3xl flex-col px-6 py-8">
                     <div className="mb-6 space-y-4 text-center">
                         <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/82 px-3 py-1.5 text-xs font-semibold tracking-[0.18em] text-secondary uppercase">
-                            <Sparkles className={`size-3.5 ${ONBOARDING_KICKER_CLASS}`} />
+                            <Sparkles
+                                className={`size-3.5 ${ONBOARDING_KICKER_CLASS}`}
+                            />
                             <span className={ONBOARDING_KICKER_CLASS}>
                                 Guided onboarding
                             </span>

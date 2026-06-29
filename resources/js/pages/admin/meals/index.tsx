@@ -255,7 +255,10 @@ function FoodEditor({
                             <AdminInput
                                 value={food.name}
                                 onChange={(event) =>
-                                    onChange({ ...food, name: event.target.value })
+                                    onChange({
+                                        ...food,
+                                        name: event.target.value,
+                                    })
                                 }
                             />
                         </AdminField>
@@ -274,7 +277,10 @@ function FoodEditor({
                             <AdminInput
                                 value={food.brand ?? ''}
                                 onChange={(event) =>
-                                    onChange({ ...food, brand: event.target.value })
+                                    onChange({
+                                        ...food,
+                                        brand: event.target.value,
+                                    })
                                 }
                             />
                         </AdminField>
@@ -345,7 +351,10 @@ function FoodEditor({
                 description="These readable lists drive allergy avoidance, diet compatibility, planner suitability, and search filtering."
             >
                 <div className="grid gap-4 md:grid-cols-2">
-                    <AdminField label="Allergens" helper="Comma-separated, e.g. peanuts, sesame.">
+                    <AdminField
+                        label="Allergens"
+                        helper="Comma-separated, e.g. peanuts, sesame."
+                    >
                         <AdminTextarea
                             rows={3}
                             value={listToText(food.allergens)}
@@ -357,14 +366,19 @@ function FoodEditor({
                             }
                         />
                     </AdminField>
-                    <AdminField label="Diet compatibility" helper="Comma-separated, e.g. vegan, keto, mediterranean.">
+                    <AdminField
+                        label="Diet compatibility"
+                        helper="Comma-separated, e.g. vegan, keto, mediterranean."
+                    >
                         <AdminTextarea
                             rows={3}
                             value={listToText(food.diets_allowed)}
                             onChange={(event) =>
                                 onChange({
                                     ...food,
-                                    diets_allowed: textToList(event.target.value),
+                                    diets_allowed: textToList(
+                                        event.target.value,
+                                    ),
                                 })
                             }
                         />
@@ -490,9 +504,12 @@ export default function AdminMealsPage() {
                 params.set('suitability', suitability);
             }
 
-            const response = await fetch(`/api/admin/foods?${params.toString()}`, {
-                headers: { Accept: 'application/json' },
-            });
+            const response = await fetch(
+                `/api/admin/foods?${params.toString()}`,
+                {
+                    headers: { Accept: 'application/json' },
+                },
+            );
 
             if (!response.ok) {
                 throw new Error('Could not load food catalog.');
@@ -524,8 +541,13 @@ export default function AdminMealsPage() {
                     return current;
                 }
 
-                if (current && nextFoods.some((food) => food.id === current.id)) {
-                    return nextFoods.find((food) => food.id === current.id) ?? null;
+                if (
+                    current &&
+                    nextFoods.some((food) => food.id === current.id)
+                ) {
+                    return (
+                        nextFoods.find((food) => food.id === current.id) ?? null
+                    );
                 }
 
                 return nextFoods[0] ?? null;
@@ -586,9 +608,7 @@ export default function AdminMealsPage() {
             }
 
             setSuccess(
-                selectedFood.id === null
-                    ? 'Food created.'
-                    : 'Food updated.',
+                selectedFood.id === null ? 'Food created.' : 'Food updated.',
             );
             setDrawerOpen(false);
             await loadFoods();
@@ -796,7 +816,9 @@ export default function AdminMealsPage() {
                             />
                         </AdminStatsGrid>
 
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
                         {success ? (
                             <AdminNotice tone="success">{success}</AdminNotice>
                         ) : null}
@@ -863,7 +885,10 @@ export default function AdminMealsPage() {
                         >
                             <AdminToolbar>
                                 <AdminToolbarGroup grow>
-                                    <AdminField label="Search" className="xl:flex-1">
+                                    <AdminField
+                                        label="Search"
+                                        className="xl:flex-1"
+                                    >
                                         <AdminInput
                                             value={query}
                                             onChange={(event) =>
@@ -872,7 +897,10 @@ export default function AdminMealsPage() {
                                             placeholder="Search name, category, or serving unit"
                                         />
                                     </AdminField>
-                                    <AdminField label="Category" className="sm:w-56">
+                                    <AdminField
+                                        label="Category"
+                                        className="sm:w-56"
+                                    >
                                         <AdminNativeSelect
                                             value={category}
                                             onChange={(event) =>
@@ -899,7 +927,9 @@ export default function AdminMealsPage() {
                                         <AdminNativeSelect
                                             value={suitability}
                                             onChange={(event) =>
-                                                setSuitability(event.target.value)
+                                                setSuitability(
+                                                    event.target.value,
+                                                )
                                             }
                                         >
                                             <option value="all">All</option>
@@ -1029,18 +1059,25 @@ export default function AdminMealsPage() {
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="flex max-w-48 flex-wrap gap-1">
-                                                            {(food.allergens ?? [])
+                                                            {(
+                                                                food.allergens ??
+                                                                []
+                                                            )
                                                                 .slice(0, 3)
                                                                 .map((item) => (
                                                                     <Badge
-                                                                        key={item}
+                                                                        key={
+                                                                            item
+                                                                        }
                                                                         variant="outline"
                                                                     >
                                                                         {item}
                                                                     </Badge>
                                                                 ))}
-                                                            {(food.allergens ?? [])
-                                                                .length === 0 ? (
+                                                            {(
+                                                                food.allergens ??
+                                                                []
+                                                            ).length === 0 ? (
                                                                 <span className="text-xs text-muted-foreground">
                                                                     Missing
                                                                 </span>
@@ -1049,20 +1086,25 @@ export default function AdminMealsPage() {
                                                     </ProductTableCell>
                                                     <ProductTableCell>
                                                         <div className="flex max-w-56 flex-wrap gap-1">
-                                                            {(food.diets_allowed ??
-                                                                [])
+                                                            {(
+                                                                food.diets_allowed ??
+                                                                []
+                                                            )
                                                                 .slice(0, 3)
                                                                 .map((item) => (
                                                                     <Badge
-                                                                        key={item}
+                                                                        key={
+                                                                            item
+                                                                        }
                                                                         variant="secondary"
                                                                     >
                                                                         {item}
                                                                     </Badge>
                                                                 ))}
-                                                            {(food.diets_allowed ??
-                                                                []).length ===
-                                                            0 ? (
+                                                            {(
+                                                                food.diets_allowed ??
+                                                                []
+                                                            ).length === 0 ? (
                                                                 <span className="text-xs text-muted-foreground">
                                                                     Not scoped
                                                                 </span>
@@ -1102,10 +1144,14 @@ export default function AdminMealsPage() {
                                                                 ]}
                                                             />
                                                             <div className="line-clamp-1 text-xs text-muted-foreground">
-                                                                {(food.planner_warnings ??
-                                                                    [])
+                                                                {(
+                                                                    food.planner_warnings ??
+                                                                    []
+                                                                )
                                                                     .slice(0, 2)
-                                                                    .join(', ') ||
+                                                                    .join(
+                                                                        ', ',
+                                                                    ) ||
                                                                     'No warnings'}
                                                             </div>
                                                         </div>

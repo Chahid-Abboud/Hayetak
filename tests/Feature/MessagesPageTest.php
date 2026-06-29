@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\Conversation;
-use App\Models\Message;
-use App\Models\MessageModeration;
 use App\Models\AiPlan;
 use App\Models\Appointment;
+use App\Models\Conversation;
 use App\Models\Food;
 use App\Models\MealEntry;
+use App\Models\Message;
+use App\Models\MessageModeration;
 use App\Models\ProfessionalClientAssignment;
 use App\Models\ProfessionalVerification;
 use App\Models\User;

@@ -199,7 +199,6 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    
                     <div className="mt-2 flex items-baseline gap-3">
                         <div className="text-4xl font-semibold tracking-tight text-foreground">
                             {bmi}
@@ -211,7 +210,6 @@ export default function BmiCard({ isGuest, profile, loading }: Props) {
                         </div>
                     </div>
                 </div>
-                
             </div>
 
             <Progress bmi={bmi} />

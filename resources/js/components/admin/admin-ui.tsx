@@ -79,7 +79,7 @@ export function AdminField({
             </span>
             {children}
             {helper ? (
-                <span className="block text-xs leading-5 break-words text-muted-foreground">
+                <span className="block text-xs leading-5 [overflow-wrap:anywhere] break-words text-muted-foreground">
                     {helper}
                 </span>
             ) : null}
@@ -144,7 +144,7 @@ export function AdminToolbarGroup({
         return (
             <div
                 className={cn(
-                    'grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] [&>label]:min-w-0 [&>label]:w-full',
+                    'grid w-full min-w-0 gap-3 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] [&>label]:w-full [&>label]:min-w-0',
                     className,
                 )}
             >
@@ -330,7 +330,7 @@ export function AdminPanel({
                     {title}
                 </h3>
                 {description ? (
-                    <p className="text-sm leading-6 text-muted-foreground">
+                    <p className="text-sm leading-6 [overflow-wrap:anywhere] break-words text-muted-foreground">
                         {description}
                     </p>
                 ) : null}
@@ -357,11 +357,11 @@ export function AdminOverviewCard({
         <div className={cn('dashboard-surface rounded-[24px] p-4', className)}>
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
-                    <h3 className="text-base font-semibold tracking-tight text-foreground">
+                    <h3 className="text-base font-semibold tracking-tight break-words text-foreground">
                         {title}
                     </h3>
                     {description ? (
-                        <p className="text-sm leading-6 text-muted-foreground">
+                        <p className="text-sm leading-6 [overflow-wrap:anywhere] break-words text-muted-foreground">
                             {description}
                         </p>
                     ) : null}

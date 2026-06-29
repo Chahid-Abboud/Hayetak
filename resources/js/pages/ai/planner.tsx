@@ -3,7 +3,6 @@ import {
     type PredictionTrendPoint,
     type PredictorMeasurement,
 } from '@/components/ai/predictor-vs-actual-card';
-import { exportPlanToPdf } from '@/lib/plan-export';
 import {
     ProductBanner,
     ProductEmptyState,
@@ -24,6 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { exportPlanToPdf } from '@/lib/plan-export';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { RefreshCw } from 'lucide-react';
@@ -264,7 +264,6 @@ type DietMealOptionGroup = {
     }>;
 };
 
-
 function humanizeMealCode(mealCode: string) {
     return mealCode.charAt(0).toUpperCase() + mealCode.slice(1);
 }
@@ -345,7 +344,9 @@ function buildDietMealOptionGroups(
                                     (item) =>
                                         `${(item.name ?? '')
                                             .trim()
-                                            .toLowerCase()}|${(item.portion ?? '')
+                                            .toLowerCase()}|${(
+                                            item.portion ?? ''
+                                        )
                                             .trim()
                                             .toLowerCase()}`,
                                 )
@@ -420,9 +421,9 @@ function buildDietMealOptionGroups(
             const signature = items
                 .map(
                     (item) =>
-                        `${(item.name ?? '')
-                            .trim()
-                            .toLowerCase()}|${(item.portion ?? '')
+                        `${(item.name ?? '').trim().toLowerCase()}|${(
+                            item.portion ?? ''
+                        )
                             .trim()
                             .toLowerCase()}`,
                 )
@@ -628,7 +629,8 @@ export default function AiPlannerPage() {
         }
 
         const generationChanged =
-            (generation?.generation_id ?? null) !== pending.previousGenerationId;
+            (generation?.generation_id ?? null) !==
+            pending.previousGenerationId;
         const dietChanged =
             (nutritionPlan?.id ?? null) !== pending.previousNutritionPlanId;
         const workoutChanged =
@@ -1080,7 +1082,9 @@ export default function AiPlannerPage() {
                                 </ProductButton>
 
                                 <ProductButton asChild emphasis="secondary">
-                                    <Link href="/workouts/log">Workout log</Link>
+                                    <Link href="/workouts/log">
+                                        Workout log
+                                    </Link>
                                 </ProductButton>
                             </div>
                         </div>
@@ -1096,7 +1100,6 @@ export default function AiPlannerPage() {
                     </ProductBanner>
                 ) : null}
 
-
                 {plan ? (
                     <ProductSection
                         title="Prediction if you follow this plan"
@@ -1106,9 +1109,7 @@ export default function AiPlannerPage() {
                             {canRenderPredictionTimeline ? (
                                 <PredictorVsActualCard
                                     trend={predictionTrend ?? []}
-                                    comparisonWeights={
-                                        comparisonWeights ?? []
-                                    }
+                                    comparisonWeights={comparisonWeights ?? []}
                                 />
                             ) : (
                                 <div className="rounded-[24px] border border-dashed border-border/70 bg-card/60 p-6 text-sm leading-6 text-muted-foreground">
@@ -1124,9 +1125,21 @@ export default function AiPlannerPage() {
                                 What affects this prediction
                             </div>
                             <ul className="mt-3 space-y-2 text-sm text-foreground">
-                                <li>- Prediction is based on the generated diet/workout plan and safe estimated adherence.</li>
-                                <li>- Each point is anchored to the latest saved weight available when that specific plan was generated.</li>
-                                <li>- Real check-ins still improve future predictor calibration, but this view stays focused on the projected outcome only.</li>
+                                <li>
+                                    - Prediction is based on the generated
+                                    diet/workout plan and safe estimated
+                                    adherence.
+                                </li>
+                                <li>
+                                    - Each point is anchored to the latest saved
+                                    weight available when that specific plan was
+                                    generated.
+                                </li>
+                                <li>
+                                    - Real check-ins still improve future
+                                    predictor calibration, but this view stays
+                                    focused on the projected outcome only.
+                                </li>
                                 <li>
                                     {plan.progress_prediction
                                         ?.feedback_adjustment?.notes ??
@@ -1182,7 +1195,6 @@ export default function AiPlannerPage() {
                         </div>
                     </ProductSection>
                 ) : null}
-
 
                 {!plan ? (
                     <ProductEmptyState
@@ -1244,9 +1256,7 @@ export default function AiPlannerPage() {
                             <div className="mt-5 grid gap-4 lg:grid-cols-3">
                                 <ScrollableListCard
                                     title="Grocery list"
-                                    items={(
-                                        plan.diet?.grocery_list ?? []
-                                    ).map(
+                                    items={(plan.diet?.grocery_list ?? []).map(
                                         (item) =>
                                             `${
                                                 item.category
@@ -1301,79 +1311,131 @@ export default function AiPlannerPage() {
                                 </div>
 
                                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                                    {paginatedMealOptionGroups.map(
-                                        (group) => (
-                                            <div
-                                                key={group.mealCode}
-                                                className="rounded-[22px] border border-border/70 bg-card/70 p-4"
-                                            >
-                                                <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                                                    {humanizeMealCode(
-                                                        group.mealCode,
-                                                    )}
-                                                </div>
-                                                <div className="mt-1 text-base font-semibold text-foreground">
-                                                    {group.title}
-                                                </div>
-
-                                                <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-2">
-                                                    {group.options.map(
-                                                        (option) => {
-                                                            const showTarget =
-                                                                option.targetKcal > 0 &&
-                                                                Math.abs(
-                                                                    option.targetKcal -
-                                                                        option.caloriesKcal,
-                                                                ) >= 15;
-                                                            return (
-                                                                <div
-                                                                    key={option.key}
-                                                                    className="rounded-[18px] border border-border/60 bg-background/80 p-3"
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-3">
-                                                                        <div className="min-w-0">
-                                                                            <div className="line-clamp-2 font-medium text-foreground">
-                                                                                {option.title}
-                                                                            </div>
-                                                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                                                {option.days.length
-                                                                                    ? `Days ${option.days.join(', ')}`
-                                                                                    : 'Flexible meal choice'}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="shrink-0 text-right text-xs text-muted-foreground">
-                                                                            <div>
-                                                                                {Math.round(option.caloriesKcal)} kcal
-                                                                            </div>
-                                                                            {showTarget ? (
-                                                                                <div>target {Math.round(option.targetKcal)} kcal</div>
-                                                                            ) : null}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                                                        <span className="rounded-full border border-border/60 px-2 py-1">P {Math.round(option.proteinG)}g</span>
-                                                                        <span className="rounded-full border border-border/60 px-2 py-1">C {Math.round(option.carbsG)}g</span>
-                                                                        <span className="rounded-full border border-border/60 px-2 py-1">F {Math.round(option.fatG)}g</span>
-                                                                    </div>
-                                                                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                                                                        {option.items.slice(0, 4).map((item, itemIndex) => (
-                                                                            <li key={`${option.key}-${item.name}-${itemIndex}`}>
-                                                                                <span className="font-medium text-foreground">{item.name}</span>
-                                                                                {item.portion ? ` - ${item.portion}` : ''}
-                                                                            </li>
-                                                                        ))}
-                                                                        {option.items.length > 4 ? (
-                                                                            <li>+{option.items.length - 4} more items</li>
-                                                                        ) : null}
-                                                                    </ul>
-                                                                </div>
-                                                            );
-                                                        },
-                                                    )}
-                                                </div>
+                                    {paginatedMealOptionGroups.map((group) => (
+                                        <div
+                                            key={group.mealCode}
+                                            className="rounded-[22px] border border-border/70 bg-card/70 p-4"
+                                        >
+                                            <div className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                {humanizeMealCode(
+                                                    group.mealCode,
+                                                )}
                                             </div>
-                                        ),
-                                    )}
+                                            <div className="mt-1 text-base font-semibold text-foreground">
+                                                {group.title}
+                                            </div>
+
+                                            <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-2">
+                                                {group.options.map((option) => {
+                                                    const showTarget =
+                                                        option.targetKcal > 0 &&
+                                                        Math.abs(
+                                                            option.targetKcal -
+                                                                option.caloriesKcal,
+                                                        ) >= 15;
+                                                    return (
+                                                        <div
+                                                            key={option.key}
+                                                            className="rounded-[18px] border border-border/60 bg-background/80 p-3"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0">
+                                                                    <div className="line-clamp-2 font-medium text-foreground">
+                                                                        {
+                                                                            option.title
+                                                                        }
+                                                                    </div>
+                                                                    <div className="mt-1 text-xs text-muted-foreground">
+                                                                        {option
+                                                                            .days
+                                                                            .length
+                                                                            ? `Days ${option.days.join(', ')}`
+                                                                            : 'Flexible meal choice'}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="shrink-0 text-right text-xs text-muted-foreground">
+                                                                    <div>
+                                                                        {Math.round(
+                                                                            option.caloriesKcal,
+                                                                        )}{' '}
+                                                                        kcal
+                                                                    </div>
+                                                                    {showTarget ? (
+                                                                        <div>
+                                                                            target{' '}
+                                                                            {Math.round(
+                                                                                option.targetKcal,
+                                                                            )}{' '}
+                                                                            kcal
+                                                                        </div>
+                                                                    ) : null}
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                                <span className="rounded-full border border-border/60 px-2 py-1">
+                                                                    P{' '}
+                                                                    {Math.round(
+                                                                        option.proteinG,
+                                                                    )}
+                                                                    g
+                                                                </span>
+                                                                <span className="rounded-full border border-border/60 px-2 py-1">
+                                                                    C{' '}
+                                                                    {Math.round(
+                                                                        option.carbsG,
+                                                                    )}
+                                                                    g
+                                                                </span>
+                                                                <span className="rounded-full border border-border/60 px-2 py-1">
+                                                                    F{' '}
+                                                                    {Math.round(
+                                                                        option.fatG,
+                                                                    )}
+                                                                    g
+                                                                </span>
+                                                            </div>
+                                                            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                                                                {option.items
+                                                                    .slice(0, 4)
+                                                                    .map(
+                                                                        (
+                                                                            item,
+                                                                            itemIndex,
+                                                                        ) => (
+                                                                            <li
+                                                                                key={`${option.key}-${item.name}-${itemIndex}`}
+                                                                            >
+                                                                                <span className="font-medium text-foreground">
+                                                                                    {
+                                                                                        item.name
+                                                                                    }
+                                                                                </span>
+                                                                                {item.portion
+                                                                                    ? ` - ${item.portion}`
+                                                                                    : ''}
+                                                                            </li>
+                                                                        ),
+                                                                    )}
+                                                                {option.items
+                                                                    .length >
+                                                                4 ? (
+                                                                    <li>
+                                                                        +
+                                                                        {option
+                                                                            .items
+                                                                            .length -
+                                                                            4}{' '}
+                                                                        more
+                                                                        items
+                                                                    </li>
+                                                                ) : null}
+                                                            </ul>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </ProductSection>
@@ -1413,12 +1475,13 @@ export default function AiPlannerPage() {
                                         const hasExercises = Boolean(
                                             day.exercises?.length,
                                         );
-                                        const isDaySeven = (day.day_index ?? -1) >= 7;
+                                        const isDaySeven =
+                                            (day.day_index ?? -1) >= 7;
 
                                         return (
                                             <div
                                                 key={`${day.day_index}-${day.focus}`}
-                                                className={`rounded-[24px] border border-border/70 bg-background/72 p-5${isDaySeven ? ' lg:col-span-2' : ''}`}
+                                                className={`rounded-[24px] border border-border/70 bg-background/72 p-5${isDaySeven ? 'lg:col-span-2' : ''}`}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
@@ -1530,7 +1593,8 @@ export default function AiPlannerPage() {
                                         ...(
                                             plan.overview?.key_constraints ?? []
                                         ).slice(0, 4),
-                                        ...(plan.overview?.assumptions ?? []
+                                        ...(
+                                            plan.overview?.assumptions ?? []
                                         ).slice(0, 4),
                                     ]}
                                 />
@@ -1538,24 +1602,19 @@ export default function AiPlannerPage() {
                                 <ScrollableListCard
                                     title="Safety notes"
                                     items={[
-                                        ...(
-                                            plan.safety?.hard_rules_observed ??
-                                            []
-                                        ),
+                                        ...(plan.safety?.hard_rules_observed ??
+                                            []),
                                         ...(plan.safety?.food_avoidances ?? []),
-                                        ...(
-                                            plan.safety?.exercise_cautions ?? []
-                                        ),
+                                        ...(plan.safety?.exercise_cautions ??
+                                            []),
                                     ]}
                                 />
 
                                 <ScrollableListCard
                                     title="Progression and recovery"
                                     items={[
-                                        ...(
-                                            plan.workout?.progression_rules ??
-                                            []
-                                        ),
+                                        ...(plan.workout?.progression_rules ??
+                                            []),
                                         ...(plan.workout?.recovery_rules ?? []),
                                         ...(plan.workout?.coach_notes ?? []),
                                     ]}
@@ -1569,14 +1628,10 @@ export default function AiPlannerPage() {
                                                 ?.review_after_days ??
                                             planHorizonDays
                                         } days`,
-                                        ...(
-                                            plan.adaptive_review
-                                                ?.checkpoints ?? []
-                                        ),
-                                        ...(
-                                            plan.adaptive_review
-                                                ?.replanning_triggers ?? []
-                                        ),
+                                        ...(plan.adaptive_review?.checkpoints ??
+                                            []),
+                                        ...(plan.adaptive_review
+                                            ?.replanning_triggers ?? []),
                                     ]}
                                 />
 
@@ -1603,7 +1658,8 @@ export default function AiPlannerPage() {
                                         }%`,
                                         `Horizon: ${
                                             plan.progress_prediction
-                                                ?.horizon_days ?? planHorizonDays
+                                                ?.horizon_days ??
+                                            planHorizonDays
                                         } days`,
                                     ]}
                                 />
@@ -2112,7 +2168,6 @@ function PaginationControls({
     );
 }
 
-
 function ScrollableListCard({
     title,
     items,
@@ -2122,9 +2177,7 @@ function ScrollableListCard({
 }) {
     return (
         <div className="rounded-[24px] border border-border/70 bg-background/72 p-4">
-            <div className="text-lg font-semibold text-foreground">
-                {title}
-            </div>
+            <div className="text-lg font-semibold text-foreground">{title}</div>
 
             <div className="mt-3 max-h-[260px] overflow-y-auto pr-2">
                 <ul className="space-y-2 text-sm leading-6 text-foreground">

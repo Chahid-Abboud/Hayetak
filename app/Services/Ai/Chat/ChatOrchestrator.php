@@ -15,18 +15,19 @@ use RuntimeException;
 
 class ChatOrchestrator
 {
-  public function __construct(
-    private readonly ChatIntentClassifier $classifier,
-    private readonly ChatContextBuilder $contextBuilder,
-    private readonly ChatSafetyGuard $safetyGuard,
-    private readonly CoachDeterministicResponder $deterministicResponder,
-    private readonly ChatModelManager $modelManager,
-    private readonly CoachToolExecutor $toolExecutor,
-    private readonly ChatResponseQualityScorer $qualityScorer,
-    private readonly AiUsageLogger $usageLogger,
-    private readonly FeatureConfigResolver $features,
-    private readonly AppNotificationService $notifications,
-) {}
+    public function __construct(
+        private readonly ChatIntentClassifier $classifier,
+        private readonly ChatContextBuilder $contextBuilder,
+        private readonly ChatSafetyGuard $safetyGuard,
+        private readonly CoachDeterministicResponder $deterministicResponder,
+        private readonly ChatModelManager $modelManager,
+        private readonly CoachToolExecutor $toolExecutor,
+        private readonly ChatResponseQualityScorer $qualityScorer,
+        private readonly AiUsageLogger $usageLogger,
+        private readonly FeatureConfigResolver $features,
+        private readonly AppNotificationService $notifications,
+        private readonly PromptInjectionSanitizer $promptSanitizer,
+    ) {}
 
     /**
      * Run the complete coach pipeline: classify, gather context, call tools/model/fallbacks, review safety, and persist messages.
@@ -37,7 +38,11 @@ class ChatOrchestrator
         array $runtimeContext = [],
         ?AiConversation $conversation = null,
     ): array {
-        $question = trim($message);
+        $originalQuestion = trim($message);
+        $question = $this->promptSanitizer->sanitize($message);
+        if ($question === '') {
+            $question = 'I need fitness or nutrition guidance.';
+        }
         $conversation ??= AiConversation::query()->create([
             'user_id' => $user->id,
             'title' => $this->makeTitle($question),
@@ -59,6 +64,7 @@ class ChatOrchestrator
                 'screen_context' => $runtimeContext['screen_context'] ?? 'coach',
                 'intent' => $classification['intent'],
                 'feature' => $classification['feature'],
+                'input_sanitized' => $question !== $originalQuestion,
             ],
         ]);
 
@@ -165,7 +171,11 @@ class ChatOrchestrator
                 }
             }
         } else {
-            $chatMetadata = [];
+            $chatMetadata = [
+                'chat_path' => 'blocked',
+                'mode_label' => 'Blocked',
+                'reason' => 'domain_guard',
+            ];
         }
 
         $quality = $this->qualityScorer->score(

@@ -16,7 +16,10 @@ type PrintableDietMealOption = {
 };
 
 type PrintableDietMealOptions = Partial<
-    Record<'breakfast' | 'lunch' | 'dinner' | 'snack', PrintableDietMealOption[]>
+    Record<
+        'breakfast' | 'lunch' | 'dinner' | 'snack',
+        PrintableDietMealOption[]
+    >
 >;
 
 type PrintableDietDay = {
@@ -183,7 +186,8 @@ function buildMealCodeHtml(
                         const items = option.items ?? [];
 
                         const totalCalories = items.reduce(
-                            (sum, item) => sum + Number(item.calories_kcal ?? 0),
+                            (sum, item) =>
+                                sum + Number(item.calories_kcal ?? 0),
                             0,
                         );
                         const totalProtein = items.reduce(
@@ -360,10 +364,12 @@ function buildDietHtml(plan: PrintablePlan): string {
                     ${
                         Object.keys(targets).length > 0
                             ? statGridHtml(
-                                  Object.entries(targets).map(([key, value]) => ({
-                                      label: titleCase(key),
-                                      value,
-                                  })),
+                                  Object.entries(targets).map(
+                                      ([key, value]) => ({
+                                          label: titleCase(key),
+                                          value,
+                                      }),
+                                  ),
                               )
                             : `<p class="muted">No daily targets were included.</p>`
                     }
@@ -411,8 +417,10 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                                 <div class="day-grid training-grid">
                                     ${trainingDays
                                         .map((day) => {
-                                            const exercises = day.exercises ?? [];
-                                            const isDaySeven = (day.day_index ?? -1) >= 7;
+                                            const exercises =
+                                                day.exercises ?? [];
+                                            const isDaySeven =
+                                                (day.day_index ?? -1) >= 7;
 
                                             return `
                                                 <div class="box avoid-break training-day-box${isDaySeven ? ' full-width-day' : ''}">
@@ -452,7 +460,8 @@ function buildWorkoutHtml(plan: PrintablePlan): string {
                                                                     <div class="exercise-row">
                                                                         <div>
                                                                             <strong>${escapeHtml(
-                                                                                exercise.name ?? 'Exercise',
+                                                                                exercise.name ??
+                                                                                    'Exercise',
                                                                             )}</strong>
 
                                                                             <small>

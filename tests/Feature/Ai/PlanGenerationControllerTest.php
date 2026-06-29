@@ -3,10 +3,10 @@
 use App\Jobs\Ai\RunPlannerAudit;
 use App\Models\AiPlan;
 use App\Models\AiRequest;
-use App\Models\PlannerAuditRun;
 use App\Models\Exercise;
 use App\Models\Food;
 use App\Models\NutritionPlan;
+use App\Models\PlannerAuditRun;
 use App\Models\User;
 use App\Models\UserDietaryRestriction;
 use App\Models\UserMedicalHistory;

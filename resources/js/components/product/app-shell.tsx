@@ -4,11 +4,9 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    Activity,
     Bell,
     CalendarDays,
     ClipboardCheck,
-    FileSearch,
     Dumbbell,
     LayoutDashboard,
     LogOut,
@@ -338,12 +336,6 @@ export function AppProductShell({
                     icon: Bell,
                     keywords: ['alerts', 'notifications', 'broadcasts'],
                 },
-                {
-                    href: '/admin/message-moderations',
-                    label: 'Moderation',
-                    icon: ShieldAlert,
-                    keywords: ['moderation', 'flagged messages', 'escalations'],
-                },
             ];
         }
 
@@ -353,7 +345,11 @@ export function AppProductShell({
                       href: '/trainer/clients',
                       label: 'My Clients',
                       icon: Users,
-                      keywords: ['clients', 'trainer clients', 'assigned clients'],
+                      keywords: [
+                          'clients',
+                          'trainer clients',
+                          'assigned clients',
+                      ],
                   }
                 : role === 'nutritionist'
                   ? {
@@ -386,7 +382,12 @@ export function AppProductShell({
                 href: '/ai/planner',
                 label: 'AI Planner',
                 icon: ClipboardCheck,
-                keywords: ['AI planner', 'ai plan', 'diet plan', 'workout plan'],
+                keywords: [
+                    'AI planner',
+                    'ai plan',
+                    'diet plan',
+                    'workout plan',
+                ],
                 match: ['/planner'],
             },
             {
@@ -431,26 +432,6 @@ export function AppProductShell({
                             label: 'Places',
                             icon: MapPin,
                         },
-                        {
-                            href: '/admin/progress',
-                            label: 'Progress',
-                            icon: Activity,
-                        },
-                    ],
-                },
-                {
-                    label: 'System',
-                    items: [
-                        {
-                            href: '/admin/logs',
-                            label: 'Audit Logs',
-                            icon: FileSearch,
-                        },
-                        {
-                            href: '/admin/message-moderations',
-                            label: 'Moderation',
-                            icon: ShieldAlert,
-                        },
                     ],
                 },
             ];
@@ -477,7 +458,7 @@ export function AppProductShell({
                 },
             ],
         });
-        
+
         groups.push({
             label: 'Connect',
             items: [
@@ -495,7 +476,6 @@ export function AppProductShell({
                 },
             ],
         });
-        
 
         return groups;
     }, [role]);
@@ -599,7 +579,9 @@ export function AppProductShell({
                             roleLabel={roleLabel}
                             primaryNav={primaryNav}
                             secondaryGroups={secondaryGroups}
-                            homeHref={role === 'admin' ? '/admin' : '/dashboard'}
+                            homeHref={
+                                role === 'admin' ? '/admin' : '/dashboard'
+                            }
                             onLogout={() => router.post('/logout')}
                         />
                     </div>
@@ -656,9 +638,7 @@ export function AppProductShell({
                                     iconClassName="size-[1.7rem]"
                                     textClassName="text-[1.08rem] text-foreground"
                                 />
-                                <div
-                                    className="mt-1 truncate text-lg tracking-tight text-foreground"
-                                >
+                                <div className="mt-1 truncate text-lg tracking-tight text-foreground">
                                     {activeItem?.label ?? 'Dashboard'}
                                 </div>
                             </div>

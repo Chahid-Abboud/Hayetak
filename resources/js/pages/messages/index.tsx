@@ -334,12 +334,10 @@ export default function MessagesPage() {
                 },
             );
             if (!res.ok) {
-                const json = (await res.json().catch(() => null)) as
-                    | { message?: string }
-                    | null;
-                throw new Error(
-                    json?.message || 'Message could not be sent.',
-                );
+                const json = (await res.json().catch(() => null)) as {
+                    message?: string;
+                } | null;
+                throw new Error(json?.message || 'Message could not be sent.');
             }
             const json = await res.json();
             const nextMessage = json?.message as Message | undefined;
@@ -709,7 +707,8 @@ export default function MessagesPage() {
                                                 </p>
                                                 <p>
                                                     Role:{' '}
-                                                    {context.professional_snapshot
+                                                    {context
+                                                        .professional_snapshot
                                                         ?.role_label ??
                                                         roleLabel(
                                                             context.peer?.role,
@@ -717,7 +716,8 @@ export default function MessagesPage() {
                                                 </p>
                                                 <p>
                                                     Verified:{' '}
-                                                    {context.professional_snapshot
+                                                    {context
+                                                        .professional_snapshot
                                                         ?.verified
                                                         ? 'Yes'
                                                         : 'No'}
@@ -741,7 +741,8 @@ export default function MessagesPage() {
                                                 </p>
                                                 <p>
                                                     Specialties:{' '}
-                                                    {context.professional_snapshot
+                                                    {context
+                                                        .professional_snapshot
                                                         ?.specialties?.length
                                                         ? context.professional_snapshot.specialties.join(
                                                               ', ',
@@ -750,7 +751,8 @@ export default function MessagesPage() {
                                                 </p>
                                                 <p>
                                                     Availability:{' '}
-                                                    {context.professional_snapshot
+                                                    {context
+                                                        .professional_snapshot
                                                         ?.availability_text ??
                                                         'No availability note yet'}
                                                 </p>
@@ -822,21 +824,25 @@ export default function MessagesPage() {
                                                 <p>
                                                     Today:{' '}
                                                     {context.activity.today
-                                                        ?.meals_logged ?? 0}{' '}
+                                                        ?.meals_logged ??
+                                                        0}{' '}
                                                     meals,{' '}
                                                     {context.activity.today
-                                                        ?.workouts_logged ?? 0}{' '}
+                                                        ?.workouts_logged ??
+                                                        0}{' '}
                                                     workouts
                                                 </p>
                                                 <p>
                                                     Last 7 days:{' '}
                                                     {context.activity
                                                         .last_7_days
-                                                        ?.meals_logged ?? 0}{' '}
+                                                        ?.meals_logged ??
+                                                        0}{' '}
                                                     meals,{' '}
                                                     {context.activity
                                                         .last_7_days
-                                                        ?.workouts_logged ?? 0}{' '}
+                                                        ?.workouts_logged ??
+                                                        0}{' '}
                                                     workouts
                                                 </p>
                                                 <p>

@@ -146,10 +146,27 @@ class UserHistoryBackfillSeeder extends Seeder
         $createdAt = $user->created_at
             ? CarbonImmutable::parse($user->created_at)->startOfDay()
             : $this->today;
+        if ($this->isSeededDemoUser($user)) {
+            $backdatedCreatedAt = $this->activityStartFloor
+                ->subDays(14 + ($user->id % 21))
+                ->startOfDay();
+            if ($createdAt->greaterThan($backdatedCreatedAt)) {
+                $user->forceFill(['created_at' => $backdatedCreatedAt])->save();
+                $user->refresh();
+                $createdAt = $backdatedCreatedAt;
+            }
+        }
         $historyStart = $this->activityStartFloor;
         if ($historyStart->greaterThan($this->activityEndCeiling)) {
             $historyStart = $this->activityEndCeiling;
         }
+        if ($historyStart->lessThan($createdAt)) {
+            $historyStart = $createdAt;
+        }
+
+        $measurementStart = $this->measurementStartFloor->lessThan($createdAt)
+            ? $createdAt
+            : $this->measurementStartFloor;
 
         return [
             'scenario' => $scenario,
@@ -160,7 +177,7 @@ class UserHistoryBackfillSeeder extends Seeder
             'created_at' => $createdAt,
             'meal_start' => $historyStart,
             'meal_end' => $this->activityEndCeiling,
-            'measurement_start' => $this->measurementStartFloor,
+            'measurement_start' => $measurementStart,
             'measurement_end' => $this->measurementEndCeiling,
             'workout_start' => $historyStart,
             'workout_days' => max(1, $inferredWorkoutDays),
@@ -2908,10 +2925,22 @@ class UserHistoryBackfillSeeder extends Seeder
     {
         $origin = strtolower(trim((string) ($user->data_origin ?? '')));
         if ($origin !== '') {
-            return in_array($origin, [
+            if (in_array($origin, [
                 User::DATA_ORIGIN_SEEDED_DEMO,
                 User::DATA_ORIGIN_TEST,
-            ], true);
+            ], true)) {
+                return true;
+            }
+
+            if (in_array($origin, [
+                User::DATA_ORIGIN_REAL,
+                User::DATA_ORIGIN_IMPORTED_REAL,
+            ], true)) {
+                // Fall through to the seeded-demo email heuristic for legacy demo rows
+                // that predate the data_origin contract.
+            } else {
+                return false;
+            }
         }
 
         $email = strtolower(trim((string) ($user->email ?? '')));

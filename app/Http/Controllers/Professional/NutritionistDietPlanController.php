@@ -51,6 +51,7 @@ class NutritionistDietPlanController extends Controller
         if (! empty($conflicts)) {
             $messages = array_map(function ($c) {
                 $allergens = implode(', ', $c['conflicting_allergens']);
+
                 return "Food \"{$c['food']}\" conflicts with allergen(s): {$allergens}";
             }, $conflicts);
 
@@ -85,6 +86,7 @@ class NutritionistDietPlanController extends Controller
         if (! empty($conflicts)) {
             $messages = array_map(function ($c) {
                 $allergens = implode(', ', $c['conflicting_allergens']);
+
                 return "Food \"{$c['food']}\" conflicts with allergen(s): {$allergens}";
             }, $conflicts);
 

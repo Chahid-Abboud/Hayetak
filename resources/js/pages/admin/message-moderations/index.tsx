@@ -111,7 +111,9 @@ export default function AdminMessageModerationsIndex() {
     const [savingId, setSavingId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
-    const [resolutionNotes, setResolutionNotes] = useState<Record<number, string>>({});
+    const [resolutionNotes, setResolutionNotes] = useState<
+        Record<number, string>
+    >({});
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -121,7 +123,9 @@ export default function AdminMessageModerationsIndex() {
                 decision,
                 state,
             });
-            const response = await fetch(`/api/admin/message-moderations?${params.toString()}`);
+            const response = await fetch(
+                `/api/admin/message-moderations?${params.toString()}`,
+            );
             if (!response.ok) {
                 throw new Error('Could not load message moderation queue.');
             }
@@ -186,12 +190,15 @@ export default function AdminMessageModerationsIndex() {
                 },
             );
 
-            const json = (await response.json().catch(() => null)) as
-                | { message?: string; item?: ModerationItem }
-                | null;
+            const json = (await response.json().catch(() => null)) as {
+                message?: string;
+                item?: ModerationItem;
+            } | null;
 
             if (!response.ok) {
-                throw new Error(json?.message || 'Could not resolve moderation item.');
+                throw new Error(
+                    json?.message || 'Could not resolve moderation item.',
+                );
             }
 
             setItems((current) =>
@@ -199,7 +206,9 @@ export default function AdminMessageModerationsIndex() {
                     row.id === item.id
                         ? {
                               ...row,
-                              resolved_at: json?.item?.resolved_at ?? new Date().toISOString(),
+                              resolved_at:
+                                  json?.item?.resolved_at ??
+                                  new Date().toISOString(),
                               resolution: resolution,
                               resolution_notes: resolutionNotes[item.id] ?? '',
                           }
@@ -232,14 +241,41 @@ export default function AdminMessageModerationsIndex() {
                     description="Review flagged user-to-user messages, confirm blocked abuse, and close sensitive escalations with clear outcomes."
                 >
                     <div className="space-y-6">
-                        {error ? <AdminNotice tone="danger">{error}</AdminNotice> : null}
-                        {message ? <AdminNotice tone="success">{message}</AdminNotice> : null}
+                        {error ? (
+                            <AdminNotice tone="danger">{error}</AdminNotice>
+                        ) : null}
+                        {message ? (
+                            <AdminNotice tone="success">{message}</AdminNotice>
+                        ) : null}
 
                         <AdminStatsGrid>
-                            <AdminStatCard label="Visible items" value={loading ? '...' : String(stats.total)} tone="accent" helper="Current queue slice." />
-                            <AdminStatCard label="Escalated" value={loading ? '...' : String(stats.escalate)} helper="Sensitive cases needing follow-up." />
-                            <AdminStatCard label="Hard blocked" value={loading ? '...' : String(stats.hard_block)} helper="Clearly prohibited content." />
-                            <AdminStatCard label="Flagged allowed" value={loading ? '...' : String(stats.allow_flagged)} helper="Delivered with moderation visibility." />
+                            <AdminStatCard
+                                label="Visible items"
+                                value={loading ? '...' : String(stats.total)}
+                                tone="accent"
+                                helper="Current queue slice."
+                            />
+                            <AdminStatCard
+                                label="Escalated"
+                                value={loading ? '...' : String(stats.escalate)}
+                                helper="Sensitive cases needing follow-up."
+                            />
+                            <AdminStatCard
+                                label="Hard blocked"
+                                value={
+                                    loading ? '...' : String(stats.hard_block)
+                                }
+                                helper="Clearly prohibited content."
+                            />
+                            <AdminStatCard
+                                label="Flagged allowed"
+                                value={
+                                    loading
+                                        ? '...'
+                                        : String(stats.allow_flagged)
+                                }
+                                helper="Delivered with moderation visibility."
+                            />
                         </AdminStatsGrid>
 
                         <AdminSection
@@ -252,32 +288,81 @@ export default function AdminMessageModerationsIndex() {
                             >
                                 <AdminToolbar>
                                     <AdminToolbarGroup grow>
-                                        <AdminField label="Search" className="xl:flex-1">
+                                        <AdminField
+                                            label="Search"
+                                            className="xl:flex-1"
+                                        >
                                             <AdminSearchInput
                                                 value={search}
                                                 placeholder="Search sender, message, category, or reason"
-                                                onChange={(event) => setSearch(event.target.value)}
+                                                onChange={(event) =>
+                                                    setSearch(
+                                                        event.target.value,
+                                                    )
+                                                }
                                             />
                                         </AdminField>
-                                        <AdminField label="Decision" className="sm:w-48">
-                                            <AdminNativeSelect value={decision} onChange={(event) => setDecision(event.target.value)}>
-                                                <option value="all">All decisions</option>
-                                                <option value="allow_flagged">Allow flagged</option>
-                                                <option value="escalate">Escalate</option>
-                                                <option value="hard_block">Hard block</option>
-                                                <option value="allow">Allow</option>
+                                        <AdminField
+                                            label="Decision"
+                                            className="sm:w-48"
+                                        >
+                                            <AdminNativeSelect
+                                                value={decision}
+                                                onChange={(event) =>
+                                                    setDecision(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            >
+                                                <option value="all">
+                                                    All decisions
+                                                </option>
+                                                <option value="allow_flagged">
+                                                    Allow flagged
+                                                </option>
+                                                <option value="escalate">
+                                                    Escalate
+                                                </option>
+                                                <option value="hard_block">
+                                                    Hard block
+                                                </option>
+                                                <option value="allow">
+                                                    Allow
+                                                </option>
                                             </AdminNativeSelect>
                                         </AdminField>
-                                        <AdminField label="State" className="sm:w-40">
-                                            <AdminNativeSelect value={state} onChange={(event) => setState(event.target.value as 'open' | 'resolved' | 'all')}>
-                                                <option value="open">Open</option>
-                                                <option value="resolved">Resolved</option>
+                                        <AdminField
+                                            label="State"
+                                            className="sm:w-40"
+                                        >
+                                            <AdminNativeSelect
+                                                value={state}
+                                                onChange={(event) =>
+                                                    setState(
+                                                        event.target.value as
+                                                            | 'open'
+                                                            | 'resolved'
+                                                            | 'all',
+                                                    )
+                                                }
+                                            >
+                                                <option value="open">
+                                                    Open
+                                                </option>
+                                                <option value="resolved">
+                                                    Resolved
+                                                </option>
                                                 <option value="all">All</option>
                                             </AdminNativeSelect>
                                         </AdminField>
                                     </AdminToolbarGroup>
                                     <AdminToolbarGroup className="w-full xl:w-auto xl:justify-end">
-                                        <Button type="button" variant="outline" disabled={loading} onClick={() => void load()}>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={loading}
+                                            onClick={() => void load()}
+                                        >
                                             <RefreshCcw className="h-4 w-4" />
                                             Refresh
                                         </Button>
@@ -285,59 +370,127 @@ export default function AdminMessageModerationsIndex() {
                                 </AdminToolbar>
 
                                 {loading && filteredItems.length === 0 ? (
-                                    <AdminEmpty title="Loading moderation queue" description="Fetching the latest flagged and escalated messages." />
+                                    <AdminEmpty
+                                        title="Loading moderation queue"
+                                        description="Fetching the latest flagged and escalated messages."
+                                    />
                                 ) : (
                                     <AdminScrollArea maxHeightClassName="max-h-[68vh]">
                                         <AdminDataTable tableClassName="min-w-[1280px]">
                                             <ProductTableHead>
                                                 <ProductTableRow>
-                                                    <ProductTableHeaderCell>Sender</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Message</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Decision</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Categories</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Reason</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Queue state</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>Created</ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell className="w-56">Actions</ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Sender
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Message
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Decision
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Categories
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Reason
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Queue state
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell>
+                                                        Created
+                                                    </ProductTableHeaderCell>
+                                                    <ProductTableHeaderCell className="w-56">
+                                                        Actions
+                                                    </ProductTableHeaderCell>
                                                 </ProductTableRow>
                                             </ProductTableHead>
                                             <ProductTableBody>
                                                 {filteredItems.map((item) => (
-                                                    <ProductTableRow key={item.id}>
+                                                    <ProductTableRow
+                                                        key={item.id}
+                                                    >
                                                         <ProductTableCell>
-                                                            <div className="font-medium text-foreground">{item.sender?.name || 'Unknown sender'}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.sender?.email}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.sender?.role}</div>
-                                                        </ProductTableCell>
-                                                        <ProductTableCell>
-                                                            <div className="max-w-[22rem] whitespace-pre-wrap text-sm text-foreground">
-                                                                {item.original_body}
+                                                            <div className="font-medium text-foreground">
+                                                                {item.sender
+                                                                    ?.name ||
+                                                                    'Unknown sender'}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {
+                                                                    item.sender
+                                                                        ?.email
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {
+                                                                    item.sender
+                                                                        ?.role
+                                                                }
                                                             </div>
                                                         </ProductTableCell>
                                                         <ProductTableCell>
-                                                            <Badge variant={decisionTone(item.decision)}>
+                                                            <div className="max-w-[22rem] text-sm whitespace-pre-wrap text-foreground">
+                                                                {
+                                                                    item.original_body
+                                                                }
+                                                            </div>
+                                                        </ProductTableCell>
+                                                        <ProductTableCell>
+                                                            <Badge
+                                                                variant={decisionTone(
+                                                                    item.decision,
+                                                                )}
+                                                            >
                                                                 {item.decision}
                                                             </Badge>
                                                             <div className="mt-2 text-xs text-muted-foreground">
-                                                                Severity: {item.severity}
+                                                                Severity:{' '}
+                                                                {item.severity}
                                                             </div>
                                                         </ProductTableCell>
                                                         <ProductTableCell>
                                                             <div className="flex max-w-[14rem] flex-wrap gap-2">
-                                                                {(item.categories ?? []).map((category) => (
-                                                                    <Badge key={`${item.id}-${category}`} variant="outline">
-                                                                        {category}
-                                                                    </Badge>
-                                                                ))}
+                                                                {(
+                                                                    item.categories ??
+                                                                    []
+                                                                ).map(
+                                                                    (
+                                                                        category,
+                                                                    ) => (
+                                                                        <Badge
+                                                                            key={`${item.id}-${category}`}
+                                                                            variant="outline"
+                                                                        >
+                                                                            {
+                                                                                category
+                                                                            }
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
                                                             </div>
                                                         </ProductTableCell>
                                                         <ProductTableCell>
                                                             <div className="max-w-[18rem] text-sm text-muted-foreground">
-                                                                {item.reason || 'No explicit moderation note.'}
+                                                                {item.reason ||
+                                                                    'No explicit moderation note.'}
                                                             </div>
-                                                            {item.signals?.same_body_count ? (
+                                                            {item.signals
+                                                                ?.same_body_count ? (
                                                                 <div className="mt-2 text-xs text-muted-foreground">
-                                                                    Repeat count in {item.signals.window_minutes} min: {item.signals.same_body_count}
+                                                                    Repeat count
+                                                                    in{' '}
+                                                                    {
+                                                                        item
+                                                                            .signals
+                                                                            .window_minutes
+                                                                    }{' '}
+                                                                    min:{' '}
+                                                                    {
+                                                                        item
+                                                                            .signals
+                                                                            .same_body_count
+                                                                    }
                                                                 </div>
                                                             ) : null}
                                                         </ProductTableCell>
@@ -345,14 +498,19 @@ export default function AdminMessageModerationsIndex() {
                                                             {item.resolved_at ? (
                                                                 <div className="space-y-1">
                                                                     <div className="text-sm font-medium text-foreground">
-                                                                        {item.resolution || 'Resolved'}
+                                                                        {item.resolution ||
+                                                                            'Resolved'}
                                                                     </div>
                                                                     <div className="text-xs text-muted-foreground">
-                                                                        {formatDateTime(item.resolved_at)}
+                                                                        {formatDateTime(
+                                                                            item.resolved_at,
+                                                                        )}
                                                                     </div>
                                                                     {item.resolution_notes ? (
                                                                         <div className="text-xs text-muted-foreground">
-                                                                            {item.resolution_notes}
+                                                                            {
+                                                                                item.resolution_notes
+                                                                            }
                                                                         </div>
                                                                     ) : null}
                                                                 </div>
@@ -365,19 +523,36 @@ export default function AdminMessageModerationsIndex() {
                                                                     <textarea
                                                                         className="min-h-[72px] w-full rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-xs text-foreground"
                                                                         placeholder="Resolution notes"
-                                                                        value={resolutionNotes[item.id] ?? ''}
-                                                                        onChange={(event) =>
-                                                                            setResolutionNotes((current) => ({
-                                                                                ...current,
-                                                                                [item.id]: event.target.value,
-                                                                            }))
+                                                                        value={
+                                                                            resolutionNotes[
+                                                                                item
+                                                                                    .id
+                                                                            ] ??
+                                                                            ''
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            setResolutionNotes(
+                                                                                (
+                                                                                    current,
+                                                                                ) => ({
+                                                                                    ...current,
+                                                                                    [item.id]:
+                                                                                        event
+                                                                                            .target
+                                                                                            .value,
+                                                                                }),
+                                                                            )
                                                                         }
                                                                     />
                                                                 </div>
                                                             )}
                                                         </ProductTableCell>
                                                         <ProductTableCell>
-                                                            {formatDateTime(item.created_at)}
+                                                            {formatDateTime(
+                                                                item.created_at,
+                                                            )}
                                                         </ProductTableCell>
                                                         <ProductTableCell>
                                                             {item.resolved_at ? (
@@ -390,8 +565,16 @@ export default function AdminMessageModerationsIndex() {
                                                                         type="button"
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        disabled={savingId === item.id}
-                                                                        onClick={() => void resolve(item, 'resolved_safe')}
+                                                                        disabled={
+                                                                            savingId ===
+                                                                            item.id
+                                                                        }
+                                                                        onClick={() =>
+                                                                            void resolve(
+                                                                                item,
+                                                                                'resolved_safe',
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Safe
                                                                     </Button>
@@ -399,16 +582,32 @@ export default function AdminMessageModerationsIndex() {
                                                                         type="button"
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        disabled={savingId === item.id}
-                                                                        onClick={() => void resolve(item, 'resolved_confirmed')}
+                                                                        disabled={
+                                                                            savingId ===
+                                                                            item.id
+                                                                        }
+                                                                        onClick={() =>
+                                                                            void resolve(
+                                                                                item,
+                                                                                'resolved_confirmed',
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Confirm
                                                                     </Button>
                                                                     <Button
                                                                         type="button"
                                                                         size="sm"
-                                                                        disabled={savingId === item.id}
-                                                                        onClick={() => void resolve(item, 'dismissed_false_positive')}
+                                                                        disabled={
+                                                                            savingId ===
+                                                                            item.id
+                                                                        }
+                                                                        onClick={() =>
+                                                                            void resolve(
+                                                                                item,
+                                                                                'dismissed_false_positive',
+                                                                            )
+                                                                        }
                                                                     >
                                                                         <CheckCheck className="h-4 w-4" />
                                                                         Dismiss
@@ -418,7 +617,8 @@ export default function AdminMessageModerationsIndex() {
                                                         </ProductTableCell>
                                                     </ProductTableRow>
                                                 ))}
-                                                {!loading && filteredItems.length === 0 ? (
+                                                {!loading &&
+                                                filteredItems.length === 0 ? (
                                                     <ProductTableEmptyRow
                                                         colSpan={8}
                                                         title="No moderation items found"

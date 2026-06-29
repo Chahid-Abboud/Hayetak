@@ -279,6 +279,14 @@ class PlannerService
             ! $hasExplicitMealOptions
         );
         $normalizedDietDays = $this->buildDietDaysFromMealOptions($normalizedMealOptions, $targetDietDays, $profileSeed);
+        $normalizedDietDays = $this->enforceDietDayMealVariety(
+            $normalizedDietDays,
+            $normalizedMealOptions,
+            $targets,
+            $mealCatalog,
+            $profile,
+            $profileSeed
+        );
 
         data_set($normalized, 'diet.meal_options', $normalizedMealOptions);
         data_set($normalized, 'diet.days', $normalizedDietDays);
@@ -831,6 +839,233 @@ class PlannerService
         return $days;
     }
 
+    private function enforceDietDayMealVariety(
+        array $days,
+        array $mealOptions,
+        array $targets,
+        array $mealCatalog,
+        array $profile,
+        int $seed = 0
+    ): array {
+        foreach ($days as $dayIndex => $day) {
+            if (! is_array($day) || ! is_array($day['meals'] ?? null)) {
+                continue;
+            }
+
+            $usedDaySignatures = [];
+
+            foreach (array_values($day['meals']) as $mealIndex => $meal) {
+                if (! is_array($meal)) {
+                    continue;
+                }
+
+                $signature = $this->mealContentSignature($meal);
+
+                if ($signature === '' || ! in_array($signature, $usedDaySignatures, true)) {
+                    if ($signature !== '') {
+                        $usedDaySignatures[] = $signature;
+                    }
+
+                    continue;
+                }
+
+                $mealCode = $this->normalizeMealCode((string) ($meal['meal_code'] ?? 'snack'));
+                $replacementMeal = $this->buildNonDuplicateMealReplacement(
+                    mealCode: $mealCode,
+                    currentMeal: $meal,
+                    mealOptions: $mealOptions,
+                    usedDaySignatures: $usedDaySignatures,
+                    targets: $targets,
+                    mealCatalog: $mealCatalog,
+                    profile: $profile,
+                    seed: $seed + ($dayIndex * 17) + ($mealIndex * 7)
+                );
+
+                if ($replacementMeal !== null) {
+                    $days[$dayIndex]['meals'][$mealIndex] = $replacementMeal;
+
+                    $replacementSignature = $this->mealContentSignature($replacementMeal);
+                    if ($replacementSignature !== '') {
+                        $usedDaySignatures[] = $replacementSignature;
+                    }
+
+                    continue;
+                }
+
+                /*
+                 * Last safety fallback: keep a full meal card instead of hiding it,
+                 * but make its name unique so lunch/dinner or breakfast/snack do not
+                 * display as the exact same planned food. This branch should rarely run
+                 * because buildNonDuplicateMealReplacement() first tries catalog/library
+                 * meals that match the user's diet and allergy constraints.
+                 */
+                $days[$dayIndex]['meals'][$mealIndex] = $this->makeLastResortUniqueMeal(
+                    mealCode: $mealCode,
+                    currentMeal: $meal,
+                    usedDaySignatures: $usedDaySignatures,
+                    seed: $seed + ($dayIndex * 31) + $mealIndex
+                );
+
+                $fallbackSignature = $this->mealContentSignature($days[$dayIndex]['meals'][$mealIndex]);
+                if ($fallbackSignature !== '') {
+                    $usedDaySignatures[] = $fallbackSignature;
+                }
+            }
+        }
+
+        return $days;
+    }
+
+    private function buildNonDuplicateMealReplacement(
+        string $mealCode,
+        array $currentMeal,
+        array $mealOptions,
+        array $usedDaySignatures,
+        array $targets,
+        array $mealCatalog,
+        array $profile,
+        int $seed = 0
+    ): ?array {
+        $replacement = $this->findNonDuplicateMealOption(
+            is_array($mealOptions[$mealCode] ?? null) ? array_values($mealOptions[$mealCode]) : [],
+            $usedDaySignatures,
+            $seed
+        );
+
+        if ($replacement !== null) {
+            return [
+                'meal_code' => $mealCode,
+                'title' => trim((string) ($replacement['title'] ?? ucfirst($mealCode).' option')) ?: ucfirst($mealCode).' option',
+                'target_kcal' => (int) ($replacement['target_kcal'] ?? ($currentMeal['target_kcal'] ?? 0)),
+                'items' => is_array($replacement['items'] ?? null) ? array_values($replacement['items']) : [],
+            ];
+        }
+
+        $candidateNames = array_values(array_unique(array_filter(array_merge(
+            $this->catalogMealNames($mealCatalog, $mealCode, $profile),
+            $this->mealNameLibrary($mealCode, $profile),
+            array_map(
+                fn (array $meal): string => $this->mealPrimaryName($meal),
+                is_array($mealOptions[$mealCode] ?? null) ? array_values($mealOptions[$mealCode]) : []
+            )
+        ))));
+
+        if ($candidateNames === []) {
+            return null;
+        }
+
+        $usedNameKeys = [];
+        $currentPrimary = strtolower(trim($this->mealPrimaryName($currentMeal)));
+        if ($currentPrimary !== '') {
+            $usedNameKeys[] = $currentPrimary;
+        }
+
+        $count = count($candidateNames);
+        $start = $count > 0 ? abs($seed) % $count : 0;
+
+        for ($step = 0; $step < ($count * 2); $step++) {
+            $candidateName = trim((string) ($candidateNames[($start + $step) % $count] ?? ''));
+            if ($candidateName === '' || in_array(strtolower($candidateName), $usedNameKeys, true)) {
+                continue;
+            }
+
+            $seedMeal = $this->mealOptionSeedMeal($mealCode, $candidateName, $targets);
+            $seedMeal['target_kcal'] = (int) ($currentMeal['target_kcal'] ?? $seedMeal['target_kcal'] ?? 0);
+
+            $normalized = $this->normalizeMeals(
+                [$seedMeal],
+                $targets,
+                $mealCatalog,
+                $profile,
+                $seed + $step + 1,
+                [$mealCode],
+                false
+            );
+
+            $candidateMeal = $normalized[0] ?? null;
+            if (! is_array($candidateMeal)) {
+                continue;
+            }
+
+            $candidateSignature = $this->mealContentSignature($candidateMeal);
+            if ($candidateSignature !== '' && ! in_array($candidateSignature, $usedDaySignatures, true)) {
+                return $candidateMeal;
+            }
+
+            $usedNameKeys[] = strtolower($candidateName);
+        }
+
+        return null;
+    }
+
+    private function makeLastResortUniqueMeal(
+        string $mealCode,
+        array $currentMeal,
+        array $usedDaySignatures,
+        int $seed = 0
+    ): array {
+        $meal = $currentMeal;
+        $items = is_array($meal['items'] ?? null) ? array_values($meal['items']) : [];
+        $suffix = 'Variation '.(($seed % 9) + 1);
+
+        if ($items === []) {
+            $items = [[
+                'name' => ucfirst($mealCode).' '.$suffix,
+                'portion' => '1 serving',
+            ]];
+        }
+
+        $firstName = trim((string) ($items[0]['name'] ?? ucfirst($mealCode).' option'));
+        $candidateName = $this->buildMealVariantName($firstName, [], $seed);
+        $items[0]['name'] = $candidateName;
+
+        $meal['meal_code'] = $mealCode;
+        $meal['title'] = trim((string) ($meal['title'] ?? ucfirst($mealCode).' option')) ?: ucfirst($mealCode).' option';
+        $meal['title'] .= ' - '.$suffix;
+        $meal['items'] = $items;
+        $meal['notes'] = trim(((string) ($meal['notes'] ?? '')).' Auto-adjusted to avoid repeating the same meal in one day.');
+
+        if (in_array($this->mealContentSignature($meal), $usedDaySignatures, true)) {
+            $meal['items'][0]['name'] = $candidateName.' '.$suffix;
+        }
+
+        return $meal;
+    }
+
+    private function findNonDuplicateMealOption(array $options, array $usedDaySignatures, int $seed = 0): ?array
+    {
+        if ($options === []) {
+            return null;
+        }
+
+        $count = count($options);
+        $start = $count > 0 ? abs($seed) % $count : 0;
+
+        for ($step = 0; $step < $count; $step++) {
+            $candidate = $options[($start + $step) % $count] ?? null;
+            if (! is_array($candidate)) {
+                continue;
+            }
+
+            $signature = $this->mealContentSignature($candidate);
+            if ($signature !== '' && ! in_array($signature, $usedDaySignatures, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeMealDuplicateToken(?string $value): string
+    {
+        $value = mb_strtolower((string) $value);
+        $value = preg_replace('/[^a-z0-9\s]/i', ' ', $value) ?? '';
+        $value = preg_replace('/\b(serving|servings|bowl|plate|meal|option|with|and|the|a|an)\b/i', ' ', $value) ?? '';
+        $value = preg_replace('/\s+/', ' ', $value) ?? '';
+
+        return trim($value);
+    }
+
     private function mealContentSignature(array $meal): string
     {
         $items = is_array($meal['items'] ?? null) ? $meal['items'] : [];
@@ -841,17 +1076,20 @@ class PlannerService
                 continue;
             }
 
-            $name = strtolower(trim((string) ($item['name'] ?? '')));
-            $portion = strtolower(trim((string) ($item['portion'] ?? '')));
+            $name = $this->normalizeMealDuplicateToken((string) ($item['name'] ?? ''));
             if ($name === '') {
                 continue;
             }
 
-            $parts[] = $name.'|'.$portion;
+            // Do not include portion/grams here. The goal is to prevent the same meal
+            // from appearing twice in one day even if the serving size is different.
+            $parts[] = $name;
         }
 
+        $parts = array_values(array_unique($parts));
+
         if ($parts === []) {
-            return strtolower(trim((string) ($meal['title'] ?? '')));
+            return $this->normalizeMealDuplicateToken((string) ($meal['title'] ?? ''));
         }
 
         return implode('||', $parts);

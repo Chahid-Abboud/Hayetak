@@ -3,16 +3,14 @@ import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import {
     Activity,
-    FileSearch,
-    type LucideIcon,
     Dumbbell,
     MapPin,
     MessageSquareText,
-    ShieldAlert,
     ShieldCheck,
     Stethoscope,
     Users,
     UtensilsCrossed,
+    type LucideIcon,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -69,7 +67,7 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 label: 'Notifications',
                 icon: MessageSquareText,
             },
-           
+
             // Shared coach shortcut expectation: href: '/coach', label: 'AI Coach'
         ],
     },
@@ -101,22 +99,6 @@ const adminWorkspaceGroups: AdminWorkspaceGroup[] = [
                 href: '/admin/progress',
                 label: 'Progress',
                 icon: Activity,
-            },
-        ],
-    },
-    {
-        label: 'System',
-        description: 'Traceability for administrator actions.',
-        links: [
-            {
-                href: '/admin/logs',
-                label: 'Audit Logs',
-                icon: FileSearch,
-            },
-            {
-                href: '/admin/message-moderations',
-                label: 'Moderation',
-                icon: ShieldAlert,
             },
         ],
     },
@@ -183,12 +165,12 @@ export function AdminShell({
                             </span>
                         </div>
                         <h1
-                            className="mt-3 text-3xl tracking-tight text-foreground sm:text-4xl"
+                            className="mt-3 text-3xl tracking-tight break-words text-foreground sm:text-4xl"
                             style={{ fontFamily: 'var(--font-display)' }}
                         >
                             {title}
                         </h1>
-                        <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
+                        <p className="mt-4 max-w-3xl text-sm leading-6 break-words text-muted-foreground sm:text-base">
                             {description}
                         </p>
                         {actions ? (
@@ -210,7 +192,7 @@ export function AdminShell({
                                 <div className="mt-1.5 text-base font-semibold tracking-tight text-foreground">
                                     {activeWorkspace.label}
                                 </div>
-                                <div className="mt-1 text-sm leading-5 text-foreground/80">
+                                <div className="mt-1 text-sm leading-5 break-words text-foreground/80">
                                     Use the admin navigation above when
                                     priorities shift.
                                 </div>
@@ -256,11 +238,11 @@ export function AdminStatCard({
             <div className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
                 {label}
             </div>
-            <div className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+            <div className="mt-2 text-2xl font-semibold tracking-tight break-words text-foreground">
                 {value}
             </div>
             {helper ? (
-                <div className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                <div className="mt-1.5 text-xs leading-5 break-words text-muted-foreground">
                     {helper}
                 </div>
             ) : null}
@@ -292,11 +274,11 @@ export function AdminSection({
         >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight break-words">
                         {title}
                     </h2>
                     {description ? (
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                        <p className="mt-2 max-w-2xl text-sm leading-6 break-words text-muted-foreground">
                             {description}
                         </p>
                     ) : null}

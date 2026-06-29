@@ -33,10 +33,11 @@ class MessageModerationService
         }
 
         $repetition = $this->repetitionSignals($conversation, $sender, $normalized);
-        if (($repetition['same_body_count'] ?? 0) >= ($repetition['hard_block_threshold'] ?? PHP_INT_MAX)) {
+        $attemptCount = (int) ($repetition['same_body_count'] ?? 0) + 1;
+        if ($attemptCount >= ($repetition['hard_block_threshold'] ?? PHP_INT_MAX)) {
             $categories[] = 'spam_abuse';
             $matchedTerms['spam_abuse'] = ['repeated_same_message'];
-        } elseif (($repetition['same_body_count'] ?? 0) >= ($repetition['escalate_threshold'] ?? PHP_INT_MAX)) {
+        } elseif ($attemptCount > ($repetition['escalate_threshold'] ?? PHP_INT_MAX)) {
             $categories[] = 'spam_repetition';
             $matchedTerms['spam_repetition'] = ['repeated_same_message'];
         }
@@ -145,6 +146,7 @@ class MessageModerationService
         return [
             'window_minutes' => $windowMinutes,
             'same_body_count' => $sameBodyCount,
+            'attempt_count' => $sameBodyCount + 1,
             'escalate_threshold' => $escalateThreshold,
             'hard_block_threshold' => $hardBlockThreshold,
         ];

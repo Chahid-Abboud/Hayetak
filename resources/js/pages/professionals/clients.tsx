@@ -1002,9 +1002,7 @@ export default function ProfessionalClientsPage() {
 
             if (!response.ok) {
                 const json = await response.json().catch(() => ({}));
-                throw new Error(
-                    json?.message || 'Failed to save workout plan',
-                );
+                throw new Error(json?.message || 'Failed to save workout plan');
             }
 
             setBanner({
@@ -1115,7 +1113,8 @@ export default function ProfessionalClientsPage() {
                                                 current
                                                     ? {
                                                           ...current,
-                                                          title: event.target.value,
+                                                          title: event.target
+                                                              .value,
                                                       }
                                                     : null,
                                             )
@@ -1140,7 +1139,8 @@ export default function ProfessionalClientsPage() {
                                                 current
                                                     ? {
                                                           ...current,
-                                                          notes: event.target.value,
+                                                          notes: event.target
+                                                              .value,
                                                       }
                                                     : null,
                                             )
@@ -1169,14 +1169,15 @@ export default function ProfessionalClientsPage() {
                                                                       {
                                                                           label: `Day ${current.days.length + 1}`,
                                                                           focus: '',
-                                                                          exercises: [
-                                                                              {
-                                                                                  name: '',
-                                                                                  sets: '',
-                                                                                  reps: '',
-                                                                                  notes: '',
-                                                                              },
-                                                                          ],
+                                                                          exercises:
+                                                                              [
+                                                                                  {
+                                                                                      name: '',
+                                                                                      sets: '',
+                                                                                      reps: '',
+                                                                                      notes: '',
+                                                                                  },
+                                                                              ],
                                                                       },
                                                                   ],
                                                               }
@@ -1200,24 +1201,36 @@ export default function ProfessionalClientsPage() {
                                                         <div className="grid flex-1 gap-3 md:grid-cols-2">
                                                             <input
                                                                 type="text"
-                                                                value={day.label}
-                                                                onChange={(event) =>
+                                                                value={
+                                                                    day.label
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
                                                                     setWorkoutPlanDialog(
                                                                         (
                                                                             current,
                                                                         ) => {
-                                                                            if (!current) {
+                                                                            if (
+                                                                                !current
+                                                                            ) {
                                                                                 return null;
                                                                             }
-                                                                            const days = [
-                                                                                ...current.days,
-                                                                            ];
-                                                                            days[dayIdx] = {
-                                                                                ...days[
-                                                                                    dayIdx
-                                                                                ],
-                                                                                label: event.target.value,
-                                                                            };
+                                                                            const days =
+                                                                                [
+                                                                                    ...current.days,
+                                                                                ];
+                                                                            days[
+                                                                                dayIdx
+                                                                            ] =
+                                                                                {
+                                                                                    ...days[
+                                                                                        dayIdx
+                                                                                    ],
+                                                                                    label: event
+                                                                                        .target
+                                                                                        .value,
+                                                                                };
                                                                             return {
                                                                                 ...current,
                                                                                 days,
@@ -1230,24 +1243,36 @@ export default function ProfessionalClientsPage() {
                                                             />
                                                             <input
                                                                 type="text"
-                                                                value={day.focus}
-                                                                onChange={(event) =>
+                                                                value={
+                                                                    day.focus
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
                                                                     setWorkoutPlanDialog(
                                                                         (
                                                                             current,
                                                                         ) => {
-                                                                            if (!current) {
+                                                                            if (
+                                                                                !current
+                                                                            ) {
                                                                                 return null;
                                                                             }
-                                                                            const days = [
-                                                                                ...current.days,
-                                                                            ];
-                                                                            days[dayIdx] = {
-                                                                                ...days[
-                                                                                    dayIdx
-                                                                                ],
-                                                                                focus: event.target.value,
-                                                                            };
+                                                                            const days =
+                                                                                [
+                                                                                    ...current.days,
+                                                                                ];
+                                                                            days[
+                                                                                dayIdx
+                                                                            ] =
+                                                                                {
+                                                                                    ...days[
+                                                                                        dayIdx
+                                                                                    ],
+                                                                                    focus: event
+                                                                                        .target
+                                                                                        .value,
+                                                                                };
                                                                             return {
                                                                                 ...current,
                                                                                 days,
@@ -1263,7 +1288,9 @@ export default function ProfessionalClientsPage() {
                                                             type="button"
                                                             onClick={() =>
                                                                 setWorkoutPlanDialog(
-                                                                    (current) =>
+                                                                    (
+                                                                        current,
+                                                                    ) =>
                                                                         current
                                                                             ? {
                                                                                   ...current,
@@ -1322,17 +1349,18 @@ export default function ProfessionalClientsPage() {
                                                                                         dayIdx
                                                                                     ].exercises[
                                                                                         exerciseIdx
-                                                                                    ] = {
-                                                                                        ...days[
-                                                                                            dayIdx
-                                                                                        ]
-                                                                                            .exercises[
-                                                                                            exerciseIdx
-                                                                                        ],
-                                                                                        name: event
-                                                                                            .target
-                                                                                            .value,
-                                                                                    };
+                                                                                    ] =
+                                                                                        {
+                                                                                            ...days[
+                                                                                                dayIdx
+                                                                                            ]
+                                                                                                .exercises[
+                                                                                                exerciseIdx
+                                                                                            ],
+                                                                                            name: event
+                                                                                                .target
+                                                                                                .value,
+                                                                                        };
                                                                                     return {
                                                                                         ...current,
                                                                                         days,
@@ -1368,17 +1396,18 @@ export default function ProfessionalClientsPage() {
                                                                                         dayIdx
                                                                                     ].exercises[
                                                                                         exerciseIdx
-                                                                                    ] = {
-                                                                                        ...days[
-                                                                                            dayIdx
-                                                                                        ]
-                                                                                            .exercises[
-                                                                                            exerciseIdx
-                                                                                        ],
-                                                                                        sets: event
-                                                                                            .target
-                                                                                            .value,
-                                                                                    };
+                                                                                    ] =
+                                                                                        {
+                                                                                            ...days[
+                                                                                                dayIdx
+                                                                                            ]
+                                                                                                .exercises[
+                                                                                                exerciseIdx
+                                                                                            ],
+                                                                                            sets: event
+                                                                                                .target
+                                                                                                .value,
+                                                                                        };
                                                                                     return {
                                                                                         ...current,
                                                                                         days,
@@ -1414,17 +1443,18 @@ export default function ProfessionalClientsPage() {
                                                                                         dayIdx
                                                                                     ].exercises[
                                                                                         exerciseIdx
-                                                                                    ] = {
-                                                                                        ...days[
-                                                                                            dayIdx
-                                                                                        ]
-                                                                                            .exercises[
-                                                                                            exerciseIdx
-                                                                                        ],
-                                                                                        reps: event
-                                                                                            .target
-                                                                                            .value,
-                                                                                    };
+                                                                                    ] =
+                                                                                        {
+                                                                                            ...days[
+                                                                                                dayIdx
+                                                                                            ]
+                                                                                                .exercises[
+                                                                                                exerciseIdx
+                                                                                            ],
+                                                                                            reps: event
+                                                                                                .target
+                                                                                                .value,
+                                                                                        };
                                                                                     return {
                                                                                         ...current,
                                                                                         days,
@@ -1460,17 +1490,18 @@ export default function ProfessionalClientsPage() {
                                                                                         dayIdx
                                                                                     ].exercises[
                                                                                         exerciseIdx
-                                                                                    ] = {
-                                                                                        ...days[
-                                                                                            dayIdx
-                                                                                        ]
-                                                                                            .exercises[
-                                                                                            exerciseIdx
-                                                                                        ],
-                                                                                        notes: event
-                                                                                            .target
-                                                                                            .value,
-                                                                                    };
+                                                                                    ] =
+                                                                                        {
+                                                                                            ...days[
+                                                                                                dayIdx
+                                                                                            ]
+                                                                                                .exercises[
+                                                                                                exerciseIdx
+                                                                                            ],
+                                                                                            notes: event
+                                                                                                .target
+                                                                                                .value,
+                                                                                        };
                                                                                     return {
                                                                                         ...current,
                                                                                         days,
@@ -1531,7 +1562,9 @@ export default function ProfessionalClientsPage() {
                                                         onClick={() =>
                                                             setWorkoutPlanDialog(
                                                                 (current) => {
-                                                                    if (!current) {
+                                                                    if (
+                                                                        !current
+                                                                    ) {
                                                                         return null;
                                                                     }
                                                                     const days =
@@ -1603,7 +1636,9 @@ export default function ProfessionalClientsPage() {
                         <div className="relative z-10 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-white p-4 text-foreground shadow-xl dark:border-white/15 dark:bg-card dark:text-white">
                             <div className="mb-3 flex items-center justify-between gap-2">
                                 <div className="text-sm font-medium">
-                                    {dietPlanDialog.diet_plan ? 'Edit' : 'Create'}{' '}
+                                    {dietPlanDialog.diet_plan
+                                        ? 'Edit'
+                                        : 'Create'}{' '}
                                     Diet plan for {dietPlanDialog.client.name}
                                 </div>
                                 <button
@@ -1650,7 +1685,8 @@ export default function ProfessionalClientsPage() {
                                                 current
                                                     ? {
                                                           ...current,
-                                                          title: event.target.value,
+                                                          title: event.target
+                                                              .value,
                                                       }
                                                     : null,
                                             )
@@ -1825,7 +1861,7 @@ export default function ProfessionalClientsPage() {
                                                     key={meal.meal_type}
                                                     className="mb-3"
                                                 >
-                                                    <div className="text-xs font-semibold uppercase text-muted-foreground">
+                                                    <div className="text-xs font-semibold text-muted-foreground uppercase">
                                                         {formatMealType(
                                                             meal.meal_type,
                                                         )}
@@ -1902,7 +1938,9 @@ export default function ProfessionalClientsPage() {
                                                             type="button"
                                                             onClick={() =>
                                                                 setDietPlanDialog(
-                                                                    (current) =>
+                                                                    (
+                                                                        current,
+                                                                    ) =>
                                                                         current
                                                                             ? {
                                                                                   ...current,
@@ -2059,8 +2097,7 @@ export default function ProfessionalClientsPage() {
                                         ),
                                     )}
                                     {dietPlanDialog.searchResults.length ===
-                                        0 &&
-                                    dietPlanDialog.searchQuery ? (
+                                        0 && dietPlanDialog.searchQuery ? (
                                         <div className="text-sm opacity-75">
                                             No foods found.
                                         </div>
@@ -2183,7 +2220,7 @@ export default function ProfessionalClientsPage() {
                             </div>
                         </aside>
 
-                        <div className="min-h-0 h-full overflow-hidden">
+                        <div className="h-full min-h-0 overflow-hidden">
                             {filteredClients.length === 0 ? (
                                 <div className="rounded-3xl border border-dashed border-border/70 bg-card p-8 text-sm text-muted-foreground">
                                     No clients match this filter.
@@ -2198,117 +2235,57 @@ export default function ProfessionalClientsPage() {
                                             key={entry.assignment_id}
                                             className="rounded-[30px] border border-border/70 bg-card/95 p-5 shadow-sm"
                                         >
-                                        <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
-                                            <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-3">
-                                                    <h2 className="text-xl font-semibold">
-                                                        {entry.client.name}
-                                                    </h2>
-                                                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                                                        {formatRoleLabel(
-                                                            roleMode,
-                                                        )}{' '}
-                                                        client
-                                                    </span>
-                                                </div>
-                                                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                                    <span>
-                                                        {entry.client.email}
-                                                    </span>
-                                                    {entry.client.age ? (
-                                                        <span>
-                                                            Age{' '}
-                                                            {entry.client.age}
+                                            <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/72 p-4 lg:flex-row lg:items-start lg:justify-between">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        <h2 className="text-xl font-semibold">
+                                                            {entry.client.name}
+                                                        </h2>
+                                                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                                                            {formatRoleLabel(
+                                                                roleMode,
+                                                            )}{' '}
+                                                            client
                                                         </span>
-                                                    ) : null}
-                                                    {entry.client.username ? (
+                                                    </div>
+                                                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                                                         <span>
-                                                            @
-                                                            {
-                                                                entry.client
-                                                                    .username
-                                                            }
+                                                            {entry.client.email}
                                                         </span>
+                                                        {entry.client.age ? (
+                                                            <span>
+                                                                Age{' '}
+                                                                {
+                                                                    entry.client
+                                                                        .age
+                                                                }
+                                                            </span>
+                                                        ) : null}
+                                                        {entry.client
+                                                            .username ? (
+                                                            <span>
+                                                                @
+                                                                {
+                                                                    entry.client
+                                                                        .username
+                                                                }
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                    {entry.notes ? (
+                                                        <p className="mt-2 text-sm text-muted-foreground">
+                                                            {entry.notes}
+                                                        </p>
                                                     ) : null}
                                                 </div>
-                                                {entry.notes ? (
-                                                    <p className="mt-2 text-sm text-muted-foreground">
-                                                        {entry.notes}
-                                                    </p>
-                                                ) : null}
-                                            </div>
 
-                                            <div className="flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                                    onClick={() =>
-                                                        void openConversation(
-                                                            entry.client.id,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        busyClientId ===
-                                                        entry.client.id
-                                                    }
-                                                >
-                                                    Message
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="rounded-full bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95"
-                                                    onClick={() =>
-                                                        openAppointmentDialog(
-                                                            entry.client,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        busyClientId ===
-                                                        entry.client.id
-                                                    }
-                                                >
-                                                    Appointment
-                                                </button>
-                                                {roleMode === 'nutritionist' ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                                            onClick={() =>
-                                                                openMealNoteDialog(
-                                                                    entry,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                busyClientId ===
-                                                                entry.client.id
-                                                            }
-                                                        >
-                                                            Meal note
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                                                            onClick={() =>
-                                                                openDietPlanDialog(
-                                                                    entry,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                busyClientId ===
-                                                                entry.client.id
-                                                            }
-                                                        >
-                                                            Diet plan
-                                                        </button>
-                                                    </>
-                                                ) : roleMode === 'trainer' ? (
+                                                <div className="flex flex-wrap gap-2">
                                                     <button
                                                         type="button"
                                                         className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
                                                         onClick={() =>
-                                                            openWorkoutPlanDialog(
-                                                                entry,
+                                                            void openConversation(
+                                                                entry.client.id,
                                                             )
                                                         }
                                                         disabled={
@@ -2316,434 +2293,527 @@ export default function ProfessionalClientsPage() {
                                                             entry.client.id
                                                         }
                                                     >
-                                                        Workout plan
+                                                        Message
                                                     </button>
-                                                ) : null}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-5 space-y-4">
-                                            <div className="rounded-2xl border bg-background p-4">
-                                                <div className="mb-3 flex items-center justify-between gap-3">
-                                                    <h3 className="text-sm font-semibold">
-                                                        Height and weight
-                                                        progress
-                                                    </h3>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Latest:{' '}
-                                                        {entry.progress
-                                                            .latest_weight_kg !==
-                                                        null
-                                                            ? `${entry.progress.latest_weight_kg} kg`
-                                                            : 'n/a'}
-                                                        {' / '}
-                                                        {entry.progress
-                                                            .latest_height_cm !==
-                                                        null
-                                                            ? `${entry.progress.latest_height_cm} cm`
-                                                            : 'n/a'}
-                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-full bg-[color:var(--primary)] px-4 py-2 text-sm font-medium text-[color:var(--primary-foreground)] transition hover:opacity-95"
+                                                        onClick={() =>
+                                                            openAppointmentDialog(
+                                                                entry.client,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            busyClientId ===
+                                                            entry.client.id
+                                                        }
+                                                    >
+                                                        Appointment
+                                                    </button>
+                                                    {roleMode ===
+                                                    'nutritionist' ? (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                                onClick={() =>
+                                                                    openMealNoteDialog(
+                                                                        entry,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    busyClientId ===
+                                                                    entry.client
+                                                                        .id
+                                                                }
+                                                            >
+                                                                Meal note
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                                onClick={() =>
+                                                                    openDietPlanDialog(
+                                                                        entry,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    busyClientId ===
+                                                                    entry.client
+                                                                        .id
+                                                                }
+                                                            >
+                                                                Diet plan
+                                                            </button>
+                                                        </>
+                                                    ) : roleMode ===
+                                                      'trainer' ? (
+                                                        <button
+                                                            type="button"
+                                                            className="rounded-full border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                                                            onClick={() =>
+                                                                openWorkoutPlanDialog(
+                                                                    entry,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                busyClientId ===
+                                                                entry.client.id
+                                                            }
+                                                        >
+                                                            Workout plan
+                                                        </button>
+                                                    ) : null}
                                                 </div>
+                                            </div>
 
-                                                {entry.progress.points
-                                                    .length === 0 ? (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        No measurement history
-                                                        logged yet.
-                                                    </p>
-                                                ) : (
-                                                    <div className="overflow-x-auto">
-                                                        <table className="min-w-full text-sm">
-                                                            <thead className="text-left text-muted-foreground">
-                                                                <tr>
-                                                                    <th className="py-2 pr-4">
-                                                                        Date
-                                                                    </th>
-                                                                    <th className="py-2 pr-4">
-                                                                        Weight
-                                                                    </th>
-                                                                    <th className="py-2">
-                                                                        Height
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {entry.progress.points
-                                                                    .slice(-6)
-                                                                    .map(
-                                                                        (
-                                                                            point,
-                                                                        ) => (
-                                                                            <tr
-                                                                                key={
-                                                                                    point.date
-                                                                                }
-                                                                                className="border-t"
-                                                                            >
-                                                                                <td className="py-2 pr-4">
-                                                                                    {
+                                            <div className="mt-5 space-y-4">
+                                                <div className="rounded-2xl border bg-background p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold">
+                                                            Height and weight
+                                                            progress
+                                                        </h3>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Latest:{' '}
+                                                            {entry.progress
+                                                                .latest_weight_kg !==
+                                                            null
+                                                                ? `${entry.progress.latest_weight_kg} kg`
+                                                                : 'n/a'}
+                                                            {' / '}
+                                                            {entry.progress
+                                                                .latest_height_cm !==
+                                                            null
+                                                                ? `${entry.progress.latest_height_cm} cm`
+                                                                : 'n/a'}
+                                                        </div>
+                                                    </div>
+
+                                                    {entry.progress.points
+                                                        .length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            No measurement
+                                                            history logged yet.
+                                                        </p>
+                                                    ) : (
+                                                        <div className="overflow-x-auto">
+                                                            <table className="min-w-full text-sm">
+                                                                <thead className="text-left text-muted-foreground">
+                                                                    <tr>
+                                                                        <th className="py-2 pr-4">
+                                                                            Date
+                                                                        </th>
+                                                                        <th className="py-2 pr-4">
+                                                                            Weight
+                                                                        </th>
+                                                                        <th className="py-2">
+                                                                            Height
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {entry.progress.points
+                                                                        .slice(
+                                                                            -6,
+                                                                        )
+                                                                        .map(
+                                                                            (
+                                                                                point,
+                                                                            ) => (
+                                                                                <tr
+                                                                                    key={
                                                                                         point.date
                                                                                     }
-                                                                                </td>
-                                                                                <td className="py-2 pr-4">
-                                                                                    {point.weight_kg !==
-                                                                                    null
-                                                                                        ? `${point.weight_kg} kg`
-                                                                                        : '-'}
-                                                                                </td>
-                                                                                <td className="py-2">
-                                                                                    {point.height_cm !==
-                                                                                    null
-                                                                                        ? `${point.height_cm} cm`
-                                                                                        : '-'}
-                                                                                </td>
-                                                                            </tr>
-                                                                        ),
-                                                                    )}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {roleMode === 'trainer' ? (
-                                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-                                                    <div className="rounded-2xl border bg-background p-4">
-                                                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                                                            <h3 className="text-sm font-semibold">
-                                                                Workout progress
-                                                            </h3>
-                                                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                                                <span className="rounded-full bg-muted px-2.5 py-1">
-                                                                    Sessions:{' '}
-                                                                    {
-                                                                        entry
-                                                                            .training
-                                                                            ?.summary
-                                                                            .logged_sessions
-                                                                    }
-                                                                </span>
-                                                                <span className="rounded-full bg-muted px-2.5 py-1">
-                                                                    Sets:{' '}
-                                                                    {
-                                                                        entry
-                                                                            .training
-                                                                            ?.summary
-                                                                            .total_sets
-                                                                    }
-                                                                </span>
-                                                            </div>
+                                                                                    className="border-t"
+                                                                                >
+                                                                                    <td className="py-2 pr-4">
+                                                                                        {
+                                                                                            point.date
+                                                                                        }
+                                                                                    </td>
+                                                                                    <td className="py-2 pr-4">
+                                                                                        {point.weight_kg !==
+                                                                                        null
+                                                                                            ? `${point.weight_kg} kg`
+                                                                                            : '-'}
+                                                                                    </td>
+                                                                                    <td className="py-2">
+                                                                                        {point.height_cm !==
+                                                                                        null
+                                                                                            ? `${point.height_cm} cm`
+                                                                                            : '-'}
+                                                                                    </td>
+                                                                                </tr>
+                                                                            ),
+                                                                        )}
+                                                                </tbody>
+                                                            </table>
                                                         </div>
+                                                    )}
+                                                </div>
 
-                                                        {entry.training
-                                                            ?.recent_workouts
-                                                            .length ? (
-                                                            <div className="space-y-3">
-                                                                {entry.training.recent_workouts.map(
-                                                                    (
-                                                                        workout,
-                                                                    ) => (
-                                                                        <div
-                                                                            key={
-                                                                                workout.id
-                                                                            }
-                                                                            className="rounded-2xl border p-3"
-                                                                        >
-                                                                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                                                                <div className="font-medium">
-                                                                                    {formatDateTime(
-                                                                                        workout.performed_at,
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="text-xs text-muted-foreground">
-                                                                                    {workout.duration_min
-                                                                                        ? `${workout.duration_min} min`
-                                                                                        : 'No duration'}
-                                                                                    {' - '}
-                                                                                    {
-                                                                                        workout.sets_count
-                                                                                    }{' '}
-                                                                                    sets
-                                                                                </div>
-                                                                            </div>
-                                                                            {workout.notes ? (
-                                                                                <p className="mt-2 text-sm text-muted-foreground">
-                                                                                    {
-                                                                                        workout.notes
-                                                                                    }
-                                                                                </p>
-                                                                            ) : null}
-                                                                        </div>
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                No workout logs
-                                                                yet for this
-                                                                client.
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="rounded-2xl border bg-background p-4">
-                                                        <h3 className="text-sm font-semibold">
-                                                            Assigned workout
-                                                            plan
-                                                        </h3>
-                                                        {entry.workout_plan ? (
-                                                            <div className="mt-3 space-y-3 text-sm">
-                                                                <div className="font-medium">
-                                                                    {
-                                                                        entry
-                                                                            .workout_plan
-                                                                            .title
-                                                                    }
-                                                                </div>
-                                                                {entry.workout_plan.notes ? (
-                                                                    <p className="text-muted-foreground">
+                                                {roleMode === 'trainer' ? (
+                                                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                                                        <div className="rounded-2xl border bg-background p-4">
+                                                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                                                <h3 className="text-sm font-semibold">
+                                                                    Workout
+                                                                    progress
+                                                                </h3>
+                                                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                                                    <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                        Sessions:{' '}
                                                                         {
                                                                             entry
-                                                                                .workout_plan
-                                                                                .notes
+                                                                                .training
+                                                                                ?.summary
+                                                                                .logged_sessions
                                                                         }
-                                                                    </p>
-                                                                ) : null}
-                                                                <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-                                                                    {entry.workout_plan.plan_json?.map(
+                                                                    </span>
+                                                                    <span className="rounded-full bg-muted px-2.5 py-1">
+                                                                        Sets:{' '}
+                                                                        {
+                                                                            entry
+                                                                                .training
+                                                                                ?.summary
+                                                                                .total_sets
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {entry.training
+                                                                ?.recent_workouts
+                                                                .length ? (
+                                                                <div className="space-y-3">
+                                                                    {entry.training.recent_workouts.map(
                                                                         (
-                                                                            day,
-                                                                            dayIdx,
+                                                                            workout,
                                                                         ) => (
                                                                             <div
-                                                                                key={`${day.label}-${dayIdx}`}
-                                                                                className="rounded-xl border px-3 py-3"
+                                                                                key={
+                                                                                    workout.id
+                                                                                }
+                                                                                className="rounded-2xl border p-3"
                                                                             >
-                                                                                <div className="font-medium">
-                                                                                    {day.label ||
-                                                                                        `Day ${dayIdx + 1}`}
-                                                                                </div>
-                                                                                {day.focus ? (
-                                                                                    <div className="text-xs text-muted-foreground">
-                                                                                        {
-                                                                                            day.focus
-                                                                                        }
+                                                                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                                    <div className="font-medium">
+                                                                                        {formatDateTime(
+                                                                                            workout.performed_at,
+                                                                                        )}
                                                                                     </div>
-                                                                                ) : null}
-                                                                                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                                                                                    {day.exercises?.length ? (
-                                                                                        day.exercises.map(
-                                                                                            (
-                                                                                                exercise,
-                                                                                                exerciseIdx,
-                                                                                            ) => (
-                                                                                                <div
-                                                                                                    key={`${exercise.name}-${exerciseIdx}`}
-                                                                                                >
-                                                                                                    <span className="font-medium text-foreground">
-                                                                                                        {
-                                                                                                            exercise.name
-                                                                                                        }
-                                                                                                    </span>
-                                                                                                    {(exercise.sets ||
-                                                                                                        exercise.reps) && (
-                                                                                                        <>
-                                                                                                            {' '}
-                                                                                                            <span>
-                                                                                                                {[
-                                                                                                                    exercise.sets
-                                                                                                                        ? `${exercise.sets} sets`
-                                                                                                                        : null,
-                                                                                                                    exercise.reps
-                                                                                                                        ? `${exercise.reps} reps`
-                                                                                                                        : null,
-                                                                                                                ]
-                                                                                                                    .filter(Boolean)
-                                                                                                                    .join(
-                                                                                                                        ' x ',
-                                                                                                                    )}
-                                                                                                            </span>
-                                                                                                        </>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            ),
-                                                                                        )
-                                                                                    ) : (
-                                                                                        <div>
-                                                                                            No
-                                                                                            exercises
-                                                                                            added.
-                                                                                        </div>
-                                                                                    )}
+                                                                                    <div className="text-xs text-muted-foreground">
+                                                                                        {workout.duration_min
+                                                                                            ? `${workout.duration_min} min`
+                                                                                            : 'No duration'}
+                                                                                        {
+                                                                                            ' - '
+                                                                                        }
+                                                                                        {
+                                                                                            workout.sets_count
+                                                                                        }{' '}
+                                                                                        sets
+                                                                                    </div>
                                                                                 </div>
+                                                                                {workout.notes ? (
+                                                                                    <p className="mt-2 text-sm text-muted-foreground">
+                                                                                        {
+                                                                                            workout.notes
+                                                                                        }
+                                                                                    </p>
+                                                                                ) : null}
                                                                             </div>
                                                                         ),
                                                                     )}
                                                                 </div>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="mt-3 text-sm text-muted-foreground">
-                                                                No workout plan
-                                                                assigned yet.
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                                                    <div className="rounded-2xl border bg-background p-4">
-                                                        <div className="mb-3 flex items-center justify-between gap-3">
-                                                            <h3 className="text-sm font-semibold">
-                                                                Weekly meals
-                                                            </h3>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                Last 7 days
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
-                                                            {entry.nutrition?.weekly_days.map(
-                                                                (day) => (
-                                                                    <div
-                                                                        key={
-                                                                            day.date
-                                                                        }
-                                                                        className="rounded-2xl border p-3"
-                                                                    >
-                                                                        <div className="mb-2 flex items-center justify-between gap-3">
-                                                                            <div className="font-medium">
-                                                                                {
-                                                                                    day.label
-                                                                                }
-                                                                            </div>
-                                                                            <div className="text-xs text-muted-foreground">
-                                                                                {
-                                                                                    day.date
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {day.meals
-                                                                            .length ? (
-                                                                            <div className="space-y-2">
-                                                                                {day.meals.map(
-                                                                                    (
-                                                                                        meal,
-                                                                                    ) => (
-                                                                                        <div
-                                                                                            key={
-                                                                                                meal.meal_type
-                                                                                            }
-                                                                                            className="rounded-xl bg-muted/40 p-3"
-                                                                                        >
-                                                                                            <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                                                                                {formatMealType(
-                                                                                                    meal.meal_type,
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <div className="mt-2 space-y-1 text-sm">
-                                                                                                {meal.items.map(
-                                                                                                    (
-                                                                                                        item,
-                                                                                                    ) => (
-                                                                                                        <div
-                                                                                                            key={
-                                                                                                                item.id
-                                                                                                            }
-                                                                                                            className="flex items-center justify-between gap-3"
-                                                                                                        >
-                                                                                                            <span className="min-w-0 truncate">
-                                                                                                                {
-                                                                                                                    item.food_name
-                                                                                                                }
-                                                                                                            </span>
-                                                                                                            <span className="text-xs text-muted-foreground">
-                                                                                                                {item.servings !==
-                                                                                                                null
-                                                                                                                    ? `${item.servings} serving(s)`
-                                                                                                                    : ''}
-                                                                                                            </span>
-                                                                                                        </div>
-                                                                                                    ),
-                                                                                                )}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ),
-                                                                                )}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-sm text-muted-foreground">
-                                                                                No
-                                                                                meals
-                                                                                logged.
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                ),
+                                                            ) : (
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    No workout
+                                                                    logs yet for
+                                                                    this client.
+                                                                </p>
                                                             )}
                                                         </div>
-                                                    </div>
 
-                                                    <div className="space-y-4">
                                                         <div className="rounded-2xl border bg-background p-4">
                                                             <h3 className="text-sm font-semibold">
-                                                                Assigned diet
+                                                                Assigned workout
                                                                 plan
                                                             </h3>
-                                                            {entry.diet_plan ? (
-                                                                <div className="mt-3 space-y-2 text-sm">
+                                                            {entry.workout_plan ? (
+                                                                <div className="mt-3 space-y-3 text-sm">
                                                                     <div className="font-medium">
                                                                         {
                                                                             entry
-                                                                                .diet_plan
+                                                                                .workout_plan
                                                                                 .title
                                                                         }
                                                                     </div>
-                                                                    <div className="text-muted-foreground">
-                                                                        {entry.diet_plan.start_date ??
-                                                                            'No start date'}{' '}
-                                                                        to{' '}
-                                                                        {entry.diet_plan.end_date ??
-                                                                            'No end date'}
-                                                                    </div>
-                                                                    {entry.diet_plan.notes ? (
+                                                                    {entry
+                                                                        .workout_plan
+                                                                        .notes ? (
                                                                         <p className="text-muted-foreground">
                                                                             {
                                                                                 entry
-                                                                                    .diet_plan
+                                                                                    .workout_plan
                                                                                     .notes
                                                                             }
                                                                         </p>
                                                                     ) : null}
+                                                                    <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                                                                        {entry.workout_plan.plan_json?.map(
+                                                                            (
+                                                                                day,
+                                                                                dayIdx,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={`${day.label}-${dayIdx}`}
+                                                                                    className="rounded-xl border px-3 py-3"
+                                                                                >
+                                                                                    <div className="font-medium">
+                                                                                        {day.label ||
+                                                                                            `Day ${dayIdx + 1}`}
+                                                                                    </div>
+                                                                                    {day.focus ? (
+                                                                                        <div className="text-xs text-muted-foreground">
+                                                                                            {
+                                                                                                day.focus
+                                                                                            }
+                                                                                        </div>
+                                                                                    ) : null}
+                                                                                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                                                                                        {day
+                                                                                            .exercises
+                                                                                            ?.length ? (
+                                                                                            day.exercises.map(
+                                                                                                (
+                                                                                                    exercise,
+                                                                                                    exerciseIdx,
+                                                                                                ) => (
+                                                                                                    <div
+                                                                                                        key={`${exercise.name}-${exerciseIdx}`}
+                                                                                                    >
+                                                                                                        <span className="font-medium text-foreground">
+                                                                                                            {
+                                                                                                                exercise.name
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                        {(exercise.sets ||
+                                                                                                            exercise.reps) && (
+                                                                                                            <>
+                                                                                                                {' '}
+                                                                                                                <span>
+                                                                                                                    {[
+                                                                                                                        exercise.sets
+                                                                                                                            ? `${exercise.sets} sets`
+                                                                                                                            : null,
+                                                                                                                        exercise.reps
+                                                                                                                            ? `${exercise.reps} reps`
+                                                                                                                            : null,
+                                                                                                                    ]
+                                                                                                                        .filter(
+                                                                                                                            Boolean,
+                                                                                                                        )
+                                                                                                                        .join(
+                                                                                                                            ' x ',
+                                                                                                                        )}
+                                                                                                                </span>
+                                                                                                            </>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                ),
+                                                                                            )
+                                                                                        ) : (
+                                                                                            <div>
+                                                                                                No
+                                                                                                exercises
+                                                                                                added.
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             ) : (
                                                                 <p className="mt-3 text-sm text-muted-foreground">
-                                                                    No diet plan
-                                                                    assigned yet.
+                                                                    No workout
+                                                                    plan
+                                                                    assigned
+                                                                    yet.
                                                                 </p>
                                                             )}
                                                         </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                                                        <div className="rounded-2xl border bg-background p-4">
+                                                            <div className="mb-3 flex items-center justify-between gap-3">
+                                                                <h3 className="text-sm font-semibold">
+                                                                    Weekly meals
+                                                                </h3>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    Last 7 days
+                                                                </div>
+                                                            </div>
 
-                                                        {entry.client.allergens
-                                                            ?.length ? (
+                                                            <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                                                                {entry.nutrition?.weekly_days.map(
+                                                                    (day) => (
+                                                                        <div
+                                                                            key={
+                                                                                day.date
+                                                                            }
+                                                                            className="rounded-2xl border p-3"
+                                                                        >
+                                                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                                                                <div className="font-medium">
+                                                                                    {
+                                                                                        day.label
+                                                                                    }
+                                                                                </div>
+                                                                                <div className="text-xs text-muted-foreground">
+                                                                                    {
+                                                                                        day.date
+                                                                                    }
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {day
+                                                                                .meals
+                                                                                .length ? (
+                                                                                <div className="space-y-2">
+                                                                                    {day.meals.map(
+                                                                                        (
+                                                                                            meal,
+                                                                                        ) => (
+                                                                                            <div
+                                                                                                key={
+                                                                                                    meal.meal_type
+                                                                                                }
+                                                                                                className="rounded-xl bg-muted/40 p-3"
+                                                                                            >
+                                                                                                <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                                                    {formatMealType(
+                                                                                                        meal.meal_type,
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                <div className="mt-2 space-y-1 text-sm">
+                                                                                                    {meal.items.map(
+                                                                                                        (
+                                                                                                            item,
+                                                                                                        ) => (
+                                                                                                            <div
+                                                                                                                key={
+                                                                                                                    item.id
+                                                                                                                }
+                                                                                                                className="flex items-center justify-between gap-3"
+                                                                                                            >
+                                                                                                                <span className="min-w-0 truncate">
+                                                                                                                    {
+                                                                                                                        item.food_name
+                                                                                                                    }
+                                                                                                                </span>
+                                                                                                                <span className="text-xs text-muted-foreground">
+                                                                                                                    {item.servings !==
+                                                                                                                    null
+                                                                                                                        ? `${item.servings} serving(s)`
+                                                                                                                        : ''}
+                                                                                                                </span>
+                                                                                                            </div>
+                                                                                                        ),
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ),
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    No
+                                                                                    meals
+                                                                                    logged.
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-4">
                                                             <div className="rounded-2xl border bg-background p-4">
                                                                 <h3 className="text-sm font-semibold">
-                                                                    Allergy
-                                                                    guardrails
+                                                                    Assigned
+                                                                    diet plan
                                                                 </h3>
-                                                                <p className="mt-3 text-sm text-muted-foreground">
-                                                                    Hidden from
-                                                                    food search:{' '}
-                                                                    {entry.client.allergens.join(
-                                                                        ', ',
-                                                                    )}
-                                                                </p>
+                                                                {entry.diet_plan ? (
+                                                                    <div className="mt-3 space-y-2 text-sm">
+                                                                        <div className="font-medium">
+                                                                            {
+                                                                                entry
+                                                                                    .diet_plan
+                                                                                    .title
+                                                                            }
+                                                                        </div>
+                                                                        <div className="text-muted-foreground">
+                                                                            {entry
+                                                                                .diet_plan
+                                                                                .start_date ??
+                                                                                'No start date'}{' '}
+                                                                            to{' '}
+                                                                            {entry
+                                                                                .diet_plan
+                                                                                .end_date ??
+                                                                                'No end date'}
+                                                                        </div>
+                                                                        {entry
+                                                                            .diet_plan
+                                                                            .notes ? (
+                                                                            <p className="text-muted-foreground">
+                                                                                {
+                                                                                    entry
+                                                                                        .diet_plan
+                                                                                        .notes
+                                                                                }
+                                                                            </p>
+                                                                        ) : null}
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="mt-3 text-sm text-muted-foreground">
+                                                                        No diet
+                                                                        plan
+                                                                        assigned
+                                                                        yet.
+                                                                    </p>
+                                                                )}
                                                             </div>
-                                                        ) : null}
+
+                                                            {entry.client
+                                                                .allergens
+                                                                ?.length ? (
+                                                                <div className="rounded-2xl border bg-background p-4">
+                                                                    <h3 className="text-sm font-semibold">
+                                                                        Allergy
+                                                                        guardrails
+                                                                    </h3>
+                                                                    <p className="mt-3 text-sm text-muted-foreground">
+                                                                        Hidden
+                                                                        from
+                                                                        food
+                                                                        search:{' '}
+                                                                        {entry.client.allergens.join(
+                                                                            ', ',
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

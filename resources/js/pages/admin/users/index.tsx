@@ -5,7 +5,6 @@ import {
     AdminField,
     AdminNativeSelect,
     AdminNotice,
-    AdminOverviewCard,
     AdminPagination,
     AdminPanel,
     AdminScrollArea,
@@ -569,9 +568,7 @@ function UserInvestigationPanel({
                     <ContextRow
                         icon={<ShieldAlert className="h-4 w-4" />}
                         label="Account state"
-                        value={
-                            detail.user.status || 'No explicit status set'
-                        }
+                        value={detail.user.status || 'No explicit status set'}
                         meta={`Verified ${detail.user.verified ? 'yes' : 'no'} / Email ${detail.user.email}`}
                     />
                 </div>
@@ -950,56 +947,6 @@ export default function AdminUsersIndex() {
         return { verifiedCount, professionalCount };
     }, [users]);
 
-    const activeFilterCount = useMemo(
-        () =>
-            [
-                search.trim() !== '',
-                role !== 'all',
-                verified !== 'all',
-                statusFilter !== 'all',
-                includeDeleted,
-            ].filter(Boolean).length,
-        [includeDeleted, role, search, statusFilter, verified],
-    );
-
-    const selectedRiskCount = useMemo(() => {
-        if (!detail) {
-            return 0;
-        }
-
-        let count = 0;
-
-        if (!detail.user.verified) {
-            count += 1;
-        }
-
-        if (
-            detail.user.status &&
-            ['suspended', 'rejected', 'needs_review', 'needs_info'].includes(
-                detail.user.status,
-            )
-        ) {
-            count += 1;
-        }
-
-        if ((detail.user.allergies ?? []).length > 0) {
-            count += 1;
-        }
-
-        if (detail.user.has_medical_history && detail.user.medical_history) {
-            count += 1;
-        }
-
-        if (
-            detail.verification?.review_status &&
-            detail.verification.review_status !== 'approved'
-        ) {
-            count += 1;
-        }
-
-        return count;
-    }, [detail]);
-
     const allVisibleSelected =
         users.length > 0 &&
         users.every((user) => selectedUserIds.includes(user.id));
@@ -1103,8 +1050,7 @@ export default function AdminUsersIndex() {
                 response = await fetch(
                     `/api/admin/users/${user.id}`,
                     jsonRequestInit('PUT', {
-                        status:
-                            action === 'suspend' ? 'suspended' : 'active',
+                        status: action === 'suspend' ? 'suspended' : 'active',
                     }),
                 );
             }
@@ -1191,7 +1137,9 @@ export default function AdminUsersIndex() {
                 <AdminField label="Status" className="sm:w-52">
                     <AdminNativeSelect
                         value={statusFilter}
-                        onChange={(event) => setStatusFilter(event.target.value)}
+                        onChange={(event) =>
+                            setStatusFilter(event.target.value)
+                        }
                     >
                         <option value="all">All statuses</option>
                         <option value="active">active</option>
@@ -1205,7 +1153,9 @@ export default function AdminUsersIndex() {
 
                 <AdminField label="Scope" className="sm:w-52">
                     <AdminNativeSelect
-                        value={includeDeleted ? 'include_deleted' : 'active_only'}
+                        value={
+                            includeDeleted ? 'include_deleted' : 'active_only'
+                        }
                         onChange={(event) =>
                             setIncludeDeleted(
                                 event.target.value === 'include_deleted',
@@ -1265,112 +1215,6 @@ export default function AdminUsersIndex() {
                                 helper="Trainers and nutritionists in the current view."
                             />
                         </AdminStatsGrid>
-
-                        <AdminSection
-                            title="Triage Guidance"
-                            description="Keep the queue readable, make bulk actions intentional, and use separate audit surfaces when you need raw metadata or debugging detail."
-                        >
-                            <div className="grid gap-4 xl:grid-cols-2">
-                                <AdminOverviewCard
-                                    title="Queue snapshot"
-                                    description="A quick read on the current user queue so you know whether you are browsing broadly or working through a narrow filter set."
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Active filters
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {activeFilterCount === 0
-                                                    ? 'All users view'
-                                                    : `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                {includeDeleted
-                                                    ? 'Deleted accounts are included in this queue.'
-                                                    : 'Queue is limited to active accounts only.'}
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Bulk action rail
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selectedUserIds.length === 0
-                                                    ? 'No users selected'
-                                                    : `${selectedUserIds.length} selected`}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Use bulk verification or status
-                                                changes without leaving the
-                                                current filter context.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AdminOverviewCard>
-
-                                <AdminOverviewCard
-                                    title="Current investigation"
-                                    description="The selected record stays human-readable here, while raw audit and technical detail stays in dedicated follow-up surfaces."
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Selected record
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {detail?.user
-                                                    ? formatUserName(
-                                                          detail.user,
-                                                      )
-                                                    : 'No user selected'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                {detail?.user
-                                                    ? 'Keep the investigation panel open for safety, activity, and plan context before opening the full editor.'
-                                                    : 'Choose a user from the table to keep context pinned while you triage.'}
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Safety signals
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {detail
-                                                    ? `${selectedRiskCount} visible signal${selectedRiskCount === 1 ? '' : 's'}`
-                                                    : 'Pending selection'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Allergies, medical history,
-                                                moderation state, and
-                                                verification gaps should stay
-                                                visible before edits.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <Button asChild variant="outline">
-                                            <Link href="/admin/logs">
-                                                <Settings2 className="h-4 w-4" />
-                                                Open logs
-                                            </Link>
-                                        </Button>
-                                        {detail?.user ? (
-                                            <Button asChild>
-                                                <Link
-                                                    href={`/admin/users/${detail.user.id}`}
-                                                >
-                                                    Open full record
-                                                </Link>
-                                            </Button>
-                                        ) : null}
-                                    </div>
-                                </AdminOverviewCard>
-                            </div>
-                        </AdminSection>
 
                         <AdminSection
                             title="Operations Workspace"
@@ -1525,258 +1369,245 @@ export default function AdminUsersIndex() {
                             </div>
 
                             <AdminScrollArea maxHeightClassName="max-h-[72vh] xl:max-h-[68vh]">
-                                        <AdminDataTable>
-                                            <ProductTableHead>
-                                                <tr>
-                                                    <ProductTableHeaderCell className="w-10">
+                                <AdminDataTable>
+                                    <ProductTableHead>
+                                        <tr>
+                                            <ProductTableHeaderCell className="w-10">
+                                                <Checkbox
+                                                    checked={allVisibleSelected}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        setSelectedUserIds(
+                                                            checked
+                                                                ? users.map(
+                                                                      (user) =>
+                                                                          user.id,
+                                                                  )
+                                                                : [],
+                                                        )
+                                                    }
+                                                    aria-label="Select visible users"
+                                                />
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                User
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                Status
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell>
+                                                Activity
+                                            </ProductTableHeaderCell>
+                                            <ProductTableHeaderCell className="w-80">
+                                                Actions
+                                            </ProductTableHeaderCell>
+                                        </tr>
+                                    </ProductTableHead>
+                                    <ProductTableBody>
+                                        {users.map((user) => {
+                                            const title = formatUserName(user);
+                                            const isSelected =
+                                                selectedUserId === user.id;
+
+                                            return (
+                                                <ProductTableRow
+                                                    key={user.id}
+                                                    interactive
+                                                    className={
+                                                        isSelected
+                                                            ? 'bg-primary/6'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    <ProductTableCell>
                                                         <Checkbox
-                                                            checked={
-                                                                allVisibleSelected
-                                                            }
+                                                            checked={selectedUserIds.includes(
+                                                                user.id,
+                                                            )}
                                                             onCheckedChange={(
                                                                 checked,
                                                             ) =>
                                                                 setSelectedUserIds(
-                                                                    checked
-                                                                        ? users.map(
-                                                                              (
-                                                                                  user,
-                                                                              ) =>
+                                                                    (
+                                                                        current,
+                                                                    ) =>
+                                                                        checked
+                                                                            ? current.includes(
                                                                                   user.id,
-                                                                          )
-                                                                        : [],
+                                                                              )
+                                                                                ? current
+                                                                                : [
+                                                                                      ...current,
+                                                                                      user.id,
+                                                                                  ]
+                                                                            : current.filter(
+                                                                                  (
+                                                                                      id,
+                                                                                  ) =>
+                                                                                      id !==
+                                                                                      user.id,
+                                                                              ),
                                                                 )
                                                             }
-                                                            aria-label="Select visible users"
+                                                            aria-label={`Select ${title}`}
                                                         />
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>
-                                                        User
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>
-                                                        Status
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell>
-                                                        Activity
-                                                    </ProductTableHeaderCell>
-                                                    <ProductTableHeaderCell className="w-80">
-                                                        Actions
-                                                    </ProductTableHeaderCell>
-                                                </tr>
-                                            </ProductTableHead>
-                                            <ProductTableBody>
-                                                {users.map((user) => {
-                                                    const title =
-                                                        formatUserName(user);
-                                                    const isSelected =
-                                                        selectedUserId ===
-                                                        user.id;
-
-                                                    return (
-                                                        <ProductTableRow
-                                                            key={user.id}
-                                                            interactive
-                                                            className={
-                                                                isSelected
-                                                                    ? 'bg-primary/6'
-                                                                    : undefined
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                selectUser(
+                                                                    user.id,
+                                                                )
                                                             }
+                                                            className="w-full min-w-0 space-y-1 text-left"
                                                         >
-                                                            <ProductTableCell>
-                                                                <Checkbox
-                                                                    checked={selectedUserIds.includes(
+                                                            <p className="text-sm font-semibold break-words text-foreground">
+                                                                {title}
+                                                            </p>
+                                                            <p className="text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
+                                                                {user.email}
+                                                            </p>
+                                                            {user.city ? (
+                                                                <p className="text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
+                                                                    {user.city}
+                                                                </p>
+                                                            ) : null}
+                                                        </button>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="space-y-2">
+                                                            <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
+                                                                {user.role}
+                                                            </Badge>
+                                                            <StatusChipSet
+                                                                items={[
+                                                                    {
+                                                                        value: user.verified
+                                                                            ? 'verified'
+                                                                            : 'unverified',
+                                                                    },
+                                                                    {
+                                                                        value:
+                                                                            user.status ||
+                                                                            'pending',
+                                                                    },
+                                                                ]}
+                                                            />
+                                                        </div>
+                                                    </ProductTableCell>
+                                                    <ProductTableCell className="text-xs text-muted-foreground">
+                                                        Meals{' '}
+                                                        {user.meal_entries_count ??
+                                                            0}
+                                                        {' / '}Workouts{' '}
+                                                        {user.workout_logs_count ??
+                                                            0}
+                                                        {' / '}AI{' '}
+                                                        {user.ai_conversations_count ??
+                                                            0}
+                                                    </ProductTableCell>
+                                                    <ProductTableCell>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    selectUser(
                                                                         user.id,
-                                                                    )}
-                                                                    onCheckedChange={(
-                                                                        checked,
-                                                                    ) =>
-                                                                        setSelectedUserIds(
-                                                                            (
-                                                                                current,
-                                                                            ) =>
-                                                                                checked
-                                                                                    ? current.includes(
-                                                                                          user.id,
-                                                                                      )
-                                                                                        ? current
-                                                                                        : [
-                                                                                              ...current,
-                                                                                              user.id,
-                                                                                          ]
-                                                                                    : current.filter(
-                                                                                          (
-                                                                                              id,
-                                                                                          ) =>
-                                                                                              id !==
-                                                                                              user.id,
-                                                                                      ),
-                                                                        )
-                                                                    }
-                                                                    aria-label={`Select ${title}`}
-                                                                />
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <button
+                                                                    );
+                                                                    setDrawerOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Inspect
+                                                            </Button>
+                                                            {!user.verified ? (
+                                                                <Button
                                                                     type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
                                                                     onClick={() =>
-                                                                        selectUser(
-                                                                            user.id,
+                                                                        void runUserAction(
+                                                                            user,
+                                                                            'verify',
                                                                         )
                                                                     }
-                                                                    className="space-y-1 text-left"
                                                                 >
-                                                                    <p className="text-sm font-semibold text-foreground">
-                                                                        {title}
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {
-                                                                            user.email
-                                                                        }
-                                                                    </p>
-                                                                    {user.city ? (
-                                                                        <p className="text-xs text-muted-foreground">
-                                                                            {
-                                                                                user.city
-                                                                            }
-                                                                        </p>
-                                                                    ) : null}
-                                                                </button>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className="space-y-2">
-                                                                    <Badge className="rounded-full px-2 py-0.5 text-[11px] capitalize">
-                                                                        {
-                                                                            user.role
-                                                                        }
-                                                                    </Badge>
-                                                                    <StatusChipSet
-                                                                        items={[
-                                                                            {
-                                                                                value: user.verified
-                                                                                    ? 'verified'
-                                                                                    : 'unverified',
-                                                                            },
-                                                                            {
-                                                                                value:
-                                                                                    user.status ||
-                                                                                    'pending',
-                                                                            },
-                                                                        ]}
-                                                                    />
-                                                                </div>
-                                                            </ProductTableCell>
-                                                            <ProductTableCell className="text-xs text-muted-foreground">
-                                                                Meals{' '}
-                                                                {user.meal_entries_count ??
-                                                                    0}
-                                                                {' / '}Workouts{' '}
-                                                                {user.workout_logs_count ??
-                                                                    0}
-                                                                {' / '}AI{' '}
-                                                                {user.ai_conversations_count ??
-                                                                    0}
-                                                            </ProductTableCell>
-                                                            <ProductTableCell>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    <Button
-                                                                        type="button"
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => {
-                                                                            selectUser(
-                                                                                user.id,
-                                                                            );
-                                                                            setDrawerOpen(
-                                                                                true,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        Inspect
-                                                                    </Button>
-                                                                    {!user.verified ? (
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() =>
-                                                                                void runUserAction(
-                                                                                    user,
-                                                                                    'verify',
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            Verify
-                                                                        </Button>
-                                                                    ) : null}
-                                                                    {user.status ===
-                                                                    'suspended' ? (
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() =>
-                                                                                void runUserAction(
-                                                                                    user,
-                                                                                    'reactivate',
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            Reactivate
-                                                                        </Button>
-                                                                    ) : (
-                                                                        <Button
-                                                                            type="button"
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            onClick={() =>
-                                                                                void runUserAction(
-                                                                                    user,
-                                                                                    'suspend',
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            Suspend
-                                                                        </Button>
-                                                                    )}
-                                                                    <Button
-                                                                        size="sm"
-                                                                        asChild
-                                                                    >
-                                                                        <Link
-                                                                            href={`/admin/users/${user.id}`}
-                                                                        >
-                                                                            Open
-                                                                        </Link>
-                                                                    </Button>
-                                                                    <Button
-                                                                        type="button"
-                                                                        size="sm"
-                                                                        variant="destructive"
-                                                                        onClick={() =>
-                                                                            void runUserAction(
-                                                                                user,
-                                                                                'delete',
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                        Delete
-                                                                    </Button>
-                                                                </div>
-                                                            </ProductTableCell>
-                                                        </ProductTableRow>
-                                                    );
-                                                })}
-                                                {!loading &&
-                                                users.length === 0 ? (
-                                                    <ProductTableEmptyRow
-                                                        colSpan={5}
-                                                        title="No users matched"
-                                                        description="Try different filters or reset search criteria."
-                                                    />
-                                                ) : null}
-                                            </ProductTableBody>
-                                        </AdminDataTable>
+                                                                    Verify
+                                                                </Button>
+                                                            ) : null}
+                                                            {user.status ===
+                                                            'suspended' ? (
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        void runUserAction(
+                                                                            user,
+                                                                            'reactivate',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Reactivate
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        void runUserAction(
+                                                                            user,
+                                                                            'suspend',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Suspend
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                size="sm"
+                                                                asChild
+                                                            >
+                                                                <Link
+                                                                    href={`/admin/users/${user.id}`}
+                                                                >
+                                                                    Open
+                                                                </Link>
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    void runUserAction(
+                                                                        user,
+                                                                        'delete',
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                Delete
+                                                            </Button>
+                                                        </div>
+                                                    </ProductTableCell>
+                                                </ProductTableRow>
+                                            );
+                                        })}
+                                        {!loading && users.length === 0 ? (
+                                            <ProductTableEmptyRow
+                                                colSpan={5}
+                                                title="No users matched"
+                                                description="Try different filters or reset search criteria."
+                                            />
+                                        ) : null}
+                                    </ProductTableBody>
+                                </AdminDataTable>
                             </AdminScrollArea>
 
                             <AdminPagination

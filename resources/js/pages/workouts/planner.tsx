@@ -23,7 +23,13 @@ import {
     Trash2,
     WandSparkles,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from 'react';
 
 type Exercise = {
     id: number;
@@ -339,13 +345,16 @@ export default function WorkoutPlannerPage() {
         setErrors({});
     }, []);
 
-    const applyPlanToDraft = useCallback((plan: WorkoutPlan, label: string) => {
-        const nextDays = toDraftDays(plan);
-        setDraftName(`${plan.name} Copy`);
-        applyDraftDays(nextDays);
-        setMode('build-own');
-        setStatus(`${label} loaded into your draft editor.`);
-    }, [applyDraftDays]);
+    const applyPlanToDraft = useCallback(
+        (plan: WorkoutPlan, label: string) => {
+            const nextDays = toDraftDays(plan);
+            setDraftName(`${plan.name} Copy`);
+            applyDraftDays(nextDays);
+            setMode('build-own');
+            setStatus(`${label} loaded into your draft editor.`);
+        },
+        [applyDraftDays],
+    );
 
     const templateSources = useMemo(() => {
         const sources: Array<{
@@ -739,8 +748,7 @@ export default function WorkoutPlannerPage() {
                                                             (current) =>
                                                                 Math.max(
                                                                     1,
-                                                                    current -
-                                                                        1,
+                                                                    current - 1,
                                                                 ),
                                                         )
                                                     }
@@ -749,8 +757,7 @@ export default function WorkoutPlannerPage() {
                                                             (current) =>
                                                                 Math.min(
                                                                     totalTemplatePages,
-                                                                    current +
-                                                                        1,
+                                                                    current + 1,
                                                                 ),
                                                         )
                                                     }
@@ -989,9 +996,7 @@ export default function WorkoutPlannerPage() {
                                             <ProductInput
                                                 value={query}
                                                 onChange={(event) =>
-                                                    setQuery(
-                                                        event.target.value,
-                                                    )
+                                                    setQuery(event.target.value)
                                                 }
                                                 placeholder="Search by name, muscle group, or equipment"
                                                 className="h-12 w-full bg-card pl-11 text-base"

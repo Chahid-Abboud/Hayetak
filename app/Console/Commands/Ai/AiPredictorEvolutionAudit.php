@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands\Ai;
 
-use App\Models\AiRequest;
 use App\Models\User;
 use App\Services\Ai\Training\ProgressLabelReadinessService;
 use Carbon\CarbonImmutable;

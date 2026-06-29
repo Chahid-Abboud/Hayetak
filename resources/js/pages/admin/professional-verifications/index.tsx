@@ -4,7 +4,6 @@ import {
     AdminField,
     AdminNativeSelect,
     AdminNotice,
-    AdminOverviewCard,
     AdminPagination,
     AdminPanel,
     AdminScrollArea,
@@ -187,7 +186,9 @@ function reviewNeedsNotes(
     status: ReviewStatus,
     verification: Verification | null,
 ) {
-    const expiryDelta = verification ? daysUntil(verification.expiry_date) : null;
+    const expiryDelta = verification
+        ? daysUntil(verification.expiry_date)
+        : null;
 
     return status !== 'approved' || (expiryDelta !== null && expiryDelta <= 30);
 }
@@ -446,8 +447,8 @@ function VerificationDecisionSurface({
                 {notesMissing ? (
                     <AdminNotice tone="warning">
                         Review notes are required for rejected requests, needs
-                        info decisions, and approvals with expired or near-expiry
-                        credentials.
+                        info decisions, and approvals with expired or
+                        near-expiry credentials.
                     </AdminNotice>
                 ) : null}
 
@@ -513,12 +514,12 @@ function VerificationDecisionSurface({
                 >
                     <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
-                            <Link href="/admin/logs">
-                                Open admin logs
-                            </Link>
+                            <Link href="/admin/logs">Open admin logs</Link>
                         </Button>
                         <Button asChild variant="outline">
-                            <Link href={`/admin/users/${verification.user?.id}`}>
+                            <Link
+                                href={`/admin/users/${verification.user?.id}`}
+                            >
                                 Open account record
                             </Link>
                         </Button>
@@ -605,22 +606,23 @@ export default function AdminProfessionalVerifications() {
 
     const filteredRows = useMemo(() => {
         const normalizedQuery = query.trim().toLowerCase();
-        return rows.filter((row) =>
-            (role === 'all' || row.role === role) &&
-            (normalizedQuery === '' ||
-                [
-                    row.full_legal_name,
-                    row.license_number,
-                    row.authority,
-                    row.country_state,
-                    row.user?.email,
-                    row.user?.first_name,
-                    row.user?.last_name,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase()
-                    .includes(normalizedQuery)),
+        return rows.filter(
+            (row) =>
+                (role === 'all' || row.role === role) &&
+                (normalizedQuery === '' ||
+                    [
+                        row.full_legal_name,
+                        row.license_number,
+                        row.authority,
+                        row.country_state,
+                        row.user?.email,
+                        row.user?.first_name,
+                        row.user?.last_name,
+                    ]
+                        .filter(Boolean)
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(normalizedQuery)),
         );
     }, [query, role, rows]);
 
@@ -670,22 +672,6 @@ export default function AdminProfessionalVerifications() {
             }).length,
         }),
         [filteredRows],
-    );
-
-    const activeFilterCount = useMemo(
-        () =>
-            (status !== 'pending' ? 1 : 0) +
-            (role !== 'all' ? 1 : 0) +
-            (query.trim() ? 1 : 0),
-        [query, role, status],
-    );
-
-    const selectedExpiryDelta = useMemo(
-        () =>
-            selectedVerification
-                ? daysUntil(selectedVerification.expiry_date)
-                : null,
-        [selectedVerification],
     );
 
     const selectedNeedsNotes = useMemo(
@@ -798,128 +784,6 @@ export default function AdminProfessionalVerifications() {
                                 helper="Useful for renewal follow-up."
                             />
                         </AdminStatsGrid>
-
-                        <AdminSection
-                            title="Triage Guidance"
-                            description="Keep the queue readable, make review actions intentional, and leave raw audit or debugging detail to dedicated logs when you need deep traces."
-                        >
-                            <div className="grid gap-4 xl:grid-cols-2">
-                                <AdminOverviewCard
-                                    title="Queue snapshot"
-                                    description="This page works best as a review rail: filter the queue, keep one request selected, and move through evidence without losing your place."
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Active filters
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {activeFilterCount === 0
-                                                    ? 'Default pending queue'
-                                                    : `${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}`}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Review state is{' '}
-                                                {status === 'all'
-                                                    ? 'showing every request.'
-                                                    : `${formatStatusLabel(status).toLowerCase()} only.`}{' '}
-                                                Role is{' '}
-                                                {formatRoleLabel(
-                                                    role,
-                                                ).toLowerCase()}
-                                                .
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Current slice
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {from && to
-                                                    ? `${from}-${to} of ${total}`
-                                                    : 'Waiting for queue data'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Pagination keeps the review
-                                                queue stable while search
-                                                refines only the current page.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AdminOverviewCard>
-
-                                <AdminOverviewCard
-                                    title="Current review context"
-                                    description="Keep the decision surface human-readable here. Use logs only when you need raw audit history or technical debugging detail."
-                                >
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Selected request
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selectedVerification
-                                                    ? personName(
-                                                          selectedVerification.user,
-                                                      )
-                                                    : 'No request selected'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                {selectedVerification
-                                                    ? `${formatRoleLabel(selectedVerification.role)} review with evidence and account state pinned beside the queue.`
-                                                    : 'Choose a request to keep evidence and decision controls pinned in place.'}
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Decision rail
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selectedVerification
-                                                    ? formatStatusLabel(
-                                                          reviewStatus,
-                                                      )
-                                                    : 'Pending selection'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Save one clear decision with
-                                                notes so the next admin can
-                                                trust the outcome without
-                                                reopening the whole case.
-                                            </div>
-                                        </div>
-
-                                        <div className="dashboard-surface-soft rounded-[22px] px-4 py-4 sm:col-span-2">
-                                            <div className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-                                                Credential timing
-                                            </div>
-                                            <div className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                                {selectedVerification
-                                                    ? selectedExpiryDelta ===
-                                                      null
-                                                        ? 'Expiry not available'
-                                                        : selectedExpiryDelta <
-                                                            0
-                                                          ? 'Credential expired'
-                                                          : selectedExpiryDelta ===
-                                                              0
-                                                            ? 'Expires today'
-                                                            : `${selectedExpiryDelta} day${selectedExpiryDelta === 1 ? '' : 's'} remaining`
-                                                    : 'Open a request to inspect timing'}
-                                            </div>
-                                            <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                                                Near-expiry requests should
-                                                usually end with either a
-                                                renewal follow-up note or a
-                                                deliberate approval rationale.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </AdminOverviewCard>
-                            </div>
-                        </AdminSection>
 
                         <AdminSection
                             title="Verification queue"
@@ -1073,14 +937,14 @@ export default function AdminProfessionalVerifications() {
                                                                                         row.id,
                                                                                     )
                                                                                 }
-                                                                                className="space-y-2 text-left"
+                                                                                className="w-full min-w-0 space-y-2 text-left"
                                                                             >
-                                                                                <div className="font-medium text-foreground">
+                                                                                <div className="font-medium break-words text-foreground">
                                                                                     {personName(
                                                                                         row.user,
                                                                                     )}
                                                                                 </div>
-                                                                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                                <div className="flex flex-wrap items-center gap-2 text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
                                                                                     <Badge
                                                                                         variant="outline"
                                                                                         className="rounded-full px-2.5 py-1 capitalize"
@@ -1104,12 +968,12 @@ export default function AdminProfessionalVerifications() {
                                                                         </ProductTableCell>
                                                                         <ProductTableCell>
                                                                             <div className="space-y-1">
-                                                                                <div className="font-medium text-foreground">
+                                                                                <div className="font-medium break-words text-foreground">
                                                                                     {
                                                                                         row.license_number
                                                                                     }
                                                                                 </div>
-                                                                                <div className="text-xs text-muted-foreground">
+                                                                                <div className="text-xs [overflow-wrap:anywhere] break-words text-muted-foreground">
                                                                                     {
                                                                                         row.full_legal_name
                                                                                     }
